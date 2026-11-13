@@ -12,6 +12,14 @@
 
 export type ModuleKey = "vehicles" | "electricity" | "bills";
 
+/** Pages that belong to the app itself rather than to one module (shown under Home in the sidebar). */
+export type SharedPageConfig = {
+  key: string;
+  label: string;
+  href: string;
+  icon: string;
+};
+
 export type ModuleConfig = {
   key: ModuleKey;
   label: string;
@@ -52,6 +60,11 @@ export const appConfig = {
   reminders: {
     leadDays: [30, 14, 7, 1, 0],
   },
+
+  // ---- Shared pages (DECISIONS C35) ------------------------------------------------------------
+  sharedPages: [
+    { key: "tasks", label: "Tasks & notes", href: "/tasks", icon: "tasks" },
+  ] satisfies SharedPageConfig[],
 
   // ---- Modules (DECISIONS C1): flip `enabled` to show/hide a module in navigation ------------
   modules: [

@@ -1,4 +1,4 @@
-import { Car, CircleHelp, Home, Receipt, Settings, Zap, type LucideIcon } from "lucide-react";
+import { Car, CircleHelp, Home, ListChecks, Receipt, Settings, Zap, type LucideIcon } from "lucide-react";
 
 /**
  * Maps the icon names used in app.config.ts to lucide icons. Add a line here when a new module
@@ -10,6 +10,7 @@ const icons: Record<string, LucideIcon> = {
   zap: Zap,
   receipt: Receipt,
   settings: Settings,
+  tasks: ListChecks,
 };
 
 export function getIcon(name: string): LucideIcon {

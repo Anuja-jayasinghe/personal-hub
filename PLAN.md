@@ -36,7 +36,7 @@ Config       : app.config.ts (name, logo, enabled modules) + theme tokens (colou
 | 0.4 | Theme tokens + `app.config.ts` (placeholder branding) | Local | ✅ Done 2026-11-13 |
 | 0.5 | Drizzle + migrations against Supabase Postgres; `.env.example` committed, `.env.local` per computer | 🌐 Supabase | ✅ Done 2026-11-13 |
 | 0.6 | App shell: sidebar, dashboard skeleton, settings; dev server on LAN | Local | ✅ Done 2026-11-13 |
-| 0.7 | Shared tasks, notes, attachments (files in Supabase Storage) | 🌐 Supabase | Approve |
+| 0.7 | Shared tasks, notes, attachments (files in Supabase Storage) | 🌐 Supabase | ✅ Done 2026-11-13 |
 | 0.8 | Reminders engine (computes due items, shows "Due soon" + 30-day list) | Local | P8 |
 | 0.9 | First push to GitHub; second computer clones and runs | 🌐 GitHub | Approve |
 | 0.10 | Backup: one-click export (DB dump + uploads → zip on this Mac) | Local | Approve |

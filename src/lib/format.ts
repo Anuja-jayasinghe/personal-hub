@@ -25,3 +25,18 @@ const dateFormatter = new Intl.DateTimeFormat(locale, {
 export function formatDate(date: Date | string | number): string {
   return dateFormatter.format(new Date(date));
 }
+
+/** Human-readable file size, e.g. "2.4 MB". */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/**
+ * Today's date as "YYYY-MM-DD" in the app time zone (DECISIONS C25). Reads the clock, so only
+ * call it from request-time code (after `await connection()`), never while pre-rendering.
+ */
+export function todayInAppTz(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: appConfig.timeZone }).format(new Date());
+}

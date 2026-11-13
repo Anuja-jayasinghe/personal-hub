@@ -22,7 +22,10 @@ import { appConfig, enabledModules } from "@/config/app.config";
 
 type NavItem = { label: string; href: string; icon: string };
 
-const mainItems: NavItem[] = [{ label: "Home", href: "/", icon: "home" }];
+const mainItems: NavItem[] = [
+  { label: "Home", href: "/", icon: "home" },
+  ...appConfig.sharedPages.map((p) => ({ label: p.label, href: p.href, icon: p.icon })),
+];
 const moduleItems: NavItem[] = enabledModules.map((m) => ({
   label: m.label,
   href: m.href,
