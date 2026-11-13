@@ -4,9 +4,9 @@ import { eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { appConfig } from "@/config/app.config";
-import { attachments, vehicles } from "@/db/schema";
+import { attachments, vehicleRenewals, vehicles } from "@/db/schema";
 import { db } from "@/db";
-import { deleteSharedDataOf } from "@/features/shared/cleanup";
+import { deleteAttachmentsOf, deleteSharedDataOf } from "@/features/shared/cleanup";
 import { toActionState } from "@/features/shared/errors";
 import { removeAttachment, storeAttachment } from "@/features/shared/files";
 import type { ActionState } from "@/features/shared/types";
@@ -64,8 +64,11 @@ export async function unarchiveVehicle(fd: FormData): Promise<void> {
 /** Permanent. Removes the vehicle and everything it owns: tasks, notes, files and the cover photo. */
 export async function deleteVehicle(fd: FormData): Promise<void> {
   const id = idFrom(fd);
+  // Renewal documents are attachments owned by each renewal, which the database cannot cascade to.
+  const renewals = await db.select({ id: vehicleRenewals.id }).from(vehicleRenewals).where(eq(vehicleRenewals.vehicleId, id));
+  for (const r of renewals) await deleteAttachmentsOf("vehicle_renewal", r.id);
   await deleteSharedDataOf("vehicle", id);
-  await db.delete(vehicles).where(eq(vehicles.id, id));
+  await db.delete(vehicles).where(eq(vehicles.id, id)); // services and renewals cascade
   redirect("/vehicles");
 }
 

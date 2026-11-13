@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CoverPhotoForm } from "@/components/vehicles/cover-photo-form";
+import { RenewalsTab } from "@/components/vehicles/renewals-tab";
 import { ServicesTab } from "@/components/vehicles/services-tab";
 import { VehicleCover } from "@/components/vehicles/vehicle-cover";
 import { isModuleEnabled } from "@/config/app.config";
@@ -24,7 +25,7 @@ export const metadata: Metadata = { title: "Vehicle" };
 const TABS = [
   { key: "overview", label: "Overview" },
   { key: "services", label: "Services" },
-  { key: "renewals", label: "Renewals", soon: "Coming in Phase 1.3: revenue license, insurance and emission test." },
+  { key: "renewals", label: "Renewals" },
   { key: "fixes", label: "Fixes", soon: "Coming in Phase 1.4: fixes for this vehicle." },
   { key: "notes", label: "Notes", soon: "Coming in Phase 1.4: notes and files for this vehicle." },
 ] as const;
@@ -146,6 +147,8 @@ async function VehicleContent({
         </div>
       ) : current.key === "services" ? (
         <ServicesTab vehicleId={vehicle.id} />
+      ) : current.key === "renewals" ? (
+        <RenewalsTab vehicleId={vehicle.id} />
       ) : (
         <EmptyState title={current.label} hint={"soon" in current ? current.soon : ""} />
       )}

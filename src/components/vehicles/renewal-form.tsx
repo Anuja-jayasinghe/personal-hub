@@ -1,0 +1,111 @@
+"use client";
+
+import { useActionState, useEffect, useRef } from "react";
+import { labelClass, labelTextClass, selectClass } from "@/components/shared/form-styles";
+import { SubmitButton } from "@/components/shared/submit-button";
+import { Input } from "@/components/ui/input";
+import type { VehicleRenewal } from "@/db/schema";
+import { initialActionState, type ActionState } from "@/features/shared/types";
+
+type Props = {
+  action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
+  types: readonly string[];
+  /** Create: the vehicle the renewal belongs to. */
+  vehicleId?: string;
+  /** Edit: the record to change. Renew: the record being renewed (its type is kept). */
+  renewal?: VehicleRenewal;
+  mode: "create" | "edit" | "renew";
+};
+
+/** One form for adding, editing and renewing a renewal (createRenewal / updateRenewal / renewRenewal). */
+export function RenewalForm({ action, types, vehicleId, renewal, mode }: Props) {
+  const [state, formAction] = useActionState(action, initialActionState);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (state.ok && mode === "create") formRef.current?.reset();
+  }, [state, mode]);
+
+  const renewing = mode === "renew";
+  // When renewing, the new cover normally starts where the old one ends.
+  const defaults = {
+    provider: renewal?.provider ?? "",
+    referenceNumber: renewing ? "" : (renewal?.referenceNumber ?? ""),
+    startDate: renewing ? (renewal?.expiryDate ?? "") : (renewal?.startDate ?? ""),
+    expiryDate: renewing ? "" : (renewal?.expiryDate ?? ""),
+    amount: renewing ? "" : (renewal?.amount ?? ""),
+  };
+
+  return (
+    <form ref={formRef} action={formAction} className="flex flex-col gap-3">
+      {mode === "create" ? <input type="hidden" name="vehicleId" value={vehicleId} /> : <input type="hidden" name="id" value={renewal?.id} />}
+
+      {mode === "create" ? (
+        <label className={labelClass}>
+          <span className={labelTextClass}>Type</span>
+          <select name="type" required defaultValue="" className={selectClass}>
+            <option value="" disabled>
+              Choose…
+            </option>
+            {types.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : mode === "edit" ? (
+        <label className={labelClass}>
+          <span className={labelTextClass}>Type</span>
+          <select name="type" required defaultValue={renewal?.type} className={selectClass}>
+            {types.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Renewing <span className="font-medium text-foreground">{renewal?.type}</span>. The old record is kept as history.
+        </p>
+      )}
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className={labelClass}>
+          <span className={labelTextClass}>Provider (optional)</span>
+          <Input name="provider" maxLength={100} defaultValue={defaults.provider} />
+        </label>
+        <label className={labelClass}>
+          <span className={labelTextClass}>Policy / reference number (optional)</span>
+          <Input name="referenceNumber" maxLength={60} defaultValue={defaults.referenceNumber} />
+        </label>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className={labelClass}>
+          <span className={labelTextClass}>Start date (optional)</span>
+          <Input type="date" name="startDate" defaultValue={defaults.startDate} />
+        </label>
+        <label className={labelClass}>
+          <span className={labelTextClass}>{renewing ? "New expiry date" : "Expiry date"}</span>
+          <Input type="date" name="expiryDate" required defaultValue={defaults.expiryDate} />
+        </label>
+        <label className={labelClass}>
+          <span className={labelTextClass}>Amount (optional)</span>
+          <Input name="amount" inputMode="decimal" defaultValue={defaults.amount} placeholder="0.00" />
+        </label>
+      </div>
+
+      {state.error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {state.error}
+        </p>
+      ) : null}
+
+      <div>
+        <SubmitButton pendingLabel="Saving…">{renewing ? "Renewed" : mode === "edit" ? "Save changes" : "Add renewal"}</SubmitButton>
+      </div>
+    </form>
+  );
+}

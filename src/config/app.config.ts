@@ -66,6 +66,16 @@ export const appConfig = {
     fuelTypes: ["Petrol", "Diesel", "Hybrid", "Electric", "Other"] as readonly string[],
     /** Suggestions for the service type box (Phase 1.2); anything else can be typed in. */
     serviceTypes: ["Full service", "Oil change", "Tyres", "Brakes", "Battery", "Other"] as readonly string[],
+    /**
+     * Renewals that expire (Phase 1.3, DECISIONS C23: the driving license is not here, C45).
+     * `leadDays` is optional: leave it out to use the app-wide reminder lead times above, or set
+     * it to warn earlier for one type, e.g. { label: "Insurance", leadDays: [60, 30, 14, 7, 1, 0] }.
+     */
+    renewalTypes: [
+      { label: "Revenue license" },
+      { label: "Insurance" },
+      { label: "Emission test" },
+    ] as readonly { label: string; leadDays?: readonly number[] }[],
   },
 
   // ---- Shared pages (DECISIONS C35) ------------------------------------------------------------

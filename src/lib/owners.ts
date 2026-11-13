@@ -13,6 +13,8 @@ export const OWNER_TYPES = [
   // Attachments can hang off a task or a note too (e.g. a photo on a standalone note).
   "task",
   "note",
+  // A vehicle renewal (insurance, licence...) can carry its document (Phase 1.3).
+  "vehicle_renewal",
 ] as const;
 
 export type OwnerType = (typeof OWNER_TYPES)[number];
