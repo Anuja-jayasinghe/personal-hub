@@ -36,6 +36,22 @@ How it protects you:
 - It only **reads** from Supabase and never overwrites an earlier backup.
 - It writes to a `.part` file first, re-reads the finished zip, checks every checksum, and checks that no rows changed while it ran. Only then does it keep the file. If anything is wrong it deletes the partial file and tells you.
 
+## Export electricity data to a spreadsheet
+
+```bash
+pnpm export:electricity
+```
+
+This is **not a backup** (use `pnpm backup` for that). It writes three CSV files into a new folder, `exports/electricity-YYYYMMDD-HHMMSS/`, that open in Excel, Numbers or Google Sheets:
+
+| File | One row per | Main columns |
+|---|---|---|
+| `meters.csv` | meter | `meter`, `account_number`, `archived`, `notes` |
+| `readings.csv` | reading | `meter`, `reading_date`, `reading_kwh`, `meter_replaced`, `old_meter_final_kwh`, `source`, `note` |
+| `bills.csv` | bill | `meter`, `bill_date`, `reading_date`, `previous_reading_kwh`, `current_reading_kwh`, `units_kwh`, `amount`, `due_date`, `paid_date`, `notes` |
+
+Dates are `YYYY-MM-DD`, readings and units are kWh, amounts are in the app currency. It only reads from the database, never overwrites an earlier export, and `--out <folder>` picks another place. Text that starts with `=`, `+`, `-` or `@` gets a leading `'` so a spreadsheet shows it instead of running it as a formula. Like backups, the folder holds your real data and is git-ignored (`exports/`): keep it out of git and share it carefully.
+
 ## How often, and where to keep copies
 
 - Take one **after you add anything important** (a new vehicle's papers, a renewed insurance document) and at least **once a month**.

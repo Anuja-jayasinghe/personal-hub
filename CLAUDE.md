@@ -29,6 +29,7 @@ Read first: [PLAN.md](PLAN.md) (phases and steps) and [DECISIONS.md](DECISIONS.m
 | `pnpm db:check` | Database sanity check (connection, row-level security, round trip) |
 | `pnpm storage:setup` / `pnpm storage:check` | Create / verify the private `attachments` bucket |
 | `pnpm backup` / `pnpm backup:restore <file.zip>` | Zip backup of all data and files / restore it (see `BACKUP.md`). Backups hold real data: never commit or share them |
+| `pnpm export:electricity` | Writes `meters.csv`, `readings.csv`, `bills.csv` into a new `exports/electricity-<timestamp>/` folder for spreadsheets (read-only; the folder is git-ignored and holds real data) |
 
 ## Conventions that are easy to miss
 

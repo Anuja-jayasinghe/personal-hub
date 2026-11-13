@@ -17,7 +17,8 @@
     "test": "vitest run",
     "setup:check": "node scripts/setup-check.mjs",
     "backup": "node scripts/backup.mjs",
-    "backup:restore": "node scripts/restore.mjs"
+    "backup:restore": "node scripts/restore.mjs",
+    "export:electricity": "node scripts/export-electricity.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
