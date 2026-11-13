@@ -6,24 +6,40 @@ import * as schema from "./schema";
 /**
  * Server-only database client (DECISIONS C19: no Supabase key or connection string ever reaches
  * the browser). Connects through the Supabase session pooler (C26) using DATABASE_URL.
+ *
+ * The connection is created on first use, not when this file is imported. That way
+ * `pnpm build` and the tests work on a brand-new computer before `.env.local` exists (found by
+ * the fresh-clone rehearsal for step 0.9); a missing DATABASE_URL only fails when a query runs.
  */
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error("DATABASE_URL is not set. Copy .env.example to .env.local and fill it in.");
+function createDb() {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("DATABASE_URL is not set. Copy .env.example to .env.local and fill it in.");
+  }
+
+  // Reuse one connection pool across hot reloads in development.
+  const globalForDb = globalThis as unknown as { __pgClient?: ReturnType<typeof postgres> };
+  const client =
+    globalForDb.__pgClient ??
+    postgres(connectionString, {
+      max: 5,
+      idle_timeout: 20,
+      connect_timeout: 15,
+    });
+  if (process.env.NODE_ENV !== "production") globalForDb.__pgClient = client;
+
+  return drizzle(client, { schema });
 }
 
-// Reuse one connection pool across hot reloads in development.
-const globalForDb = globalThis as unknown as { __pgClient?: ReturnType<typeof postgres> };
+export type Db = ReturnType<typeof createDb>;
 
-const client =
-  globalForDb.__pgClient ??
-  postgres(connectionString, {
-    max: 5,
-    idle_timeout: 20,
-    connect_timeout: 15,
-  });
+let instance: Db | undefined;
 
-if (process.env.NODE_ENV !== "production") globalForDb.__pgClient = client;
-
-export const db = drizzle(client, { schema });
-export type Db = typeof db;
+/** The database. Looks like a plain Drizzle client (`db.select()...`); connects on first use. */
+export const db = new Proxy({} as Db, {
+  get(_target, prop) {
+    instance ??= createDb();
+    const value = Reflect.get(instance, prop, instance);
+    return typeof value === "function" ? value.bind(instance) : value;
+  },
+});

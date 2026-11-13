@@ -15,6 +15,7 @@
     "storage:setup": "node scripts/storage-setup.mjs",
     "storage:check": "node scripts/storage-check.mjs",
     "test": "vitest run",
+    "setup:check": "node scripts/setup-check.mjs",
     "backup": "node scripts/backup.mjs",
     "backup:restore": "node scripts/restore.mjs"
   },
@@ -47,5 +48,8 @@
     "typescript": "^5",
     "vitest": "^5.1.0"
   },
-  "packageManager": "pnpm@10.11.0"
+  "packageManager": "pnpm@10.11.0",
+  "engines": {
+    "node": ">=22"
+  }
 }
