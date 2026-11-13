@@ -4,6 +4,8 @@
  * was read), so one bill is one block in one month; two bills of the same meter in one month add up.
  */
 
+import { addMonths, monthOf } from "@/lib/dates";
+
 export type BillUnits = { meterId: string; /** "YYYY-MM-DD" */ readingDate: string; /** Hundredths of a kWh. */ units: number };
 
 export type MonthBar = {
@@ -15,15 +17,7 @@ export type MonthBar = {
   segments: { meterId: string; units: number }[];
 };
 
-/** "YYYY-MM" of a "YYYY-MM-DD". */
-export const monthOf = (date: string): string => date.slice(0, 7);
-
-/** The month `n` months after `month` (negative for before), as "YYYY-MM". */
-export function addMonths(month: string, n: number): string {
-  const [y, m] = month.split("-").map(Number);
-  const index = y * 12 + (m - 1) + n;
-  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
-}
+export { addMonths, monthOf };
 
 /**
  * Bars for the last `maxMonths` months that end at the latest bill (so the chart does not need a

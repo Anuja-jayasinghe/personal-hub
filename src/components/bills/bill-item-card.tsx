@@ -36,7 +36,7 @@ export function BillItemCard({
   const tone = days === null ? "" : days < 0 ? "font-medium text-status-overdue" : days <= 7 ? "text-status-soon" : "text-muted-foreground";
 
   return (
-    <li className="rounded-xl border bg-card p-4 text-card-foreground">
+    <li id={`item-${item.id}`} className="scroll-mt-20 rounded-xl border bg-card p-4 text-card-foreground">
       <div className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">

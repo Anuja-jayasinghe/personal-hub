@@ -51,3 +51,14 @@ export function todayIn(timeZone: string, now: Date): string {
 export function yearOfInstant(instant: Date, timeZone: string): number {
   return Number(todayIn(timeZone, instant).slice(0, 4));
 }
+
+/** "YYYY-MM" of a "YYYY-MM-DD". */
+export const monthOf = (ymd: string): string => ymd.slice(0, 7);
+
+/** The month `n` months after `month` ("YYYY-MM"), negative for before, as "YYYY-MM". */
+export function addMonths(month: string, n: number): string {
+  const [y, m] = month.split("-").map(Number);
+  const index = y * 12 + (m - 1) + n;
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
+}
+
