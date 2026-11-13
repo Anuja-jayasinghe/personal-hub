@@ -3,13 +3,14 @@
 import { eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { db } from "@/db";
-import { billItems } from "@/db/schema";
-import { deleteSharedDataOf } from "@/features/shared/cleanup";
+import { billItems, billPayments } from "@/db/schema";
+import { deleteAttachmentsOf, deleteSharedDataOf } from "@/features/shared/cleanup";
 import { toActionState } from "@/features/shared/errors";
 import type { ActionState } from "@/features/shared/types";
 import { idFrom, ValidationError } from "@/features/shared/validation";
+import { applyPayment, dueAfterUndo } from "./payments";
 import { anchorDayOf } from "./schedule";
-import { parseBillItem } from "./validate";
+import { parseBillItem, parsePayment } from "./validate";
 
 // Server Actions are public HTTP endpoints, so every input is validated here.
 
@@ -67,7 +68,78 @@ export async function unarchiveBillItem(fd: FormData): Promise<void> {
 /** Permanent: the item and its documents. */
 export async function deleteBillItem(fd: FormData): Promise<void> {
   const id = idFrom(fd);
+  // Receipts are attachments owned by each payment, which the database cannot cascade to.
+  const payments = await db.select({ id: billPayments.id }).from(billPayments).where(eq(billPayments.itemId, id));
+  for (const p of payments) await deleteAttachmentsOf("bill_payment", p.id);
   await deleteSharedDataOf("bill_item", id);
   await db.delete(billItems).where(eq(billItems.id, id));
+  refresh();
+}
+
+// ---- Payments ----
+
+function paymentFields(fd: FormData) {
+  const raw: Record<string, string | undefined> = {};
+  for (const k of ["paidDate", "amount", "note"]) {
+    const v = fd.get(k);
+    raw[k] = typeof v === "string" ? v : undefined;
+  }
+  const r = parsePayment(raw);
+  if (!r.ok) throw new ValidationError(r.error);
+  return r.value;
+}
+
+/**
+ * "Mark paid": records a payment for the item's current due date and moves the due date forward
+ * by the frequency (a one-off item is finished), in one transaction. The item row is locked while
+ * this runs, so a double click cannot pay two periods.
+ */
+export async function markBillItemPaid(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  try {
+    const itemId = idFrom(fd, "itemId");
+    const f = paymentFields(fd);
+    await db.transaction(async (tx) => {
+      const [item] = await tx.select().from(billItems).where(eq(billItems.id, itemId)).for("update");
+      if (!item) throw new ValidationError("That item could not be found.");
+      if (item.archivedAt) throw new ValidationError("Unarchive this item before recording a payment.");
+      const paid = applyPayment(item);
+      if (!paid.ok) throw new ValidationError(paid.error);
+      await tx.insert(billPayments).values({ itemId, dueDate: paid.settles, ...f });
+      await tx.update(billItems).set({ nextDueDate: paid.nextDueDate }).where(eq(billItems.id, itemId));
+    });
+    refresh();
+    return { ok: true };
+  } catch (err) {
+    return toActionState(err);
+  }
+}
+
+/** Edits what was recorded (date, amount, note). It does not move the item's due date. */
+export async function updateBillPayment(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  try {
+    await db.update(billPayments).set(paymentFields(fd)).where(eq(billPayments.id, idFrom(fd)));
+    refresh();
+    return { ok: true };
+  } catch (err) {
+    return toActionState(err);
+  }
+}
+
+/**
+ * Deletes a payment and its receipts. If it was the most recently recorded payment, the item goes
+ * back to due on the date that payment settled (see `dueAfterUndo`).
+ */
+export async function deleteBillPayment(fd: FormData): Promise<void> {
+  const id = idFrom(fd);
+  await deleteAttachmentsOf("bill_payment", id);
+  await db.transaction(async (tx) => {
+    const [payment] = await tx.select().from(billPayments).where(eq(billPayments.id, id));
+    if (!payment) return;
+    const [item] = await tx.select().from(billItems).where(eq(billItems.id, payment.itemId)).for("update");
+    const all = await tx.select().from(billPayments).where(eq(billPayments.itemId, payment.itemId));
+    await tx.delete(billPayments).where(eq(billPayments.id, id));
+    const restored = item ? dueAfterUndo(all, id, payment.dueDate, item.nextDueDate) : null;
+    if (restored) await tx.update(billItems).set({ nextDueDate: restored }).where(eq(billItems.id, payment.itemId));
+  });
   refresh();
 }

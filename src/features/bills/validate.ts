@@ -73,3 +73,27 @@ export function parseBillItem(raw: Record<string, string | undefined>): BillItem
     },
   };
 }
+
+export type PaymentFields = { paidDate: string; amount: string | null; note: string | null };
+export type PaymentResult = { ok: true; value: PaymentFields } | { ok: false; error: string };
+
+/** A payment: the day it was paid, what was actually paid (optional) and a note (optional). */
+export function parsePayment(raw: Record<string, string | undefined>): PaymentResult {
+  const paidDate = (raw.paidDate ?? "").trim();
+  if (!paidDate) return { ok: false, error: "Paid date is required." };
+  if (!isValidDate(paidDate)) return { ok: false, error: "Paid date must be a valid date." };
+
+  const amountRaw = (raw.amount ?? "").replace(/,/g, "").trim();
+  let amount: string | null = null;
+  if (amountRaw) {
+    if (!/^\d{1,10}(\.\d{1,2})?$/.test(amountRaw)) return { ok: false, error: "Amount must be a number like 1500 or 1500.50." };
+    amount = amountRaw;
+  }
+
+  const note = (raw.note ?? "").trim();
+  if (note.length > 500) return { ok: false, error: "Note must be at most 500 characters." };
+  if (looksLikeCardNumber(note)) {
+    return { ok: false, error: "The note looks like it contains a card number. Card numbers are never stored: remove it." };
+  }
+  return { ok: true, value: { paidDate, amount, note: note || null } };
+}

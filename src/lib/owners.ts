@@ -19,6 +19,8 @@ export const OWNER_TYPES = [
   "electricity_bill",
   // A bill or subscription (Phase 3.1) can carry its contract or a statement.
   "bill_item",
+  // A payment of a bill or subscription can carry its receipt (Phase 3.2).
+  "bill_payment",
 ] as const;
 
 export type OwnerType = (typeof OWNER_TYPES)[number];
