@@ -1,11 +1,14 @@
 import { Trash2 } from "lucide-react";
+import { BillForm } from "@/components/electricity/bill-form";
+import { BillsList } from "@/components/electricity/bills-list";
 import { MeterForm } from "@/components/electricity/meter-form";
 import { ReadingForm } from "@/components/electricity/reading-form";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Badge } from "@/components/ui/badge";
-import type { ElectricityMeter, ElectricityReading } from "@/db/schema";
+import type { Attachment, ElectricityBill, ElectricityMeter, ElectricityReading } from "@/db/schema";
 import {
   addReading,
+  createBill,
   archiveMeter,
   deleteMeter,
   deleteReading,
@@ -21,11 +24,17 @@ import { formatDate } from "@/lib/format";
 export function MeterSection({
   meter,
   readings,
+  bills,
+  billFiles,
   today,
 }: {
   meter: ElectricityMeter;
   /** This meter's readings, newest first. */
   readings: ElectricityReading[];
+  /** This meter's bills, newest first. */
+  bills: ElectricityBill[];
+  /** Documents attached to bills, by bill id. */
+  billFiles: Map<string, Attachment[]>;
   today: string;
 }) {
   const sorted = sortReadings(readings.map((r) => ({ ...toReading(r), row: r })));
@@ -60,7 +69,7 @@ export function MeterSection({
         </form>
         <form action={deleteMeter}>
           <input type="hidden" name="id" value={meter.id} />
-          <SubmitButton variant="ghost" size="icon" aria-label={`Delete meter ${meter.name}`} confirm={`Permanently delete "${meter.name}" and all its readings? This cannot be undone.`}>
+          <SubmitButton variant="ghost" size="icon" aria-label={`Delete meter ${meter.name}`} confirm={`Permanently delete "${meter.name}" and all its readings, bills and bill documents? This cannot be undone.`}>
             <Trash2 aria-hidden />
           </SubmitButton>
         </form>
@@ -75,6 +84,20 @@ export function MeterSection({
             </div>
           </details>
         ) : null}
+
+        {!meter.archivedAt ? (
+          <details className="rounded-md border border-primary/40">
+            <summary className="cursor-pointer px-3 py-1.5 text-sm font-medium">Add a bill</summary>
+            <div className="border-t p-3">
+              <BillForm action={createBill} meterId={meter.id} defaultDate={today} defaultPrevious={bills[0]?.currentReading} />
+            </div>
+          </details>
+        ) : null}
+
+        <details className="rounded-md border">
+          <summary className="cursor-pointer px-3 py-1.5 text-sm text-muted-foreground">Bills ({bills.length})</summary>
+          <BillsList bills={bills} files={billFiles} today={today} />
+        </details>
 
         <details className="rounded-md border">
           <summary className="cursor-pointer px-3 py-1.5 text-sm text-muted-foreground">Reading history ({readings.length})</summary>

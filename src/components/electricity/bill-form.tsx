@@ -1,0 +1,92 @@
+"use client";
+
+import { useActionState, useEffect, useRef } from "react";
+import { labelClass, labelTextClass } from "@/components/shared/form-styles";
+import { SubmitButton } from "@/components/shared/submit-button";
+import { Input } from "@/components/ui/input";
+import type { ElectricityBill } from "@/db/schema";
+import { initialActionState, type ActionState } from "@/features/shared/types";
+
+type Props = {
+  action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
+  /** Add: the meter the bill belongs to. */
+  meterId?: string;
+  /** Edit: the bill to change. */
+  bill?: ElectricityBill;
+  /** Add: pre-filled bill date, usually today in the app time zone. */
+  defaultDate?: string;
+  /** Add: pre-filled previous reading, the current reading of the meter's last bill. */
+  defaultPrevious?: string;
+};
+
+/** Add / edit form for a bill (createBill / updateBill). Units are worked out from the readings when left empty. */
+export function BillForm({ action, meterId, bill, defaultDate, defaultPrevious }: Props) {
+  const [state, formAction] = useActionState(action, initialActionState);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (state.ok && !bill) formRef.current?.reset();
+  }, [state, bill]);
+
+  return (
+    <form ref={formRef} action={formAction} className="flex flex-col gap-3">
+      {bill ? <input type="hidden" name="id" value={bill.id} /> : <input type="hidden" name="meterId" value={meterId} />}
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className={labelClass}>
+          <span className={labelTextClass}>Bill date</span>
+          <Input type="date" name="billDate" required defaultValue={bill?.billDate ?? defaultDate} />
+        </label>
+        <label className={labelClass}>
+          <span className={labelTextClass}>Reading date (optional, defaults to the bill date)</span>
+          <Input type="date" name="readingDate" defaultValue={bill?.readingDate ?? ""} />
+        </label>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className={labelClass}>
+          <span className={labelTextClass}>Previous reading (kWh)</span>
+          <Input name="previousReading" required inputMode="decimal" defaultValue={bill?.previousReading ?? defaultPrevious ?? ""} placeholder="12345.6" />
+        </label>
+        <label className={labelClass}>
+          <span className={labelTextClass}>Current reading (kWh)</span>
+          <Input name="currentReading" required inputMode="decimal" defaultValue={bill?.currentReading ?? ""} placeholder="12560" />
+        </label>
+        <label className={labelClass}>
+          <span className={labelTextClass}>Units (optional)</span>
+          <Input name="units" inputMode="decimal" defaultValue={bill?.units ?? ""} placeholder="current − previous" />
+        </label>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className={labelClass}>
+          <span className={labelTextClass}>Amount (optional)</span>
+          <Input name="amount" inputMode="decimal" defaultValue={bill?.amount ?? ""} placeholder="0.00" />
+        </label>
+        <label className={labelClass}>
+          <span className={labelTextClass}>Due date (optional)</span>
+          <Input type="date" name="dueDate" defaultValue={bill?.dueDate ?? ""} />
+        </label>
+        <label className={labelClass}>
+          <span className={labelTextClass}>Paid on (optional)</span>
+          <Input type="date" name="paidDate" defaultValue={bill?.paidDate ?? ""} />
+        </label>
+      </div>
+
+      <label className={labelClass}>
+        <span className={labelTextClass}>Notes (optional)</span>
+        <Input name="notes" maxLength={500} defaultValue={bill?.notes ?? ""} />
+      </label>
+
+      {state.error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {state.error}
+        </p>
+      ) : null}
+
+      <div>
+        <SubmitButton pendingLabel="Saving…">{bill ? "Save changes" : "Add bill"}</SubmitButton>
+      </div>
+    </form>
+  );
+}

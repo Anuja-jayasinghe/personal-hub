@@ -3,11 +3,15 @@
 import { eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { db } from "@/db";
-import { electricityMeters, electricityReadings } from "@/db/schema";
+import { electricityBills, electricityMeters, electricityReadings } from "@/db/schema";
+import { deleteAttachmentsOf } from "@/features/shared/cleanup";
 import { toActionState } from "@/features/shared/errors";
 import type { ActionState } from "@/features/shared/types";
 import { idFrom, ValidationError } from "@/features/shared/validation";
 import { toCents } from "@/lib/decimal";
+import { isValidDate } from "@/lib/dates";
+import { todayInAppTz } from "@/lib/format";
+import { parseBill } from "./bill-validate";
 import { checkReadingFits, toReading } from "./usage";
 import { parseMeter, parseReading } from "./validate";
 
@@ -60,7 +64,11 @@ export async function unarchiveMeter(fd: FormData): Promise<void> {
 
 /** Permanent: the meter and (by cascade) all its readings. */
 export async function deleteMeter(fd: FormData): Promise<void> {
-  await db.delete(electricityMeters).where(eq(electricityMeters.id, idFrom(fd)));
+  const id = idFrom(fd);
+  // Bill documents are attachments owned by each bill, which the database cannot cascade to.
+  const bills = await db.select({ id: electricityBills.id }).from(electricityBills).where(eq(electricityBills.meterId, id));
+  for (const b of bills) await deleteAttachmentsOf("electricity_bill", b.id);
+  await db.delete(electricityMeters).where(eq(electricityMeters.id, id));
   refresh();
 }
 
@@ -113,5 +121,60 @@ export async function updateReading(_prev: ActionState, fd: FormData): Promise<A
 
 export async function deleteReading(fd: FormData): Promise<void> {
   await db.delete(electricityReadings).where(eq(electricityReadings.id, idFrom(fd)));
+  refresh();
+}
+
+// ---- Bills ----
+
+const BILL_KEYS = ["billDate", "readingDate", "previousReading", "currentReading", "units", "amount", "dueDate", "paidDate", "notes"];
+
+function billFields(fd: FormData) {
+  const r = parseBill(raw(fd, BILL_KEYS));
+  if (!r.ok) throw new ValidationError(r.error);
+  return r.value;
+}
+
+export async function createBill(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  try {
+    const meterId = idFrom(fd, "meterId");
+    const [meter] = await db.select({ id: electricityMeters.id }).from(electricityMeters).where(eq(electricityMeters.id, meterId));
+    if (!meter) throw new ValidationError("That meter could not be found.");
+    await db.insert(electricityBills).values({ meterId, ...billFields(fd) });
+    refresh();
+    return { ok: true };
+  } catch (err) {
+    return toActionState(err);
+  }
+}
+
+export async function updateBill(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  try {
+    await db.update(electricityBills).set(billFields(fd)).where(eq(electricityBills.id, idFrom(fd)));
+    refresh();
+    return { ok: true };
+  } catch (err) {
+    return toActionState(err);
+  }
+}
+
+/** Permanent: the bill and its documents. */
+export async function deleteBill(fd: FormData): Promise<void> {
+  const id = idFrom(fd);
+  await deleteAttachmentsOf("electricity_bill", id);
+  await db.delete(electricityBills).where(eq(electricityBills.id, id));
+  refresh();
+}
+
+/** Marks a bill paid on the given date (today in the app time zone when left empty). An invalid date is ignored. */
+export async function markBillPaid(fd: FormData): Promise<void> {
+  const given = fd.get("paidDate");
+  const paidDate = typeof given === "string" && given.trim() ? given.trim() : todayInAppTz();
+  if (!isValidDate(paidDate)) return;
+  await db.update(electricityBills).set({ paidDate }).where(eq(electricityBills.id, idFrom(fd)));
+  refresh();
+}
+
+export async function markBillUnpaid(fd: FormData): Promise<void> {
+  await db.update(electricityBills).set({ paidDate: null }).where(eq(electricityBills.id, idFrom(fd)));
   refresh();
 }
