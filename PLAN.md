@@ -131,6 +131,30 @@ Sub-steps (each needs your OK before it runs):
 | 0.8e | `/reminders` page and sidebar item: Overdue, Today, Next 7 days, Next 30 days | Local |
 | 0.8f | Verify in the browser with tasks due at -3, 0, +1, +7, +14, +30 and +31 days (real rows, removed afterwards) | 🌐 Supabase writes (test data only) |
 
+### Steps 0.9 and 0.10 detail — second computer and backups (planned 2026-11-13, awaiting approval)
+
+Facts: Node here is v26.13 and pnpm 10.11 (the repo pins `packageManager: pnpm@10.11.0`; no `engines` field yet). `process.loadEnvFile`, used by the database scripts, needs a recent Node, so the second computer needs Node 22 or newer. The real database password cannot be fetched back from Supabase (only reset); the secret key can be re-fetched with the Supabase CLI or copied from the dashboard. `libpq`'s `pg_dump` exists on this Mac but would have to be installed on every computer, so the plan avoids it. `backups/` is already git-ignored. From your dotfiles repo: the second computer is your personal Windows laptop (PowerShell, `winget`, `gh`, projects under `C:\gitprojects`, Bitwarden for passwords); this Mac is the work Mac.
+
+**Step 0.9 — second computer.** I cannot operate that machine, so this step is: write exact instructions, rehearse them on this Mac, then you run them there and tell me what broke.
+
+| # | What | Local / External |
+|---|------|------------------|
+| 0.9a | Replace the template `README.md` with a short project readme; add `SETUP.md` written for **Windows / PowerShell** (winget installs for Node LTS and pnpm, clone to `C:\gitprojects\personal-hub`, `pnpm install`, create `.env.local` — database password copied by you (C41), secret key copied from the Supabase dashboard, check, run, Windows firewall prompt); add `engines` (Node 22+) to `package.json` | Local |
+| 0.9b | `scripts/setup-check.mjs` (`pnpm setup:check`): checks Node version, that each required variable is set (names only, never values), database reachable with row-level security on, storage bucket private; each failure says how to fix it | Local; reads 🌐 Supabase |
+| 0.9c | **Rehearsal on this Mac:** a fresh `git clone` into a scratch folder, `pnpm install --frozen-lockfile`, lint / typecheck / test / build **without** `.env.local` (finds out whether a new machine can build before it has secrets), then add `.env.local` and run `setup:check` and the dev server. Fix whatever breaks. This proves the repo is self-contained on macOS; Windows-only problems (paths, firewall) can only show up on the laptop. | 🌐 GitHub (read), 🌐 npm, reads 🌐 Supabase |
+| 0.9d | You follow `SETUP.md` on the second computer; I fix the instructions for anything that failed | You |
+
+**Step 0.10 — backups.** Free Supabase projects have no downloadable backups, and your data will include bills, insurance documents and photos.
+
+| # | What | Local / External |
+|---|------|------------------|
+| 0.10a | `scripts/backup.mjs` (`pnpm backup`): writes a new single file `backups/personal-hub-YYYYMMDD-HHMMSS.zip` (C43) containing `manifest.json` (time, row and file counts, checksums), `data/<table>.json` for every table in the `public` schema, and every file in the `attachments` bucket under `files/`. Streamed with `fflate`. Only reads (SELECT and file downloads); never overwrites an earlier backup | 🌐 npm (`fflate`); reads 🌐 Supabase |
+| 0.10b | `scripts/restore.mjs` (`pnpm backup:restore <file.zip>`): re-inserts the rows (using `json_populate_recordset`, so types round-trip exactly) and re-uploads the files. Refuses to run if any target table already has rows, unless you pass `--wipe` and type a confirmation phrase | 🌐 Supabase writes |
+| 0.10c | **Rehearsal:** create temporary test rows and a PDF, back up, compare checksums, delete the test data, restore, compare again, clean up | 🌐 Supabase writes (test data only) |
+| 0.10d | Document in `SETUP.md`: how often to back up, where to keep copies (not git, a second location, ideally an encrypted disk), and how to restore into a brand-new Supabase project (create project, run `pnpm db:migrate`, create the bucket with `pnpm storage:setup`, then restore) | Local |
+
+Not included (each its own later decision): **how backups are triggered beyond the command — a scheduled GitHub Action or an in-app button (C42, tracked as a GitHub issue)**, encrypting the backup, an in-app "backup overdue" reminder, restoring into a second Supabase project as a full test (the free plan's two project slots are both in use, so the rehearsal restores into the live database using test data only).
+
 ## Phase 1 — Vehicles
 
 | Entity | Fields |
