@@ -1,0 +1,47 @@
+# --- Secrets: never commit (DECISIONS C8, P12) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Local data: dumps, backups, uploads (DECISIONS C8) ---
+data/
+backups/
+uploads/
+*.dump
+*.sql.gz
+*.zip
+
+# --- Dependencies ---
+node_modules/
+.pnpm-store/
+
+# --- Next.js / build output ---
+.next/
+out/
+build/
+dist/
+next-env.d.ts
+*.tsbuildinfo
+
+# --- Supabase CLI local state ---
+supabase/.branches/
+supabase/.temp/
+
+# --- Logs ---
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+*.log
+
+# --- OS / editors ---
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# --- Testing / misc ---
+coverage/
+.vercel/

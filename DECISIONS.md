@@ -1,0 +1,74 @@
+# anuja-hub — Decision Log
+
+The single place to track what has been **confirmed**, what is **pending**, and what was **rejected**.
+Rules for this project:
+
+- Nothing is created, installed or run without a confirmed decision here.
+- Anything marked **EXTERNAL** (runs anywhere other than this Mac) needs its own explicit confirmation, and needs it again if it changes.
+- Every answer gets recorded here with its date.
+
+Legend: ✅ Confirmed · ⏳ Pending · ❌ Rejected · 🌐 EXTERNAL
+
+---
+
+## ✅ Confirmed
+
+| # | Date | Decision | Notes |
+|---|------|----------|-------|
+| C1 | 2026-11-12 | MVP scope: Vehicles + Electricity log, Bills/Subscriptions next | Built as a "super app" shell with modules |
+| C2 | 2026-11-12 | Project name/folder: `anuja-hub` at `/Users/anujaj/gitProject/anuja-hub` | Working name only |
+| C3 | 2026-11-12 | Branding decided later, separately | Everything parameter-based: app name, colours, fonts, logo, icons live in one config + theme tokens |
+| C4 | 2026-11-12 | **Web app runs locally**; data services are real hosted ones from the start | Replaces "everything local": you work from two computers and both need the same data |
+| C5 | 2026-11-12 | Stack: **Next.js + TypeScript** | Tailwind + shadcn/ui, Drizzle ORM, PWA |
+| C6 | 2026-11-12 | Reminders: **in-app only** for the MVP | Dashboard "due soon" + next-30-days list; email later |
+| C7 | 2026-11-12 | 🌐 Database + file storage: **Supabase** (hosted Postgres + Storage) | You create the account and project. Free projects pause after 7 days unused; resume them from the dashboard |
+| C8 | 2026-11-12 | Git: initialise a repo + 🌐 **private GitHub repo** as the remote | Syncs code between your two computers. `.env*`, DB dumps and uploads are never committed |
+| C9 | 2026-11-12 | Package manager: **pnpm** | 🌐 Package installs come from the npm registry |
+| C10 | 2026-11-12 | Login: **none** | Dev-only, single user |
+| C11 | 2026-11-12 | Access: **anyone on the network** can open the local app (listens on LAN) | You accepted the risk: anyone on the same Wi-Fi can read and change data |
+| C12 | 2026-11-13 | PayLedger retired; its Supabase free-tier slot is now free for this project | Verified 2026-11-13 via CLI: the account has only SolarEdge (`mqrlrkerjtfsjypaeppf`, ap-southeast-1), so one slot is open |
+| C13 | 2026-11-13 | Supabase CLI 3.1.0 stays logged in account-wide on this Mac | Your choice from the PayLedger session. Per project: `supabase link --project-ref <ref>`. The Keychain token is never read directly |
+| C14 | 2026-11-13 | `anuja-hub` is a working name only; a real name is coming "very soon" | Keep it out of public-facing text (GitHub repo name, README, descriptions) until chosen. Brand stays parameter-based (C3) |
+| C15 | 2026-11-13 | Real name not chosen yet: use a **neutral name** for the repo and Supabase project, rename later | Neutral name confirmed: **`personal-hub`** (for both) |
+| C16 | 2026-11-13 | Supabase region: **Singapore (ap-southeast-1)** | Same as SolarEdge |
+| C17 | 2026-11-13 | I create the Supabase project with the CLI | I confirm the exact command with you first. DB password generated, stored only in `.env.local` (git-ignored) |
+| C18 | 2026-11-13 | I create the private GitHub repo with `gh` | `gh` is logged in as `Anuja-jayasinghe` (scopes: repo, workflow…). I confirm the exact name first and ask again before the first push |
+
+## ⏳ Pending — needs your answer
+
+| # | Decision | Options | Recommendation |
+|---|----------|---------|----------------|
+| P6 | Currency + electricity tariff blocks | You supply | Needed for cost estimates |
+| P7 | Vehicle renewal types | Revenue license, insurance, emission test, + others? | Confirm list |
+| P8 | Reminder lead times | 30 / 14 / 7 / 1 / 0 days | Confirm or adjust |
+| P9 | Branding (name, colours, fonts, logo) | Separate session later | — |
+| P12 | How the app connects to Supabase | Server-side only, through the Postgres connection string + service key kept in `.env.local` on each computer | Server-side only; no keys in the browser |
+
+## 🌐 External services
+
+| Service | Purpose | Status |
+|---------|---------|--------|
+| Supabase (Postgres + Storage) | Shared data + uploaded documents across both computers | ✅ Approved (C7) — project `personal-hub` created 2026-11-13 (ref `qfhwazfnentlweackpqa`, ap-southeast-1) |
+| GitHub (private repo) | Code sync between both computers | ✅ Approved (C8) — private repo `Anuja-jayasinghe/personal-hub` created 2026-11-13, empty, nothing pushed |
+| npm registry via pnpm | Download open-source packages | ✅ Approved (C9) — I'll still say when an install runs |
+| Email provider (Gmail SMTP / Resend) | Reminder emails | ⏳ Deferred (C6) |
+| Hosting the web app (e.g. Vercel) | Access from anywhere | ⏳ Deferred (C4) |
+
+## 🛠 Step progress
+
+| Step | Date | Status | What was done |
+|------|------|--------|---------------|
+| 0.1 | 2026-11-12 | ✅ Done | `git init -b main` (local, no remote yet) + `.gitignore` excluding `.env*` (except `.env.example`), keys, `data/`, `backups/`, `uploads/`, dumps, `node_modules`, `.next`. Nothing committed yet |
+| 0.2 | 2026-11-13 | ✅ Done | Supabase project `personal-hub` created via CLI (ref `qfhwazfnentlweackpqa`, Singapore). Random DB password saved only in `.env.local` (git-ignored; never printed). Private GitHub repo `personal-hub` created and set as `origin`; no push. Note: the CLI needed `--yes` for hosted changes, applied only after your approval of the exact command |
+| 0.2b | 2026-11-13 | ✅ Done | `supabase link --project-ref qfhwazfnentlweackpqa` run in this folder (local state only, in git-ignored `supabase/.temp`). First local commit of the planning files; nothing pushed |
+
+## ❌ Rejected
+
+| # | Date | Decision | Why |
+|---|------|----------|-----|
+| R1 | 2026-11-12 | Cloud hosting of the web app from day one | Web app stays local |
+| R2 | 2026-11-12 | Ballerina API + React UI | Next.js chosen |
+| R3 | 2026-11-12 | Email reminders in MVP | In-app first |
+| R4 | 2026-11-12 | Local SQLite / Postgres in Docker | Hosted DB needed for two computers |
+| R5 | 2026-11-12 | Local-only git with no remote | Two computers need sync |
+| R6 | 2026-11-12 | Passcode login | Dev-only, single user |
