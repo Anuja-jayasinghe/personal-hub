@@ -33,6 +33,8 @@ Legend: ✅ Confirmed · ⏳ Pending · ❌ Rejected · 🌐 EXTERNAL
 | C16 | 2026-11-13 | Supabase region: **Singapore (ap-southeast-1)** | Same as SolarEdge |
 | C17 | 2026-11-13 | I create the Supabase project with the CLI | I confirm the exact command with you first. DB password generated, stored only in `.env.local` (git-ignored) |
 | C18 | 2026-11-13 | I create the private GitHub repo with `gh` | `gh` is logged in as `Anuja-jayasinghe` (scopes: repo, workflow…). I confirm the exact name first and ask again before the first push |
+| C19 | 2026-11-13 | Supabase access is **server-side only** | Connection string + service key live in `.env.local` on each computer, used by server code only. No Supabase key reaches the browser, so no row-level-security setup is needed for the MVP |
+| C20 | 2026-11-13 | Reminder lead times: **30, 14, 7, 1 and 0 days** | In-app flags; adjustable per renewal type later |
 
 ## ⏳ Pending — needs your answer
 
@@ -40,9 +42,7 @@ Legend: ✅ Confirmed · ⏳ Pending · ❌ Rejected · 🌐 EXTERNAL
 |---|----------|---------|----------------|
 | P6 | Currency + electricity tariff blocks | You supply | Needed for cost estimates |
 | P7 | Vehicle renewal types | Revenue license, insurance, emission test, + others? | Confirm list |
-| P8 | Reminder lead times | 30 / 14 / 7 / 1 / 0 days | Confirm or adjust |
 | P9 | Branding (name, colours, fonts, logo) | Separate session later | — |
-| P12 | How the app connects to Supabase | Server-side only, through the Postgres connection string + service key kept in `.env.local` on each computer | Server-side only; no keys in the browser |
 
 ## 🌐 External services
 
@@ -61,6 +61,8 @@ Legend: ✅ Confirmed · ⏳ Pending · ❌ Rejected · 🌐 EXTERNAL
 | 0.1 | 2026-11-12 | ✅ Done | `git init -b main` (local, no remote yet) + `.gitignore` excluding `.env*` (except `.env.example`), keys, `data/`, `backups/`, `uploads/`, dumps, `node_modules`, `.next`. Nothing committed yet |
 | 0.2 | 2026-11-13 | ✅ Done | Supabase project `personal-hub` created via CLI (ref `qfhwazfnentlweackpqa`, Singapore). Random DB password saved only in `.env.local` (git-ignored; never printed). Private GitHub repo `personal-hub` created and set as `origin`; no push. Note: the CLI needed `--yes` for hosted changes, applied only after your approval of the exact command |
 | 0.2b | 2026-11-13 | ✅ Done | `supabase link --project-ref qfhwazfnentlweackpqa` run in this folder (local state only, in git-ignored `supabase/.temp`). First local commit of the planning files; nothing pushed |
+| 0.9a | 2026-11-13 | ✅ Done | First push: `main` → `origin/main` (commit aaf784d: `.gitignore`, `DECISIONS.md`, `PLAN.md`). Repo verified PRIVATE. No secrets in the push |
+| 0.3 | 2026-11-13 | ✅ Done (uncommitted) | 🌐 npm registry via pnpm. Next.js 16.4.6 + React 19.3 + TypeScript 5.9 + Tailwind 4.3 + ESLint scaffolded in a scratch folder, then copied in (your `.gitignore` kept); `src/` layout, `@/*` alias. shadcn/ui initialised with its defaults (CSS-variable theming, creates `components.json`, `src/components/ui/button.tsx`, `src/lib/utils.ts`, and edits `src/app/globals.css` and fonts). Next.js telemetry disabled for these runs. `pnpm build` and `pnpm lint` both pass. Not yet pushed |
 
 ## ❌ Rejected
 
