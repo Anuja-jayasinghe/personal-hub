@@ -114,7 +114,7 @@ export const appConfig = {
       description: "Payment dates, amounts and history.",
       href: "/bills",
       icon: "receipt",
-      enabled: false, // Phase 3 — see PLAN.md
+      enabled: true,
     },
   ] satisfies ModuleConfig[],
 } as const;

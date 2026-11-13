@@ -199,12 +199,26 @@ Delivered as separate issues (#15 to #19), each its own pull request (C51 go-ahe
 
 Not in this phase: tariff and cost estimates (C22), the import endpoint (C54), solar tracking.
 
-## Phase 3 — Bills & Subscriptions (after MVP)
+## Phase 3 — Bills & Subscriptions
 
-- Payees and subscriptions with frequency, due day, amount, autopay flag and a payment-method label. Card numbers are never stored.
-- Payment history.
-- Upcoming views, a monthly calendar and the total of monthly commitments.
-- Electricity bills also show up here.
+Delivered as separate issues (#25 to #29), each its own pull request (C56 go-ahead). Decisions C56–C59: electricity bills shown read-only on the Bills page, autopay items give a heads-up only, LKR only, same go-ahead terms as Phase 2.
+
+| Piece | Issue | What |
+|-------|-------|------|
+| 3.1 | #25 | **Bill items**: one list of bills and subscriptions (type, name, frequency, next due date, usual amount, autopay flag, payment-method *label*, notes, documents, archive). Card numbers are never stored and the app refuses anything that looks like one |
+| 3.2 | #26 | **Payments and history**: Mark paid records a payment (date, actual amount, receipt) and moves the next due date forward by the frequency (a one-off item is finished); payment history per item |
+| 3.3 | #27 | **Reminders**: the next due date of each active item feeds Reminders and Home; autopay items remind only 1 day before and on the day |
+| 3.4 | #28 | **Upcoming, monthly calendar (plain CSS) and monthly commitments** (weekly, quarterly and yearly items converted to a monthly figure) |
+| 3.5 | #29 | **Electricity bills on the Bills page**, read-only, not counted in commitments |
+
+Data model
+
+| Table | Fields |
+|---|---|
+| Bill item | kind (bill / subscription), name, frequency (weekly / monthly / quarterly / yearly / one-off), next due date, anchor day of month, usual amount (LKR), autopay, payment-method label, notes, archived |
+| Payment (3.2) | item, paid date, actual amount, the due date it settled, note, receipt |
+
+Not in this phase: per-item currencies (C59), card or bank details of any kind, automatic payment.
 
 ## Later (each needs its own decision)
 

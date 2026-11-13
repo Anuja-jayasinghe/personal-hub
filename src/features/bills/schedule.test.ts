@@ -1,0 +1,67 @@
+import { describe, expect, it } from "vitest";
+import { addMonthsKeepingDay, anchorDayOf, daysInMonth, isFrequency, nextDueAfter } from "./schedule";
+
+describe("daysInMonth / anchorDayOf", () => {
+  it("knows month lengths and leap years", () => {
+    expect(daysInMonth(2026, 2)).toBe(28);
+    expect(daysInMonth(2028, 2)).toBe(29);
+    expect(daysInMonth(2026, 11)).toBe(30);
+    expect(daysInMonth(2026, 12)).toBe(31);
+    expect(daysInMonth(1900, 2)).toBe(28);
+    expect(daysInMonth(2000, 2)).toBe(29);
+  });
+  it("reads the day of the month", () => {
+    expect(anchorDayOf("2026-11-05")).toBe(5);
+    expect(anchorDayOf("2026-01-31")).toBe(31);
+  });
+});
+
+describe("addMonthsKeepingDay", () => {
+  it("clamps to the last day of a shorter month and comes back to the anchor day", () => {
+    expect(addMonthsKeepingDay("2026-01-31", 1, 31)).toBe("2026-02-28");
+    expect(addMonthsKeepingDay("2026-02-28", 1, 31)).toBe("2026-03-31");
+    expect(addMonthsKeepingDay("2026-03-31", 1, 31)).toBe("2026-04-30");
+    expect(addMonthsKeepingDay("2028-01-31", 1, 31)).toBe("2028-02-29");
+  });
+  it("crosses year ends", () => {
+    expect(addMonthsKeepingDay("2026-12-15", 1, 15)).toBe("2027-01-15");
+    expect(addMonthsKeepingDay("2026-11-15", 3, 15)).toBe("2027-02-15");
+    expect(addMonthsKeepingDay("2026-11-15", 12, 15)).toBe("2027-11-15");
+  });
+});
+
+describe("nextDueAfter", () => {
+  it("weekly adds seven days, across month and year ends", () => {
+    expect(nextDueAfter("weekly", "2026-11-13")).toBe("2026-11-20");
+    expect(nextDueAfter("weekly", "2026-12-28")).toBe("2027-01-04");
+    expect(nextDueAfter("weekly", "2028-02-26")).toBe("2028-03-04");
+  });
+  it("monthly keeps the anchor day through short months", () => {
+    expect(nextDueAfter("monthly", "2026-01-31")).toBe("2026-02-28");
+    expect(nextDueAfter("monthly", "2026-02-28", 31)).toBe("2026-03-31");
+    // without an anchor it would use the 28th: the anchor is what stops the drift
+    expect(nextDueAfter("monthly", "2026-02-28")).toBe("2026-03-28");
+  });
+  it("quarterly adds three months", () => {
+    expect(nextDueAfter("quarterly", "2026-11-30")).toBe("2027-02-28");
+    expect(nextDueAfter("quarterly", "2026-02-28", 30)).toBe("2026-05-30");
+  });
+  it("yearly keeps a Feb 29 bill on Feb 28 in common years and back to 29", () => {
+    expect(nextDueAfter("yearly", "2028-02-29")).toBe("2029-02-28");
+    expect(nextDueAfter("yearly", "2029-02-28", 29)).toBe("2030-02-28");
+    expect(nextDueAfter("yearly", "2031-02-28", 29)).toBe("2032-02-29");
+    expect(nextDueAfter("yearly", "2026-11-13")).toBe("2027-11-13");
+  });
+  it("a one-off item has no next date", () => {
+    expect(nextDueAfter("one_off", "2026-11-13")).toBeNull();
+  });
+});
+
+describe("isFrequency", () => {
+  it("accepts only the known frequencies", () => {
+    expect(isFrequency("monthly")).toBe(true);
+    expect(isFrequency("one_off")).toBe(true);
+    expect(isFrequency("daily")).toBe(false);
+    expect(isFrequency("")).toBe(false);
+  });
+});

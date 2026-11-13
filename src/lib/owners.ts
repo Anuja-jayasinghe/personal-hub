@@ -17,6 +17,8 @@ export const OWNER_TYPES = [
   "vehicle_renewal",
   // An electricity bill can carry a photo or PDF of the paper bill (Phase 2.2).
   "electricity_bill",
+  // A bill or subscription (Phase 3.1) can carry its contract or a statement.
+  "bill_item",
 ] as const;
 
 export type OwnerType = (typeof OWNER_TYPES)[number];

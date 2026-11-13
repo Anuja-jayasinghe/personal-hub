@@ -6,3 +6,4 @@ export * from "./vehicle-services";
 export * from "./vehicle-renewals";
 export * from "./electricity";
 export * from "./electricity-bills";
+export * from "./bill-items";
