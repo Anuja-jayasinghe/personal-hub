@@ -61,3 +61,21 @@ export function nextDueAfter(frequency: Frequency, due: string, anchorDay: numbe
   if (frequency === "weekly") return addDaysTo(due, 7);
   return addMonthsKeepingDay(due, MONTHS_PER_STEP[frequency], anchorDay);
 }
+
+/**
+ * The first due date on or after `today` for an item that pays itself (autopay, DECISIONS C58):
+ * past dates are assumed to have been paid by the bank, so the schedule is rolled forward until it
+ * reaches today or later. Null when there is nothing left (a one-off whose date has passed, or an
+ * item with no due date). A date that is not in the past is returned as it is.
+ */
+export function rollForward(
+  item: { frequency: Frequency; nextDueDate: string | null; anchorDay: number | null },
+  today: string,
+): string | null {
+  let due = item.nextDueDate;
+  for (let i = 0; due !== null && due < today; i++) {
+    if (i > 10_000) return null; // safety net: a corrupt date can never loop for ever
+    due = nextDueAfter(item.frequency, due, item.anchorDay ?? undefined);
+  }
+  return due;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addMonthsKeepingDay, anchorDayOf, daysInMonth, isFrequency, nextDueAfter } from "./schedule";
+import { addMonthsKeepingDay, anchorDayOf, daysInMonth, isFrequency, nextDueAfter, rollForward } from "./schedule";
 
 describe("daysInMonth / anchorDayOf", () => {
   it("knows month lengths and leap years", () => {
@@ -63,5 +63,28 @@ describe("isFrequency", () => {
     expect(isFrequency("one_off")).toBe(true);
     expect(isFrequency("daily")).toBe(false);
     expect(isFrequency("")).toBe(false);
+  });
+});
+
+describe("rollForward", () => {
+  const monthly31 = { frequency: "monthly" as const, nextDueDate: "2026-01-31", anchorDay: 31 };
+  it("returns a date that is today or later as it is", () => {
+    expect(rollForward({ ...monthly31, nextDueDate: "2026-11-13" }, "2026-11-13")).toBe("2026-11-13");
+    expect(rollForward({ ...monthly31, nextDueDate: "2026-12-01" }, "2026-11-13")).toBe("2026-12-01");
+  });
+  it("rolls a past monthly date forward keeping the anchor day", () => {
+    expect(rollForward(monthly31, "2026-11-13")).toBe("2026-11-30");
+    expect(rollForward(monthly31, "2026-03-31")).toBe("2026-03-31");
+    expect(rollForward(monthly31, "2026-04-01")).toBe("2026-04-30");
+  });
+  it("rolls weekly and yearly items", () => {
+    expect(rollForward({ frequency: "weekly", nextDueDate: "2026-10-30", anchorDay: 30 }, "2026-11-13")).toBe("2026-11-13");
+    expect(rollForward({ frequency: "weekly", nextDueDate: "2026-10-30", anchorDay: 30 }, "2026-11-14")).toBe("2026-11-20");
+    expect(rollForward({ frequency: "yearly", nextDueDate: "2024-02-29", anchorDay: 29 }, "2026-11-13")).toBe("2027-02-28");
+  });
+  it("is null for a past one-off or an item with no date", () => {
+    expect(rollForward({ frequency: "one_off", nextDueDate: "2026-10-01", anchorDay: 1 }, "2026-11-13")).toBeNull();
+    expect(rollForward({ frequency: "one_off", nextDueDate: "2026-12-01", anchorDay: 1 }, "2026-11-13")).toBe("2026-12-01");
+    expect(rollForward({ frequency: "monthly", nextDueDate: null, anchorDay: null }, "2026-11-13")).toBeNull();
   });
 });

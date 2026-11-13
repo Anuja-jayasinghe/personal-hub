@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Attachment, BillItem, BillPayment } from "@/db/schema";
 import { archiveBillItem, deleteBillItem, deleteBillPayment, markBillItemPaid, unarchiveBillItem, updateBillItem, updateBillPayment } from "@/features/bills/actions";
 import { sortPayments } from "@/features/bills/payments";
-import { FREQUENCY_LABELS } from "@/features/bills/schedule";
+import { FREQUENCY_LABELS, rollForward } from "@/features/bills/schedule";
 import { describeDays } from "@/features/reminders/engine";
 import { daysBetween } from "@/lib/dates";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -30,7 +30,9 @@ export function BillItemCard({
 }) {
   const history = sortPayments(payments);
   const lastPaid = history[0];
-  const days = item.nextDueDate ? daysBetween(today, item.nextDueDate) : null;
+  // An autopay item pays itself (C58): show its next charge, not a stale date it was "overdue" on.
+  const shownDue = item.autopay ? rollForward(item, today) : item.nextDueDate;
+  const days = shownDue ? daysBetween(today, shownDue) : null;
   const tone = days === null ? "" : days < 0 ? "font-medium text-status-overdue" : days <= 7 ? "text-status-soon" : "text-muted-foreground";
 
   return (
@@ -45,9 +47,9 @@ export function BillItemCard({
             {item.archivedAt ? <Badge variant="secondary">Archived</Badge> : null}
           </div>
           <p className="mt-1 text-sm">
-            {item.nextDueDate ? (
+            {shownDue ? (
               <>
-                Next due <span className="font-medium">{formatDate(item.nextDueDate)}</span>
+                {item.autopay ? "Next charge" : "Next due"} <span className="font-medium">{formatDate(shownDue)}</span>
                 {days !== null ? <span className={tone}> · {describeDays(days)}</span> : null}
               </>
             ) : (
