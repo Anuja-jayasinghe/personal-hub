@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Suspense } from "react";
 import { Logo } from "@/components/brand/logo";
 import { getIcon } from "@/components/shell/icons";
 import {
@@ -82,12 +83,18 @@ export function AppSidebar() {
           </span>
         </div>
       </SidebarHeader>
+      {/* usePathname() is request-time data on pages with a changing id (/vehicles/[id]), so the
+          links sit inside Suspense; the sidebar frame renders immediately. */}
       <SidebarContent>
-        <NavGroup items={mainItems} />
-        <NavGroup label="Modules" items={moduleItems} />
+        <Suspense fallback={null}>
+          <NavGroup items={mainItems} />
+          <NavGroup label="Modules" items={moduleItems} />
+        </Suspense>
       </SidebarContent>
       <SidebarFooter>
-        <NavGroup items={footerItems} />
+        <Suspense fallback={null}>
+          <NavGroup items={footerItems} />
+        </Suspense>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

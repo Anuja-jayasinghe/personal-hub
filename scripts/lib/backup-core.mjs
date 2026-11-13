@@ -56,6 +56,39 @@ export async function exportTable(sql, table) {
   return { json: row.json, rows: row.rows };
 }
 
+/** Foreign keys between app tables, as { child, parent } (the child holds the reference). */
+export async function listForeignKeys(sql) {
+  return sql`
+    select child.relname as child, parent.relname as parent
+    from pg_constraint c
+    join pg_class child on child.oid = c.conrelid
+    join pg_class parent on parent.oid = c.confrelid
+    where c.contype = 'f' and c.connamespace = 'public'::regnamespace and c.conrelid <> c.confrelid`;
+}
+
+/**
+ * Orders tables so every table comes after the tables it references (parents first), otherwise
+ * alphabetically. Restore inserts in this order and deletes in the reverse order. Throws if the
+ * foreign keys form a loop, because then no order works without deferring constraints.
+ */
+export function orderByDependencies(tables, edges) {
+  const remaining = new Set(tables);
+  const parentsOf = new Map(tables.map((t) => [t, new Set()]));
+  for (const { child, parent } of edges) {
+    if (remaining.has(child) && remaining.has(parent)) parentsOf.get(child).add(parent);
+  }
+  const ordered = [];
+  while (remaining.size > 0) {
+    const ready = [...remaining].filter((t) => [...parentsOf.get(t)].every((p) => !remaining.has(p))).sort();
+    if (ready.length === 0) {
+      throw new Error(`Foreign keys form a loop between: ${[...remaining].sort().join(", ")}. This restore cannot order them automatically.`);
+    }
+    ordered.push(ready[0]); // one at a time keeps the result stable and alphabetical where free
+    remaining.delete(ready[0]);
+  }
+  return ordered;
+}
+
 export async function countMigrations(sql) {
   try {
     const [{ n }] = await sql`select count(*)::int as n from drizzle.__drizzle_migrations`;

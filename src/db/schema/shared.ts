@@ -1,13 +1,6 @@
-import { bigint, check, date, index, boolean, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { bigint, boolean, check, date, index, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-
-/** Shared timestamp columns (timestamptz, set by the database). */
-const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
-const updatedAt = () =>
-  timestamp("updated_at", { withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date());
+import { createdAt, updatedAt } from "./_columns";
 
 export const TASK_STATUSES = ["todo", "doing", "done"] as const;
 export const TASK_PRIORITIES = ["low", "normal", "high"] as const;

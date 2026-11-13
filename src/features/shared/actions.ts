@@ -4,8 +4,9 @@ import { eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { db } from "@/db";
 import { attachments, notes, tasks, TASK_PRIORITIES, TASK_STATUSES } from "@/db/schema";
-import { ATTACHMENT_BUCKET, ALLOWED_ATTACHMENT_TYPES, MAX_ATTACHMENT_BYTES, resolveMimeType, storageClient } from "@/lib/storage";
 import { deleteAttachmentsOf } from "./cleanup";
+import { toActionState as failure } from "./errors";
+import { removeAttachment, storeAttachment } from "./files";
 import type { ActionState } from "./types";
 import {
   idFrom,
@@ -21,12 +22,6 @@ import {
 
 // Server Actions are public HTTP endpoints, so every input is validated here, never trusted from
 // the form. Form actions return { ok, error } for useActionState; plain-form actions return void.
-
-function failure(err: unknown): ActionState {
-  if (err instanceof ValidationError) return { ok: false, error: err.message };
-  console.error(err);
-  return { ok: false, error: "Something went wrong. Please try again." };
-}
 
 // ---------------------------------------------------------------------------------------------
 // Tasks
@@ -138,45 +133,12 @@ export async function deleteNote(fd: FormData): Promise<void> {
 // Attachments (files live in the private Supabase Storage bucket)
 // ---------------------------------------------------------------------------------------------
 
-function safeFileName(name: string): string {
-  const cleaned = name.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^\.+/, "").slice(-120);
-  return cleaned || "file";
-}
-
 export async function uploadAttachment(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
     const owner = requiredOwner(fd);
     const file = fd.get("file");
-    if (!(file instanceof File) || file.size === 0) throw new ValidationError("Choose a file to upload.");
-    if (file.size > MAX_ATTACHMENT_BYTES) {
-      throw new ValidationError(`File is too large. The limit is ${MAX_ATTACHMENT_BYTES / 1024 / 1024} MB.`);
-    }
-    const mimeType = resolveMimeType(file);
-    if (!(ALLOWED_ATTACHMENT_TYPES as readonly string[]).includes(mimeType)) {
-      throw new ValidationError("Only JPEG, PNG, WebP, HEIC images and PDF files are allowed.");
-    }
-
-    const storagePath = `${owner.ownerType}/${owner.ownerId}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
-    const storage = storageClient().storage.from(ATTACHMENT_BUCKET);
-    const { error: uploadError } = await storage.upload(storagePath, Buffer.from(await file.arrayBuffer()), {
-      contentType: mimeType,
-    });
-    if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
-
-    try {
-      await db.insert(attachments).values({
-        ownerType: owner.ownerType,
-        ownerId: owner.ownerId,
-        bucket: ATTACHMENT_BUCKET,
-        storagePath,
-        fileName: file.name.slice(0, 255),
-        mimeType,
-        sizeBytes: file.size,
-      });
-    } catch (dbError) {
-      await storage.remove([storagePath]); // don't leave an orphaned file behind
-      throw dbError;
-    }
+    if (!(file instanceof File)) throw new ValidationError("Choose a file to upload.");
+    await storeAttachment(owner, file);
     refresh();
     return { ok: true };
   } catch (err) {
@@ -188,9 +150,6 @@ export async function deleteAttachment(fd: FormData): Promise<void> {
   const id = idFrom(fd);
   const [row] = await db.select().from(attachments).where(eq(attachments.id, id));
   if (!row) return;
-
-  const { error } = await storageClient().storage.from(row.bucket).remove([row.storagePath]);
-  if (error) throw new Error(`Could not delete file: ${error.message}`);
-  await db.delete(attachments).where(eq(attachments.id, id));
+  await removeAttachment(row);
   refresh();
 }
