@@ -21,6 +21,16 @@ function utcMidnight(ymd: string): number {
   return ms;
 }
 
+/** True when `ymd` is a real calendar day written as "YYYY-MM-DD" (rejects "2026-02-31"). */
+export function isValidDate(ymd: string): boolean {
+  try {
+    utcMidnight(ymd);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Whole days from `from` to `to` (positive when `to` is later), e.g. daysBetween("2026-11-13", "2026-11-20") === 7. */
 export function daysBetween(from: string, to: string): number {
   return Math.round((utcMidnight(to) - utcMidnight(from)) / MS_PER_DAY);

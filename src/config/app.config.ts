@@ -64,6 +64,8 @@ export const appConfig = {
   // ---- Vehicles (Phase 1) -----------------------------------------------------------------------
   vehicles: {
     fuelTypes: ["Petrol", "Diesel", "Hybrid", "Electric", "Other"] as readonly string[],
+    /** Suggestions for the service type box (Phase 1.2); anything else can be typed in. */
+    serviceTypes: ["Full service", "Oil change", "Tyres", "Brakes", "Battery", "Other"] as readonly string[],
   },
 
   // ---- Shared pages (DECISIONS C35) ------------------------------------------------------------

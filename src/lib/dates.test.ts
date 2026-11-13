@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, daysBetween, todayIn } from "./dates";
+import { addDays, daysBetween, isValidDate, todayIn } from "./dates";
 
 describe("daysBetween", () => {
   it("is 0 for the same day", () => {
@@ -68,5 +68,18 @@ describe("todayIn", () => {
 
   it("returns YYYY-MM-DD", () => {
     expect(todayIn("Asia/Colombo", new Date("2026-01-05T00:00:00Z"))).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+});
+
+describe("isValidDate", () => {
+  it("accepts real calendar days", () => {
+    expect(isValidDate("2026-11-13")).toBe(true);
+    expect(isValidDate("2028-02-29")).toBe(true);
+  });
+
+  it("rejects everything else", () => {
+    for (const bad of ["2026-02-31", "2027-02-29", "2026-13-01", "13/11/2026", "2026-1-1", "", "not a date"]) {
+      expect(isValidDate(bad)).toBe(false);
+    }
   });
 });
