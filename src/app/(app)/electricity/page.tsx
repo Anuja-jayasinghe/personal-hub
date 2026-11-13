@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { MonthlyChart } from "@/components/electricity/monthly-chart";
 import { MeterForm } from "@/components/electricity/meter-form";
 import { MeterSection } from "@/components/electricity/meter-section";
 import { EmptyState, PageHeader } from "@/components/shell/page-header";
@@ -22,6 +23,12 @@ async function ElectricityContent({ searchParams }: { searchParams: Promise<{ ar
 
   return (
     <>
+      {!showArchived ? (
+        <Suspense fallback={null}>
+          <MonthlyChart />
+        </Suspense>
+      ) : null}
+
       {!showArchived ? (
         <details className="rounded-lg border">
           <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">Add a meter</summary>

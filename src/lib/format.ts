@@ -41,3 +41,10 @@ export function formatBytes(bytes: number): string {
 export function todayInAppTz(): string {
   return todayIn(appConfig.timeZone, new Date());
 }
+
+const monthFormatter = new Intl.DateTimeFormat(locale, { month: "short", year: "2-digit", timeZone: "UTC" });
+
+/** Formats a "YYYY-MM" month, e.g. "Oct 26". */
+export function formatMonth(month: string): string {
+  return monthFormatter.format(new Date(`${month}-01T00:00:00Z`));
+}
