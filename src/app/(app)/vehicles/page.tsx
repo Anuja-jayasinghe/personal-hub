@@ -6,13 +6,17 @@ import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VehicleCard } from "@/components/vehicles/vehicle-card";
 import { isModuleEnabled } from "@/config/app.config";
+import { countByOwner } from "@/features/reminders/by-owner";
+import { getReminders } from "@/features/reminders/load";
 import { countArchivedVehicles, listVehicles } from "@/features/vehicles/queries";
 import { notFound } from "next/navigation";
 
 export const metadata: Metadata = { title: "Vehicles" };
 
 async function VehicleList({ showArchived }: { showArchived: boolean }) {
-  const [list, archivedCount] = await Promise.all([listVehicles(showArchived), countArchivedVehicles()]);
+  const [list, archivedCount, reminders] = await Promise.all([listVehicles(showArchived), countArchivedVehicles(), getReminders()]);
+  // How many reminders each vehicle has (archived vehicles have none: their sources are skipped).
+  const due = countByOwner(reminders.results);
 
   return (
     <>
@@ -24,7 +28,7 @@ async function VehicleList({ showArchived }: { showArchived: boolean }) {
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2">
           {list.map((v) => (
-            <VehicleCard key={v.id} vehicle={v} />
+            <VehicleCard key={v.id} vehicle={v} due={due.get(v.id)} />
           ))}
         </ul>
       )}

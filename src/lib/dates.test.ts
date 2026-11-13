@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, daysBetween, isValidDate, todayIn } from "./dates";
+import { addDays, daysBetween, isValidDate, todayIn, yearOfInstant } from "./dates";
 
 describe("daysBetween", () => {
   it("is 0 for the same day", () => {
@@ -81,5 +81,14 @@ describe("isValidDate", () => {
     for (const bad of ["2026-02-31", "2027-02-29", "2026-13-01", "13/11/2026", "2026-1-1", "", "not a date"]) {
       expect(isValidDate(bad)).toBe(false);
     }
+  });
+});
+
+describe("yearOfInstant", () => {
+  it("uses the year in the given time zone around New Year", () => {
+    // 20:00 UTC on 31 Dec is already 1 Jan in Colombo (UTC+5:30), but still 2026 in UTC.
+    const instant = new Date("2026-12-31T20:00:00Z");
+    expect(yearOfInstant(instant, "UTC")).toBe(2026);
+    expect(yearOfInstant(instant, "Asia/Colombo")).toBe(2027);
   });
 });

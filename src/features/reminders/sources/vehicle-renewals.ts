@@ -23,6 +23,7 @@ export const vehicleRenewalsSource: ReminderSource = {
       dueDate: r.expiryDate,
       href: `/vehicles/${r.vehicleId}?tab=renewals`,
       kind: "renewal",
+      ownerId: r.vehicleId,
       leadDays: leadsByType.get(r.type),
     }));
   },

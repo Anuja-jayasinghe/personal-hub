@@ -1,10 +1,12 @@
 import { Check, CircleDot, RotateCcw, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { AttachmentsPanel } from "@/components/shared/attachments-panel";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { TaskForm } from "@/components/shared/task-form";
 import { Badge } from "@/components/ui/badge";
 import type { Attachment, Task, TaskStatus } from "@/db/schema";
 import { createTask, deleteTask, setTaskStatus, updateTask } from "@/features/shared/actions";
+import { ownerLabels, type OwnerLabel } from "@/features/shared/owner-labels";
 import { attachmentsByOwner, listTasks, type OwnerScope } from "@/features/shared/queries";
 import { formatDate, formatMoney, todayInAppTz } from "@/lib/format";
 
@@ -12,9 +14,21 @@ import { formatDate, formatMoney, todayInAppTz } from "@/lib/format";
  * Tasks for any scope: standalone, one record (e.g. a vehicle), or everything. Drop it into any
  * page inside <Suspense>; it loads its own data at request time.
  */
-export async function TasksPanel({ scope, title = "Tasks" }: { scope: OwnerScope; title?: string }) {
+export async function TasksPanel({
+  scope,
+  title = "Tasks",
+  itemName = "task",
+  itemNamePlural = "tasks",
+}: {
+  scope: OwnerScope;
+  title?: string;
+  /** Wording for this context, e.g. "fix" / "fixes" on a vehicle's Fixes tab. */
+  itemName?: string;
+  itemNamePlural?: string;
+}) {
   const list = await listTasks(scope);
   const files = await attachmentsByOwner("task", list.map((t) => t.id));
+  const labels = scope.kind === "all" ? await ownerLabels(list) : new Map<string, OwnerLabel>();
   const today = todayInAppTz(); // after the queries, which opt this render into request time
   const owner = scope.kind === "owner" ? scope.owner : null;
 
@@ -25,20 +39,20 @@ export async function TasksPanel({ scope, title = "Tasks" }: { scope: OwnerScope
       </h2>
 
       <details className="rounded-lg border">
-        <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">Add a task</summary>
+        <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">Add a {itemName}</summary>
         <div className="border-t p-4">
-          <TaskForm action={createTask} owner={owner} />
+          <TaskForm action={createTask} owner={owner} addLabel={`Add ${itemName}`} />
         </div>
       </details>
 
       {list.length === 0 ? (
         <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-          No tasks yet.
+          No {itemNamePlural} yet.
         </p>
       ) : (
         <ul className="flex flex-col gap-2">
           {list.map((task) => (
-            <TaskItem key={task.id} task={task} files={files.get(task.id) ?? []} today={today} />
+            <TaskItem key={task.id} task={task} files={files.get(task.id) ?? []} today={today} ownerLabel={task.ownerType && task.ownerId ? labels.get(`${task.ownerType}:${task.ownerId}`) : undefined} showOwner={scope.kind === "all"} />
           ))}
         </ul>
       )}
@@ -60,7 +74,7 @@ function StatusForm({ id, status, label, icon }: { id: string; status: TaskStatu
   );
 }
 
-function TaskItem({ task, files, today }: { task: Task; files: Attachment[]; today: string }) {
+function TaskItem({ task, files, today, ownerLabel, showOwner }: { task: Task; files: Attachment[]; today: string; ownerLabel?: OwnerLabel; showOwner: boolean }) {
   const done = task.status === "done";
   const overdue = !done && task.dueDate !== null && task.dueDate < today;
 
@@ -85,7 +99,15 @@ function TaskItem({ task, files, today }: { task: Task; files: Attachment[]; tod
                 {task.actualCost ? `Actual ${formatMoney(Number(task.actualCost))}` : null}
               </span>
             ) : null}
-            {task.ownerType ? <Badge variant="outline">{task.ownerType}</Badge> : null}
+            {showOwner && task.ownerType ? (
+              ownerLabel ? (
+                <Link href={ownerLabel.href}>
+                  <Badge variant="outline">{ownerLabel.label}</Badge>
+                </Link>
+              ) : (
+                <Badge variant="outline">{task.ownerType}</Badge>
+              )
+            ) : null}
           </div>
           {task.details ? <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{task.details}</p> : null}
         </div>
