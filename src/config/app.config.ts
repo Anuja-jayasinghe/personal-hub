@@ -84,6 +84,14 @@ export const appConfig = {
     billingCycleDays: 30,
   },
 
+  // ---- Bills & subscriptions (Phase 3) -------------------------------------------------------------
+  bills: {
+    /** How many days ahead the Upcoming list on the Bills page looks (overdue items are always shown). */
+    upcomingDays: 60,
+    /** How many months ahead the calendar can be moved forward. */
+    calendarMonthsAhead: 12,
+  },
+
   // ---- Shared pages (DECISIONS C35) ------------------------------------------------------------
   sharedPages: [
     { key: "reminders", label: "Reminders", href: "/reminders", icon: "bell" },
