@@ -8,6 +8,13 @@
       "when": 1794553075512,
       "tag": "0000_romantic_warbird",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794559978215,
+      "tag": "0001_keen_silver_samurai",
+      "breakpoints": true
     }
   ]
 }

@@ -79,6 +79,36 @@ Facts: Next.js 16 dev already listens on all interfaces (it printed `Network: ht
 Verification: build, lint, typecheck; browser pane at desktop and phone widths; dark mode toggle; LAN fetch.
 Reminder: with no login (C10) and LAN access (C11), anyone on the same Wi-Fi can open the app and, once data screens exist, change data.
 
+### Step 0.7 detail — shared tasks, notes, attachments (planned 2026-11-13, awaiting approval)
+
+Facts: Supabase free plan gives 1 GB of file storage and 50 MB per file. Next.js Server Actions accept only 1 MB request bodies by default; uploads need `serverActions.bodySizeLimit` raised (10 MB planned). Server-side file access (C19) needs Supabase's secret key plus the project URL in `.env.local`; the CLI can print the key with `supabase projects api-keys --reveal`, so I can write it straight into `.env.local` without it appearing on screen.
+
+Data model (all tables: uuid id, `timestamptz` created/updated, RLS on with no policies, per C27):
+
+| Table | Columns |
+|-------|---------|
+| `tasks` | `owner_type`, `owner_id` (both null for a standalone task), `title`, `details`, `status` (todo / doing / done), `priority` (low / normal / high), `due_date` (date), `estimated_cost`, `actual_cost` (numeric 12,2, optional), `completed_at` |
+| `notes` | `owner_type`, `owner_id` (null = standalone), `title` (optional), `body`, `pinned` |
+| `attachments` | `owner_type`, `owner_id`, `bucket`, `storage_path`, `file_name`, `mime_type`, `size_bytes` |
+
+- Owners are polymorphic (`owner_type` + `owner_id`), so there are no foreign keys. Allowed `owner_type` values live in one code file (`vehicle`, `meter`, `bill`, `subscription`, ...), so adding a module needs no migration. Deleting an owner must also delete its tasks, notes and files in app code; this will be done in each module.
+- Indexes on `(owner_type, owner_id)` and on `due_date` / `status` for tasks.
+
+Files: one private Supabase Storage bucket `attachments` (never public). Files are uploaded through a server action and opened via short-lived signed links created on the server. Initial limits: 10 MB per file; images and PDFs only.
+
+Reusable pieces any module page can drop in: `<TasksPanel ownerType ownerId />`, `<NotesPanel ... />`, `<AttachmentsPanel ... />`, with server actions for create / edit / complete / delete.
+
+| # | What | Local / External |
+|---|------|------------------|
+| 0.7a | Install `@supabase/supabase-js` (server-only use) | 🌐 npm registry |
+| 0.7b | Put `SUPABASE_URL` and the secret key into `.env.local` (never printed); add placeholders to `.env.example` | Local file, used for 🌐 Supabase |
+| 0.7c | Schema for the three tables; generate the migration SQL and show it to you | Local |
+| 0.7d | Apply the migration | 🌐 Supabase write |
+| 0.7e | `scripts/storage-setup.mjs` creates the private `attachments` bucket (safe to re-run) | 🌐 Supabase write |
+| 0.7f | Server actions + the three panels; raise the upload limit in `next.config.ts` | Local |
+| 0.7g | One new sidebar page **Tasks & notes** (C35) for standalone items, so everything is testable before Vehicles exists | Local |
+| 0.7h | Verify: create, edit, complete, delete; upload an image and a PDF, open via signed link, delete; confirm the public Data API and public storage URLs cannot read anything | 🌐 Supabase |
+
 ## Phase 1 — Vehicles
 
 | Entity | Fields |
