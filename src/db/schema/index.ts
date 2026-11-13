@@ -2,3 +2,4 @@
 export * from "./settings";
 export * from "./shared";
 export * from "./vehicles";
+export * from "./vehicle-services";
