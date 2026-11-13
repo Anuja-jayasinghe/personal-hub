@@ -2,7 +2,7 @@ import "server-only";
 import { asc, count, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { db } from "@/db";
-import { vehicleServices, vehicles } from "@/db/schema";
+import { vehicleRenewals, vehicleServices, vehicles } from "@/db/schema";
 import { UUID_RE } from "@/features/shared/validation";
 
 /** Active vehicles, or archived ones (sold; hidden, no reminders, history kept: DECISIONS C48). */
@@ -54,5 +54,33 @@ export async function listServicesOfActiveVehicles() {
     })
     .from(vehicleServices)
     .innerJoin(vehicles, eq(vehicles.id, vehicleServices.vehicleId))
+    .where(isNull(vehicles.archivedAt));
+}
+
+/** A vehicle's renewals, latest expiry first (current and past; split with renewal-logic). */
+export async function listRenewals(vehicleId: string) {
+  await connection();
+  return db
+    .select()
+    .from(vehicleRenewals)
+    .where(eq(vehicleRenewals.vehicleId, vehicleId))
+    .orderBy(desc(vehicleRenewals.expiryDate), desc(vehicleRenewals.createdAt));
+}
+
+/** Every renewal of every ACTIVE (not archived) vehicle, with the vehicle's nickname. For reminders. */
+export async function listRenewalsOfActiveVehicles() {
+  await connection();
+  return db
+    .select({
+      id: vehicleRenewals.id,
+      vehicleId: vehicleRenewals.vehicleId,
+      nickname: vehicles.nickname,
+      type: vehicleRenewals.type,
+      expiryDate: vehicleRenewals.expiryDate,
+      renewedAt: vehicleRenewals.renewedAt,
+      createdAt: vehicleRenewals.createdAt,
+    })
+    .from(vehicleRenewals)
+    .innerJoin(vehicles, eq(vehicles.id, vehicleRenewals.vehicleId))
     .where(isNull(vehicles.archivedAt));
 }
