@@ -1,0 +1,93 @@
+/*
+ * Theme tokens — the ONE place for colours and radius (DECISIONS C3).
+ *
+ * To re-brand, change the BRAND PRIMITIVES below (hue / chroma / radius). Every semantic colour
+ * (--primary, --background, --border, ...) is derived from them, and shadcn/ui components read
+ * only the semantic names, so no component needs touching.
+ *
+ * Fonts live in src/theme/fonts.ts. The app name and logo live in src/config/app.config.ts.
+ * All values here are PLACEHOLDERS until branding is decided (P9).
+ */
+
+:root {
+  /* ===== BRAND PRIMITIVES (edit these) ===== */
+  --brand-hue: 215; /* 0–360: 215 = blue, 160 = green, 30 = orange, 330 = pink */
+  --brand-chroma: 0.12; /* colourfulness of the accent: 0 = grey, ~0.2 = vivid */
+  --neutral-chroma: 0.006; /* faint tint carried into greys so they sit with the brand hue */
+  --radius: 0.625rem; /* base corner radius; every other radius is derived from this */
+
+  /* ===== Semantic colours — light ===== */
+  --background: oklch(0.99 var(--neutral-chroma) var(--brand-hue));
+  --foreground: oklch(0.18 var(--neutral-chroma) var(--brand-hue));
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(0.48 var(--brand-chroma) var(--brand-hue));
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 calc(var(--brand-chroma) * 0.15) var(--brand-hue));
+  --secondary-foreground: oklch(0.28 var(--brand-chroma) var(--brand-hue));
+  --accent: oklch(0.95 calc(var(--brand-chroma) * 0.25) var(--brand-hue));
+  --accent-foreground: oklch(0.28 var(--brand-chroma) var(--brand-hue));
+
+  --muted: oklch(0.96 var(--neutral-chroma) var(--brand-hue));
+  --muted-foreground: oklch(0.5 var(--neutral-chroma) var(--brand-hue));
+  --border: oklch(0.92 var(--neutral-chroma) var(--brand-hue));
+  --input: oklch(0.92 var(--neutral-chroma) var(--brand-hue));
+  --ring: oklch(0.62 var(--brand-chroma) var(--brand-hue));
+
+  --destructive: oklch(0.577 0.245 27.325);
+
+  /* Status colours used by reminders (overdue / due soon / ok). */
+  --status-overdue: oklch(0.577 0.245 27.325);
+  --status-soon: oklch(0.75 0.15 75);
+  --status-ok: oklch(0.62 0.15 150);
+
+  /* Charts: five steps of the brand hue. */
+  --chart-1: oklch(0.8 var(--brand-chroma) var(--brand-hue));
+  --chart-2: oklch(0.65 var(--brand-chroma) var(--brand-hue));
+  --chart-3: oklch(0.5 var(--brand-chroma) var(--brand-hue));
+  --chart-4: oklch(0.38 var(--brand-chroma) var(--brand-hue));
+  --chart-5: oklch(0.28 var(--brand-chroma) var(--brand-hue));
+
+  --sidebar: oklch(0.975 var(--neutral-chroma) var(--brand-hue));
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--ring);
+}
+
+/* ===== Semantic colours — dark (applied by adding the "dark" class to <html>) ===== */
+.dark {
+  --background: oklch(0.16 var(--neutral-chroma) var(--brand-hue));
+  --foreground: oklch(0.97 var(--neutral-chroma) var(--brand-hue));
+  --card: oklch(0.2 var(--neutral-chroma) var(--brand-hue));
+  --card-foreground: var(--foreground);
+  --popover: oklch(0.2 var(--neutral-chroma) var(--brand-hue));
+  --popover-foreground: var(--foreground);
+
+  --primary: oklch(0.72 var(--brand-chroma) var(--brand-hue));
+  --primary-foreground: oklch(0.18 var(--brand-chroma) var(--brand-hue));
+  --secondary: oklch(0.27 calc(var(--brand-chroma) * 0.2) var(--brand-hue));
+  --secondary-foreground: oklch(0.97 0 0);
+  --accent: oklch(0.3 calc(var(--brand-chroma) * 0.3) var(--brand-hue));
+  --accent-foreground: oklch(0.97 0 0);
+
+  --muted: oklch(0.27 var(--neutral-chroma) var(--brand-hue));
+  --muted-foreground: oklch(0.72 var(--neutral-chroma) var(--brand-hue));
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.55 var(--brand-chroma) var(--brand-hue));
+
+  --destructive: oklch(0.704 0.191 22.216);
+
+  --status-overdue: oklch(0.704 0.191 22.216);
+  --status-soon: oklch(0.82 0.14 80);
+  --status-ok: oklch(0.72 0.15 150);
+
+  --sidebar: oklch(0.2 var(--neutral-chroma) var(--brand-hue));
+}

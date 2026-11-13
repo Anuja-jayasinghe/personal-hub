@@ -33,7 +33,7 @@ Config       : app.config.ts (name, logo, enabled modules) + theme tokens (colou
 | 0.1 | `git init` + `.gitignore` (excludes `.env*`, dumps, uploads) | Local | ✅ Done 2026-11-12 |
 | 0.2 | You create the Supabase project and the private GitHub repo | 🌐 Supabase, GitHub | P10, P11 |
 | 0.3 | Scaffold Next.js + TS + Tailwind + shadcn/ui with pnpm | 🌐 npm registry | ✅ C9 — approve step |
-| 0.4 | Theme tokens + `app.config.ts` (placeholder branding) | Local | Approve |
+| 0.4 | Theme tokens + `app.config.ts` (placeholder branding) | Local | ✅ Done 2026-11-13 |
 | 0.5 | Drizzle + migrations against Supabase Postgres; `.env.example` committed, `.env.local` per computer | 🌐 Supabase | P12 |
 | 0.6 | App shell: sidebar/bottom nav, dashboard skeleton, settings; dev server on LAN | Local | ✅ C11 — approve step |
 | 0.7 | Shared tasks, notes, attachments (files in Supabase Storage) | 🌐 Supabase | Approve |
@@ -46,15 +46,15 @@ Config       : app.config.ts (name, logo, enabled modules) + theme tokens (colou
 | Entity | Fields |
 |--------|--------|
 | Vehicle | nickname, reg no, make, model, year, fuel, odometer, photo |
-| Service record | date, odometer, type, garage, cost, items done, next due date, next due km |
-| Renewal | type (P7), provider, ref/policy no, start, expiry, amount, document |
+| Service record | date, odometer (optional, history only), type, garage, cost, items done, next due date |
+| Renewal | type (revenue license / insurance / emission test / driving license — configurable), provider, ref/policy no, start, expiry, amount, document |
 | Fix | title, priority, status (todo → booked → done), est. cost, actual cost, link to service |
 | Notes | shared notes, attached to the vehicle |
 
 Behaviour:
 - Expiry and service due dates feed the reminders engine.
 - Marking a renewal as renewed asks for the next expiry date.
-- The app asks for an odometer update when one is overdue.
+- Service reminders are date-only (C24); there are no km-based reminders.
 
 ## Phase 2 — Electricity
 

@@ -35,14 +35,17 @@ Legend: ✅ Confirmed · ⏳ Pending · ❌ Rejected · 🌐 EXTERNAL
 | C18 | 2026-11-13 | I create the private GitHub repo with `gh` | `gh` is logged in as `Anuja-jayasinghe` (scopes: repo, workflow…). I confirm the exact name first and ask again before the first push |
 | C19 | 2026-11-13 | Supabase access is **server-side only** | Connection string + service key live in `.env.local` on each computer, used by server code only. No Supabase key reaches the browser, so no row-level-security setup is needed for the MVP |
 | C20 | 2026-11-13 | Reminder lead times: **30, 14, 7, 1 and 0 days** | In-app flags; adjustable per renewal type later |
+| C21 | 2026-11-13 | Currency: **LKR** | A single setting in `app.config.ts`, not hard-coded in screens |
+| C22 | 2026-11-13 | Electricity tariff: **add later**; units only for now | The "since last bill" card shows units, days, daily average and projected units. Cost estimate turns on once a tariff is entered in settings (tariff table stays in the data model, versioned by effective date) |
+| C23 | 2026-11-13 | Renewal types tracked: **Revenue license, Insurance, Emission test, Driving license** | Types are data, not code, so more can be added in settings. Driving license belongs to you (a person-level item), not to one vehicle |
+| C24 | 2026-11-13 | Service reminders use **date only** | No odometer-based due. The odometer field stays optional on service records for your history, but nothing reminds by km |
 
 ## ⏳ Pending — needs your answer
 
 | # | Decision | Options | Recommendation |
 |---|----------|---------|----------------|
-| P6 | Currency + electricity tariff blocks | You supply | Needed for cost estimates |
-| P7 | Vehicle renewal types | Revenue license, insurance, emission test, + others? | Confirm list |
 | P9 | Branding (name, colours, fonts, logo) | Separate session later | — |
+| P15 | Time zone used for "today" in reminders | `Asia/Colombo` (placeholder I assumed from LKR) · other | Confirm `Asia/Colombo` |
 
 ## 🌐 External services
 
@@ -63,6 +66,8 @@ Legend: ✅ Confirmed · ⏳ Pending · ❌ Rejected · 🌐 EXTERNAL
 | 0.2b | 2026-11-13 | ✅ Done | `supabase link --project-ref qfhwazfnentlweackpqa` run in this folder (local state only, in git-ignored `supabase/.temp`). First local commit of the planning files; nothing pushed |
 | 0.9a | 2026-11-13 | ✅ Done | First push: `main` → `origin/main` (commit aaf784d: `.gitignore`, `DECISIONS.md`, `PLAN.md`). Repo verified PRIVATE. No secrets in the push |
 | 0.3 | 2026-11-13 | ✅ Done (uncommitted) | 🌐 npm registry via pnpm. Next.js 16.4.6 + React 19.3 + TypeScript 5.9 + Tailwind 4.3 + ESLint scaffolded in a scratch folder, then copied in (your `.gitignore` kept); `src/` layout, `@/*` alias. shadcn/ui initialised with its defaults (CSS-variable theming, creates `components.json`, `src/components/ui/button.tsx`, `src/lib/utils.ts`, and edits `src/app/globals.css` and fonts). Next.js telemetry disabled for these runs. `pnpm build` and `pnpm lint` both pass. Not yet pushed |
+| 0.3a | 2026-11-13 | ✅ Done | Scaffold committed (b29d87b) and pushed to private `Anuja-jayasinghe/personal-hub` (verified PRIVATE). Scan of staged changes found no secrets |
+| 0.4 | 2026-11-13 | ✅ Done (uncommitted) | Local only, no new packages. **Re-brand points:** `src/config/app.config.ts` (name, tagline, logo, currency LKR, time zone, reminder lead times, module list with on/off flags) · `src/theme/theme.css` (brand hue/chroma/radius primitives; all colours derived from them, light + dark + status colours) · `src/theme/fonts.ts` (typefaces; Geist placeholder). Also added `src/components/brand/logo.tsx`, `src/lib/format.ts` (money + date in app locale), a placeholder home page, and `.claude/launch.json`. Removed the unused Next.js template images. Placeholder name "Personal Hub", blue hue 215. `pnpm build`, lint and `tsc` pass; viewed in the browser pane at :3100 with no console errors; changing `--brand-hue` recoloured the primary as intended |
 
 ## ❌ Rejected
 
