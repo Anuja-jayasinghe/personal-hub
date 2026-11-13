@@ -1,4 +1,5 @@
 import { Zap } from "lucide-react";
+import Link from "next/link";
 import { Suspense } from "react";
 import { DueSoonCard } from "@/components/reminders/due-soon-card";
 import { EmptyState, PageHeader } from "@/components/shell/page-header";
@@ -30,8 +31,11 @@ export default function Home() {
           <CardContent>
             <EmptyState
               title="No bill yet"
-              hint="Add your last bill and a meter reading to see what you've used so far."
+              hint="Add your meters and readings on the Electricity page; the usage since your last bill shows here once a bill is logged."
             />
+            <Link href="/electricity" className="mt-3 inline-block text-sm font-medium underline-offset-2 hover:underline">
+              Open Electricity
+            </Link>
           </CardContent>
         </Card>
       </div>

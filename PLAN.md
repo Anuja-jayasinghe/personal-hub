@@ -181,18 +181,23 @@ Behaviour:
 
 ## Phase 2 — Electricity
 
+Delivered as separate issues (#15 to #19), each its own pull request (C51 go-ahead). Decisions C52–C55: two consumption meters tracked separately, one cumulative kWh total per reading, the import endpoint deferred, extras = CSV export command + monthly chart + paid / unpaid status.
+
+| Piece | Issue | What |
+|-------|-------|------|
+| 2.1 | #15 | **Meters and readings**: add / edit / archive / delete meters, log readings (date + kWh), history, a backwards reading is refused, "meter replaced" keeps usage correct |
+| 2.2 | #16 | **Bills**: bill date, reading date, previous and current reading, units, amount, due date, paid date, document; unpaid bills feed Reminders |
+| 2.3 | #17 | **Since-last-bill calculator** per meter and combined: units, days, daily average, projected cycle total; replaces the Home placeholder; units only (no tariff, C22) |
+| 2.4a | #18 | **CSV export command** (`pnpm export:electricity`), not a web download |
+| 2.4b | #19 | **Monthly usage chart** without a new package |
+
 | Entity | Fields |
 |--------|--------|
-| Meter | name, type (consumption / solar export), account no |
-| Bill | meter, bill date, reading date, prev reading, current reading, units, amount, due date, paid date, document |
-| Reading | meter, date/time, value, source (manual/auto), note |
-| Tariff | blocks + fixed charge, versioned by effective date (P6) |
+| Meter | name, account number, notes, archived flag |
+| Reading | meter, date, value (kWh, 2 decimals), source (manual / auto), note, optional "replaced" final value of the old meter |
+| Bill | meter, bill date, reading date, previous reading, current reading, units, amount (LKR), due date, paid date, notes, document |
 
-The "since last bill" card shows units used, days elapsed, average per day, a projected 30-day total and an estimated cost.
-- Readings that go backwards trigger a warning.
-- A "meter replaced" event resets the baseline.
-- Readings can be exported to CSV.
-- A local `POST /api/electricity/readings` endpoint lets your automation project push readings later.
+Not in this phase: tariff and cost estimates (C22), the import endpoint (C54), solar tracking.
 
 ## Phase 3 — Bills & Subscriptions (after MVP)
 

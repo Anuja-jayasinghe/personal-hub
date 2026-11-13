@@ -78,6 +78,12 @@ export const appConfig = {
     ] as readonly { label: string; leadDays?: readonly number[] }[],
   },
 
+  // ---- Electricity (Phase 2) ----------------------------------------------------------------------
+  electricity: {
+    /** Length of a billing cycle in days, used to project usage ("at this rate: ~N kWh per cycle"). */
+    billingCycleDays: 30,
+  },
+
   // ---- Shared pages (DECISIONS C35) ------------------------------------------------------------
   sharedPages: [
     { key: "reminders", label: "Reminders", href: "/reminders", icon: "bell" },
