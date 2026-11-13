@@ -15,6 +15,13 @@
       "when": 1794559978215,
       "tag": "0001_keen_silver_samurai",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794570453301,
+      "tag": "0002_flippant_secret_warriors",
+      "breakpoints": true
     }
   ]
 }

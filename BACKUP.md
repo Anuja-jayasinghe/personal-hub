@@ -73,6 +73,6 @@ The restore refuses to start if the database has fewer migrations applied than t
 ## Good to know
 
 - The restore reads the whole zip into memory, which is fine for personal-sized data (the free plan allows 1 GB of files in total; very large backups need a computer with enough free memory).
-- Tables are restored in alphabetical order. Today no table has foreign keys; if one is added later, the restore will need to order tables by their dependencies (note this in the pull request that adds the first foreign key).
+- Tables are restored parents first and deleted (with `--wipe`) children first, following the foreign keys in the database (the vehicles table points at its cover photo in `attachments`). If foreign keys ever form a loop, the restore stops with a clear message instead of guessing.
 - Dates are read and written in UTC, so a backup made on one computer restores identically on another.
 - Tested end to end (issue #4): a backup of test data was deleted and restored, and the database rows and file bytes matched exactly; a second backup produced identical checksums.

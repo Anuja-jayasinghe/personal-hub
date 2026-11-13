@@ -61,6 +61,11 @@ export const appConfig = {
     leadDays: [30, 14, 7, 1, 0],
   },
 
+  // ---- Vehicles (Phase 1) -----------------------------------------------------------------------
+  vehicles: {
+    fuelTypes: ["Petrol", "Diesel", "Hybrid", "Electric", "Other"] as readonly string[],
+  },
+
   // ---- Shared pages (DECISIONS C35) ------------------------------------------------------------
   sharedPages: [
     { key: "reminders", label: "Reminders", href: "/reminders", icon: "bell" },

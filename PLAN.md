@@ -157,17 +157,26 @@ Not included (each its own later decision): **how backups are triggered beyond t
 
 ## Phase 1 — Vehicles
 
+Delivered as four pull requests, each from its own issue (C44):
+
+| Piece | What |
+|-------|------|
+| 1.1 | **Vehicles:** list, add / edit, detail page with tabs (Overview, Services, Renewals, Fixes, Notes), cover photo (C47), archive and confirmed delete (C48) |
+| 1.2 | **Service records** and their next-due dates feeding Reminders |
+| 1.3 | **Renewals** (revenue license, insurance, emission test) with expiry feeding Reminders and a "renewed" flow that keeps history (C46) |
+| 1.4 | **Fixes, notes and files** from the shared panels (step 0.7), dashboard polish |
+
 | Entity | Fields |
 |--------|--------|
-| Vehicle | nickname, reg no, make, model, year, fuel, odometer, photo |
+| Vehicle | nickname, reg no, make, model, year, fuel, odometer (manual, optional), cover photo, archived flag |
 | Service record | date, odometer (optional, history only), type, garage, cost, items done, next due date |
-| Renewal | type (revenue license / insurance / emission test / driving license — configurable), provider, ref/policy no, start, expiry, amount, document |
-| Fix | title, priority, status (todo → booked → done), est. cost, actual cost, link to service |
-| Notes | shared notes, attached to the vehicle |
+| Renewal | type (revenue license / insurance / emission test, configurable; the driving license moved to a later Documents page, C45), provider, ref/policy no, start, expiry, amount, document, renewed flag |
+| Fix | a shared task that belongs to the vehicle (todo / doing / done; "doing" covers "booked") with estimated and actual cost |
+| Notes | shared notes attached to the vehicle |
 
 Behaviour:
-- Expiry and service due dates feed the reminders engine.
-- Marking a renewal as renewed asks for the next expiry date.
+- Expiry and service due dates feed the reminders engine; archived vehicles and renewed records do not.
+- Marking a renewal as renewed asks for the new expiry date and adds a new record (C46).
 - Service reminders are date-only (C24); there are no km-based reminders.
 
 ## Phase 2 — Electricity

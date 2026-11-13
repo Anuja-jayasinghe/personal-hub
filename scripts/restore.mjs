@@ -20,10 +20,12 @@ import {
   countMigrations,
   exportTable,
   formatBytes,
+  listForeignKeys,
   listObjects,
   listPublicTables,
   loadEnv,
   openClients,
+  orderByDependencies,
   quoteIdent,
   removeAllObjects,
   sha256,
@@ -85,6 +87,8 @@ try {
   console.log(`Restoring into ${new URL(process.env.SUPABASE_URL).hostname}`);
 
   const dbTables = await listPublicTables(sql);
+  // Parents before children: rows are inserted in this order and deleted in the reverse order.
+  const tableOrder = orderByDependencies(dbTables, await listForeignKeys(sql));
   const missingTables = Object.keys(manifest.tables).filter((t) => !dbTables.includes(t));
   if (missingTables.length > 0) {
     fail(`This database has no table(s): ${missingTables.join(", ")}. Run pnpm db:migrate first.`);
@@ -150,9 +154,10 @@ try {
     console.log(`  uploaded ${manifest.files.length} file(s)`);
 
     await sql.begin(async (tx) => {
-      if (wipe) for (const name of dbTables) await tx.unsafe(`delete from ${quoteIdent(name)}`);
-      for (const [name, t] of Object.entries(parsed)) {
-        if (t.rows.length === 0) continue;
+      if (wipe) for (const name of [...tableOrder].reverse()) await tx.unsafe(`delete from ${quoteIdent(name)}`);
+      for (const name of tableOrder) {
+        const t = parsed[name];
+        if (!t || t.rows.length === 0) continue;
         const cols = t.columns.map(quoteIdent).join(", ");
         await tx.unsafe(
           `insert into ${quoteIdent(name)} (${cols})
