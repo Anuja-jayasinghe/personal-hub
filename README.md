@@ -29,7 +29,7 @@ pnpm dev --port 3100    # http://localhost:3100
 
 ## Commands
 
-`pnpm dev` · `pnpm build` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm setup:check` · `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:check` · `pnpm storage:setup` · `pnpm storage:check` · `pnpm backup` · `pnpm backup:restore`
+`pnpm dev` · `pnpm build` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm setup:check` · `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:check` · `pnpm storage:setup` · `pnpm storage:check` · `pnpm backup` · `pnpm backup:restore` · `pnpm export:electricity`
 
 ## Secrets
 

@@ -8,6 +8,7 @@
 # --- Local data: dumps, backups, uploads (DECISIONS C8) ---
 data/
 backups/
+exports/
 uploads/
 *.dump
 *.sql.gz
