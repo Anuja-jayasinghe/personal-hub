@@ -34,12 +34,34 @@ Config       : app.config.ts (name, logo, enabled modules) + theme tokens (colou
 | 0.2 | You create the Supabase project and the private GitHub repo | 🌐 Supabase, GitHub | P10, P11 |
 | 0.3 | Scaffold Next.js + TS + Tailwind + shadcn/ui with pnpm | 🌐 npm registry | ✅ C9 — approve step |
 | 0.4 | Theme tokens + `app.config.ts` (placeholder branding) | Local | ✅ Done 2026-11-13 |
-| 0.5 | Drizzle + migrations against Supabase Postgres; `.env.example` committed, `.env.local` per computer | 🌐 Supabase | P12 |
+| 0.5 | Drizzle + migrations against Supabase Postgres; `.env.example` committed, `.env.local` per computer | 🌐 Supabase | ✅ Done 2026-11-13 |
 | 0.6 | App shell: sidebar/bottom nav, dashboard skeleton, settings; dev server on LAN | Local | ✅ C11 — approve step |
 | 0.7 | Shared tasks, notes, attachments (files in Supabase Storage) | 🌐 Supabase | Approve |
 | 0.8 | Reminders engine (computes due items, shows "Due soon" + 30-day list) | Local | P8 |
 | 0.9 | First push to GitHub; second computer clones and runs | 🌐 GitHub | Approve |
 | 0.10 | Backup: one-click export (DB dump + uploads → zip on this Mac) | Local | Approve |
+
+### Step 0.5 detail — database foundation (planned 2026-11-13, awaiting approval)
+
+Findings that shape it:
+- The Supabase **direct host is IPv6-only** (no IPv4 address). Many home networks have no IPv6, so the app would fail to connect there. The **session pooler** (`aws-0-ap-southeast-1.pooler.supabase.com:5432`) works over IPv4 and supports migrations, so it is used for both the app and migrations.
+- Supabase exposes every `public` table through its REST "Data API" using a public key. With C19 (server-side only) nothing should use that path, so **every table gets row-level security switched on with no policies**: the browser path is then closed, while the app's server connection (the `postgres` role) is unaffected.
+- The free plan has no downloadable backups, which makes the export in step 0.10 important.
+
+Sub-steps (each needs your OK before it runs):
+
+| # | What | Local / External |
+|---|------|------------------|
+| 0.5a | Install `drizzle-orm`, `postgres` (driver), `drizzle-kit` (dev) with pnpm | 🌐 npm registry |
+| 0.5b | `drizzle.config.ts`, `src/db/index.ts` (server-only client), `src/db/schema/`, scripts `db:generate` / `db:migrate` / `db:studio`; `.env.example` (placeholders, committed) | Local |
+| 0.5c | Build `DATABASE_URL` (session pooler + your saved password) into `.env.local`; never printed | Local file, used for 🌐 Supabase |
+| 0.5d | First schema: `app_settings` (key, JSON value, updated_at) with RLS on; generate the migration SQL and show it to you | Local |
+| 0.5e | Apply the migration to Supabase (`pnpm db:migrate`) | 🌐 Supabase write |
+| 0.5f | Verify: read/write one setting through the app server code, then confirm RLS is on and the Data API cannot read the table | 🌐 Supabase |
+
+Conventions for all later tables: `uuid` primary keys (`gen_random_uuid()`), `timestamptz` created/updated columns, due dates as `date` (no time-zone drift), amounts as `numeric(12,2)`, polymorphic owner as `owner_type` + `owner_id`, RLS enabled in the same migration that creates the table.
+
+Shared tasks, notes and attachments tables stay in step 0.7 with their UI, as planned.
 
 ## Phase 1 — Vehicles
 

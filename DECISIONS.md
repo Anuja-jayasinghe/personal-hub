@@ -39,13 +39,17 @@ Legend: ✅ Confirmed · ⏳ Pending · ❌ Rejected · 🌐 EXTERNAL
 | C22 | 2026-11-13 | Electricity tariff: **add later**; units only for now | The "since last bill" card shows units, days, daily average and projected units. Cost estimate turns on once a tariff is entered in settings (tariff table stays in the data model, versioned by effective date) |
 | C23 | 2026-11-13 | Renewal types tracked: **Revenue license, Insurance, Emission test, Driving license** | Types are data, not code, so more can be added in settings. Driving license belongs to you (a person-level item), not to one vehicle |
 | C24 | 2026-11-13 | Service reminders use **date only** | No odometer-based due. The odometer field stays optional on service records for your history, but nothing reminds by km |
+| C25 | 2026-11-13 | Time zone: **Asia/Colombo** | Set in `app.config.ts` (`timeZone`); decides what "today" means for reminders |
+| C26 | 2026-11-13 | DB route: **Supabase session pooler** (`aws-0-ap-southeast-1.pooler.supabase.com:5432`) for the app and migrations | Direct host is IPv6-only |
+| C27 | 2026-11-13 | **Row-level security on every table, no policies** | Enabled in the same migration that creates each table; blocks the public Data API path, server connection unaffected |
+| C28 | 2026-11-13 | Step 0.5 scope: **Drizzle setup + `app_settings` table only** | Shared tasks/notes/attachments stay in step 0.7 |
+| C29 | 2026-11-13 | "Don't ask again, run" — standing go-ahead for the remaining step 0.5 sub-steps (0.5a–0.5f) | Scope is step 0.5 only. Commits, pushes and later steps still get their own confirmation unless you say otherwise |
 
 ## ⏳ Pending — needs your answer
 
 | # | Decision | Options | Recommendation |
 |---|----------|---------|----------------|
 | P9 | Branding (name, colours, fonts, logo) | Separate session later | — |
-| P15 | Time zone used for "today" in reminders | `Asia/Colombo` (placeholder I assumed from LKR) · other | Confirm `Asia/Colombo` |
 
 ## 🌐 External services
 
@@ -68,6 +72,8 @@ Legend: ✅ Confirmed · ⏳ Pending · ❌ Rejected · 🌐 EXTERNAL
 | 0.3 | 2026-11-13 | ✅ Done (uncommitted) | 🌐 npm registry via pnpm. Next.js 16.4.6 + React 19.3 + TypeScript 5.9 + Tailwind 4.3 + ESLint scaffolded in a scratch folder, then copied in (your `.gitignore` kept); `src/` layout, `@/*` alias. shadcn/ui initialised with its defaults (CSS-variable theming, creates `components.json`, `src/components/ui/button.tsx`, `src/lib/utils.ts`, and edits `src/app/globals.css` and fonts). Next.js telemetry disabled for these runs. `pnpm build` and `pnpm lint` both pass. Not yet pushed |
 | 0.3a | 2026-11-13 | ✅ Done | Scaffold committed (b29d87b) and pushed to private `Anuja-jayasinghe/personal-hub` (verified PRIVATE). Scan of staged changes found no secrets |
 | 0.4 | 2026-11-13 | ✅ Done (uncommitted) | Local only, no new packages. **Re-brand points:** `src/config/app.config.ts` (name, tagline, logo, currency LKR, time zone, reminder lead times, module list with on/off flags) · `src/theme/theme.css` (brand hue/chroma/radius primitives; all colours derived from them, light + dark + status colours) · `src/theme/fonts.ts` (typefaces; Geist placeholder). Also added `src/components/brand/logo.tsx`, `src/lib/format.ts` (money + date in app locale), a placeholder home page, and `.claude/launch.json`. Removed the unused Next.js template images. Placeholder name "Personal Hub", blue hue 215. `pnpm build`, lint and `tsc` pass; viewed in the browser pane at :3100 with no console errors; changing `--brand-hue` recoloured the primary as intended |
+| 0.4a | 2026-11-13 | ✅ Done | Step 0.4 committed (4ea8163) and pushed to private `personal-hub` (verified PRIVATE). `.claude/launch.json` deliberately not committed |
+| 0.5 | 2026-11-13 | ✅ Done | 🌐 npm: `drizzle-orm` 0.45.4, `postgres` 4.1.1, `server-only` 0.0.1, dev `drizzle-kit` 0.31.11. Added `drizzle.config.ts`, `src/db/index.ts` (server-only client), `src/db/schema/` (`app_settings`, RLS on), `.env.example`, `scripts/db-check.mjs`, scripts `db:generate/migrate/studio/check` + `typecheck`. `DATABASE_URL` (session pooler + your password) written to `.env.local` only (git-ignored, mode 600, never printed). 🌐 Supabase write: migration `drizzle/0000_romantic_warbird.sql` applied (creates `app_settings`, enables RLS). Verified: connection OK, RLS on, write/read OK, public `anon` role sees 0 rows, cleanup OK; the Drizzle client also worked through a temporary Next.js route that was then deleted. `typecheck` and lint pass |
 
 ## ❌ Rejected
 

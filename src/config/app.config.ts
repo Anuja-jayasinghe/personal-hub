@@ -45,7 +45,7 @@ export const appConfig = {
     /** Fraction digits shown for amounts. */
     fractionDigits: 2,
   },
-  /** Placeholder assumption — confirm (DECISIONS P15). Used to decide what "today" is for reminders. */
+  /** Confirmed (DECISIONS C25). Used to decide what "today" is for reminders. */
   timeZone: "Asia/Colombo",
 
   // ---- Reminders (DECISIONS C20): days before a due date that an item gets flagged ----------
