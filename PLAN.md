@@ -38,7 +38,7 @@ Config       : app.config.ts (name, logo, enabled modules) + theme tokens (colou
 | 0.6 | App shell: sidebar, dashboard skeleton, settings; dev server on LAN | Local | ✅ Done 2026-11-13 |
 | 0.7 | Shared tasks, notes, attachments (files in Supabase Storage) | 🌐 Supabase | ✅ Done 2026-11-13 |
 | 0.8 | Reminders engine (computes due items, shows "Due soon" + 30-day list) | Local | ✅ Done 2026-11-13 |
-| 0.9 | First push to GitHub; second computer clones and runs | 🌐 GitHub | Approve |
+| 0.9 | Second computer clones and runs (Windows laptop) | 🌐 GitHub | ✅ 0.9a–c done and merged 2026-11-13 (PR #5); ⏳ 0.9d, the run on the Windows laptop, still pending (P33) |
 | 0.10 | Backup: `pnpm backup` / `pnpm backup:restore` (DB rows + uploaded files → one zip) | 🌐 Supabase reads/writes | ✅ Done 2026-11-13 (issue #4; trigger decision in #1) |
 
 ### Step 0.5 detail — database foundation (planned 2026-11-13, awaiting approval)
