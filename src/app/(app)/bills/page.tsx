@@ -8,7 +8,7 @@ import { EmptyState, PageHeader } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isModuleEnabled } from "@/config/app.config";
 import { createBillItem } from "@/features/bills/actions";
-import { listBillItems } from "@/features/bills/queries";
+import { listBillItems, listPayments } from "@/features/bills/queries";
 import { attachmentsByOwner } from "@/features/shared/queries";
 import { todayInAppTz } from "@/lib/format";
 
@@ -18,6 +18,8 @@ async function BillsContent({ searchParams }: { searchParams: Promise<{ archived
   const showArchived = (await searchParams).archived === "1";
   const [items, archivedItems] = await Promise.all([listBillItems(showArchived), listBillItems(true)]);
   const files = await attachmentsByOwner("bill_item", items.map((i) => i.id));
+  const payments = await listPayments(items.map((i) => i.id));
+  const receipts = await attachmentsByOwner("bill_payment", payments.map((p) => p.id));
   const today = todayInAppTz(); // after the queries, which opt this render into request time
 
   return (
@@ -39,7 +41,7 @@ async function BillsContent({ searchParams }: { searchParams: Promise<{ archived
       ) : (
         <ul className="flex flex-col gap-4">
           {items.map((item) => (
-            <BillItemCard key={item.id} item={item} files={files.get(item.id) ?? []} today={today} />
+            <BillItemCard key={item.id} item={item} files={files.get(item.id) ?? []} payments={payments.filter((p) => p.itemId === item.id)} receipts={receipts} today={today} />
           ))}
         </ul>
       )}
