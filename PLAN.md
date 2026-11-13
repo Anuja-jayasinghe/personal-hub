@@ -35,7 +35,7 @@ Config       : app.config.ts (name, logo, enabled modules) + theme tokens (colou
 | 0.3 | Scaffold Next.js + TS + Tailwind + shadcn/ui with pnpm | 🌐 npm registry | ✅ C9 — approve step |
 | 0.4 | Theme tokens + `app.config.ts` (placeholder branding) | Local | ✅ Done 2026-11-13 |
 | 0.5 | Drizzle + migrations against Supabase Postgres; `.env.example` committed, `.env.local` per computer | 🌐 Supabase | ✅ Done 2026-11-13 |
-| 0.6 | App shell: sidebar/bottom nav, dashboard skeleton, settings; dev server on LAN | Local | ✅ C11 — approve step |
+| 0.6 | App shell: sidebar, dashboard skeleton, settings; dev server on LAN | Local | ✅ Done 2026-11-13 |
 | 0.7 | Shared tasks, notes, attachments (files in Supabase Storage) | 🌐 Supabase | Approve |
 | 0.8 | Reminders engine (computes due items, shows "Due soon" + 30-day list) | Local | P8 |
 | 0.9 | First push to GitHub; second computer clones and runs | 🌐 GitHub | Approve |
@@ -62,6 +62,22 @@ Sub-steps (each needs your OK before it runs):
 Conventions for all later tables: `uuid` primary keys (`gen_random_uuid()`), `timestamptz` created/updated columns, due dates as `date` (no time-zone drift), amounts as `numeric(12,2)`, polymorphic owner as `owner_type` + `owner_id`, RLS enabled in the same migration that creates the table.
 
 Shared tasks, notes and attachments tables stay in step 0.7 with their UI, as planned.
+
+### Step 0.6 detail — app shell (planned 2026-11-13, awaiting approval)
+
+Facts: Next.js 16 dev already listens on all interfaces (it printed `Network: http://10.100.8.171:3100`), but it blocks dev assets requested from other hostnames unless they are listed in `allowedDevOrigins` (hostnames only; `*` = exactly one label). `lucide-react` is already installed; nothing new is needed for icons.
+
+| # | What | Notes |
+|---|------|-------|
+| 0.6a | Shell layout in a route group `(app)` using the **shadcn Sidebar** (C30): collapsible on desktop, slide-out panel with a menu button on phones; links built from `appConfig.modules` (enabled only) plus Home and Settings; active-link highlight | 🌐 npm: shadcn adds its sidebar components (sidebar, sheet, tooltip, separator, skeleton, input, hooks) |
+| 0.6b | Dashboard skeleton at `/` (C32): "Due soon" card and "Electricity since last bill" card, each with a friendly empty state | Real data arrives with 0.8 (reminders) and Phase 2 (electricity) |
+| 0.6c | Stub pages `/vehicles` and `/electricity` so navigation never 404s | Disabled modules (Bills) get no route and no menu entry |
+| 0.6d | `/settings`: appearance (light / dark / system) + read-only summary of config (name, currency, time zone, reminder lead times, modules) | Editable settings stored in `app_settings` come later |
+| 0.6e | Theme switcher with **next-themes** (C31): light / dark / system, `dark` class on `<html>` | 🌐 npm: `next-themes` |
+| 0.6f | LAN access (DECISIONS C11): `allowedDevOrigins` for `10.*.*.*`, `192.168.*.*`, `*.local` in `next.config.ts`; verified by fetching the page via the Mac's LAN address | Your phone check is manual: open `http://<this Mac's address>:3100` on the same Wi-Fi. macOS may show a firewall prompt |
+
+Verification: build, lint, typecheck; browser pane at desktop and phone widths; dark mode toggle; LAN fetch.
+Reminder: with no login (C10) and LAN access (C11), anyone on the same Wi-Fi can open the app and, once data screens exist, change data.
 
 ## Phase 1 — Vehicles
 

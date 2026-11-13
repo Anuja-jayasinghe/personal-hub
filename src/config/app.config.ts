@@ -85,3 +85,8 @@ export const appConfig = {
 export type AppConfig = typeof appConfig;
 
 export const enabledModules = appConfig.modules.filter((m) => m.enabled);
+
+/** True when a module is switched on in `appConfig.modules`; route pages use it to 404 when off. */
+export function isModuleEnabled(key: ModuleKey): boolean {
+  return appConfig.modules.some((m) => m.key === key && m.enabled);
+}
