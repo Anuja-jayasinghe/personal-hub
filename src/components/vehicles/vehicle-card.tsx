@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Vehicle } from "@/db/schema";
 
 /** One vehicle in the list: cover photo, nickname, make / model / year and registration number. */
-export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
+export function VehicleCard({ vehicle, due }: { vehicle: Vehicle; due?: { total: number; overdue: number } }) {
   const subtitle = [vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(" ");
   return (
     <li>
@@ -19,6 +19,12 @@ export function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
           <div className="flex flex-wrap items-center gap-1.5">
             {vehicle.registrationNumber ? <Badge variant="outline">{vehicle.registrationNumber}</Badge> : null}
             {vehicle.archivedAt ? <Badge variant="secondary">Archived</Badge> : null}
+            {due && due.total > 0 ? (
+              <Badge variant="outline" className={due.overdue > 0 ? "border-status-overdue text-status-overdue" : "border-status-soon text-status-soon"}>
+                {due.overdue > 0 ? `${due.overdue} overdue` : `${due.total} due`}
+                {due.overdue > 0 && due.total > due.overdue ? ` · ${due.total - due.overdue} due` : ""}
+              </Badge>
+            ) : null}
           </div>
         </div>
       </Link>

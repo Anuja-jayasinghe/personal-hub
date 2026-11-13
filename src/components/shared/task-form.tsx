@@ -15,10 +15,12 @@ type Props = {
   /** Pass an existing task to edit it. */
   task?: Task;
   onDone?: () => void;
+  /** Label of the create button, e.g. "Add fix". */
+  addLabel?: string;
 };
 
 /** Create / edit form for a task. Works with the createTask and updateTask Server Actions. */
-export function TaskForm({ action, owner, task, onDone }: Props) {
+export function TaskForm({ action, owner, task, onDone, addLabel = "Add task" }: Props) {
   const [state, formAction] = useActionState(action, initialActionState);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -79,7 +81,7 @@ export function TaskForm({ action, owner, task, onDone }: Props) {
       ) : null}
 
       <div>
-        <SubmitButton pendingLabel="Saving…">{task ? "Save changes" : "Add task"}</SubmitButton>
+        <SubmitButton pendingLabel="Saving…">{task ? "Save changes" : addLabel}</SubmitButton>
       </div>
     </form>
   );

@@ -20,6 +20,7 @@ export const vehicleServicesSource: ReminderSource = {
       dueDate: r.nextDueDate,
       href: `/vehicles/${r.vehicleId}?tab=services`,
       kind: "service",
+      ownerId: r.vehicleId,
     }));
   },
 };

@@ -1,10 +1,12 @@
 import { Pin, PinOff, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { AttachmentsPanel } from "@/components/shared/attachments-panel";
 import { NoteForm } from "@/components/shared/note-form";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Badge } from "@/components/ui/badge";
 import type { Attachment, Note } from "@/db/schema";
 import { createNote, deleteNote, toggleNotePinned, updateNote } from "@/features/shared/actions";
+import { ownerLabels, type OwnerLabel } from "@/features/shared/owner-labels";
 import { attachmentsByOwner, listNotes, type OwnerScope } from "@/features/shared/queries";
 import { formatDate } from "@/lib/format";
 
@@ -12,6 +14,7 @@ import { formatDate } from "@/lib/format";
 export async function NotesPanel({ scope, title = "Notes" }: { scope: OwnerScope; title?: string }) {
   const list = await listNotes(scope);
   const files = await attachmentsByOwner("note", list.map((n) => n.id));
+  const labels = scope.kind === "all" ? await ownerLabels(list) : new Map<string, OwnerLabel>();
   const owner = scope.kind === "owner" ? scope.owner : null;
 
   return (
@@ -34,7 +37,7 @@ export async function NotesPanel({ scope, title = "Notes" }: { scope: OwnerScope
       ) : (
         <ul className="flex flex-col gap-2">
           {list.map((note) => (
-            <NoteItem key={note.id} note={note} files={files.get(note.id) ?? []} />
+            <NoteItem key={note.id} note={note} files={files.get(note.id) ?? []} ownerLabel={note.ownerType && note.ownerId ? labels.get(`${note.ownerType}:${note.ownerId}`) : undefined} showOwner={scope.kind === "all"} />
           ))}
         </ul>
       )}
@@ -42,7 +45,7 @@ export async function NotesPanel({ scope, title = "Notes" }: { scope: OwnerScope
   );
 }
 
-function NoteItem({ note, files }: { note: Note; files: Attachment[] }) {
+function NoteItem({ note, files, ownerLabel, showOwner }: { note: Note; files: Attachment[]; ownerLabel?: OwnerLabel; showOwner: boolean }) {
   return (
     <li className="rounded-lg border bg-card p-3 text-card-foreground">
       <div className="flex items-start gap-3">
@@ -51,7 +54,15 @@ function NoteItem({ note, files }: { note: Note; files: Attachment[] }) {
           <p className="whitespace-pre-wrap text-sm">{note.body}</p>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
             {note.pinned ? <Badge variant="secondary">Pinned</Badge> : null}
-            {note.ownerType ? <Badge variant="outline">{note.ownerType}</Badge> : null}
+            {showOwner && note.ownerType ? (
+              ownerLabel ? (
+                <Link href={ownerLabel.href}>
+                  <Badge variant="outline">{ownerLabel.label}</Badge>
+                </Link>
+              ) : (
+                <Badge variant="outline">{note.ownerType}</Badge>
+              )
+            ) : null}
             <span>Updated {formatDate(note.updatedAt)}</span>
           </div>
         </div>

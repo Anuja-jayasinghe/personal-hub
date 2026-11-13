@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { EmptyState } from "@/components/shell/page-header";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CoverPhotoForm } from "@/components/vehicles/cover-photo-form";
 import { RenewalsTab } from "@/components/vehicles/renewals-tab";
+import { NotesPanel } from "@/components/shared/notes-panel";
+import { TasksPanel } from "@/components/shared/tasks-panel";
 import { ServicesTab } from "@/components/vehicles/services-tab";
+import { VehicleFiles } from "@/components/vehicles/vehicle-files";
+import { VehicleSummary } from "@/components/vehicles/vehicle-summary";
 import { VehicleCover } from "@/components/vehicles/vehicle-cover";
 import { isModuleEnabled } from "@/config/app.config";
 import {
@@ -26,8 +29,8 @@ const TABS = [
   { key: "overview", label: "Overview" },
   { key: "services", label: "Services" },
   { key: "renewals", label: "Renewals" },
-  { key: "fixes", label: "Fixes", soon: "Coming in Phase 1.4: fixes for this vehicle." },
-  { key: "notes", label: "Notes", soon: "Coming in Phase 1.4: notes and files for this vehicle." },
+  { key: "fixes", label: "Fixes" },
+  { key: "notes", label: "Notes" },
 ] as const;
 
 function Detail({ label, value }: { label: string; value: React.ReactNode }) {
@@ -86,6 +89,7 @@ async function VehicleContent({
 
       {current.key === "overview" ? (
         <div className="flex flex-col gap-8">
+          <VehicleSummary vehicleId={vehicle.id} />
           <dl className="grid gap-4 sm:grid-cols-3">
             <Detail label="Make" value={vehicle.make} />
             <Detail label="Model" value={vehicle.model} />
@@ -149,8 +153,13 @@ async function VehicleContent({
         <ServicesTab vehicleId={vehicle.id} />
       ) : current.key === "renewals" ? (
         <RenewalsTab vehicleId={vehicle.id} />
+      ) : current.key === "fixes" ? (
+        <TasksPanel scope={{ kind: "owner", owner: { ownerType: "vehicle", ownerId: vehicle.id } }} title="Fixes" itemName="fix" itemNamePlural="fixes" />
       ) : (
-        <EmptyState title={current.label} hint={"soon" in current ? current.soon : ""} />
+        <div className="flex flex-col gap-8">
+          <NotesPanel scope={{ kind: "owner", owner: { ownerType: "vehicle", ownerId: vehicle.id } }} title="Notes" />
+          <VehicleFiles vehicleId={vehicle.id} coverAttachmentId={vehicle.coverAttachmentId} />
+        </div>
       )}
     </>
   );

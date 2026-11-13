@@ -20,6 +20,8 @@ export type ReminderItem = {
   kind: string;
   /** Override the default lead times for this item (e.g. insurance renewals warn earlier). */
   leadDays?: readonly number[];
+  /** The record this item belongs to (a vehicle's id), so lists can count what is due per record. */
+  ownerId?: string;
 };
 
 /**
