@@ -36,7 +36,7 @@ export function UpcomingList({ occurrences, today, days }: { occurrences: Occurr
         <CardTitle className="flex items-center gap-2">
           <CalendarClock className="size-4" aria-hidden /> Upcoming
         </CardTitle>
-        <CardDescription>Overdue items and everything due in the next {days} days.</CardDescription>
+        <CardDescription>Overdue items and everything due in the next {days} days. Unpaid electricity bills are shown here too; they are managed on the Electricity page.</CardDescription>
       </CardHeader>
       <CardContent>
         {occurrences.length === 0 ? (

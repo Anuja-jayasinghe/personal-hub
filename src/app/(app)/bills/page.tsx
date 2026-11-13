@@ -11,8 +11,10 @@ import { EmptyState, PageHeader } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { appConfig, isModuleEnabled } from "@/config/app.config";
 import { createBillItem } from "@/features/bills/actions";
+import { electricityOccurrences } from "@/features/bills/electricity";
 import { listBillItems, listPayments } from "@/features/bills/queries";
 import { commitments, lastDayOf, occurrencesOf, toBillLike, upcoming } from "@/features/bills/upcoming";
+import { listUnpaidBillsWithDueDate } from "@/features/electricity/queries";
 import { attachmentsByOwner } from "@/features/shared/queries";
 import { addMonths, monthOf } from "@/lib/dates";
 import { todayInAppTz } from "@/lib/format";
@@ -22,7 +24,11 @@ export const metadata: Metadata = { title: "Bills & subscriptions" };
 async function BillsContent({ searchParams }: { searchParams: Promise<{ archived?: string; month?: string }> }) {
   const params = await searchParams;
   const showArchived = params.archived === "1";
-  const [items, archivedItems] = await Promise.all([listBillItems(showArchived), listBillItems(true)]);
+  const [items, archivedItems, unpaidElectricity] = await Promise.all([
+    listBillItems(showArchived),
+    listBillItems(true),
+    showArchived || !isModuleEnabled("electricity") ? Promise.resolve([]) : listUnpaidBillsWithDueDate(),
+  ]);
   const files = await attachmentsByOwner("bill_item", items.map((i) => i.id));
   const payments = await listPayments(items.map((i) => i.id));
   const receipts = await attachmentsByOwner("bill_payment", payments.map((p) => p.id));
@@ -35,14 +41,16 @@ async function BillsContent({ searchParams }: { searchParams: Promise<{ archived
   const lastMonth = addMonths(thisMonth, appConfig.bills.calendarMonthsAhead);
   const requested = params.month && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month) ? params.month : thisMonth;
   const month = requested < thisMonth ? thisMonth : requested > lastMonth ? lastMonth : requested;
-  const inMonth = bills.flatMap((b) => occurrencesOf(b, today, lastDayOf(month))).filter((o) => monthOf(o.date) === month);
+  // Unpaid electricity bills are shown read-only (C57): they are managed on the Electricity page.
+  const electricity = electricityOccurrences(unpaidElectricity, today);
+  const inMonth = [...bills.flatMap((b) => occurrencesOf(b, today, lastDayOf(month))), ...electricity].filter((o) => monthOf(o.date) === month);
 
   return (
     <>
       {!showArchived ? (
         <>
           <div className="grid gap-4 lg:grid-cols-2">
-            <UpcomingList occurrences={upcoming(bills, [], today, horizon)} today={today} days={horizon} />
+            <UpcomingList occurrences={upcoming(bills, electricity, today, horizon)} today={today} days={horizon} />
             <CommitmentsCard data={commitments(bills)} />
           </div>
           <BillsCalendar
