@@ -1,4 +1,5 @@
 import { appConfig } from "@/config/app.config";
+import { todayIn } from "@/lib/dates";
 
 const { code, locale, fractionDigits } = appConfig.currency;
 
@@ -38,5 +39,5 @@ export function formatBytes(bytes: number): string {
  * call it from request-time code (after `await connection()`), never while pre-rendering.
  */
 export function todayInAppTz(): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: appConfig.timeZone }).format(new Date());
+  return todayIn(appConfig.timeZone, new Date());
 }

@@ -37,7 +37,7 @@ Config       : app.config.ts (name, logo, enabled modules) + theme tokens (colou
 | 0.5 | Drizzle + migrations against Supabase Postgres; `.env.example` committed, `.env.local` per computer | 🌐 Supabase | ✅ Done 2026-11-13 |
 | 0.6 | App shell: sidebar, dashboard skeleton, settings; dev server on LAN | Local | ✅ Done 2026-11-13 |
 | 0.7 | Shared tasks, notes, attachments (files in Supabase Storage) | 🌐 Supabase | ✅ Done 2026-11-13 |
-| 0.8 | Reminders engine (computes due items, shows "Due soon" + 30-day list) | Local | P8 |
+| 0.8 | Reminders engine (computes due items, shows "Due soon" + 30-day list) | Local | ✅ Done 2026-11-13 |
 | 0.9 | First push to GitHub; second computer clones and runs | 🌐 GitHub | Approve |
 | 0.10 | Backup: one-click export (DB dump + uploads → zip on this Mac) | Local | Approve |
 
@@ -108,6 +108,28 @@ Reusable pieces any module page can drop in: `<TasksPanel ownerType ownerId />`,
 | 0.7f | Server actions + the three panels; raise the upload limit in `next.config.ts` | Local |
 | 0.7g | One new sidebar page **Tasks & notes** (C35) for standalone items, so everything is testable before Vehicles exists | Local |
 | 0.7h | Verify: create, edit, complete, delete; upload an image and a PDF, open via signed link, delete; confirm the public Data API and public storage URLs cannot read anything | 🌐 Supabase |
+
+### Step 0.8 detail — reminders engine (planned 2026-11-13, awaiting approval)
+
+Goal: one place that answers "what is due, and how soon?" for every module, in the app only (C6: no email for now). Lead times 30 / 14 / 7 / 1 / 0 days (C20) and the `Asia/Colombo` calendar day (C25) come from `app.config.ts`.
+
+Design:
+- **Sources.** A module contributes a *reminder source*: `{ key, label, load() }` returning items `{ id, title, dueDate "YYYY-MM-DD", href, kind, leadDays? }`. All sources are listed in one registry file, so Vehicles (renewals, services), Electricity (bill due dates) and Bills later just add one line. An item may override the default lead times (C20: adjustable per renewal type).
+- **Today's only real source: open tasks that have a due date** (done tasks drop out). So the engine can be tested with real data instead of invented examples.
+- **Pure calculation.** `computeReminders(items, today, leadDays)` has no database or clock access. For each item it returns days until due and a level: *overdue* (past due, stays until the task is done), *today*, *soon* (within 7 days), *upcoming* (within 30 days), or *later* (beyond the largest lead time, hidden). It also reports which lead-time threshold was most recently crossed (e.g. "14-day"). Dates are compared as calendar days, never as timestamps, so there is no time-zone drift.
+- **"Today" in the app time zone** from a pure helper `todayIn(timeZone, now)`, used by the existing `todayInAppTz()`.
+- **Not included:** snooze/dismiss, repeating reminders, email or push (all later, each its own decision), and a live count badge in the sidebar.
+
+Sub-steps (each needs your OK before it runs):
+
+| # | What | Local / External |
+|---|------|------------------|
+| 0.8a | Install **Vitest** as a dev dependency and add `pnpm test` | 🌐 npm registry (if chosen, see P27) |
+| 0.8b | `src/features/reminders/`: types, pure engine, source registry, tasks source | Local; the tasks source reads the existing `tasks` table |
+| 0.8c | Unit tests for the engine: each lead-time boundary (30, 14, 7, 1, 0, 31), overdue, month and year rollover, leap day, and the Colombo midnight edge (e.g. 18:30 UTC is already the next day in Colombo) | Local |
+| 0.8d | Home "Due soon" card shows real items instead of the empty state, with a "View all" link | Local |
+| 0.8e | `/reminders` page and sidebar item: Overdue, Today, Next 7 days, Next 30 days | Local |
+| 0.8f | Verify in the browser with tasks due at -3, 0, +1, +7, +14, +30 and +31 days (real rows, removed afterwards) | 🌐 Supabase writes (test data only) |
 
 ## Phase 1 — Vehicles
 

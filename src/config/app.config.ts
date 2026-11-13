@@ -63,6 +63,7 @@ export const appConfig = {
 
   // ---- Shared pages (DECISIONS C35) ------------------------------------------------------------
   sharedPages: [
+    { key: "reminders", label: "Reminders", href: "/reminders", icon: "bell" },
     { key: "tasks", label: "Tasks & notes", href: "/tasks", icon: "tasks" },
   ] satisfies SharedPageConfig[],
 

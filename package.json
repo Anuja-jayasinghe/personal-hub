@@ -13,7 +13,8 @@
     "db:check": "node scripts/db-check.mjs",
     "typecheck": "tsc --noEmit",
     "storage:setup": "node scripts/storage-setup.mjs",
-    "storage:check": "node scripts/storage-check.mjs"
+    "storage:check": "node scripts/storage-check.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -40,7 +41,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "tailwindcss": "4.3.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.1.0"
   },
   "packageManager": "pnpm@10.11.0"
 }
