@@ -43,6 +43,13 @@
       "when": 1794588305843,
       "tag": "0005_nebulous_leech",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794588710834,
+      "tag": "0006_young_cerise",
+      "breakpoints": true
     }
   ]
 }

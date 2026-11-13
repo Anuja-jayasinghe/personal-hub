@@ -1,8 +1,8 @@
 import "server-only";
-import { asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { db } from "@/db";
-import { electricityMeters, electricityReadings } from "@/db/schema";
+import { electricityBills, electricityMeters, electricityReadings } from "@/db/schema";
 import { UUID_RE } from "@/features/shared/validation";
 
 /** Active meters, or archived ones, by name. */
@@ -36,4 +36,27 @@ export async function listReadings(meterId: string) {
 export async function listAllReadings() {
   await connection();
   return db.select().from(electricityReadings).orderBy(desc(electricityReadings.readingDate), desc(electricityReadings.createdAt));
+}
+
+/** Every bill of every meter, newest first. */
+export async function listAllBills() {
+  await connection();
+  return db.select().from(electricityBills).orderBy(desc(electricityBills.billDate), desc(electricityBills.createdAt));
+}
+
+/** Unpaid bills that have a due date, with their meter's name, for the reminders (archived meters included: an unpaid bill is still owed). */
+export async function listUnpaidBillsWithDueDate() {
+  await connection();
+  return db
+    .select({
+      id: electricityBills.id,
+      meterId: electricityBills.meterId,
+      meterName: electricityMeters.name,
+      billDate: electricityBills.billDate,
+      dueDate: electricityBills.dueDate,
+      amount: electricityBills.amount,
+    })
+    .from(electricityBills)
+    .innerJoin(electricityMeters, eq(electricityMeters.id, electricityBills.meterId))
+    .where(and(isNull(electricityBills.paidDate), isNotNull(electricityBills.dueDate)));
 }
