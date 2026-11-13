@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Personal Hub
 
-## Getting Started
+A personal "super app" for the day-to-day things you need to keep on top of, in one place. *Personal Hub* is a placeholder name; the real name and branding are decided later and are kept in a few config files so they are easy to change.
 
-First, run the development server:
+**Today:** a shell with a sidebar, a Home dashboard, **Reminders** (what is overdue or due soon), **Tasks & notes** with file attachments, and Settings.
+**Next:** Vehicles (services, licence and insurance renewals, fixes, notes), Electricity (meter readings, bills, units since the last bill), then Bills & subscriptions.
+
+Built with Next.js, TypeScript, Tailwind and shadcn/ui, with data in Supabase (Postgres and a private file bucket).
+
+## Quick start
+
+New computer? Follow **[SETUP.md](SETUP.md)** (written for the Windows laptop). Already set up:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+pnpm setup:check        # confirms your .env.local, database and file storage work
+pnpm dev --port 3100    # http://localhost:3100
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Documents
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| File | What it is |
+|---|---|
+| [PLAN.md](PLAN.md) | The phased build plan |
+| [DECISIONS.md](DECISIONS.md) | Everything confirmed, pending or rejected, and a log of each step |
+| [CLAUDE.md](CLAUDE.md) | Working rules and conventions for coding agents (also useful to people) |
+| [SETUP.md](SETUP.md) | Setting up a new computer |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Commands
 
-## Learn More
+`pnpm dev` · `pnpm build` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm setup:check` · `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:check` · `pnpm storage:setup` · `pnpm storage:check`
 
-To learn more about Next.js, take a look at the following resources:
+## Secrets
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Real settings live in `.env.local`, which is git-ignored. Only placeholders are in `.env.example`. Never commit, paste or print a secret.

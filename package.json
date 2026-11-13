@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "storage:setup": "node scripts/storage-setup.mjs",
     "storage:check": "node scripts/storage-check.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "setup:check": "node scripts/setup-check.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -44,5 +45,8 @@
     "typescript": "^5",
     "vitest": "^5.1.0"
   },
-  "packageManager": "pnpm@10.11.0"
+  "packageManager": "pnpm@10.11.0",
+  "engines": {
+    "node": ">=22"
+  }
 }

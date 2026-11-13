@@ -25,6 +25,7 @@ Read first: [PLAN.md](PLAN.md) (phases and steps) and [DECISIONS.md](DECISIONS.m
 | `pnpm dev --port 3100` | Dev server (also reachable on the home Wi-Fi) |
 | `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test` | Checks |
 | `pnpm db:generate` / `pnpm db:migrate` | Create / apply a Drizzle migration (migrate writes to Supabase) |
+| `pnpm setup:check` | New-computer check: Node version, `.env.local`, database, migrations, storage (never prints secrets) |
 | `pnpm db:check` | Database sanity check (connection, row-level security, round trip) |
 | `pnpm storage:setup` / `pnpm storage:check` | Create / verify the private `attachments` bucket |
 
