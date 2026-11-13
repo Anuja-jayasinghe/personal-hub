@@ -103,4 +103,4 @@ Install Node 22+ and pnpm (for example with Homebrew: `brew install node pnpm`),
 
 ## Backups
 
-A backup and restore command is planned (issue #4). Until it exists, nothing outside Supabase holds a copy of your data, and the free Supabase plan has no downloadable backups.
+`pnpm backup` makes one zip of all your data and files, and `pnpm backup:restore` puts it back. See **[BACKUP.md](BACKUP.md)** for how often to back up, where to keep copies and how to restore. Backups contain your real data: keep them out of git. The free Supabase plan has no downloadable backups of its own.

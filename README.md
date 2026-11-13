@@ -25,10 +25,11 @@ pnpm dev --port 3100    # http://localhost:3100
 | [DECISIONS.md](DECISIONS.md) | Everything confirmed, pending or rejected, and a log of each step |
 | [CLAUDE.md](CLAUDE.md) | Working rules and conventions for coding agents (also useful to people) |
 | [SETUP.md](SETUP.md) | Setting up a new computer |
+| [BACKUP.md](BACKUP.md) | Backing up and restoring all your data and files |
 
 ## Commands
 
-`pnpm dev` · `pnpm build` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm setup:check` · `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:check` · `pnpm storage:setup` · `pnpm storage:check`
+`pnpm dev` · `pnpm build` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm setup:check` · `pnpm db:generate` · `pnpm db:migrate` · `pnpm db:check` · `pnpm storage:setup` · `pnpm storage:check` · `pnpm backup` · `pnpm backup:restore`
 
 ## Secrets
 
