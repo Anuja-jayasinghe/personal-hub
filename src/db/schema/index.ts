@@ -4,3 +4,4 @@ export * from "./shared";
 export * from "./vehicles";
 export * from "./vehicle-services";
 export * from "./vehicle-renewals";
+export * from "./electricity";

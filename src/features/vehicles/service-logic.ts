@@ -1,3 +1,5 @@
+import { toCents } from "@/lib/decimal";
+
 /**
  * Rules for which service records matter, and yearly cost totals. Pure (no database, no clock),
  * so they can be tested. Used by the Services tab and by the reminder source.
@@ -43,11 +45,7 @@ export function dueServices<T extends ServiceRow>(rows: readonly T[]): (T & { ne
   return latestPerType(rows).filter((r): r is T & { nextDueDate: string } => r.nextDueDate !== null);
 }
 
-/** "12500.50" -> 1250050 (whole cents, so sums are exact). */
-export function toCents(amount: string): number {
-  const [whole, fraction = ""] = amount.split(".");
-  return Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
-}
+export { toCents };
 
 /** Total spent per calendar year of the service date, newest year first. */
 export function totalsByYear(rows: readonly { serviceDate: string; cost: string | null }[]): { year: number; cents: number }[] {
