@@ -21,7 +21,7 @@ export async function DueSoonCard() {
         <CardTitle className="flex items-center gap-2">
           <BellRing className="size-4" aria-hidden /> Due soon
         </CardTitle>
-        <CardDescription>Renewals, services and tasks coming up.</CardDescription>
+        <CardDescription>Renewals, services, bills and tasks coming up.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         {shown.length > 0 ? (
