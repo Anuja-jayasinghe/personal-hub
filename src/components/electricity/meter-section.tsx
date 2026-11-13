@@ -1,10 +1,12 @@
 import { Trash2 } from "lucide-react";
 import { BillForm } from "@/components/electricity/bill-form";
 import { BillsList } from "@/components/electricity/bills-list";
+import { UsageSummary } from "@/components/electricity/usage-summary";
 import { MeterForm } from "@/components/electricity/meter-form";
 import { ReadingForm } from "@/components/electricity/reading-form";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Badge } from "@/components/ui/badge";
+import { appConfig } from "@/config/app.config";
 import type { Attachment, ElectricityBill, ElectricityMeter, ElectricityReading } from "@/db/schema";
 import {
   addReading,
@@ -16,6 +18,7 @@ import {
   updateMeter,
   updateReading,
 } from "@/features/electricity/actions";
+import { sinceLastBill } from "@/features/electricity/since-bill";
 import { formatKwh, sortReadings, toReading } from "@/features/electricity/usage";
 import { toCents } from "@/lib/decimal";
 import { formatDate } from "@/lib/format";
@@ -39,6 +42,11 @@ export function MeterSection({
 }) {
   const sorted = sortReadings(readings.map((r) => ({ ...toReading(r), row: r })));
   const latest = sorted.at(-1);
+  const usage = sinceLastBill(
+    bills.map((b) => ({ billDate: b.billDate, readingDate: b.readingDate, currentReading: toCents(b.currentReading), createdAt: b.createdAt })),
+    sorted,
+    appConfig.electricity.billingCycleDays,
+  );
 
   return (
     <li className="rounded-xl border bg-card p-4 text-card-foreground">
@@ -73,6 +81,11 @@ export function MeterSection({
             <Trash2 aria-hidden />
           </SubmitButton>
         </form>
+      </div>
+
+      <div className="mt-3 rounded-md bg-muted/50 p-3">
+        <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Since your last bill</p>
+        <UsageSummary usage={usage} />
       </div>
 
       <div className="mt-3 flex flex-col gap-2">
