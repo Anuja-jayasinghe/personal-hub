@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect } from "react";
 import { labelClass, labelTextClass, textareaClass } from "@/components/shared/form-styles";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useKeepValuesOnError } from "@/components/shared/use-keep-values-on-error";
 import { Input } from "@/components/ui/input";
 import type { Note } from "@/db/schema";
 import { initialActionState, type ActionState } from "@/features/shared/types";
@@ -17,14 +18,14 @@ type Props = {
 /** Create / edit form for a note. Works with the createNote and updateNote Server Actions. */
 export function NoteForm({ action, owner, note }: Props) {
   const [state, formAction] = useActionState(action, initialActionState);
-  const formRef = useRef<HTMLFormElement>(null);
+  const { formRef, onSubmit } = useKeepValuesOnError(state);
 
   useEffect(() => {
     if (state.ok && !note) formRef.current?.reset();
-  }, [state, note]);
+  }, [formRef, state, note]);
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-3">
+    <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
       {note ? <input type="hidden" name="id" value={note.id} /> : null}
       {!note && owner ? (
         <>

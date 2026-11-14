@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { labelClass, labelTextClass } from "@/components/shared/form-styles";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useKeepValuesOnError } from "@/components/shared/use-keep-values-on-error";
 import { Input } from "@/components/ui/input";
 import type { ElectricityReading } from "@/db/schema";
 import { initialActionState, type ActionState } from "@/features/shared/types";
@@ -20,7 +21,7 @@ type Props = {
 /** Add / edit form for a meter reading (addReading / updateReading). */
 export function ReadingForm({ action, meterId, reading, defaultDate }: Props) {
   const [state, formAction] = useActionState(action, initialActionState);
-  const formRef = useRef<HTMLFormElement>(null);
+  const { formRef, onSubmit } = useKeepValuesOnError(state);
   const [replaced, setReplaced] = useState(reading?.replacedFinalValue != null);
 
   useEffect(() => {
@@ -29,10 +30,10 @@ export function ReadingForm({ action, meterId, reading, defaultDate }: Props) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reset the toggle together with the form
       setReplaced(false);
     }
-  }, [state, reading]);
+  }, [formRef, state, reading]);
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-3">
+    <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
       {reading ? <input type="hidden" name="id" value={reading.id} /> : <input type="hidden" name="meterId" value={meterId} />}
 
       <div className="grid gap-3 sm:grid-cols-2">
