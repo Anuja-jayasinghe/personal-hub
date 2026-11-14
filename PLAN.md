@@ -220,11 +220,24 @@ Data model
 
 Not in this phase: per-item currencies (C59), card or bank details of any kind, automatic payment.
 
+## Phase 4 — Daily use
+
+Goal: the hub works from your phone anywhere and reaches you, instead of only showing things while the dev server runs on your Mac. Decisions C61–C64; open details P34–P38 (`DECISIONS.md`). Every piece that touches an outside service is confirmed again when it starts. Suggested order: **4.4 first** (no dependencies, protects your data now), then 4.1, 4.2, 4.3, 4.5.
+
+| Piece | Issue | What |
+|-------|-------|------|
+| 4.1 | #38 | **Login with Clerk** 🌐 (new service and npm package). Every page, the `/files/<id>` link and every Server Action requires a signed-in user whose email is on an allowed list kept as a secret (so a stranger who signs up still gets nothing). Sign-out. The scheduled jobs are protected by their own secret, not by Clerk. Local development keeps working. Replaces C10 |
+| 4.2 | #39 | **Hosting on Vercel** 🌐 as a new project on your own subdomain (P34), separate from your personal-site project. Environment variables set on Vercel (each one confirmed), Clerk production setup for the new address, a check that the hosted build works against the existing database and files. Needs 4.1 first |
+| 4.3 | #40 | **Daily email digest** 🌐 (P35, P36): a Vercel scheduled job calls a protected route that runs the existing reminders engine and emails what is overdue or due soon, only when there is something. Needs 4.2 first |
+| 4.4 | #41 | **Scheduled backup with a GitHub Action** 🌐 (issue #1, C64): weekly and manual runs of the existing `pnpm backup`, the zip encrypted before it is stored (P37), a limited number of copies kept, restore steps in `BACKUP.md`, GitHub's failure email as the alert. The database password and Supabase secret key become GitHub secrets |
+| 4.5 | #42 | **Phone polish**: add-to-home-screen icon and name from the app config, fixes from a real-phone check, light-mode check of the Phase 2 and 3 screens |
+
+Risks to keep in mind: the free Vercel plan limits scheduled jobs to once a day and the exact minute is not guaranteed; a free Supabase project pauses after a week of no use (a daily job keeps it awake, which is a side benefit of 4.3); the backup zip holds real data (hence P37).
+
 ## Later (each needs its own decision)
 
-- Cloud hosting 🌐
-- Email reminders 🌐
-- Push notifications
+- Push notifications (decided against for now, C63)
 - Global search
 - Branding session
+- Electricity tariff and cost estimates (C22), import API for your automation project (C54), a Documents page (C45), per-item currencies (C59)
 - More modules: warranties, home maintenance, documents
