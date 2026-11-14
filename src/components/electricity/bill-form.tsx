@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect } from "react";
 import { labelClass, labelTextClass } from "@/components/shared/form-styles";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useKeepValuesOnError } from "@/components/shared/use-keep-values-on-error";
 import { Input } from "@/components/ui/input";
 import type { ElectricityBill } from "@/db/schema";
 import { initialActionState, type ActionState } from "@/features/shared/types";
@@ -22,14 +23,14 @@ type Props = {
 /** Add / edit form for a bill (createBill / updateBill). Units are worked out from the readings when left empty. */
 export function BillForm({ action, meterId, bill, defaultDate, defaultPrevious }: Props) {
   const [state, formAction] = useActionState(action, initialActionState);
-  const formRef = useRef<HTMLFormElement>(null);
+  const { formRef, onSubmit } = useKeepValuesOnError(state);
 
   useEffect(() => {
     if (state.ok && !bill) formRef.current?.reset();
-  }, [state, bill]);
+  }, [formRef, state, bill]);
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-3">
+    <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
       {bill ? <input type="hidden" name="id" value={bill.id} /> : <input type="hidden" name="meterId" value={meterId} />}
 
       <div className="grid gap-3 sm:grid-cols-2">

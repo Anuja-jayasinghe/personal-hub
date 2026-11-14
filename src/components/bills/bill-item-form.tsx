@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect } from "react";
 import { labelClass, labelTextClass, textareaClass } from "@/components/shared/form-styles";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useKeepValuesOnError } from "@/components/shared/use-keep-values-on-error";
 import { Input } from "@/components/ui/input";
 import type { BillItem } from "@/db/schema";
 import { FREQUENCIES, FREQUENCY_LABELS } from "@/features/bills/schedule";
@@ -22,14 +23,14 @@ const selectClass =
 /** Add / edit form for a bill or subscription (createBillItem / updateBillItem). */
 export function BillItemForm({ action, item, defaultDate }: Props) {
   const [state, formAction] = useActionState(action, initialActionState);
-  const formRef = useRef<HTMLFormElement>(null);
+  const { formRef, onSubmit } = useKeepValuesOnError(state);
 
   useEffect(() => {
     if (state.ok && !item) formRef.current?.reset();
-  }, [state, item]);
+  }, [formRef, state, item]);
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-3">
+    <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
       {item ? <input type="hidden" name="id" value={item.id} /> : null}
 
       <div className="grid gap-3 sm:grid-cols-3">

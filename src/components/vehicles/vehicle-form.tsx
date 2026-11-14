@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { labelClass, labelTextClass, selectClass } from "@/components/shared/form-styles";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useKeepValuesOnError } from "@/components/shared/use-keep-values-on-error";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Vehicle } from "@/db/schema";
@@ -19,9 +20,10 @@ type Props = {
 /** Add / edit form for a vehicle. On success the Server Action redirects to the vehicle's page. */
 export function VehicleForm({ action, fuelTypes, vehicle }: Props) {
   const [state, formAction] = useActionState(action, initialActionState);
+  const { formRef, onSubmit } = useKeepValuesOnError(state);
 
   return (
-    <form action={formAction} className="flex max-w-xl flex-col gap-4">
+    <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex max-w-xl flex-col gap-4">
       {vehicle ? <input type="hidden" name="id" value={vehicle.id} /> : null}
 
       <label className={labelClass}>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect } from "react";
 import { labelClass, labelTextClass, selectClass, textareaClass } from "@/components/shared/form-styles";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { useKeepValuesOnError } from "@/components/shared/use-keep-values-on-error";
 import { Input } from "@/components/ui/input";
 import type { Task } from "@/db/schema";
 import { initialActionState, type ActionState } from "@/features/shared/types";
@@ -22,17 +23,17 @@ type Props = {
 /** Create / edit form for a task. Works with the createTask and updateTask Server Actions. */
 export function TaskForm({ action, owner, task, onDone, addLabel = "Add task" }: Props) {
   const [state, formAction] = useActionState(action, initialActionState);
-  const formRef = useRef<HTMLFormElement>(null);
+  const { formRef, onSubmit } = useKeepValuesOnError(state);
 
   useEffect(() => {
     if (state.ok) {
       if (!task) formRef.current?.reset();
       onDone?.();
     }
-  }, [state, task, onDone]);
+  }, [formRef, state, task, onDone]);
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-3">
+    <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
       {task ? <input type="hidden" name="id" value={task.id} /> : null}
       {!task && owner ? (
         <>
