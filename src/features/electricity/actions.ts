@@ -4,7 +4,6 @@ import { eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { db } from "@/db";
 import { electricityBills, electricityMeters, electricityReadings } from "@/db/schema";
-import { deleteAttachmentsOf } from "@/features/shared/cleanup";
 import { toActionState } from "@/features/shared/errors";
 import type { ActionState } from "@/features/shared/types";
 import { idFrom, ValidationError } from "@/features/shared/validation";
@@ -67,13 +66,10 @@ export async function unarchiveMeter(fd: FormData): Promise<void> {
   refresh();
 }
 
-/** Permanent: the meter and (by cascade) all its readings. */
+/** Permanent: the meter and (by cascade) all its readings and bills. */
 export async function deleteMeter(fd: FormData): Promise<void> {
   await requireUser();
   const id = idFrom(fd);
-  // Bill documents are attachments owned by each bill, which the database cannot cascade to.
-  const bills = await db.select({ id: electricityBills.id }).from(electricityBills).where(eq(electricityBills.meterId, id));
-  for (const b of bills) await deleteAttachmentsOf("electricity_bill", b.id);
   await db.delete(electricityMeters).where(eq(electricityMeters.id, id));
   refresh();
 }
@@ -168,11 +164,10 @@ export async function updateBill(_prev: ActionState, fd: FormData): Promise<Acti
   }
 }
 
-/** Permanent: the bill and its documents. */
+/** Permanent: the bill. */
 export async function deleteBill(fd: FormData): Promise<void> {
   await requireUser();
   const id = idFrom(fd);
-  await deleteAttachmentsOf("electricity_bill", id);
   await db.delete(electricityBills).where(eq(electricityBills.id, id));
   refresh();
 }

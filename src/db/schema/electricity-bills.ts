@@ -7,8 +7,8 @@ import { electricityMeters } from "./electricity";
  * Monthly electricity bills (Phase 2.2). A bill belongs to a meter and records the readings the
  * utility used, the units billed, the amount (LKR, C21), the due date and, once paid, the paid
  * date (C55). Units normally equal current minus previous reading, but are stored because a
- * replaced meter makes that subtraction meaningless. Deleting a meter deletes its bills (CASCADE);
- * the bills' documents are removed by the application first. Row-level security on (C27).
+ * replaced meter makes that subtraction meaningless. Deleting a meter deletes its bills (CASCADE).
+ * Bills carry no documents (C74). Row-level security on (C27).
  */
 export const electricityBills = pgTable(
   "electricity_bills",
