@@ -21,7 +21,10 @@ export const vehicles = pgTable(
     model: text("model"),
     year: integer("year"),
     fuelType: text("fuel_type"),
-    /** Current odometer in km. Entered by hand and optional; nothing reminds by distance (C24). */
+    /**
+     * LEGACY and unused: the old single, undated odometer value. Mileage now lives in dated
+     * readings (vehicle_odometer_readings). Kept only because a migration here may only add.
+     */
     odometerKm: integer("odometer_km"),
     /**
      * The vehicle's cover photo (C47): one attachment whose owner is this vehicle. If that file is

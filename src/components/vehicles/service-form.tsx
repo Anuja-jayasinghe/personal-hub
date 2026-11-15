@@ -59,7 +59,7 @@ export function ServiceForm({ action, serviceTypes, vehicleId, service, defaultD
           <Input name="cost" inputMode="decimal" defaultValue={service?.cost ?? ""} placeholder="0.00" />
         </label>
         <label className={labelClass}>
-          <span className={labelTextClass}>Odometer km (optional)</span>
+          <span className={labelTextClass}>Odometer at service, km (optional)</span>
           <Input name="odometerKm" inputMode="numeric" defaultValue={service?.odometerKm ?? ""} placeholder="45200" />
         </label>
       </div>

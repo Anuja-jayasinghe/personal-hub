@@ -8,3 +8,4 @@ export * from "./electricity";
 export * from "./electricity-bills";
 export * from "./bill-items";
 export * from "./bill-payments";
+export * from "./vehicle-odometer";

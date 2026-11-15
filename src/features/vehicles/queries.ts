@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, count, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { db } from "@/db";
-import { tasks, vehicleRenewals, vehicleServices, vehicles } from "@/db/schema";
+import { tasks, vehicleOdometerReadings, vehicleRenewals, vehicleServices, vehicles } from "@/db/schema";
 import { UUID_RE } from "@/features/shared/validation";
 
 /** Active vehicles, or archived ones (sold; hidden, no reminders, history kept: DECISIONS C48). */
@@ -105,4 +105,14 @@ export async function getVehicleSummary(vehicleId: string) {
       .where(and(eq(tasks.ownerType, "vehicle"), eq(tasks.ownerId, vehicleId))),
   ]);
   return { services, renewals, fixes };
+}
+
+/** A vehicle's dated odometer readings, newest first. (Services with an odometer count too: see odometer.ts.) */
+export async function listOdometerReadings(vehicleId: string) {
+  await connection();
+  return db
+    .select()
+    .from(vehicleOdometerReadings)
+    .where(eq(vehicleOdometerReadings.vehicleId, vehicleId))
+    .orderBy(desc(vehicleOdometerReadings.readingDate), desc(vehicleOdometerReadings.createdAt));
 }

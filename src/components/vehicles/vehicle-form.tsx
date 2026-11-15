@@ -63,13 +63,17 @@ export function VehicleForm({ action, fuelTypes, vehicle }: Props) {
             ))}
           </select>
         </label>
-        <label className={labelClass}>
-          <span className={labelTextClass}>Odometer (km)</span>
-          <Input name="odometerKm" inputMode="numeric" defaultValue={vehicle?.odometerKm ?? ""} placeholder="45200" />
-        </label>
+        {vehicle ? null : (
+          <label className={labelClass}>
+            <span className={labelTextClass}>Odometer today (km)</span>
+            <Input name="odometerKm" inputMode="numeric" placeholder="45200" />
+          </label>
+        )}
       </div>
       <p className="-mt-2 text-xs text-muted-foreground">
-        The odometer is only a note for your records; nothing reminds you by distance.
+        {vehicle
+          ? "Odometer readings, each with the date it was read, are on the vehicle's Overview page."
+          : "Optional. It is saved as a reading dated today; add later readings on the vehicle's Overview page. Nothing reminds you by distance."}
       </p>
 
       {state.error ? (

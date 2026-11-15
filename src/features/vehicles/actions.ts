@@ -4,13 +4,14 @@ import { eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { appConfig } from "@/config/app.config";
-import { attachments, vehicleRenewals, vehicles } from "@/db/schema";
+import { attachments, vehicleOdometerReadings, vehicleRenewals, vehicles } from "@/db/schema";
 import { db } from "@/db";
 import { deleteAttachmentsOf, deleteSharedDataOf } from "@/features/shared/cleanup";
 import { toActionState } from "@/features/shared/errors";
 import { removeAttachment, storeAttachment } from "@/features/shared/files";
 import type { ActionState } from "@/features/shared/types";
 import { idFrom, ValidationError } from "@/features/shared/validation";
+import { todayInAppTz } from "@/lib/format";
 import { parseVehicle } from "./validate";
 
 // Server Actions are public HTTP endpoints, so every input is validated here (see shared/actions.ts).
@@ -28,11 +29,23 @@ function fieldsFrom(fd: FormData) {
   return result.value;
 }
 
+/** The vehicle's own columns, and the odometer typed on the form (which is a dated reading, not a column). */
+function vehicleAndOdometer(fd: FormData) {
+  const { odometerKm, ...fields } = fieldsFrom(fd);
+  return { fields, odometerKm };
+}
+
 export async function createVehicle(_prev: ActionState, fd: FormData): Promise<ActionState> {
   let id: string;
   try {
-    const [row] = await db.insert(vehicles).values(fieldsFrom(fd)).returning({ id: vehicles.id });
-    id = row.id;
+    // The odometer typed on the form becomes the first dated reading (today); the old undated
+    // column is no longer written.
+    const { fields, odometerKm } = vehicleAndOdometer(fd);
+    id = await db.transaction(async (tx) => {
+      const [row] = await tx.insert(vehicles).values(fields).returning({ id: vehicles.id });
+      if (odometerKm !== null) await tx.insert(vehicleOdometerReadings).values({ vehicleId: row.id, readingDate: todayInAppTz(), km: odometerKm });
+      return row.id;
+    });
   } catch (err) {
     return toActionState(err);
   }
@@ -43,7 +56,8 @@ export async function updateVehicle(_prev: ActionState, fd: FormData): Promise<A
   let id: string;
   try {
     id = idFrom(fd);
-    await db.update(vehicles).set(fieldsFrom(fd)).where(eq(vehicles.id, id));
+    // Mileage is edited as dated readings on the vehicle's Overview, not here.
+    await db.update(vehicles).set(vehicleAndOdometer(fd).fields).where(eq(vehicles.id, id));
   } catch (err) {
     return toActionState(err);
   }
