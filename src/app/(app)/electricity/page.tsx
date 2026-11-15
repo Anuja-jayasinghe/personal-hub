@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { MonthlyChart } from "@/components/electricity/monthly-chart";
 import { MeterForm } from "@/components/electricity/meter-form";
-import { MeterSection } from "@/components/electricity/meter-section";
+import { MeterCard } from "@/components/electricity/meter-card";
 import { EmptyState, PageHeader } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { isModuleEnabled } from "@/config/app.config";
@@ -21,43 +21,45 @@ async function ElectricityContent({ searchParams }: { searchParams: Promise<{ ar
 
   return (
     <>
+      {meters.length === 0 ? (
+        <EmptyState
+          title={showArchived ? "No archived meters" : "No meters yet"}
+          hint={showArchived ? "Meters you archive show up here with their history." : "Add your electricity meter(s) under Manage meters below, then log readings and bills."}
+        />
+      ) : (
+        <ul className="grid items-start gap-4 md:grid-cols-2">
+          {meters.map((m) => (
+            <MeterCard key={m.id} meter={m} readings={readings.filter((r) => r.meterId === m.id)} bills={bills.filter((b) => b.meterId === m.id)} today={today} />
+          ))}
+        </ul>
+      )}
+
       {!showArchived ? (
         <Suspense fallback={null}>
           <MonthlyChart />
         </Suspense>
       ) : null}
 
-      {!showArchived ? (
-        <details className="rounded-lg border">
-          <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">Add a meter</summary>
-          <div className="border-t p-4">
-            <MeterForm action={createMeter} />
-          </div>
-        </details>
-      ) : null}
-
-      {meters.length === 0 ? (
-        <EmptyState
-          title={showArchived ? "No archived meters" : "No meters yet"}
-          hint={showArchived ? "Meters you archive show up here with their history." : "Add your electricity meter(s), then log readings and bills."}
-        />
-      ) : (
-        <ul className="flex flex-col gap-4">
-          {meters.map((m) => (
-            <MeterSection key={m.id} meter={m} readings={readings.filter((r) => r.meterId === m.id)} bills={bills.filter((b) => b.meterId === m.id)} today={today} />
-          ))}
-        </ul>
-      )}
-
       {showArchived ? (
         <Link href="/electricity" className="text-sm underline-offset-2 hover:underline">
           ← Back to active meters
         </Link>
-      ) : archivedMeters.length > 0 ? (
-        <Link href="/electricity?archived=1" className="text-sm text-muted-foreground underline-offset-2 hover:underline">
-          Show archived ({archivedMeters.length})
-        </Link>
-      ) : null}
+      ) : (
+        <details className="@container rounded-lg border text-sm" open={meters.length === 0}>
+          <summary className="cursor-pointer px-4 py-2.5 text-muted-foreground">Manage meters</summary>
+          <div className="flex flex-col gap-4 border-t p-4">
+            <div>
+              <h2 className="mb-2 font-medium">Add a meter</h2>
+              <MeterForm action={createMeter} />
+            </div>
+            {archivedMeters.length > 0 ? (
+              <Link href="/electricity?archived=1" className="underline-offset-2 hover:underline">
+                Show archived meters ({archivedMeters.length})
+              </Link>
+            ) : null}
+          </div>
+        </details>
+      )}
     </>
   );
 }

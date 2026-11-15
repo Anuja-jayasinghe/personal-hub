@@ -36,7 +36,7 @@ export function ReadingForm({ action, meterId, reading, defaultDate }: Props) {
     <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
       {reading ? <input type="hidden" name="id" value={reading.id} /> : <input type="hidden" name="meterId" value={meterId} />}
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 @sm:grid-cols-2">
         <label className={labelClass}>
           <span className={labelTextClass}>Reading date</span>
           <Input type="date" name="readingDate" required defaultValue={reading?.readingDate ?? defaultDate} />
