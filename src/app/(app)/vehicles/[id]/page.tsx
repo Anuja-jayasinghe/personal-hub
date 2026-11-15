@@ -11,7 +11,7 @@ import { OdometerSection } from "@/components/vehicles/odometer-section";
 import { RenewalsTab } from "@/components/vehicles/renewals-tab";
 import { NotesPanel } from "@/components/shared/notes-panel";
 import { ServicesTab } from "@/components/vehicles/services-tab";
-import { VehicleFiles } from "@/components/vehicles/vehicle-files";
+import { DocumentsTab } from "@/components/vehicles/documents-tab";
 import { VehicleSummary } from "@/components/vehicles/vehicle-summary";
 import { VehicleCover } from "@/components/vehicles/vehicle-cover";
 import { appConfig, isModuleEnabled } from "@/config/app.config";
@@ -30,7 +30,7 @@ const TABS = [
   { key: "overview", label: "Overview" },
   { key: "services", label: "Services" },
   { key: "renewals", label: "Renewals" },
-  { key: "files", label: "Files" },
+  { key: "documents", label: "Documents" },
 ] as const;
 
 function Detail({ label, value }: { label: string; value: React.ReactNode }) {
@@ -47,9 +47,9 @@ async function VehicleContent({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; q?: string; sort?: string }>;
 }) {
-  const [{ id }, { tab }] = await Promise.all([params, searchParams]);
+  const [{ id }, { tab, q, sort }] = await Promise.all([params, searchParams]);
   const vehicle = await getVehicle(id);
   if (!vehicle) notFound();
   const current = TABS.find((t) => t.key === tab) ?? TABS[0];
@@ -160,7 +160,7 @@ async function VehicleContent({
       ) : current.key === "renewals" ? (
         <RenewalsTab vehicleId={vehicle.id} />
       ) : (
-        <VehicleFiles vehicleId={vehicle.id} coverAttachmentId={vehicle.coverAttachmentId} />
+        <DocumentsTab vehicleId={vehicle.id} coverAttachmentId={vehicle.coverAttachmentId} query={q ?? ""} sort={sort} />
       )}
     </>
   );
@@ -172,7 +172,7 @@ export default function VehiclePage(props: PageProps<"/vehicles/[id]">) {
     <Suspense fallback={<Skeleton className="h-64 w-full rounded-xl" aria-label="Loading vehicle" />}>
       <VehicleContent
         params={props.params as Promise<{ id: string }>}
-        searchParams={props.searchParams as Promise<{ tab?: string }>}
+        searchParams={props.searchParams as Promise<{ tab?: string; q?: string; sort?: string }>}
       />
     </Suspense>
   );

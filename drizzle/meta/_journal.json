@@ -78,6 +78,13 @@
       "when": 1794727263479,
       "tag": "0010_last_albert_cleary",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794745597559,
+      "tag": "0011_premium_catseye",
+      "breakpoints": true
     }
   ]
 }

@@ -71,6 +71,8 @@ export const attachments = pgTable(
     bucket: text("bucket").notNull().default("attachments"),
     storagePath: text("storage_path").notNull().unique(),
     fileName: text("file_name").notNull(),
+    /** A short name the owner gave it ("Insurance 2026-2027"). Required for vehicle documents; older files have none. */
+    title: text("title"),
     mimeType: text("mime_type").notNull(),
     sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
     createdAt: createdAt(),
