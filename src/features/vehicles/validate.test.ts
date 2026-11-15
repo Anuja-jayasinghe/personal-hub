@@ -2,13 +2,14 @@ import { describe, expect, it } from "vitest";
 import { parseVehicle } from "./validate";
 
 const FUELS = ["Petrol", "Diesel", "Hybrid", "Electric", "Other"];
+const TYPES = ["car", "suv", "motorbike"];
 const ok = (raw: Record<string, string>) => {
-  const r = parseVehicle(raw, FUELS);
+  const r = parseVehicle(raw, FUELS, TYPES);
   if (!r.ok) throw new Error(`expected ok, got: ${r.error}`);
   return r.value;
 };
 const err = (raw: Record<string, string>) => {
-  const r = parseVehicle(raw, FUELS);
+  const r = parseVehicle(raw, FUELS, TYPES);
   if (r.ok) throw new Error("expected an error");
   return r.error;
 };
@@ -22,13 +23,14 @@ describe("parseVehicle", () => {
       model: null,
       year: null,
       fuelType: null,
+      vehicleType: null,
       odometerKm: null,
     });
   });
 
   it("accepts a full vehicle and tidies it", () => {
     expect(
-      ok({ nickname: "  Family  car ", registrationNumber: " cab  1234 ", make: "Toyota", model: "Corolla", year: "2018", fuelType: "Petrol", odometerKm: "45,200" }),
+      ok({ nickname: "  Family  car ", registrationNumber: " cab  1234 ", make: "Toyota", model: "Corolla", year: "2018", fuelType: "Petrol", vehicleType: "suv", odometerKm: "45,200" }),
     ).toEqual({
       nickname: "Family car",
       registrationNumber: "CAB 1234",
@@ -36,6 +38,7 @@ describe("parseVehicle", () => {
       model: "Corolla",
       year: 2018,
       fuelType: "Petrol",
+      vehicleType: "suv",
       odometerKm: 45200,
     });
   });
@@ -57,6 +60,14 @@ describe("parseVehicle", () => {
     expect(err({ nickname: "A", year: "2101" })).toMatch(/Year must be between/);
     expect(err({ nickname: "A", year: "20x8" })).toMatch(/Year must be a whole number/);
     expect(err({ nickname: "A", year: "2018.5" })).toMatch(/whole number/);
+  });
+
+  it("checks the vehicle type against the listed keys", () => {
+    expect(ok({ nickname: "A", vehicleType: "motorbike" }).vehicleType).toBe("motorbike");
+    expect(ok({ nickname: "A", vehicleType: "" }).vehicleType).toBeNull();
+    expect(err({ nickname: "A", vehicleType: "spaceship" })).toMatch(/Vehicle type is not one of the listed options/);
+    // labels are not keys: only the stored key is accepted
+    expect(err({ nickname: "A", vehicleType: "Motorbike" })).toMatch(/Vehicle type/);
   });
 
   it("checks the odometer", () => {

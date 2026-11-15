@@ -63,6 +63,23 @@ export const appConfig = {
 
   // ---- Vehicles (Phase 1) -----------------------------------------------------------------------
   vehicles: {
+    /**
+     * What kind of vehicle it is. Each type picks the icon shown when a vehicle has no cover photo,
+     * so a bike does not look like a car. `icon` is a name from src/components/vehicles/vehicle-icons.ts.
+     * Add a line here to add a type; the stored value is the `key`, so do not rename one in use.
+     */
+    types: [
+      { key: "car", label: "Car", icon: "car" },
+      { key: "suv", label: "SUV / Jeep", icon: "suv" },
+      { key: "van", label: "Van", icon: "van" },
+      { key: "pickup", label: "Pickup / Truck", icon: "truck" },
+      { key: "motorbike", label: "Motorbike", icon: "motorbike" },
+      { key: "scooter", label: "Scooter", icon: "scooter" },
+      { key: "bicycle", label: "Bicycle", icon: "bicycle" },
+      { key: "three-wheeler", label: "Three-wheeler", icon: "three-wheeler" },
+      { key: "bus", label: "Bus", icon: "bus" },
+      { key: "other", label: "Other", icon: "car" },
+    ] as readonly { key: string; label: string; icon: string }[],
     fuelTypes: ["Petrol", "Diesel", "Hybrid", "Electric", "Other"] as readonly string[],
     /** Suggestions for the service type box (Phase 1.2); anything else can be typed in. */
     serviceTypes: ["Full service", "Oil change", "Tyres", "Brakes", "Battery", "Other"] as readonly string[],
