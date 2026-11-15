@@ -1,8 +1,8 @@
 import "server-only";
-import { and, asc, count, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { asc, count, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { db } from "@/db";
-import { tasks, vehicleOdometerReadings, vehicleRenewals, vehicleServices, vehicles } from "@/db/schema";
+import { vehicleOdometerReadings, vehicleRenewals, vehicleServices, vehicles } from "@/db/schema";
 import { UUID_RE } from "@/features/shared/validation";
 
 /** Active vehicles, or archived ones (sold; hidden, no reminders, history kept: DECISIONS C48). */
@@ -88,7 +88,7 @@ export async function listRenewalsOfActiveVehicles() {
 /** Raw figures for a vehicle's Overview tab; the page turns them into text with the pure helpers. */
 export async function getVehicleSummary(vehicleId: string) {
   await connection();
-  const [services, renewals, fixes] = await Promise.all([
+  const [services, renewals] = await Promise.all([
     db
       .select()
       .from(vehicleServices)
@@ -99,12 +99,8 @@ export async function getVehicleSummary(vehicleId: string) {
       .from(vehicleRenewals)
       .where(eq(vehicleRenewals.vehicleId, vehicleId))
       .orderBy(desc(vehicleRenewals.expiryDate), desc(vehicleRenewals.createdAt)),
-    db
-      .select({ status: tasks.status, actualCost: tasks.actualCost, completedAt: tasks.completedAt })
-      .from(tasks)
-      .where(and(eq(tasks.ownerType, "vehicle"), eq(tasks.ownerId, vehicleId))),
   ]);
-  return { services, renewals, fixes };
+  return { services, renewals };
 }
 
 /** A vehicle's dated odometer readings, newest first. (Services with an odometer count too: see odometer.ts.) */

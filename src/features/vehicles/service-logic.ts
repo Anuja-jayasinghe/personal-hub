@@ -46,14 +46,3 @@ export function dueServices<T extends ServiceRow>(rows: readonly T[]): (T & { ne
 }
 
 export { toCents };
-
-/** Total spent per calendar year of the service date, newest year first. */
-export function totalsByYear(rows: readonly { serviceDate: string; cost: string | null }[]): { year: number; cents: number }[] {
-  const totals = new Map<number, number>();
-  for (const r of rows) {
-    if (r.cost === null) continue;
-    const year = Number(r.serviceDate.slice(0, 4));
-    totals.set(year, (totals.get(year) ?? 0) + toCents(r.cost));
-  }
-  return [...totals.entries()].map(([year, cents]) => ({ year, cents })).sort((a, b) => b.year - a.year);
-}

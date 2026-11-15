@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { appConfig } from "@/config/app.config";
 import type { VehicleService } from "@/db/schema";
 import { describeDays } from "@/features/reminders/engine";
-import { latestPerType, totalsByYear } from "@/features/vehicles/service-logic";
+import { latestPerType } from "@/features/vehicles/service-logic";
 import { createService, deleteService, updateService } from "@/features/vehicles/service-actions";
 import { listServices } from "@/features/vehicles/queries";
 import { daysBetween } from "@/lib/dates";
@@ -15,7 +15,6 @@ import { formatDate, formatMoney, todayInAppTz } from "@/lib/format";
 export async function ServicesTab({ vehicleId }: { vehicleId: string }) {
   const list = await listServices(vehicleId);
   const today = todayInAppTz(); // after the query, which opts this render into request time
-  const totals = totalsByYear(list);
   // The newest record of each type is the one whose next due date drives Reminders.
   const current = new Set(latestPerType(list).map((s) => s.id));
   const { serviceTypes } = appConfig.vehicles;
@@ -28,17 +27,6 @@ export async function ServicesTab({ vehicleId }: { vehicleId: string }) {
           <ServiceForm action={createService} serviceTypes={serviceTypes} vehicleId={vehicleId} defaultDate={today} />
         </div>
       </details>
-
-      {totals.length > 0 ? (
-        <p className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          Spent on services:
-          {totals.map((t) => (
-            <Badge key={t.year} variant="secondary">
-              {t.year}: {formatMoney(t.cents / 100)}
-            </Badge>
-          ))}
-        </p>
-      ) : null}
 
       {list.length === 0 ? (
         <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">

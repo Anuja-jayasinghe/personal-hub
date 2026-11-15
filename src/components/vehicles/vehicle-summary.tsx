@@ -5,9 +5,8 @@ import { describeDays } from "@/features/reminders/engine";
 import { getReminders } from "@/features/reminders/load";
 import { getVehicleSummary } from "@/features/vehicles/queries";
 import { splitCurrentAndPast } from "@/features/vehicles/renewal-logic";
-import { yearSpend } from "@/features/vehicles/spend";
 import { daysBetween } from "@/lib/dates";
-import { formatDate, formatMoney, todayInAppTz } from "@/lib/format";
+import { formatDate, todayInAppTz } from "@/lib/format";
 
 function Stat({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -18,16 +17,13 @@ function Stat({ label, children }: { label: string; children: React.ReactNode })
   );
 }
 
-/** Top of a vehicle's Overview: what is due, last service, renewals, open fixes and spending. */
+/** Top of a vehicle's Overview: what is due, last service, and renewals. */
 export async function VehicleSummary({ vehicleId }: { vehicleId: string }) {
-  const [{ services, renewals, fixes }, reminders] = await Promise.all([getVehicleSummary(vehicleId), getReminders()]);
+  const [{ services, renewals }, reminders] = await Promise.all([getVehicleSummary(vehicleId), getReminders()]);
   const today = todayInAppTz();
-  const year = Number(today.slice(0, 4));
   const due = reminders.results.filter((r) => r.item.ownerId === vehicleId);
   const lastService = services[0];
   const { current } = splitCurrentAndPast(renewals);
-  const openFixes = fixes.filter((f) => f.status !== "done").length;
-  const spend = yearSpend({ services, fixes, year, timeZone: appConfig.timeZone });
 
   return (
     <section aria-label="Summary" className="flex flex-col gap-4">
@@ -47,7 +43,7 @@ export async function VehicleSummary({ vehicleId }: { vehicleId: string }) {
         ) : null}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2">
         <Stat label="Last service">
           {lastService ? (
             <>
@@ -81,19 +77,6 @@ export async function VehicleSummary({ vehicleId }: { vehicleId: string }) {
           ) : (
             <span className="text-muted-foreground">None added</span>
           )}
-        </Stat>
-
-        <Stat label="Open fixes">
-          <Link href={`/vehicles/${vehicleId}?tab=fixes`} className="font-medium underline-offset-2 hover:underline">
-            {openFixes}
-          </Link>
-        </Stat>
-
-        <Stat label={`Spent in ${year}`}>
-          <p className="font-medium">{formatMoney(spend.totalCents / 100)}</p>
-          <p className="text-xs text-muted-foreground">
-            Services {formatMoney(spend.servicesCents / 100)} · Fixes {formatMoney(spend.fixesCents / 100)}
-          </p>
         </Stat>
       </div>
     </section>

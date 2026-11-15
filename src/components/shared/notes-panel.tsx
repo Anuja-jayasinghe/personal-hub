@@ -11,11 +11,33 @@ import { attachmentsByOwner, listNotes, type OwnerScope } from "@/features/share
 import { formatDate } from "@/lib/format";
 
 /** Notes for any scope: standalone, one record (e.g. a vehicle), or everything. Use inside <Suspense>. */
-export async function NotesPanel({ scope, title = "Notes" }: { scope: OwnerScope; title?: string }) {
+export async function NotesPanel({
+  scope,
+  title = "Notes",
+  quietWhenEmpty = false,
+}: {
+  scope: OwnerScope;
+  title?: string;
+  /** With no notes, show only a small "Add a note" link: no heading, no empty-state box. */
+  quietWhenEmpty?: boolean;
+}) {
   const list = await listNotes(scope);
   const files = await attachmentsByOwner("note", list.map((n) => n.id));
   const labels = scope.kind === "all" ? await ownerLabels(list) : new Map<string, OwnerLabel>();
   const owner = scope.kind === "owner" ? scope.owner : null;
+
+  if (quietWhenEmpty && list.length === 0) {
+    return (
+      <details className="group">
+        <summary className="w-fit cursor-pointer list-none text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+          + Add a note
+        </summary>
+        <div className="mt-3 rounded-lg border p-4">
+          <NoteForm action={createNote} owner={owner} />
+        </div>
+      </details>
+    );
+  }
 
   return (
     <section aria-labelledby="notes-heading" className="flex flex-col gap-4">

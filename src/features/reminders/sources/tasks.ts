@@ -1,54 +1,24 @@
 import "server-only";
-import { and, eq, isNotNull, isNull, ne, or } from "drizzle-orm";
+import { and, isNotNull, isNull, ne } from "drizzle-orm";
 import { db } from "@/db";
-import { tasks, vehicles } from "@/db/schema";
+import { tasks } from "@/db/schema";
 import type { ReminderSource } from "../engine";
 
 /**
- * Open tasks (not done) that have a due date (DECISIONS C36). Standalone tasks link to the Tasks
- * page. A task that belongs to a vehicle is a "fix": it shows the vehicle's name, links to the
- * vehicle's Fixes tab, and stops reminding while the vehicle is archived (C48).
+ * Open standalone tasks (not done) that have a due date (DECISIONS C36), linking to the Tasks page.
+ * Vehicles no longer have fixes (C71), so tasks that belong to a record are not reminded here.
  */
 export const tasksSource: ReminderSource = {
   key: "tasks",
   label: "Tasks",
   async load() {
     const rows = await db
-      .select({
-        id: tasks.id,
-        title: tasks.title,
-        dueDate: tasks.dueDate,
-        ownerType: tasks.ownerType,
-        ownerId: tasks.ownerId,
-        vehicleNickname: vehicles.nickname,
-        vehicleArchivedAt: vehicles.archivedAt,
-      })
+      .select({ id: tasks.id, title: tasks.title, dueDate: tasks.dueDate })
       .from(tasks)
-      .leftJoin(vehicles, and(eq(tasks.ownerType, "vehicle"), eq(tasks.ownerId, vehicles.id)))
-      .where(
-        and(
-          ne(tasks.status, "done"),
-          isNotNull(tasks.dueDate),
-          // not owned by an archived vehicle (tasks of other owners, or none, are unaffected)
-          or(ne(tasks.ownerType, "vehicle"), isNull(tasks.ownerType), isNull(vehicles.archivedAt)),
-        ),
-      );
+      .where(and(ne(tasks.status, "done"), isNotNull(tasks.dueDate), isNull(tasks.ownerType)));
 
-    return rows.flatMap((r) => {
-      if (!r.dueDate) return [];
-      if (r.ownerType === "vehicle" && r.ownerId) {
-        return [
-          {
-            id: `task:${r.id}`,
-            title: `${r.title} · ${r.vehicleNickname ?? "Vehicle"}`,
-            dueDate: r.dueDate,
-            href: `/vehicles/${r.ownerId}?tab=fixes`,
-            kind: "fix",
-            ownerId: r.ownerId,
-          },
-        ];
-      }
-      return [{ id: `task:${r.id}`, title: r.title, dueDate: r.dueDate, href: "/tasks", kind: "task" }];
-    });
+    return rows.flatMap((r) =>
+      r.dueDate ? [{ id: `task:${r.id}`, title: r.title, dueDate: r.dueDate, href: "/tasks", kind: "task" }] : [],
+    );
   },
 };
