@@ -17,7 +17,7 @@ Read first: [PLAN.md](PLAN.md) (phases and steps) and [DECISIONS.md](DECISIONS.m
 
 ## Secrets — never print, never commit
 
-`.env.local` holds the database password, the Supabase secret key and the connection string. It is git-ignored. Never echo these values, put them in a commit, an issue, a pull request, or a URL. Scan staged changes for them before every commit. Only placeholders belong in `.env.example`. No Supabase key may reach the browser: server code only, and never a `NEXT_PUBLIC_` variable for secrets.
+`.env.local` holds the database password, the Supabase secret key, the Clerk secret key and the connection string. It is git-ignored. Never echo these values, put them in a commit, an issue, a pull request, or a URL. Scan staged changes for them before every commit. Only placeholders belong in `.env.example`. No Supabase key may reach the browser: server code only, and never a `NEXT_PUBLIC_` variable for secrets.
 
 ## Commands
 
@@ -40,4 +40,4 @@ Read first: [PLAN.md](PLAN.md) (phases and steps) and [DECISIONS.md](DECISIONS.m
 - **Every table** gets row-level security enabled in the same migration that creates it (no policies; the app uses the server connection only).
 - **Database reads happen at request time:** call `await connection()` first and render inside `<Suspense>` (Next.js cache components are on).
 - **Dates are calendar days** (`"YYYY-MM-DD"`) in the app time zone (`Asia/Colombo`); use the helpers in `src/lib/dates.ts`, never timestamps, for due dates.
-- **No login yet, and the dev server is open to the home network** (owner's decision). Don't add endpoints that return all data without a login being decided first.
+- **Login is Clerk plus an allowed-email list (Phase 4.1, C61).** `src/proxy.ts` sends signed-out visitors to /sign-in; `ALLOWED_EMAILS` (the real gate, fails closed) is checked by `src/lib/auth.ts`. Every page sits inside `AccessGate` (the `(app)` layout), `/files/<id>` calls `getAuthState()`, and **every Server Action must start with `await requireUser();`** (a test fails if one does not). A new route handler must check `getAuthState()` itself. Keep `NEXT_PUBLIC_CLERK_KEYLESS_DISABLED` and `NEXT_PUBLIC_CLERK_TELEMETRY_DISABLED` set in `next.config.ts` so nothing contacts Clerk by itself.

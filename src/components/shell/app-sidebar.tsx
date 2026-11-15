@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
 import { Logo } from "@/components/brand/logo";
+import { AccountMenu } from "@/components/shell/account-menu";
 import { getIcon } from "@/components/shell/icons";
 import {
   Sidebar,
@@ -95,6 +96,7 @@ export function AppSidebar() {
         <Suspense fallback={null}>
           <NavGroup items={footerItems} />
         </Suspense>
+        <AccountMenu />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

@@ -11,6 +11,7 @@ import { idFrom, ValidationError } from "@/features/shared/validation";
 import { applyPayment, dueAfterUndo } from "./payments";
 import { anchorDayOf } from "./schedule";
 import { parseBillItem, parsePayment } from "./validate";
+import { requireUser } from "@/lib/auth";
 
 // Server Actions are public HTTP endpoints, so every input is validated here.
 
@@ -29,6 +30,7 @@ function fieldsFrom(fd: FormData) {
 
 export async function createBillItem(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
+    await requireUser();
     const f = fieldsFrom(fd);
     await db.insert(billItems).values({ ...f, anchorDay: anchorDayOf(f.nextDueDate) });
     refresh();
@@ -40,6 +42,7 @@ export async function createBillItem(_prev: ActionState, fd: FormData): Promise<
 
 export async function updateBillItem(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
+    await requireUser();
     const id = idFrom(fd);
     const f = fieldsFrom(fd);
     const [existing] = await db.select().from(billItems).where(eq(billItems.id, id));
@@ -56,17 +59,20 @@ export async function updateBillItem(_prev: ActionState, fd: FormData): Promise<
 }
 
 export async function archiveBillItem(fd: FormData): Promise<void> {
+  await requireUser();
   await db.update(billItems).set({ archivedAt: new Date() }).where(eq(billItems.id, idFrom(fd)));
   refresh();
 }
 
 export async function unarchiveBillItem(fd: FormData): Promise<void> {
+  await requireUser();
   await db.update(billItems).set({ archivedAt: null }).where(eq(billItems.id, idFrom(fd)));
   refresh();
 }
 
 /** Permanent: the item and its documents. */
 export async function deleteBillItem(fd: FormData): Promise<void> {
+  await requireUser();
   const id = idFrom(fd);
   // Receipts are attachments owned by each payment, which the database cannot cascade to.
   const payments = await db.select({ id: billPayments.id }).from(billPayments).where(eq(billPayments.itemId, id));
@@ -96,6 +102,7 @@ function paymentFields(fd: FormData) {
  */
 export async function markBillItemPaid(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
+    await requireUser();
     const itemId = idFrom(fd, "itemId");
     const f = paymentFields(fd);
     await db.transaction(async (tx) => {
@@ -117,6 +124,7 @@ export async function markBillItemPaid(_prev: ActionState, fd: FormData): Promis
 /** Edits what was recorded (date, amount, note). It does not move the item's due date. */
 export async function updateBillPayment(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
+    await requireUser();
     await db.update(billPayments).set(paymentFields(fd)).where(eq(billPayments.id, idFrom(fd)));
     refresh();
     return { ok: true };
@@ -130,6 +138,7 @@ export async function updateBillPayment(_prev: ActionState, fd: FormData): Promi
  * back to due on the date that payment settled (see `dueAfterUndo`).
  */
 export async function deleteBillPayment(fd: FormData): Promise<void> {
+  await requireUser();
   const id = idFrom(fd);
   await deleteAttachmentsOf("bill_payment", id);
   await db.transaction(async (tx) => {

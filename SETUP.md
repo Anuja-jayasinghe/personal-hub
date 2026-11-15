@@ -50,16 +50,32 @@ Copy-Item .env.example .env.local
 notepad .env.local
 ```
 
-Fill in these four lines (the project ref is `qfhwazfnentlweackpqa`):
+Fill in these lines (the project ref is `qfhwazfnentlweackpqa`):
 
 ```
 DATABASE_URL=postgresql://postgres.qfhwazfnentlweackpqa:<database-password>@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
 SUPABASE_DB_PASSWORD=<database-password>
 SUPABASE_URL=https://qfhwazfnentlweackpqa.supabase.co
 SUPABASE_SECRET_KEY=<secret key from the dashboard>
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=<publishable key from the Clerk dashboard, API keys page>
+CLERK_SECRET_KEY=<secret key from the Clerk dashboard, API keys page>
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+ALLOWED_EMAILS=<your email address>
 ```
 
+The last five lines are the login (Phase 4.1). The app stays closed until `ALLOWED_EMAILS` is set, and only a signed-in person whose email is on that list gets in. Copy the two Clerk keys from this Mac's `.env.local` or from the Clerk dashboard yourself; never paste them into chat, an issue or a commit.
+
 Replace the `<...>` parts, including the angle brackets. `.env.local` is git-ignored and must never be committed.
+
+## Login (Clerk), one time only
+
+The hub only opens for people on `ALLOWED_EMAILS` who are signed in with Clerk. Set this up once, on any computer (the dashboard names below may differ slightly):
+
+1. Create a free account at <https://clerk.com> and a new application (the development instance is fine for local use). Turn on **Email code** and **Google** as sign-in methods.
+2. In the dashboard's **Access mode** page, choose **Invite-only**, then add yourself under **Users** (create or invite your own email address). Clerk's allowlist is a paid feature in production, which is why the app has its own `ALLOWED_EMAILS` list.
+3. On the **API keys** page, copy the publishable key and the secret key into `.env.local` yourself (see step 3 above). Never paste them into chat, an issue or a commit.
+4. Put your email address in `ALLOWED_EMAILS`, restart the app, and sign in at `/sign-in`.
 
 ## 4. Check everything
 
@@ -76,6 +92,8 @@ You want every line to say `PASS`. The script never prints your secrets, and eac
 | `EHOSTUNREACH` / direct host warning | You used the direct database address, which needs IPv6. Use the pooler address above. |
 | `storage rejected the key` / `Invalid Compact JWS` | `SUPABASE_SECRET_KEY` is wrong. Copy the `default` secret key again. |
 | `migrations applied: 1 of 2` | Someone added a database change. Run `pnpm db:migrate` once (on either computer). |
+| `Login is not set up yet` (in the browser) | `ALLOWED_EMAILS` is empty or missing in `.env.local`. Add your address and restart the app. |
+| `This account is not allowed` (in the browser) | You signed in with an email that is not on `ALLOWED_EMAILS`. Sign out and use the right one. |
 | `.env.local not found` | Run the command from the project folder, and make sure the file is named exactly `.env.local`. |
 
 ## 5. Run the app
