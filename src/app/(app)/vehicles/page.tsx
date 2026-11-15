@@ -56,7 +56,7 @@ export default function VehiclesPage(props: PageProps<"/vehicles">) {
   return (
     <>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <PageHeader title="Vehicles" description="Services, licence and insurance renewals, fixes and notes." />
+        <PageHeader title="Vehicles" description="Services, licence and insurance renewals, and notes." />
         <Link href="/vehicles/new" className={buttonVariants()}>
           Add vehicle
         </Link>

@@ -161,10 +161,12 @@ Delivered as four pull requests, each from its own issue (C44):
 
 | Piece | What |
 |-------|------|
-| 1.1 | **Vehicles:** list, add / edit, detail page with tabs (Overview, Services, Renewals, Fixes, Notes), cover photo (C47), archive and confirmed delete (C48) |
+| 1.1 | **Vehicles:** list, add / edit, detail page with tabs (Overview, Services, Renewals, Files), cover photo (C47), archive and confirmed delete (C48) |
 | 1.2 | **Service records** and their next-due dates feeding Reminders |
 | 1.3 | **Renewals** (revenue license, insurance, emission test) with expiry feeding Reminders and a "renewed" flow that keeps history (C46) |
 | 1.4 | **Fixes, notes and files** from the shared panels (step 0.7), dashboard polish |
+
+**Changed later (C70, C71, issue #49):** vehicles no longer show money spent and no longer have Fixes; Notes sit on the Overview and stay hidden while empty, and the old Notes tab is now the Files tab.
 
 | Entity | Fields |
 |--------|--------|

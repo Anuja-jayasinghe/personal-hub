@@ -120,7 +120,7 @@ export const appConfig = {
     {
       key: "vehicles",
       label: "Vehicles",
-      description: "Services, licence and insurance renewals, fixes and notes.",
+      description: "Services, licence and insurance renewals, and notes.",
       href: "/vehicles",
       icon: "car",
       enabled: true,

@@ -22,7 +22,7 @@ export async function TasksPanel({
 }: {
   scope: OwnerScope;
   title?: string;
-  /** Wording for this context, e.g. "fix" / "fixes" on a vehicle's Fixes tab. */
+  /** Wording for this context, e.g. "chore" / "chores" for a differently worded list. */
   itemName?: string;
   itemNamePlural?: string;
 }) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dueServices, latestPerType, toCents, totalsByYear, typeKey, type ServiceRow } from "./service-logic";
+import { dueServices, latestPerType, toCents, typeKey, type ServiceRow } from "./service-logic";
 
 let n = 0;
 function svc(over: Partial<ServiceRow> & Pick<ServiceRow, "serviceDate">): ServiceRow {
@@ -60,24 +60,11 @@ describe("latestPerType / dueServices", () => {
   });
 });
 
-describe("toCents / totalsByYear", () => {
+describe("toCents", () => {
   it("converts decimal strings exactly", () => {
     expect(toCents("12500.50")).toBe(1250050);
     expect(toCents("12500.5")).toBe(1250050);
     expect(toCents("12500")).toBe(1250000);
     expect(toCents("0.07")).toBe(7);
-  });
-
-  it("sums per year without float error, newest year first, skipping empty costs", () => {
-    const totals = totalsByYear([
-      { serviceDate: "2025-03-01", cost: "0.10" },
-      { serviceDate: "2025-04-01", cost: "0.20" },
-      { serviceDate: "2026-01-01", cost: "100" },
-      { serviceDate: "2026-02-01", cost: null },
-    ]);
-    expect(totals).toEqual([
-      { year: 2026, cents: 10000 },
-      { year: 2025, cents: 30 },
-    ]);
   });
 });

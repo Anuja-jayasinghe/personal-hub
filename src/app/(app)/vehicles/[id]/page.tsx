@@ -10,7 +10,6 @@ import { CoverPhotoForm } from "@/components/vehicles/cover-photo-form";
 import { OdometerSection } from "@/components/vehicles/odometer-section";
 import { RenewalsTab } from "@/components/vehicles/renewals-tab";
 import { NotesPanel } from "@/components/shared/notes-panel";
-import { TasksPanel } from "@/components/shared/tasks-panel";
 import { ServicesTab } from "@/components/vehicles/services-tab";
 import { VehicleFiles } from "@/components/vehicles/vehicle-files";
 import { VehicleSummary } from "@/components/vehicles/vehicle-summary";
@@ -31,8 +30,7 @@ const TABS = [
   { key: "overview", label: "Overview" },
   { key: "services", label: "Services" },
   { key: "renewals", label: "Renewals" },
-  { key: "fixes", label: "Fixes" },
-  { key: "notes", label: "Notes" },
+  { key: "files", label: "Files" },
 ] as const;
 
 function Detail({ label, value }: { label: string; value: React.ReactNode }) {
@@ -103,6 +101,8 @@ async function VehicleContent({
             <Detail label="Registration" value={vehicle.registrationNumber} />
           </dl>
 
+          <NotesPanel scope={{ kind: "owner", owner: { ownerType: "vehicle", ownerId: vehicle.id } }} title="Notes" quietWhenEmpty />
+
           <OdometerSection vehicleId={vehicle.id} />
 
           <section aria-labelledby="cover" className="flex flex-col gap-3">
@@ -147,7 +147,7 @@ async function VehicleContent({
                 <input type="hidden" name="id" value={vehicle.id} />
                 <SubmitButton
                   variant="destructive"
-                  confirm={`Permanently delete "${vehicle.nickname}" with all its tasks, notes and files? This cannot be undone.`}
+                  confirm={`Permanently delete "${vehicle.nickname}" with all its notes and files? This cannot be undone.`}
                 >
                   Delete permanently
                 </SubmitButton>
@@ -159,13 +159,8 @@ async function VehicleContent({
         <ServicesTab vehicleId={vehicle.id} />
       ) : current.key === "renewals" ? (
         <RenewalsTab vehicleId={vehicle.id} />
-      ) : current.key === "fixes" ? (
-        <TasksPanel scope={{ kind: "owner", owner: { ownerType: "vehicle", ownerId: vehicle.id } }} title="Fixes" itemName="fix" itemNamePlural="fixes" />
       ) : (
-        <div className="flex flex-col gap-8">
-          <NotesPanel scope={{ kind: "owner", owner: { ownerType: "vehicle", ownerId: vehicle.id } }} title="Notes" />
-          <VehicleFiles vehicleId={vehicle.id} coverAttachmentId={vehicle.coverAttachmentId} />
-        </div>
+        <VehicleFiles vehicleId={vehicle.id} coverAttachmentId={vehicle.coverAttachmentId} />
       )}
     </>
   );
