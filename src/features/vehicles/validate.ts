@@ -11,6 +11,7 @@ export type VehicleFields = {
   model: string | null;
   year: number | null;
   fuelType: string | null;
+  vehicleType: string | null;
   odometerKm: number | null;
 };
 
@@ -39,7 +40,11 @@ function optionalInteger(raw: string | undefined, label: string, min: number, ma
   return { value: n };
 }
 
-export function parseVehicle(raw: Record<string, string | undefined>, fuelTypes: readonly string[]): VehicleResult {
+export function parseVehicle(
+  raw: Record<string, string | undefined>,
+  fuelTypes: readonly string[],
+  vehicleTypeKeys: readonly string[] = [],
+): VehicleResult {
   const nickname = clean(raw.nickname);
   if (!nickname) return { ok: false, error: "Nickname is required." };
   if (nickname.length > 60) return { ok: false, error: "Nickname must be at most 60 characters." };
@@ -58,6 +63,9 @@ export function parseVehicle(raw: Record<string, string | undefined>, fuelTypes:
   const fuel = clean(raw.fuelType);
   if (fuel && !fuelTypes.includes(fuel)) return { ok: false, error: "Fuel type is not one of the listed options." };
 
+  const vehicleType = clean(raw.vehicleType);
+  if (vehicleType && !vehicleTypeKeys.includes(vehicleType)) return { ok: false, error: "Vehicle type is not one of the listed options." };
+
   return {
     ok: true,
     value: {
@@ -68,6 +76,7 @@ export function parseVehicle(raw: Record<string, string | undefined>, fuelTypes:
       model: model.value,
       year: year.value,
       fuelType: fuel || null,
+      vehicleType: vehicleType || null,
       odometerKm: odometer.value,
     },
   };

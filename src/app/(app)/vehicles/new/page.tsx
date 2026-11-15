@@ -12,7 +12,7 @@ export default function NewVehiclePage() {
   return (
     <>
       <PageHeader title="Add vehicle" description="Only the nickname is required; fill in the rest if you like." />
-      <VehicleForm action={createVehicle} fuelTypes={appConfig.vehicles.fuelTypes} />
+      <VehicleForm action={createVehicle} fuelTypes={appConfig.vehicles.fuelTypes} vehicleTypes={appConfig.vehicles.types} />
     </>
   );
 }

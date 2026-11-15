@@ -13,12 +13,14 @@ import { initialActionState, type ActionState } from "@/features/shared/types";
 type Props = {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
   fuelTypes: readonly string[];
+  /** The kinds of vehicle to pick from (appConfig.vehicles.types). */
+  vehicleTypes: readonly { key: string; label: string }[];
   /** Pass an existing vehicle to edit it. */
   vehicle?: Vehicle;
 };
 
 /** Add / edit form for a vehicle. On success the Server Action redirects to the vehicle's page. */
-export function VehicleForm({ action, fuelTypes, vehicle }: Props) {
+export function VehicleForm({ action, fuelTypes, vehicleTypes, vehicle }: Props) {
   const [state, formAction] = useActionState(action, initialActionState);
   const { formRef, onSubmit } = useKeepValuesOnError(state);
 
@@ -29,6 +31,18 @@ export function VehicleForm({ action, fuelTypes, vehicle }: Props) {
       <label className={labelClass}>
         <span className={labelTextClass}>Nickname</span>
         <Input name="nickname" required maxLength={60} defaultValue={vehicle?.nickname} placeholder="e.g. Corolla" />
+      </label>
+
+      <label className={labelClass}>
+        <span className={labelTextClass}>Type</span>
+        <select name="vehicleType" defaultValue={vehicle?.vehicleType ?? ""} className={selectClass}>
+          <option value="">—</option>
+          {vehicleTypes.map((t) => (
+            <option key={t.key} value={t.key}>
+              {t.label}
+            </option>
+          ))}
+        </select>
       </label>
 
       <label className={labelClass}>

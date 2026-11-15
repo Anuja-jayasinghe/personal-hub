@@ -21,6 +21,8 @@ export const vehicles = pgTable(
     model: text("model"),
     year: integer("year"),
     fuelType: text("fuel_type"),
+    /** The kind of vehicle (a key of `appConfig.vehicles.types`: car, suv, motorbike...). Picks its icon. */
+    vehicleType: text("vehicle_type"),
     /**
      * LEGACY and unused: the old single, undated odometer value. Mileage now lives in dated
      * readings (vehicle_odometer_readings). Kept only because a migration here may only add.

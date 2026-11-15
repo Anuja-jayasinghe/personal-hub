@@ -15,7 +15,7 @@ import { ServicesTab } from "@/components/vehicles/services-tab";
 import { VehicleFiles } from "@/components/vehicles/vehicle-files";
 import { VehicleSummary } from "@/components/vehicles/vehicle-summary";
 import { VehicleCover } from "@/components/vehicles/vehicle-cover";
-import { isModuleEnabled } from "@/config/app.config";
+import { appConfig, isModuleEnabled } from "@/config/app.config";
 import {
   archiveVehicle,
   deleteVehicle,
@@ -23,6 +23,7 @@ import {
   unarchiveVehicle,
 } from "@/features/vehicles/actions";
 import { getVehicle } from "@/features/vehicles/queries";
+import { findVehicleType } from "@/features/vehicles/vehicle-type";
 
 export const metadata: Metadata = { title: "Vehicle" };
 
@@ -55,15 +56,17 @@ async function VehicleContent({
   if (!vehicle) notFound();
   const current = TABS.find((t) => t.key === tab) ?? TABS[0];
   const subtitle = [vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(" ");
+  const type = findVehicleType(appConfig.vehicles.types, vehicle.vehicleType);
 
   return (
     <>
       <header className="flex flex-wrap items-center gap-4">
-        <VehicleCover coverAttachmentId={vehicle.coverAttachmentId} alt={`${vehicle.nickname} photo`} className="size-20 shrink-0 rounded-xl" />
+        <VehicleCover coverAttachmentId={vehicle.coverAttachmentId} vehicleType={vehicle.vehicleType} alt={`${vehicle.nickname} photo`} className="size-20 shrink-0 rounded-xl" />
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-2xl font-semibold tracking-tight">{vehicle.nickname}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
             {subtitle ? <span>{subtitle}</span> : null}
+            {type ? <Badge variant="secondary">{type.label}</Badge> : null}
             {vehicle.registrationNumber ? <Badge variant="outline">{vehicle.registrationNumber}</Badge> : null}
             {vehicle.archivedAt ? <Badge variant="secondary">Archived</Badge> : null}
           </div>
@@ -92,6 +95,7 @@ async function VehicleContent({
         <div className="flex flex-col gap-8">
           <VehicleSummary vehicleId={vehicle.id} />
           <dl className="grid gap-4 sm:grid-cols-3">
+            <Detail label="Type" value={type?.label} />
             <Detail label="Make" value={vehicle.make} />
             <Detail label="Model" value={vehicle.model} />
             <Detail label="Year" value={vehicle.year} />

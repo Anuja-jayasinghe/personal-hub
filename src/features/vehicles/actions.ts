@@ -21,11 +21,15 @@ const COVER_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
 function fieldsFrom(fd: FormData) {
   const raw: Record<string, string | undefined> = {};
-  for (const key of ["nickname", "registrationNumber", "make", "model", "year", "fuelType", "odometerKm"]) {
+  for (const key of ["nickname", "registrationNumber", "make", "model", "year", "fuelType", "vehicleType", "odometerKm"]) {
     const v = fd.get(key);
     raw[key] = typeof v === "string" ? v : undefined;
   }
-  const result = parseVehicle(raw, appConfig.vehicles.fuelTypes);
+  const result = parseVehicle(
+    raw,
+    appConfig.vehicles.fuelTypes,
+    appConfig.vehicles.types.map((t) => t.key),
+  );
   if (!result.ok) throw new ValidationError(result.error);
   return result.value;
 }

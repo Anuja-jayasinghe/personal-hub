@@ -71,6 +71,13 @@
       "when": 1794723307409,
       "tag": "0009_shocking_wolfsbane",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794727263479,
+      "tag": "0010_last_albert_cleary",
+      "breakpoints": true
     }
   ]
 }

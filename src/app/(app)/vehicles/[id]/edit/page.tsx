@@ -17,7 +17,7 @@ async function EditContent({ params }: { params: Promise<{ id: string }> }) {
   return (
     <>
       <PageHeader title={`Edit ${vehicle.nickname}`} />
-      <VehicleForm action={updateVehicle} fuelTypes={appConfig.vehicles.fuelTypes} vehicle={vehicle} />
+      <VehicleForm action={updateVehicle} fuelTypes={appConfig.vehicles.fuelTypes} vehicleTypes={appConfig.vehicles.types} vehicle={vehicle} />
     </>
   );
 }
