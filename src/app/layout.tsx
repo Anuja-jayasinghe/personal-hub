@@ -1,4 +1,6 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Providers } from "@/components/providers";
 import { appConfig } from "@/config/app.config";
 import { fontVariables } from "@/theme/fonts";
@@ -17,7 +19,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     // suppressHydrationWarning: next-themes sets the "dark" class on <html> before hydration.
     <html lang="en" className={`${fontVariables} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+        {/* Clerk reads the current path and the session, which are request-time data: with cache
+            components that has to sit inside Suspense (C61). */}
+        <Suspense fallback={null}>
+          <ClerkProvider>
+            <Providers>{children}</Providers>
+          </ClerkProvider>
+        </Suspense>
       </body>
     </html>
   );

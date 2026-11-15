@@ -2,7 +2,7 @@
 // It reports what is missing and how to fix it. It never prints secret values.
 //
 //   1. Node version
-//   2. .env.local and the three required variables (names only; flags leftover placeholders)
+//   2. .env.local and the required variables, including the login ones (names only; flags leftover placeholders)
 //   3. DATABASE_URL looks right (session pooler, not the IPv6-only direct host)
 //   4. database reachable, all migrations applied, row-level security on for every table
 //   5. file storage reachable and the "attachments" bucket is private
@@ -38,7 +38,15 @@ try {
   );
 }
 
-const required = ["DATABASE_URL", "SUPABASE_URL", "SUPABASE_SECRET_KEY"];
+// The last three are the login (Phase 4.1): without them the app stays closed to everyone.
+const required = [
+  "DATABASE_URL",
+  "SUPABASE_URL",
+  "SUPABASE_SECRET_KEY",
+  "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+  "CLERK_SECRET_KEY",
+  "ALLOWED_EMAILS",
+];
 let envReady = true;
 for (const name of required) {
   const value = process.env[name];
@@ -52,6 +60,16 @@ for (const name of required) {
     ok(`${name} is set`);
   }
 }
+// Shape checks for the login variables (never printing their values).
+if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && !/^pk_(test|live)_/.test(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)) {
+  bad("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY does not look like a Clerk publishable key", "it starts with pk_test_ or pk_live_; copy it again from the Clerk dashboard, API keys page");
+}
+if (process.env.CLERK_SECRET_KEY && !/^sk_(test|live)_/.test(process.env.CLERK_SECRET_KEY)) {
+  bad("CLERK_SECRET_KEY does not look like a Clerk secret key", "it starts with sk_test_ or sk_live_; copy it again from the Clerk dashboard, API keys page");
+}
+if (process.env.ALLOWED_EMAILS && !/[^@\s,;]+@[^@\s,;]+/.test(process.env.ALLOWED_EMAILS)) {
+  bad("ALLOWED_EMAILS has no email address in it", "put your email address there (several can be separated by commas)");
+}
 
 if (!envReady) {
   console.log("\nFix the problems above, then run pnpm setup:check again.");
@@ -59,7 +77,7 @@ if (!envReady) {
 }
 
 // Anything printed below is scrubbed of the secret values, just in case a library echoes them.
-const secrets = [process.env.SUPABASE_SECRET_KEY, process.env.SUPABASE_DB_PASSWORD].filter(Boolean);
+const secrets = [process.env.SUPABASE_SECRET_KEY, process.env.SUPABASE_DB_PASSWORD, process.env.CLERK_SECRET_KEY].filter(Boolean);
 try {
   const pw = decodeURIComponent(new URL(process.env.DATABASE_URL).password);
   if (pw) secrets.push(pw);

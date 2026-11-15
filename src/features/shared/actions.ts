@@ -8,6 +8,7 @@ import { deleteAttachmentsOf } from "./cleanup";
 import { toActionState as failure } from "./errors";
 import { removeAttachment, storeAttachment } from "./files";
 import type { ActionState } from "./types";
+import { requireUser } from "@/lib/auth";
 import {
   idFrom,
   oneOf,
@@ -40,6 +41,7 @@ function taskFields(fd: FormData) {
 
 export async function createTask(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
+    await requireUser();
     const owner = optionalOwner(fd);
     await db.insert(tasks).values({
       ...taskFields(fd),
@@ -55,6 +57,7 @@ export async function createTask(_prev: ActionState, fd: FormData): Promise<Acti
 
 export async function updateTask(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
+    await requireUser();
     await db.update(tasks).set(taskFields(fd)).where(eq(tasks.id, idFrom(fd)));
     refresh();
     return { ok: true };
@@ -64,6 +67,7 @@ export async function updateTask(_prev: ActionState, fd: FormData): Promise<Acti
 }
 
 export async function setTaskStatus(fd: FormData): Promise<void> {
+  await requireUser();
   const status = oneOf(fd, "status", "Status", TASK_STATUSES);
   await db
     .update(tasks)
@@ -73,6 +77,7 @@ export async function setTaskStatus(fd: FormData): Promise<void> {
 }
 
 export async function deleteTask(fd: FormData): Promise<void> {
+  await requireUser();
   const id = idFrom(fd);
   await deleteAttachmentsOf("task", id);
   await db.delete(tasks).where(eq(tasks.id, id));
@@ -92,6 +97,7 @@ function noteFields(fd: FormData) {
 
 export async function createNote(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
+    await requireUser();
     const owner = optionalOwner(fd);
     await db.insert(notes).values({
       ...noteFields(fd),
@@ -107,6 +113,7 @@ export async function createNote(_prev: ActionState, fd: FormData): Promise<Acti
 
 export async function updateNote(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
+    await requireUser();
     await db.update(notes).set(noteFields(fd)).where(eq(notes.id, idFrom(fd)));
     refresh();
     return { ok: true };
@@ -116,6 +123,7 @@ export async function updateNote(_prev: ActionState, fd: FormData): Promise<Acti
 }
 
 export async function toggleNotePinned(fd: FormData): Promise<void> {
+  await requireUser();
   const id = idFrom(fd);
   const pinned = fd.get("pinned") === "true";
   await db.update(notes).set({ pinned }).where(eq(notes.id, id));
@@ -123,6 +131,7 @@ export async function toggleNotePinned(fd: FormData): Promise<void> {
 }
 
 export async function deleteNote(fd: FormData): Promise<void> {
+  await requireUser();
   const id = idFrom(fd);
   await deleteAttachmentsOf("note", id);
   await db.delete(notes).where(eq(notes.id, id));
@@ -135,6 +144,7 @@ export async function deleteNote(fd: FormData): Promise<void> {
 
 export async function uploadAttachment(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
+    await requireUser();
     const owner = requiredOwner(fd);
     const file = fd.get("file");
     if (!(file instanceof File)) throw new ValidationError("Choose a file to upload.");
@@ -147,6 +157,7 @@ export async function uploadAttachment(_prev: ActionState, fd: FormData): Promis
 }
 
 export async function deleteAttachment(fd: FormData): Promise<void> {
+  await requireUser();
   const id = idFrom(fd);
   const [row] = await db.select().from(attachments).where(eq(attachments.id, id));
   if (!row) return;

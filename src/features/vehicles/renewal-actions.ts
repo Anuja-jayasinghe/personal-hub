@@ -10,6 +10,7 @@ import { toActionState } from "@/features/shared/errors";
 import type { ActionState } from "@/features/shared/types";
 import { idFrom, ValidationError } from "@/features/shared/validation";
 import { parseRenewal } from "./renewal-validate";
+import { requireUser } from "@/lib/auth";
 
 // Server Actions are public HTTP endpoints, so every input is validated here.
 
@@ -29,6 +30,7 @@ function fieldsFrom(fd: FormData, options: { expiryAfter?: string } = {}, forced
 
 export async function createRenewal(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
+    await requireUser();
     const vehicleId = idFrom(fd, "vehicleId");
     const [vehicle] = await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, vehicleId));
     if (!vehicle) throw new ValidationError("That vehicle could not be found.");
@@ -42,6 +44,7 @@ export async function createRenewal(_prev: ActionState, fd: FormData): Promise<A
 
 export async function updateRenewal(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
+    await requireUser();
     await db.update(vehicleRenewals).set(fieldsFrom(fd)).where(eq(vehicleRenewals.id, idFrom(fd)));
     refresh();
     return { ok: true };
@@ -57,6 +60,7 @@ export async function updateRenewal(_prev: ActionState, fd: FormData): Promise<A
  */
 export async function renewRenewal(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
+    await requireUser();
     const oldId = idFrom(fd);
     await db.transaction(async (tx) => {
       const [old] = await tx.select().from(vehicleRenewals).where(eq(vehicleRenewals.id, oldId));
@@ -74,6 +78,7 @@ export async function renewRenewal(_prev: ActionState, fd: FormData): Promise<Ac
 }
 
 export async function deleteRenewal(fd: FormData): Promise<void> {
+  await requireUser();
   const id = idFrom(fd);
   await deleteAttachmentsOf("vehicle_renewal", id);
   await db.delete(vehicleRenewals).where(eq(vehicleRenewals.id, id));
