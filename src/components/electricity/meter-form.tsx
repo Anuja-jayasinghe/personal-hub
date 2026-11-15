@@ -26,7 +26,7 @@ export function MeterForm({ action, meter }: Props) {
   return (
     <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
       {meter ? <input type="hidden" name="id" value={meter.id} /> : null}
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 @sm:grid-cols-2">
         <label className={labelClass}>
           <span className={labelTextClass}>Name</span>
           <Input name="name" required maxLength={60} defaultValue={meter?.name} placeholder="e.g. Main house" />

@@ -38,7 +38,7 @@ export function BillForm({ action, meterId, bill, defaultDate, defaultPrevious, 
     <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
       {bill ? <input type="hidden" name="id" value={bill.id} /> : <input type="hidden" name="meterId" value={meterId} />}
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 @sm:grid-cols-2">
         <label className={labelClass}>
           <span className={labelTextClass}>Bill date</span>
           <Input type="date" name="billDate" required defaultValue={bill?.billDate ?? defaultDate} />
@@ -61,7 +61,7 @@ export function BillForm({ action, meterId, bill, defaultDate, defaultPrevious, 
         </details>
       ) : null}
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 @sm:grid-cols-2 @lg:grid-cols-3">
         {autoPrevious ? null : (
           <label className={labelClass}>
             <span className={labelTextClass}>{bill ? "Previous reading (kWh)" : "Previous reading (kWh), needed once for the first bill"}</span>
@@ -78,7 +78,7 @@ export function BillForm({ action, meterId, bill, defaultDate, defaultPrevious, 
         </label>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 @sm:grid-cols-2 @lg:grid-cols-3">
         <label className={labelClass}>
           <span className={labelTextClass}>Amount (optional)</span>
           <Input name="amount" inputMode="decimal" defaultValue={bill?.amount ?? ""} placeholder="0.00" />

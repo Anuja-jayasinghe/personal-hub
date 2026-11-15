@@ -41,7 +41,7 @@ export function BillsList({
               ) : null}
               <form action={deleteBill} className="ml-auto">
                 <input type="hidden" name="id" value={b.id} />
-                <SubmitButton variant="ghost" size="icon-sm" aria-label={`Delete bill from ${formatDate(b.billDate)}`} confirm="Delete this bill and its documents? This cannot be undone.">
+                <SubmitButton variant="ghost" size="icon-sm" aria-label={`Delete bill from ${formatDate(b.billDate)}`} confirm="Delete this bill? This cannot be undone.">
                   <Trash2 aria-hidden />
                 </SubmitButton>
               </form>

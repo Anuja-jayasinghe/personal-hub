@@ -193,6 +193,8 @@ Delivered as separate issues (#15 to #19), each its own pull request (C51 go-ahe
 | 2.4a | #18 | **CSV export command** (`pnpm export:electricity`), not a web download |
 | 2.4b | #19 | **Monthly usage chart** without a new package |
 
+**Changed later (C73–C75, issues #53 and #55):** adding a bill takes the previous reading from the last bill, bills keep no file, and the Electricity page shows the meters as side-by-side cards with the chart below and Add meter under Manage meters.
+
 | Entity | Fields |
 |--------|--------|
 | Meter | name, account number, notes, archived flag |
