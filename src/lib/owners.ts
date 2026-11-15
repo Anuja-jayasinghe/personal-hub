@@ -15,8 +15,6 @@ export const OWNER_TYPES = [
   "note",
   // A vehicle renewal (insurance, licence...) can carry its document (Phase 1.3).
   "vehicle_renewal",
-  // An electricity bill can carry a photo or PDF of the paper bill (Phase 2.2).
-  "electricity_bill",
   // A bill or subscription (Phase 3.1) can carry its contract or a statement.
   "bill_item",
   // A payment of a bill or subscription can carry its receipt (Phase 3.2).

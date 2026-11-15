@@ -7,7 +7,7 @@ import { ReadingForm } from "@/components/electricity/reading-form";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { appConfig } from "@/config/app.config";
-import type { Attachment, ElectricityBill, ElectricityMeter, ElectricityReading } from "@/db/schema";
+import type { ElectricityBill, ElectricityMeter, ElectricityReading } from "@/db/schema";
 import {
   addReading,
   createBill,
@@ -28,7 +28,6 @@ export function MeterSection({
   meter,
   readings,
   bills,
-  billFiles,
   today,
 }: {
   meter: ElectricityMeter;
@@ -36,8 +35,6 @@ export function MeterSection({
   readings: ElectricityReading[];
   /** This meter's bills, newest first. */
   bills: ElectricityBill[];
-  /** Documents attached to bills, by bill id. */
-  billFiles: Map<string, Attachment[]>;
   today: string;
 }) {
   const sorted = sortReadings(readings.map((r) => ({ ...toReading(r), row: r })));
@@ -77,7 +74,7 @@ export function MeterSection({
         </form>
         <form action={deleteMeter}>
           <input type="hidden" name="id" value={meter.id} />
-          <SubmitButton variant="ghost" size="icon" aria-label={`Delete meter ${meter.name}`} confirm={`Permanently delete "${meter.name}" and all its readings, bills and bill documents? This cannot be undone.`}>
+          <SubmitButton variant="ghost" size="icon" aria-label={`Delete meter ${meter.name}`} confirm={`Permanently delete "${meter.name}" and all its readings and bills? This cannot be undone.`}>
             <Trash2 aria-hidden />
           </SubmitButton>
         </form>
@@ -102,14 +99,14 @@ export function MeterSection({
           <details className="rounded-md border border-primary/40">
             <summary className="cursor-pointer px-3 py-1.5 text-sm font-medium">Add a bill</summary>
             <div className="border-t p-3">
-              <BillForm action={createBill} meterId={meter.id} defaultDate={today} defaultPrevious={bills[0]?.currentReading} />
+              <BillForm action={createBill} meterId={meter.id} defaultDate={today} defaultPrevious={bills[0]?.currentReading} previousDate={bills[0]?.readingDate} />
             </div>
           </details>
         ) : null}
 
         <details className="rounded-md border">
           <summary className="cursor-pointer px-3 py-1.5 text-sm text-muted-foreground">Bills ({bills.length})</summary>
-          <BillsList bills={bills} files={billFiles} today={today} />
+          <BillsList bills={bills} today={today} />
         </details>
 
         <details className="rounded-md border">

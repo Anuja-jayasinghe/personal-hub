@@ -10,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { isModuleEnabled } from "@/config/app.config";
 import { createMeter } from "@/features/electricity/actions";
 import { listAllBills, listAllReadings, listMeters } from "@/features/electricity/queries";
-import { attachmentsByOwner } from "@/features/shared/queries";
 import { todayInAppTz } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Electricity" };
@@ -18,7 +17,6 @@ export const metadata: Metadata = { title: "Electricity" };
 async function ElectricityContent({ searchParams }: { searchParams: Promise<{ archived?: string }> }) {
   const showArchived = (await searchParams).archived === "1";
   const [meters, readings, bills, archivedMeters] = await Promise.all([listMeters(showArchived), listAllReadings(), listAllBills(), listMeters(true)]);
-  const billFiles = await attachmentsByOwner("electricity_bill", bills.map((b) => b.id));
   const today = todayInAppTz(); // after the queries, which opt this render into request time
 
   return (
@@ -46,7 +44,7 @@ async function ElectricityContent({ searchParams }: { searchParams: Promise<{ ar
       ) : (
         <ul className="flex flex-col gap-4">
           {meters.map((m) => (
-            <MeterSection key={m.id} meter={m} readings={readings.filter((r) => r.meterId === m.id)} bills={bills.filter((b) => b.meterId === m.id)} billFiles={billFiles} today={today} />
+            <MeterSection key={m.id} meter={m} readings={readings.filter((r) => r.meterId === m.id)} bills={bills.filter((b) => b.meterId === m.id)} today={today} />
           ))}
         </ul>
       )}

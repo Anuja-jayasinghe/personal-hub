@@ -1,24 +1,21 @@
 import { Trash2 } from "lucide-react";
 import { BillForm } from "@/components/electricity/bill-form";
-import { AttachmentsPanel } from "@/components/shared/attachments-panel";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import type { Attachment, ElectricityBill } from "@/db/schema";
+import type { ElectricityBill } from "@/db/schema";
 import { deleteBill, markBillPaid, markBillUnpaid, updateBill } from "@/features/electricity/actions";
 import { billStatus } from "@/features/electricity/bill-logic";
 import { formatKwh } from "@/features/electricity/usage";
 import { toCents } from "@/lib/decimal";
 import { formatDate, formatMoney } from "@/lib/format";
 
-/** One meter's bills, newest first: status, mark paid / unpaid, edit, documents, delete. */
+/** One meter's bills, newest first: status, mark paid / unpaid, edit, delete. */
 export function BillsList({
   bills,
-  files,
   today,
 }: {
   bills: ElectricityBill[];
-  files: Map<string, Attachment[]>;
   today: string;
 }) {
   if (bills.length === 0) return <p className="border-t p-3 text-sm text-muted-foreground">No bills yet.</p>;
@@ -27,7 +24,6 @@ export function BillsList({
     <ul className="flex flex-col divide-y border-t">
       {bills.map((b) => {
         const status = billStatus(b, today);
-        const docs = files.get(b.id) ?? [];
         return (
           <li key={b.id} className="p-3">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
@@ -75,12 +71,6 @@ export function BillsList({
                 <summary className="cursor-pointer px-3 py-1 text-xs text-muted-foreground">Edit</summary>
                 <div className="border-t p-3">
                   <BillForm action={updateBill} bill={b} />
-                </div>
-              </details>
-              <details className="rounded-md border">
-                <summary className="cursor-pointer px-3 py-1 text-xs text-muted-foreground">Documents ({docs.length})</summary>
-                <div className="border-t p-3">
-                  <AttachmentsPanel owner={{ ownerType: "electricity_bill", ownerId: b.id }} items={docs} />
                 </div>
               </details>
             </div>

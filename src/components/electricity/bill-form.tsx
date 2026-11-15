@@ -7,6 +7,7 @@ import { useKeepValuesOnError } from "@/components/shared/use-keep-values-on-err
 import { Input } from "@/components/ui/input";
 import type { ElectricityBill } from "@/db/schema";
 import { initialActionState, type ActionState } from "@/features/shared/types";
+import { formatDate } from "@/lib/format";
 
 type Props = {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
@@ -18,10 +19,14 @@ type Props = {
   defaultDate?: string;
   /** Add: pre-filled previous reading, the current reading of the meter's last bill. */
   defaultPrevious?: string;
+  /** Add: the reading date of that last bill, shown next to the auto-filled previous reading. */
+  previousDate?: string;
 };
 
 /** Add / edit form for a bill (createBill / updateBill). Units are worked out from the readings when left empty. */
-export function BillForm({ action, meterId, bill, defaultDate, defaultPrevious }: Props) {
+export function BillForm({ action, meterId, bill, defaultDate, defaultPrevious, previousDate }: Props) {
+  // C73: once a meter has a bill, the previous reading is taken from it, so only this month's reading is typed.
+  const autoPrevious = !bill && defaultPrevious !== undefined;
   const [state, formAction] = useActionState(action, initialActionState);
   const { formRef, onSubmit } = useKeepValuesOnError(state);
 
@@ -44,11 +49,25 @@ export function BillForm({ action, meterId, bill, defaultDate, defaultPrevious }
         </label>
       </div>
 
+      {autoPrevious ? (
+        <details className="rounded-md border px-3 py-2 text-sm">
+          <summary className="cursor-pointer text-muted-foreground">
+            Previous reading {defaultPrevious} kWh, from the last bill{previousDate ? ` (${formatDate(previousDate)})` : ""}. Change
+          </summary>
+          <label className={`${labelClass} mt-2 max-w-xs`}>
+            <span className={labelTextClass}>Previous reading (kWh)</span>
+            <Input name="previousReading" required inputMode="decimal" defaultValue={defaultPrevious} />
+          </label>
+        </details>
+      ) : null}
+
       <div className="grid gap-3 sm:grid-cols-3">
-        <label className={labelClass}>
-          <span className={labelTextClass}>Previous reading (kWh)</span>
-          <Input name="previousReading" required inputMode="decimal" defaultValue={bill?.previousReading ?? defaultPrevious ?? ""} placeholder="12345.6" />
-        </label>
+        {autoPrevious ? null : (
+          <label className={labelClass}>
+            <span className={labelTextClass}>{bill ? "Previous reading (kWh)" : "Previous reading (kWh), needed once for the first bill"}</span>
+            <Input name="previousReading" required inputMode="decimal" defaultValue={bill?.previousReading ?? ""} placeholder="12345.6" />
+          </label>
+        )}
         <label className={labelClass}>
           <span className={labelTextClass}>Current reading (kWh)</span>
           <Input name="currentReading" required inputMode="decimal" defaultValue={bill?.currentReading ?? ""} placeholder="12560" />

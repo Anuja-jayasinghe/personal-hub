@@ -188,7 +188,7 @@ Delivered as separate issues (#15 to #19), each its own pull request (C51 go-ahe
 | Piece | Issue | What |
 |-------|-------|------|
 | 2.1 | #15 | **Meters and readings**: add / edit / archive / delete meters, log readings (date + kWh), history, a backwards reading is refused, "meter replaced" keeps usage correct |
-| 2.2 | #16 | **Bills**: bill date, reading date, previous and current reading, units, amount, due date, paid date, document; unpaid bills feed Reminders |
+| 2.2 | #16 | **Bills**: bill date, reading date, previous and current reading, units, amount, due date, paid date; unpaid bills feed Reminders (no bill file is kept, C74) |
 | 2.3 | #17 | **Since-last-bill calculator** per meter and combined: units, days, daily average, projected cycle total; replaces the Home placeholder; units only (no tariff, C22) |
 | 2.4a | #18 | **CSV export command** (`pnpm export:electricity`), not a web download |
 | 2.4b | #19 | **Monthly usage chart** without a new package |
@@ -197,7 +197,7 @@ Delivered as separate issues (#15 to #19), each its own pull request (C51 go-ahe
 |--------|--------|
 | Meter | name, account number, notes, archived flag |
 | Reading | meter, date, value (kWh, 2 decimals), source (manual / auto), note, optional "replaced" final value of the old meter |
-| Bill | meter, bill date, reading date, previous reading, current reading, units, amount (LKR), due date, paid date, notes, document |
+| Bill | meter, bill date, reading date, previous reading, current reading, units, amount (LKR), due date, paid date, notes |
 
 Not in this phase: tariff and cost estimates (C22), the import endpoint (C54), solar tracking.
 
