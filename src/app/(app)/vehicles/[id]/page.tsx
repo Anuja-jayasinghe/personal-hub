@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CoverPhotoForm } from "@/components/vehicles/cover-photo-form";
+import { OdometerSection } from "@/components/vehicles/odometer-section";
 import { RenewalsTab } from "@/components/vehicles/renewals-tab";
 import { NotesPanel } from "@/components/shared/notes-panel";
 import { TasksPanel } from "@/components/shared/tasks-panel";
@@ -96,8 +97,9 @@ async function VehicleContent({
             <Detail label="Year" value={vehicle.year} />
             <Detail label="Fuel" value={vehicle.fuelType} />
             <Detail label="Registration" value={vehicle.registrationNumber} />
-            <Detail label="Odometer" value={vehicle.odometerKm === null ? null : `${vehicle.odometerKm.toLocaleString("en-LK")} km`} />
           </dl>
+
+          <OdometerSection vehicleId={vehicle.id} />
 
           <section aria-labelledby="cover" className="flex flex-col gap-3">
             <h2 id="cover" className="text-lg font-medium">

@@ -7,6 +7,8 @@ import { vehicleServices, vehicles } from "@/db/schema";
 import { toActionState } from "@/features/shared/errors";
 import type { ActionState } from "@/features/shared/types";
 import { idFrom, ValidationError } from "@/features/shared/validation";
+import { checkFits } from "./odometer";
+import { loadOdometerPoints } from "./odometer-points";
 import { parseService } from "./service-validate";
 
 // Server Actions are public HTTP endpoints, so every input is validated here.
@@ -27,7 +29,12 @@ export async function createService(_prev: ActionState, fd: FormData): Promise<A
     const vehicleId = idFrom(fd, "vehicleId");
     const [vehicle] = await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, vehicleId));
     if (!vehicle) throw new ValidationError("That vehicle could not be found.");
-    await db.insert(vehicleServices).values({ vehicleId, ...fieldsFrom(fd) });
+    const f = fieldsFrom(fd);
+    if (f.odometerKm !== null) {
+      const fit = checkFits(await loadOdometerPoints(vehicleId), { date: f.serviceDate, km: f.odometerKm });
+      if (!fit.ok) throw new ValidationError(fit.error);
+    }
+    await db.insert(vehicleServices).values({ vehicleId, ...f });
     refresh();
     return { ok: true };
   } catch (err) {
@@ -37,7 +44,15 @@ export async function createService(_prev: ActionState, fd: FormData): Promise<A
 
 export async function updateService(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await db.update(vehicleServices).set(fieldsFrom(fd)).where(eq(vehicleServices.id, idFrom(fd)));
+    const id = idFrom(fd);
+    const [existing] = await db.select().from(vehicleServices).where(eq(vehicleServices.id, id));
+    if (!existing) throw new ValidationError("That service record could not be found.");
+    const f = fieldsFrom(fd);
+    if (f.odometerKm !== null) {
+      const fit = checkFits(await loadOdometerPoints(existing.vehicleId, { serviceId: id }), { date: f.serviceDate, km: f.odometerKm });
+      if (!fit.ok) throw new ValidationError(fit.error);
+    }
+    await db.update(vehicleServices).set(f).where(eq(vehicleServices.id, id));
     refresh();
     return { ok: true };
   } catch (err) {
