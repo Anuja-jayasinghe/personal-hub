@@ -18,6 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { appConfig, enabledModules } from "@/config/app.config";
@@ -73,16 +74,34 @@ function NavGroup({ label, items }: { label?: string; items: NavItem[] }) {
   );
 }
 
+/**
+ * Logo and name, with the collapse button inside the panel (C77). Collapsed, the button sits under
+ * the logo so the panel can be opened again. On a phone the panel is a slide-out, so its button
+ * stays in the top bar (see the app layout) and is not repeated here.
+ */
+function SidebarTop() {
+  const { isMobile, state } = useSidebar();
+  const expanded = state === "expanded";
+  return (
+    <div className="flex items-center gap-2 px-1 py-1 group-data-[collapsible=icon]:flex-col">
+      <Logo size={32} />
+      <span className="truncate font-semibold group-data-[collapsible=icon]:hidden">{appConfig.name}</span>
+      {isMobile ? null : (
+        <SidebarTrigger
+          className="ml-auto group-data-[collapsible=icon]:ml-0"
+          aria-label={expanded ? "Collapse navigation" : "Expand navigation"}
+          aria-expanded={expanded}
+        />
+      )}
+    </div>
+  );
+}
+
 export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-1 py-1">
-          <Logo size={32} />
-          <span className="truncate font-semibold group-data-[collapsible=icon]:hidden">
-            {appConfig.name}
-          </span>
-        </div>
+        <SidebarTop />
       </SidebarHeader>
       {/* usePathname() is request-time data on pages with a changing id (/vehicles/[id]), so the
           links sit inside Suspense; the sidebar frame renders immediately. */}
