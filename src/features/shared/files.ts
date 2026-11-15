@@ -27,6 +27,7 @@ export async function storeAttachment(
   file: File,
   allowedTypes: readonly string[] = ALLOWED_ATTACHMENT_TYPES,
   typeMessage = "Only JPEG, PNG, WebP, HEIC images and PDF files are allowed.",
+  title: string | null = null,
 ): Promise<Attachment> {
   if (file.size === 0) throw new ValidationError("Choose a file to upload.");
   if (file.size > MAX_ATTACHMENT_BYTES) {
@@ -51,6 +52,7 @@ export async function storeAttachment(
         bucket: ATTACHMENT_BUCKET,
         storagePath,
         fileName: file.name.slice(0, 255),
+        title,
         mimeType,
         sizeBytes: file.size,
       })
