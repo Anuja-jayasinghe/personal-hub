@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, inArray, isNull } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { db } from "@/db";
 import { electricityBills, electricityMeters, electricityReadings } from "@/db/schema";
@@ -11,6 +11,7 @@ import { toCents } from "@/lib/decimal";
 import { isValidDate } from "@/lib/dates";
 import { todayInAppTz } from "@/lib/format";
 import { parseBill } from "./bill-validate";
+import { parseBatch } from "./readings-batch";
 import { checkReadingFits, toReading } from "./usage";
 import { parseMeter, parseReading } from "./validate";
 import { requireUser } from "@/lib/auth";
@@ -101,6 +102,55 @@ export async function addReading(_prev: ActionState, fd: FormData): Promise<Acti
     if (!meter) throw new ValidationError("That meter could not be found.");
     const f = await readingToSave(fd, meterId);
     await db.insert(electricityReadings).values({ meterId, ...f, source: "manual" });
+    refresh();
+    return { ok: true };
+  } catch (err) {
+    return toActionState(err);
+  }
+}
+
+/**
+ * One date and a reading for each active meter, saved together or not at all (2b.1). A blank field
+ * skips that meter. Each value is checked against that meter's other readings, and the message
+ * names the meter.
+ */
+export async function addReadings(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  try {
+    await requireUser();
+    const meters = await db
+      .select({ id: electricityMeters.id, name: electricityMeters.name })
+      .from(electricityMeters)
+      .where(isNull(electricityMeters.archivedAt));
+    const text = (key: string) => {
+      const v = fd.get(key);
+      return typeof v === "string" ? v : undefined;
+    };
+    const parsed = parseBatch(
+      text("readingDate"),
+      meters.map((m) => ({ meterId: m.id, name: m.name, raw: text(`value:${m.id}`) })),
+    );
+    if (!parsed.ok) throw new ValidationError(parsed.error);
+
+    const existing = await db
+      .select()
+      .from(electricityReadings)
+      .where(inArray(electricityReadings.meterId, parsed.rows.map((r) => r.meterId)));
+    const problems: string[] = [];
+    for (const row of parsed.rows) {
+      const fit = checkReadingFits(existing.filter((r) => r.meterId === row.meterId).map(toReading), {
+        date: parsed.date,
+        value: toCents(row.value),
+        replacedFinal: null,
+        createdAt: new Date(),
+      });
+      if (!fit.ok) problems.push(`${row.name}: ${fit.error}`);
+    }
+    if (problems.length > 0) throw new ValidationError(problems.join("\n"));
+
+    // One statement, so either every reading is saved or none is.
+    await db
+      .insert(electricityReadings)
+      .values(parsed.rows.map((row) => ({ meterId: row.meterId, readingDate: parsed.date, value: row.value, source: "manual" as const })));
     refresh();
     return { ok: true };
   } catch (err) {

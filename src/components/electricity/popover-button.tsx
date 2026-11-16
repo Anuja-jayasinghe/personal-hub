@@ -4,6 +4,7 @@ import { ChevronDown, MoreHorizontal, Plus } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { createBill, addReading } from "@/features/electricity/actions";
 import { BillForm } from "@/components/electricity/bill-form";
+import { BothReadingsForm, type MeterForEntry } from "@/components/electricity/both-readings-form";
 import { ReadingForm } from "@/components/electricity/reading-form";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -75,6 +76,19 @@ export function AddBillButton({
       {(close) => (
         <div className="p-1">
           <BillForm action={createBill} meterId={meterId} defaultDate={defaultDate} defaultPrevious={defaultPrevious} previousDate={previousDate} onDone={close} />
+        </div>
+      )}
+    </PopoverButton>
+  );
+}
+
+/** "Add readings": both meters' readings in one card (2b.1), closing itself after saving. The primary action of the page. */
+export function AddBothReadingsButton({ meters, defaultDate }: { meters: MeterForEntry[]; defaultDate: string }) {
+  return (
+    <PopoverButton label="Add readings" icon="plus" variant="default" align="end">
+      {(close) => (
+        <div className="p-1">
+          <BothReadingsForm meters={meters} defaultDate={defaultDate} onDone={close} />
         </div>
       )}
     </PopoverButton>

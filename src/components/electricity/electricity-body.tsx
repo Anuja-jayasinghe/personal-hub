@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ElectricityOverview } from "@/components/electricity/electricity-overview";
 import { ElectricityTabs } from "@/components/electricity/electricity-tabs";
 import { MeterForm } from "@/components/electricity/meter-form";
+import { AddBothReadingsButton } from "@/components/electricity/popover-button";
 import { MeterView } from "@/components/electricity/meter-view";
 import { EmptyState } from "@/components/shell/page-header";
 import { appConfig } from "@/config/app.config";
@@ -65,14 +66,25 @@ export function ElectricityBody({
       ) : (
         <>
           {meters.length > 1 || selected ? (
-            <ElectricityTabs
-              meters={meters}
-              toneIndexOf={toneIndexOf}
-              selectedId={selected?.id ?? null}
-              showBoth={!showArchived && meters.length > 1}
-              archived={showArchived}
-              basePath={basePath}
-            />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <ElectricityTabs
+                meters={meters}
+                toneIndexOf={toneIndexOf}
+                selectedId={selected?.id ?? null}
+                showBoth={!showArchived && meters.length > 1}
+                archived={showArchived}
+                basePath={basePath}
+              />
+              {!showArchived && meters.length > 1 ? (
+                <AddBothReadingsButton
+                  defaultDate={today}
+                  meters={meters.map((m) => {
+                    const newest = data.get(m.id)?.readingRows[0];
+                    return { id: m.id, name: m.name, toneIndex: toneIndexOf(m.id), lastValue: newest?.value ?? null, lastDate: newest?.date ?? null };
+                  })}
+                />
+              ) : null}
+            </div>
           ) : null}
 
           {selected ? (
