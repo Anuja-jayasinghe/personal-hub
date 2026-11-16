@@ -106,6 +106,8 @@ export const appConfig = {
      * A meter is "near" its limit when it has `nearUnits` or fewer units left. Change the targets here.
      */
     limits: { lowUnits: 120, highUnits: 180, nearUnits: 10 },
+    /** A meter counts as overdue for a check once its newest reading is this many days old (2b.4). */
+    checkEveryDays: 5,
   },
 
   // ---- Bills & subscriptions (Phase 3) -------------------------------------------------------------

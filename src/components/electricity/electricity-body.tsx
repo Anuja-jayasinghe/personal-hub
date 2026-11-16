@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/shell/page-header";
 import { appConfig } from "@/config/app.config";
 import type { ElectricityBill, ElectricityMeter, ElectricityReading } from "@/db/schema";
 import { createMeter } from "@/features/electricity/actions";
+import { lastChecked } from "@/features/electricity/last-checked";
 import { computeLimits } from "@/features/electricity/limits";
 import { limitInputFromUsage, limitRulesFromConfig } from "@/features/electricity/limits-input";
 import { describeMeter } from "@/features/electricity/meter-data";
@@ -63,6 +64,9 @@ export function ElectricityBody({
     showArchived ? computeLimits(inputs.filter((i) => i.id === id), rules).meters[0] : limits.meters.find((l) => l.id === id)!;
   const nameOf = (id: string) => meters.find((m) => m.id === id)?.name ?? "Meter";
 
+  // When each meter was last read by a person (2b.4).
+  const checks = new Map(meters.map((m) => [m.id, lastChecked(data.get(m.id)!.readingRows[0]?.date ?? null, today, appConfig.electricity.checkEveryDays)]));
+
   const picked = meters.find((m) => m.id === meterParam) ?? null;
   const selected = picked ?? (showArchived ? (meters[0] ?? null) : null);
   const meterHref = (id: string) => `${basePath}${showArchived ? "?archived=1&" : "?"}meter=${id}`;
@@ -108,9 +112,10 @@ export function ElectricityBody({
               today={today}
               limit={limitFor(selected.id)}
               units={units}
+              check={checks.get(selected.id)!}
             />
           ) : (
-            <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} limits={limits} units={units} nameOf={nameOf} />
+            <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} limits={limits} units={units} nameOf={nameOf} checks={checks} />
           )}
         </>
       )}
