@@ -8,6 +8,8 @@ import { EmptyState } from "@/components/shell/page-header";
 import { appConfig } from "@/config/app.config";
 import type { ElectricityBill, ElectricityMeter, ElectricityReading } from "@/db/schema";
 import { createMeter } from "@/features/electricity/actions";
+import { computeLimits } from "@/features/electricity/limits";
+import { limitInputFromUsage, limitRulesFromConfig } from "@/features/electricity/limits-input";
 import { describeMeter } from "@/features/electricity/meter-data";
 
 /**
@@ -52,6 +54,15 @@ export function ElectricityBody({
     ]),
   );
 
+  // The 120 / 180 rule (C82): worked out across the active meters; an archived meter is looked at on its own.
+  const rules = limitRulesFromConfig();
+  const units = { low: appConfig.electricity.limits.lowUnits, high: appConfig.electricity.limits.highUnits };
+  const inputs = meters.map((m) => limitInputFromUsage(m.id, data.get(m.id)!.usage));
+  const limits = computeLimits(inputs, rules);
+  const limitFor = (id: string) =>
+    showArchived ? computeLimits(inputs.filter((i) => i.id === id), rules).meters[0] : limits.meters.find((l) => l.id === id)!;
+  const nameOf = (id: string) => meters.find((m) => m.id === id)?.name ?? "Meter";
+
   const picked = meters.find((m) => m.id === meterParam) ?? null;
   const selected = picked ?? (showArchived ? (meters[0] ?? null) : null);
   const meterHref = (id: string) => `${basePath}${showArchived ? "?archived=1&" : "?"}meter=${id}`;
@@ -95,9 +106,11 @@ export function ElectricityBody({
               data={data.get(selected.id)!}
               readings={readings.filter((r) => r.meterId === selected.id)}
               today={today}
+              limit={limitFor(selected.id)}
+              units={units}
             />
           ) : (
-            <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} />
+            <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} limits={limits} units={units} nameOf={nameOf} />
           )}
         </>
       )}
