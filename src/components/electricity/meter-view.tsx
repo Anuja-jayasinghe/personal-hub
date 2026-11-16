@@ -2,6 +2,7 @@ import { Trash2 } from "lucide-react";
 import { BillChip } from "@/components/electricity/bill-chip";
 import { BillForm } from "@/components/electricity/bill-form";
 import { MeterForm } from "@/components/electricity/meter-form";
+import { LimitChips } from "@/components/electricity/limit-chips";
 import { MeterBadge, toneFor } from "@/components/electricity/meter-tone";
 import { MonthlyChart } from "@/components/electricity/monthly-chart";
 import { AddBillButton, AddReadingButton, PopoverButton } from "@/components/electricity/popover-button";
@@ -26,6 +27,8 @@ import {
 import { billStatus } from "@/features/electricity/bill-logic";
 import type { MeterData } from "@/features/electricity/meter-data";
 import { barShare, kwhParts } from "@/features/electricity/overview";
+import type { MeterLimit } from "@/features/electricity/limits";
+import { leftHeadline, usedOfLimit, type LimitUnits } from "@/features/electricity/limits-text";
 import { formatKwh } from "@/features/electricity/usage";
 import { toCents } from "@/lib/decimal";
 import { formatDate, formatMoney, formatMonth } from "@/lib/format";
@@ -94,6 +97,8 @@ export function MeterView({
   data,
   readings,
   today,
+  limit,
+  units,
 }: {
   meter: ElectricityMeter;
   toneIndex: number;
@@ -102,10 +107,13 @@ export function MeterView({
   data: MeterData;
   readings: ElectricityReading[];
   today: string;
+  /** This meter against its current limit (2b.3). */
+  limit: MeterLimit;
+  units: LimitUnits;
 }) {
   const { usage, last, lastStatus, bills, readingRows } = data;
   const active = !meter.archivedAt;
-  const used = usage.state === "ok" ? kwhParts(usage.units) : null;
+  const headline = limit.known ? leftHeadline(limit) : null;
   const readingById = new Map(readings.map((r) => [r.id, r]));
   const barClass = toneFor(toneIndex).bar.split(" ")[0];
   const maxDelta = Math.max(0, ...readingRows.map((r) => r.delta ?? 0));
@@ -143,20 +151,22 @@ export function MeterView({
         </span>
       </header>
 
-      <section aria-label="Usage since the last bill" className="flex flex-col gap-3">
+      <section aria-label="Units left to the limit" className="flex flex-col gap-3">
         <p className="text-5xl leading-none font-medium tabular-nums">
-          {used ? (
+          {headline ? (
             <>
-              {used.value} <span className="text-xl font-normal text-muted-foreground">{used.unit}</span>
+              {headline.value} <span className="text-xl font-normal text-muted-foreground">{headline.label === "left" ? "units left" : "units over"}</span>
             </>
           ) : (
             <span className="text-muted-foreground">–</span>
           )}
         </p>
+        <LimitChips limit={limit} units={units} />
         {usage.state === "ok" ? (
           <>
+            <p className="text-sm text-muted-foreground tabular-nums">{usedOfLimit(limit)}</p>
             <div className="max-w-lg">
-              <UsageGauge used={usage.units} reference={last ? toCents(last.units) : null} projected={usage.projected} toneIndex={toneIndex} />
+              <UsageGauge used={usage.units} reference={limit.limit} projected={usage.projected} toneIndex={toneIndex} referenceLabel="limit" />
             </div>
             <CycleFacts days={usage.days} perDay={usage.dailyAverage} from={last ? toCents(last.currentReading) : null} />
           </>

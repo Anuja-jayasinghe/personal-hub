@@ -3,9 +3,9 @@ import { toneFor } from "@/components/electricity/meter-tone";
 import { gaugeScale, kwhParts } from "@/features/electricity/overview";
 
 /**
- * One bar that answers "is this cycle running higher or lower than last time?" (C81): the filled part
- * is what has been used since the last bill, the faded part is where a full cycle would end at the
- * current pace, and the thin mark is what the last bill billed. The figures sit under it, with the
+ * One bar for how close a meter is to its limit (C81, C87): the filled part is what has been used since
+ * the last bill, the faded part is where a full cycle would end at the current pace, and the thin mark
+ * is the reference, which is the meter's limit (120 or 180) on the electricity screens. The figures sit under it, with the
  * same swatches, so the bar needs no sentence. All figures are hundredths of a kWh.
  */
 export function UsageGauge({
@@ -14,19 +14,22 @@ export function UsageGauge({
   projected,
   toneIndex,
   size = "md",
+  referenceLabel = "last bill",
 }: {
   used: number;
   reference: number | null;
   projected: number | null;
   toneIndex: number;
   size?: "sm" | "md";
+  /** What the thin mark stands for: the last bill, or (since 2b.3) the meter's limit. */
+  referenceLabel?: string;
 }) {
   const g = gaugeScale({ used, reference, projected });
   const bar = toneFor(toneIndex).bar.split(" ")[0]; // the fill colour only
   const kwh = (v: number) => Math.round(v / 100).toLocaleString("en-US"); // whole kWh: the bar is for a quick read
   const label = `Used ${kwh(used)} kWh since the last bill${
     projected !== null ? `; about ${kwh(projected)} kWh by the end of the cycle at this pace` : ""
-  }${reference !== null ? `; the last bill was ${kwh(reference)} kWh` : ""}.`;
+  }${reference !== null ? `; the ${referenceLabel} is ${kwh(reference)} kWh` : ""}.`;
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -50,7 +53,7 @@ export function UsageGauge({
         ) : null}
         {reference !== null ? (
           <li className="flex items-center gap-1.5">
-            <span className="h-3 w-0.5 rounded-full bg-foreground" /> {kwh(reference)} last bill
+            <span className="h-3 w-0.5 rounded-full bg-foreground" /> {kwh(reference)} {referenceLabel}
           </li>
         ) : null}
       </ul>
