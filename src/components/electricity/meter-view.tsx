@@ -2,6 +2,7 @@ import { Trash2 } from "lucide-react";
 import { BillChip } from "@/components/electricity/bill-chip";
 import { BillForm } from "@/components/electricity/bill-form";
 import { MeterForm } from "@/components/electricity/meter-form";
+import { LastCheckedLine } from "@/components/electricity/last-checked-line";
 import { LimitChips } from "@/components/electricity/limit-chips";
 import { MeterBadge, toneFor } from "@/components/electricity/meter-tone";
 import { MonthlyChart } from "@/components/electricity/monthly-chart";
@@ -27,6 +28,7 @@ import {
 import { billStatus } from "@/features/electricity/bill-logic";
 import type { MeterData } from "@/features/electricity/meter-data";
 import { barShare, kwhParts } from "@/features/electricity/overview";
+import type { LastChecked } from "@/features/electricity/last-checked";
 import type { MeterLimit } from "@/features/electricity/limits";
 import { leftHeadline, usedOfLimit, type LimitUnits } from "@/features/electricity/limits-text";
 import { formatKwh } from "@/features/electricity/usage";
@@ -99,6 +101,7 @@ export function MeterView({
   today,
   limit,
   units,
+  check,
 }: {
   meter: ElectricityMeter;
   toneIndex: number;
@@ -110,6 +113,7 @@ export function MeterView({
   /** This meter against its current limit (2b.3). */
   limit: MeterLimit;
   units: LimitUnits;
+  check: LastChecked;
 }) {
   const { usage, last, lastStatus, bills, readingRows } = data;
   const active = !meter.archivedAt;
@@ -162,6 +166,7 @@ export function MeterView({
           )}
         </p>
         <LimitChips limit={limit} units={units} />
+        <LastCheckedLine check={check} />
         {usage.state === "ok" ? (
           <>
             <p className="text-sm text-muted-foreground tabular-nums">{usedOfLimit(limit)}</p>

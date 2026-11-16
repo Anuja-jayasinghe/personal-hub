@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { BillChip } from "@/components/electricity/bill-chip";
+import { LastCheckedLine } from "@/components/electricity/last-checked-line";
 import { LimitChips } from "@/components/electricity/limit-chips";
 import { MeterBadge } from "@/components/electricity/meter-tone";
 import { CycleFacts, UsageGauge } from "@/components/electricity/usage-gauge";
 import type { ElectricityMeter } from "@/db/schema";
 import type { MeterData } from "@/features/electricity/meter-data";
+import type { LastChecked } from "@/features/electricity/last-checked";
 import type { MeterLimit } from "@/features/electricity/limits";
 import { leftHeadline, usedOfLimit, type LimitUnits } from "@/features/electricity/limits-text";
 import { toCents } from "@/lib/decimal";
@@ -18,6 +20,7 @@ export function MeterTile({
   href,
   limit,
   units,
+  check,
 }: {
   meter: ElectricityMeter;
   toneIndex: number;
@@ -25,6 +28,7 @@ export function MeterTile({
   href: string;
   limit: MeterLimit;
   units: LimitUnits;
+  check: LastChecked;
 }) {
   const { usage, last, lastStatus } = data;
   const headline = limit.known ? leftHeadline(limit) : null;
@@ -63,6 +67,7 @@ export function MeterTile({
       )}
 
       <span className="mt-2 flex flex-col items-start gap-1.5">
+        <LastCheckedLine check={check} />
         <LimitChips limit={limit} units={units} />
         {last && lastStatus ? <BillChip status={lastStatus} /> : null}
       </span>

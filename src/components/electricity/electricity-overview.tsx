@@ -2,6 +2,7 @@ import { MeterTile } from "@/components/electricity/meter-tile";
 import { MonthlyChart } from "@/components/electricity/monthly-chart";
 import type { ElectricityBill, ElectricityMeter } from "@/db/schema";
 import type { MeterData } from "@/features/electricity/meter-data";
+import { checkNudge, type LastChecked } from "@/features/electricity/last-checked";
 import type { LimitsResult } from "@/features/electricity/limits";
 import { adviceLine, paceLine, type LimitUnits } from "@/features/electricity/limits-text";
 import { unpaidTotal } from "@/features/electricity/overview";
@@ -18,6 +19,7 @@ export function ElectricityOverview({
   limits,
   units,
   nameOf,
+  checks,
 }: {
   meters: ElectricityMeter[];
   allMeters: ElectricityMeter[];
@@ -28,17 +30,19 @@ export function ElectricityOverview({
   limits: LimitsResult;
   units: LimitUnits;
   nameOf: (id: string) => string;
+  checks: Map<string, LastChecked>;
 }) {
   const unpaid = unpaidTotal(bills.filter((b) => meters.some((m) => m.id === b.meterId)));
   const pace = paceLine(limits);
   const advice = adviceLine(limits.advice, limits, nameOf, units);
+  const nudge = checkNudge(meters.map((m) => ({ name: m.name, check: checks.get(m.id)! })));
   const room = Math.floor(limits.headroom / 100);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-3 sm:grid-cols-2">
         {meters.map((m) => (
-          <MeterTile key={m.id} meter={m} toneIndex={toneIndexOf(m.id)} data={data.get(m.id)!} href={hrefFor(m.id)} limit={limits.meters.find((l) => l.id === m.id)!} units={units} />
+          <MeterTile key={m.id} meter={m} toneIndex={toneIndexOf(m.id)} data={data.get(m.id)!} href={hrefFor(m.id)} limit={limits.meters.find((l) => l.id === m.id)!} units={units} check={checks.get(m.id)!} />
         ))}
       </div>
 
@@ -52,6 +56,12 @@ export function ElectricityOverview({
           }`}
         >
           {advice}
+        </p>
+      ) : null}
+
+      {nudge ? (
+        <p role="status" className="rounded-xl bg-amber-100 px-4 py-3 text-sm text-amber-900 dark:bg-amber-500/20 dark:text-amber-100">
+          {nudge}
         </p>
       ) : null}
 
