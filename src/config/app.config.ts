@@ -99,6 +99,13 @@ export const appConfig = {
   electricity: {
     /** Length of a billing cycle in days, used to project usage ("at this rate: ~N kWh per cycle"). */
     billingCycleDays: 30,
+    /**
+     * The two-slab rule (DECISIONS C82), in units (kWh) per billing cycle. The price per unit jumps
+     * after `lowUnits`, so one meter should stay at `lowUnits` or below while the other may run up to
+     * `highUnits`; the first meter to cross `lowUnits` becomes the one allowed up to `highUnits`.
+     * A meter is "near" its limit when it has `nearUnits` or fewer units left. Change the targets here.
+     */
+    limits: { lowUnits: 120, highUnits: 180, nearUnits: 10 },
   },
 
   // ---- Bills & subscriptions (Phase 3) -------------------------------------------------------------
