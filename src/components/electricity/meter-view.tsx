@@ -146,11 +146,11 @@ export function MeterView({
         </p>
         <p className="mt-2 text-sm text-muted-foreground">
           {usage.state === "ok"
-            ? `used since your last bill on ${formatDate(usage.sinceDate)}: ${usage.days} day${usage.days === 1 ? "" : "s"}${
+            ? `used since your last bill on ${formatDate(usage.sinceDate)}, from a reading of ${last ? formatKwh(toCents(last.currentReading)) : ""}: ${usage.days} day${usage.days === 1 ? "" : "s"}${
                 usage.dailyAverage !== null ? `, about ${formatKwh(usage.dailyAverage)} a day` : ""
               }`
             : usage.state === "no-reading"
-              ? `No reading since your last bill on ${formatDate(usage.sinceDate)}. Add a reading to see your usage.`
+              ? `No reading since your last bill on ${formatDate(usage.sinceDate)}${last ? ` (reading ${formatKwh(toCents(last.currentReading))})` : ""}. Add a reading to see your usage.`
               : "No bill yet. Add a bill to see your usage since it."}
         </p>
       </section>
