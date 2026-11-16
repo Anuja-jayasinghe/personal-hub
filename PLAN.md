@@ -210,7 +210,7 @@ Goal: the reason the Hub exists. You read both meters by hand now and then, and 
 | Piece | What |
 |-------|------|
 | 2b.1 | ✅ (issue #74, C85) **One-step entry of both readings**: one card with one date and one field per active meter, today's date pre-filled, each value checked against the last reading |
-| 2b.2 | **Limits engine**: pure, tested, config-driven: which meter is the 120 meter and which the 180 meter, units left per meter, combined headroom, a pace check for the cycle, and "close to the limit" |
+| 2b.2 | ✅ (issue #$N, C86) **Limits engine**: pure, tested, config-driven: which meter is the 120 meter and which the 180 meter, units left per meter, combined headroom, a pace check for the cycle, and "close to the limit" |
 | 2b.3 | **Usage against the limits on screen**: a role chip and "units left" per meter, the combined headroom, and the close-to-limit hint (this replaces the "last bill" mark on the cycle ring) |
 | 2b.4 | **Last checked** on each meter ("checked 3 days ago"), with a nudge when it has been too long |
 | later | **Mark which meter is live** (issue #69) |
