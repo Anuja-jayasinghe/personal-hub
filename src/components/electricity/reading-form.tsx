@@ -16,21 +16,25 @@ type Props = {
   reading?: ElectricityReading;
   /** Add: pre-filled date ("YYYY-MM-DD"), usually today in the app time zone. */
   defaultDate?: string;
+  /** Called after a successful save, e.g. to close the card the form sits in. */
+  onDone?: () => void;
 };
 
 /** Add / edit form for a meter reading (addReading / updateReading). */
-export function ReadingForm({ action, meterId, reading, defaultDate }: Props) {
+export function ReadingForm({ action, meterId, reading, defaultDate, onDone }: Props) {
   const [state, formAction] = useActionState(action, initialActionState);
   const { formRef, onSubmit } = useKeepValuesOnError(state);
   const [replaced, setReplaced] = useState(reading?.replacedFinalValue != null);
 
   useEffect(() => {
-    if (state.ok && !reading) {
+    if (!state.ok) return;
+    if (!reading) {
       formRef.current?.reset();
       // eslint-disable-next-line react-hooks/set-state-in-effect -- reset the toggle together with the form
       setReplaced(false);
     }
-  }, [formRef, state, reading]);
+    onDone?.();
+  }, [formRef, state, reading, onDone]);
 
   return (
     <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
