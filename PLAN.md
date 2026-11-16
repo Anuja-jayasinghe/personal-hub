@@ -203,6 +203,18 @@ Delivered as separate issues (#15 to #19), each its own pull request (C51 go-ahe
 
 Not in this phase: tariff and cost estimates (C22), the import endpoint (C54), solar tracking.
 
+## Phase 2b — Electricity targets (C82, C83)
+
+Goal: the reason the Hub exists. You read both meters by hand now and then, and need to see at once how much each meter has used since the last bill, how far it is from its limit, and when you last checked. The rule is in C82 (one meter at 120 units or below, the other up to 180; the first to cross 120 becomes the 180 meter); the numbers sit in `app.config.ts`.
+
+| Piece | What |
+|-------|------|
+| 2b.1 | **One-step entry of both readings**: one card with one date and one field per active meter, today's date pre-filled, each value checked against the last reading |
+| 2b.2 | **Limits engine**: pure, tested, config-driven: which meter is the 120 meter and which the 180 meter, units left per meter, combined headroom, a pace check for the cycle, and "close to the limit" |
+| 2b.3 | **Usage against the limits on screen**: a role chip and "units left" per meter, the combined headroom, and the close-to-limit hint (this replaces the "last bill" mark on the cycle ring) |
+| 2b.4 | **Last checked** on each meter ("checked 3 days ago"), with a nudge when it has been too long |
+| later | **Mark which meter is live** (issue #69) |
+
 ## Phase 3 — Bills & Subscriptions
 
 Delivered as separate issues (#25 to #29), each its own pull request (C56 go-ahead). Decisions C56–C59: electricity bills shown read-only on the Bills page, autopay items give a heads-up only, LKR only, same go-ahead terms as Phase 2.
@@ -238,10 +250,14 @@ Goal: the hub works from your phone anywhere and reaches you, instead of only sh
 
 Risks to keep in mind: the free Vercel plan limits scheduled jobs to once a day and the exact minute is not guaranteed; a free Supabase project pauses after a week of no use (a daily job keeps it awake, which is a side benefit of 4.3); the backup zip holds real data (hence P37).
 
+## Phase 5 — Sharing and roles (C83, P40)
+
+Goal: your father and one other person can add readings and see usage, and you control exactly what each person can see and do. Needs the Hub hosted (4.2) and a roles and permissions model on top of the login; the questions to settle first are in P40. Not planned in detail yet.
+
 ## Later (each needs its own decision)
 
 - Push notifications (decided against for now, C63)
 - Global search
 - Branding session
 - Electricity tariff and cost estimates (C22), import API for your automation project (C54), a Documents page (C45), per-item currencies (C59)
-- More modules: warranties, home maintenance, documents
+- More modules: warranties (purchased items, warranty periods, alerts before they end), home maintenance, documents
