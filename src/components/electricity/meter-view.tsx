@@ -2,9 +2,11 @@ import { Trash2 } from "lucide-react";
 import { BillChip } from "@/components/electricity/bill-chip";
 import { BillForm } from "@/components/electricity/bill-form";
 import { MeterForm } from "@/components/electricity/meter-form";
-import { MeterBadge } from "@/components/electricity/meter-tone";
+import { MeterBadge, toneFor } from "@/components/electricity/meter-tone";
+import { MonthlyChart } from "@/components/electricity/monthly-chart";
 import { AddBillButton, AddReadingButton, PopoverButton } from "@/components/electricity/popover-button";
 import { ReadingForm } from "@/components/electricity/reading-form";
+import { CycleFacts, UsageGauge } from "@/components/electricity/usage-gauge";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -23,7 +25,7 @@ import {
 } from "@/features/electricity/actions";
 import { billStatus } from "@/features/electricity/bill-logic";
 import type { MeterData } from "@/features/electricity/meter-data";
-import { kwhParts } from "@/features/electricity/overview";
+import { barShare, kwhParts } from "@/features/electricity/overview";
 import { formatKwh } from "@/features/electricity/usage";
 import { toCents } from "@/lib/decimal";
 import { formatDate, formatMoney, formatMonth } from "@/lib/format";
@@ -86,12 +88,15 @@ function BillRow({ bill, today }: { bill: ElectricityBill; today: string }) {
 export function MeterView({
   meter,
   toneIndex,
+  allMeters,
   data,
   readings,
   today,
 }: {
   meter: ElectricityMeter;
   toneIndex: number;
+  /** Every meter, active first: gives the chart each meter's colour. */
+  allMeters: ElectricityMeter[];
   data: MeterData;
   readings: ElectricityReading[];
   today: string;
@@ -100,6 +105,8 @@ export function MeterView({
   const active = !meter.archivedAt;
   const used = usage.state === "ok" ? kwhParts(usage.units) : null;
   const readingById = new Map(readings.map((r) => [r.id, r]));
+  const barClass = toneFor(toneIndex).bar.split(" ")[0];
+  const maxDelta = Math.max(0, ...readingRows.map((r) => r.delta ?? 0));
 
   return (
     <div className="flex flex-col gap-6">
@@ -134,7 +141,7 @@ export function MeterView({
         </span>
       </header>
 
-      <section aria-label="Usage since the last bill">
+      <section aria-label="Usage since the last bill" className="flex flex-col gap-3">
         <p className="text-5xl leading-none font-medium tabular-nums">
           {used ? (
             <>
@@ -144,15 +151,20 @@ export function MeterView({
             <span className="text-muted-foreground">–</span>
           )}
         </p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {usage.state === "ok"
-            ? `used since your last bill on ${formatDate(usage.sinceDate)}: ${usage.days} day${usage.days === 1 ? "" : "s"}${
-                usage.dailyAverage !== null ? `, about ${formatKwh(usage.dailyAverage)} a day` : ""
-              }`
-            : usage.state === "no-reading"
-              ? `No reading since your last bill on ${formatDate(usage.sinceDate)}. Add a reading to see your usage.`
-              : "No bill yet. Add a bill to see your usage since it."}
-        </p>
+        {usage.state === "ok" ? (
+          <>
+            <div className="max-w-lg">
+              <UsageGauge used={usage.units} reference={last ? toCents(last.units) : null} projected={usage.projected} toneIndex={toneIndex} />
+            </div>
+            <CycleFacts days={usage.days} perDay={usage.dailyAverage} from={last ? toCents(last.currentReading) : null} />
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {usage.state === "no-reading"
+              ? `Add a reading to count from the ${formatDate(usage.sinceDate)} bill.`
+              : "Add a bill to start counting."}
+          </p>
+        )}
       </section>
 
       {last && lastStatus ? (
@@ -186,6 +198,8 @@ export function MeterView({
           <AddBillButton meterId={meter.id} defaultDate={today} defaultPrevious={last?.currentReading} previousDate={last?.readingDate} />
         </div>
       ) : null}
+
+      {bills.length > 0 ? <MonthlyChart meters={allMeters} bills={bills} /> : null}
 
       <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section aria-label="Bills">
@@ -223,7 +237,7 @@ export function MeterView({
             <>
               <ul>
                 {readingRows.slice(0, SHOWN).map((r) => (
-                  <ReadingRowItem key={r.id} row={r} reading={readingById.get(r.id)} />
+                  <ReadingRowItem key={r.id} row={r} reading={readingById.get(r.id)} share={barShare(r.delta ?? 0, maxDelta)} barClass={barClass} />
                 ))}
               </ul>
               {readingRows.length > SHOWN ? (
@@ -233,7 +247,7 @@ export function MeterView({
                   </summary>
                   <ul>
                     {readingRows.slice(SHOWN).map((r) => (
-                      <ReadingRowItem key={r.id} row={r} reading={readingById.get(r.id)} />
+                      <ReadingRowItem key={r.id} row={r} reading={readingById.get(r.id)} share={barShare(r.delta ?? 0, maxDelta)} barClass={barClass} />
                     ))}
                   </ul>
                 </details>
@@ -246,13 +260,16 @@ export function MeterView({
   );
 }
 
-function ReadingRowItem({ row, reading }: { row: MeterData["readingRows"][number]; reading: ElectricityReading | undefined }) {
+function ReadingRowItem({ row, reading, share, barClass }: { row: MeterData["readingRows"][number]; reading: ElectricityReading | undefined; share: number; barClass: string }) {
   const kwh = kwhParts(row.value);
   return (
     <li className="flex items-center gap-3 border-t py-2.5 text-sm">
       <span className="min-w-0 flex-1">
         {formatDate(row.date)}
         {row.replaced ? <span className="ml-2 text-xs text-muted-foreground">meter replaced</span> : null}
+        <span aria-hidden className="mt-1.5 block h-1.5 rounded-full bg-muted">
+          <span className={`block h-full rounded-full ${barClass}`} style={{ width: `${share}%` }} />
+        </span>
       </span>
       <span className="tabular-nums">{kwh.value}</span>
       <span className="w-16 text-right text-muted-foreground tabular-nums">{row.delta === null ? "" : `+${kwhParts(row.delta).value}`}</span>
