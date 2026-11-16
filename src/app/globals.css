@@ -4,7 +4,8 @@
 /* Brand colours + radius live in one file; fonts live in src/theme/fonts.ts. */
 @import "../theme/theme.css";
 
-@custom-variant dark (&:is(.dark *));
+/* The dark: variant applies under the dark palettes (src/theme/palettes.ts keeps this list in step). */
+@custom-variant dark (&:is([data-palette="terminal"] *, [data-palette="midnight"] *));
 
 /* Maps the theme variables to Tailwind utilities (bg-primary, text-muted-foreground, ...).
    Values come from src/theme/theme.css — edit them there, not here. */

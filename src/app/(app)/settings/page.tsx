@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PageHeader } from "@/components/shell/page-header";
-import { ThemeSwitcher } from "@/components/shell/theme-switcher";
+import { PalettePicker } from "@/components/shell/palette-picker";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { appConfig } from "@/config/app.config";
@@ -36,10 +36,10 @@ export default function SettingsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Appearance</CardTitle>
-          <CardDescription>Choose light, dark, or follow this device.</CardDescription>
+          <CardDescription>Choose a colour palette. It is remembered on this device.</CardDescription>
         </CardHeader>
         <CardContent>
-          <ThemeSwitcher />
+          <PalettePicker />
         </CardContent>
       </Card>
 

@@ -34,7 +34,7 @@ Read first: [PLAN.md](PLAN.md) (phases and steps) and [DECISIONS.md](DECISIONS.m
 
 ## Conventions that are easy to miss
 
-- **Branding is parameters:** name, currency, time zone, reminder lead times and modules live in `src/config/app.config.ts`; colours and radius in `src/theme/theme.css`; fonts in `src/theme/fonts.ts`.
+- **Branding is parameters:** name, currency, time zone, reminder lead times and modules live in `src/config/app.config.ts`; colours and radius in `src/theme/theme.css` (four palettes, one block each, switched with `data-palette` on `<html>`; the list is `src/theme/palettes.ts`, and a test keeps the list, the CSS and the `dark:` variant in `globals.css` in step); fonts in `src/theme/fonts.ts`.
 - **A new module** registers itself in `app.config.ts`, adds its pages under `src/app/(app)/`, adds its owner type to `src/lib/owners.ts`, and adds a reminder source in `src/features/reminders/sources.ts`.
 - **Shared tasks, notes and files** attach to any record through `owner_type` + `owner_id` (no foreign keys). When a record is deleted, call `deleteSharedDataOf(ownerType, ownerId)` from `src/features/shared/cleanup.ts`.
 - **Every table** gets row-level security enabled in the same migration that creates it (no policies; the app uses the server connection only).

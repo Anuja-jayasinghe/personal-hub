@@ -1,57 +1,158 @@
 /*
- * Theme tokens — the ONE place for colours and radius (DECISIONS C3).
+ * Theme tokens — the ONE place for colours and radius (DECISIONS C3, C89).
  *
- * To re-brand, change the BRAND PRIMITIVES below (hue / chroma / radius). Every semantic colour
- * (--primary, --background, --border, ...) is derived from them, and shadcn/ui components read
- * only the semantic names, so no component needs touching.
+ * There are four palettes, switched with a `data-palette` attribute on <html> (the picker is in
+ * Settings; the list lives in src/theme/palettes.ts). Paper & Ink is the default and is written on
+ * :root, so it applies when no palette is chosen; the other three override it below. shadcn/ui
+ * components read only the semantic names (--primary, --background, ...), so no component needs
+ * touching to add or change a palette.
+ *
+ * Extra tokens: --brand-2 is the palette's secondary accent, and --meter-a / --meter-b are the two
+ * meter identity colours on the Electricity page (the primary and the secondary accent).
  *
  * Fonts live in src/theme/fonts.ts. The app name and logo live in src/config/app.config.ts.
- * All values here are PLACEHOLDERS until branding is decided (P9).
  */
 
 :root {
-  /* ===== BRAND PRIMITIVES (edit these) ===== */
-  --brand-hue: 215; /* 0–360: 215 = blue, 160 = green, 30 = orange, 330 = pink */
-  --brand-chroma: 0.12; /* colourfulness of the accent: 0 = grey, ~0.2 = vivid */
-  --neutral-chroma: 0.006; /* faint tint carried into greys so they sit with the brand hue */
   --radius: 0.625rem; /* base corner radius; every other radius is derived from this */
 
-  /* ===== Semantic colours — light ===== */
-  --background: oklch(0.99 var(--neutral-chroma) var(--brand-hue));
-  --foreground: oklch(0.18 var(--neutral-chroma) var(--brand-hue));
-  --card: oklch(1 0 0);
-  --card-foreground: var(--foreground);
-  --popover: oklch(1 0 0);
-  --popover-foreground: var(--foreground);
+  /* ===== Paper & Ink (default, light) ===== */
+  color-scheme: light;
+  --background: #f9fafb;
+  --foreground: #1f2937;
+  --card: #ffffff;
+  --card-foreground: #1f2937;
+  --popover: #ffffff;
+  --popover-foreground: #1f2937;
 
-  --primary: oklch(0.48 var(--brand-chroma) var(--brand-hue));
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 calc(var(--brand-chroma) * 0.15) var(--brand-hue));
-  --secondary-foreground: oklch(0.28 var(--brand-chroma) var(--brand-hue));
-  --accent: oklch(0.95 calc(var(--brand-chroma) * 0.25) var(--brand-hue));
-  --accent-foreground: oklch(0.28 var(--brand-chroma) var(--brand-hue));
+  --primary: #111827;
+  --primary-foreground: #f9fafb;
+  --brand-2: #2563eb;
+  --brand-2-foreground: #ffffff;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #1f2937;
+  --accent: #f3f4f6;
+  --accent-foreground: #111827;
 
-  --muted: oklch(0.96 var(--neutral-chroma) var(--brand-hue));
-  --muted-foreground: oklch(0.5 var(--neutral-chroma) var(--brand-hue));
-  --border: oklch(0.92 var(--neutral-chroma) var(--brand-hue));
-  --input: oklch(0.92 var(--neutral-chroma) var(--brand-hue));
-  --ring: oklch(0.62 var(--brand-chroma) var(--brand-hue));
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --border: #d1d5db;
+  --input: #d1d5db;
+  --ring: #2563eb;
 
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: #dc2626;
+  --status-overdue: #dc2626;
+  --status-soon: #b45309;
+  --status-ok: #047857;
 
-  /* Status colours used by reminders (overdue / due soon / ok). */
-  --status-overdue: oklch(0.577 0.245 27.325);
-  --status-soon: oklch(0.75 0.15 75);
-  --status-ok: oklch(0.62 0.15 150);
+  --sidebar: #ffffff;
+}
 
-  /* Charts: five steps of the brand hue. */
-  --chart-1: oklch(0.8 var(--brand-chroma) var(--brand-hue));
-  --chart-2: oklch(0.65 var(--brand-chroma) var(--brand-hue));
-  --chart-3: oklch(0.5 var(--brand-chroma) var(--brand-hue));
-  --chart-4: oklch(0.38 var(--brand-chroma) var(--brand-hue));
-  --chart-5: oklch(0.28 var(--brand-chroma) var(--brand-hue));
+/* ===== Cyberpunk Terminal (dark) ===== */
+[data-palette="terminal"] {
+  color-scheme: dark;
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card: #18181b;
+  --card-foreground: #fafafa;
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
 
-  --sidebar: oklch(0.975 var(--neutral-chroma) var(--brand-hue));
+  --primary: #22c55e;
+  --primary-foreground: #052e16;
+  --brand-2: #e879f9;
+  --brand-2-foreground: #09090b;
+  --secondary: #27272a;
+  --secondary-foreground: #fafafa;
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
+
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --border: rgb(250 250 250 / 13%);
+  --input: rgb(250 250 250 / 18%);
+  --ring: #22c55e;
+
+  --destructive: #ef4444;
+  --status-overdue: #ef4444;
+  --status-soon: #fbbf24;
+  --status-ok: #22c55e;
+
+  --sidebar: #0e0e11;
+}
+
+/* ===== Swiss Bauhaus (light) ===== */
+[data-palette="bauhaus"] {
+  color-scheme: light;
+  --background: #e5e5e5;
+  --foreground: #171717;
+  --card: #f4f4f4;
+  --card-foreground: #171717;
+  --popover: #f4f4f4;
+  --popover-foreground: #171717;
+
+  --primary: #ea580c;
+  --primary-foreground: #171717;
+  --brand-2: #171717;
+  --brand-2-foreground: #f4f4f4;
+  --secondary: #d4d4d4;
+  --secondary-foreground: #171717;
+  --accent: #d4d4d4;
+  --accent-foreground: #171717;
+
+  --muted: #dadada;
+  --muted-foreground: #525252;
+  --border: #b8b8b8;
+  --input: #b8b8b8;
+  --ring: #2563eb;
+
+  --destructive: #b91c1c;
+  --status-overdue: #b91c1c;
+  --status-soon: #a16207;
+  --status-ok: #15803d;
+
+  --sidebar: #dcdcdc;
+}
+
+/* ===== Midnight Slate and Electric Cyan (dark) ===== */
+[data-palette="midnight"] {
+  color-scheme: dark;
+  --background: #0f172a;
+  --foreground: #f8fafc;
+  --card: #1e293b;
+  --card-foreground: #f8fafc;
+  --popover: #1e293b;
+  --popover-foreground: #f8fafc;
+
+  --primary: #38bdf8;
+  --primary-foreground: #0f172a;
+  --brand-2: #818cf8;
+  --brand-2-foreground: #0f172a;
+  --secondary: #273449;
+  --secondary-foreground: #f8fafc;
+  --accent: #273449;
+  --accent-foreground: #f8fafc;
+
+  --muted: #273449;
+  --muted-foreground: #94a3b8;
+  --border: rgb(248 250 252 / 13%);
+  --input: rgb(248 250 252 / 18%);
+  --ring: #38bdf8;
+
+  --destructive: #f43f5e;
+  --status-overdue: #f43f5e;
+  --status-soon: #fbbf24;
+  --status-ok: #34d399;
+
+  --sidebar: #0b1222;
+}
+
+/*
+ * Derived tokens: the same in every palette because they point at the palette's own colours.
+ * They sit after the palettes so they resolve against whichever palette is on <html>.
+ */
+:root,
+[data-palette] {
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
@@ -59,35 +160,17 @@
   --sidebar-accent-foreground: var(--accent-foreground);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
-}
 
-/* ===== Semantic colours — dark (applied by adding the "dark" class to <html>) ===== */
-.dark {
-  --background: oklch(0.16 var(--neutral-chroma) var(--brand-hue));
-  --foreground: oklch(0.97 var(--neutral-chroma) var(--brand-hue));
-  --card: oklch(0.2 var(--neutral-chroma) var(--brand-hue));
-  --card-foreground: var(--foreground);
-  --popover: oklch(0.2 var(--neutral-chroma) var(--brand-hue));
-  --popover-foreground: var(--foreground);
+  /* Charts: five steps of the primary colour over the page. */
+  --chart-1: color-mix(in oklab, var(--primary) 35%, var(--background));
+  --chart-2: color-mix(in oklab, var(--primary) 55%, var(--background));
+  --chart-3: color-mix(in oklab, var(--primary) 75%, var(--background));
+  --chart-4: color-mix(in oklab, var(--primary) 90%, var(--background));
+  --chart-5: var(--primary);
 
-  --primary: oklch(0.72 var(--brand-chroma) var(--brand-hue));
-  --primary-foreground: oklch(0.18 var(--brand-chroma) var(--brand-hue));
-  --secondary: oklch(0.27 calc(var(--brand-chroma) * 0.2) var(--brand-hue));
-  --secondary-foreground: oklch(0.97 0 0);
-  --accent: oklch(0.3 calc(var(--brand-chroma) * 0.3) var(--brand-hue));
-  --accent-foreground: oklch(0.97 0 0);
-
-  --muted: oklch(0.27 var(--neutral-chroma) var(--brand-hue));
-  --muted-foreground: oklch(0.72 var(--neutral-chroma) var(--brand-hue));
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.55 var(--brand-chroma) var(--brand-hue));
-
-  --destructive: oklch(0.704 0.191 22.216);
-
-  --status-overdue: oklch(0.704 0.191 22.216);
-  --status-soon: oklch(0.82 0.14 80);
-  --status-ok: oklch(0.72 0.15 150);
-
-  --sidebar: oklch(0.2 var(--neutral-chroma) var(--brand-hue));
+  /* The two meters on the Electricity page: the primary and the secondary accent. */
+  --meter-a: var(--primary);
+  --meter-a-foreground: var(--primary-foreground);
+  --meter-b: var(--brand-2);
+  --meter-b-foreground: var(--brand-2-foreground);
 }

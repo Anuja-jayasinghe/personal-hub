@@ -6,8 +6,9 @@ import { badgeLetter } from "@/features/electricity/overview";
  * the only signal. The tone is picked by the meter's position in the list of all meters.
  */
 const TONES = [
-  { badge: "bg-violet-100 text-violet-900 dark:bg-violet-500/25 dark:text-violet-100", bar: "bg-violet-500 text-white" },
-  { badge: "bg-teal-100 text-teal-900 dark:bg-teal-500/25 dark:text-teal-100", bar: "bg-teal-600 text-white" },
+  // The first two follow the palette: the primary colour and the secondary accent (--meter-a / --meter-b in theme.css, C89).
+  { badge: "bg-[color-mix(in_oklab,var(--meter-a)_22%,transparent)] text-foreground", bar: "bg-[var(--meter-a)] text-[var(--meter-a-foreground)]" },
+  { badge: "bg-[color-mix(in_oklab,var(--meter-b)_22%,transparent)] text-foreground", bar: "bg-[var(--meter-b)] text-[var(--meter-b-foreground)]" },
   { badge: "bg-amber-100 text-amber-900 dark:bg-amber-500/25 dark:text-amber-100", bar: "bg-amber-600 text-white" },
   { badge: "bg-rose-100 text-rose-900 dark:bg-rose-500/25 dark:text-rose-100", bar: "bg-rose-500 text-white" },
   { badge: "bg-sky-100 text-sky-900 dark:bg-sky-500/25 dark:text-sky-100", bar: "bg-sky-600 text-white" },
