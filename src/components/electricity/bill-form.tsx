@@ -21,18 +21,22 @@ type Props = {
   defaultPrevious?: string;
   /** Add: the reading date of that last bill, shown next to the auto-filled previous reading. */
   previousDate?: string;
+  /** Called after a successful save, e.g. to close the card the form sits in. */
+  onDone?: () => void;
 };
 
 /** Add / edit form for a bill (createBill / updateBill). Units are worked out from the readings when left empty. */
-export function BillForm({ action, meterId, bill, defaultDate, defaultPrevious, previousDate }: Props) {
+export function BillForm({ action, meterId, bill, defaultDate, defaultPrevious, previousDate, onDone }: Props) {
   // C73: once a meter has a bill, the previous reading is taken from it, so only this month's reading is typed.
   const autoPrevious = !bill && defaultPrevious !== undefined;
   const [state, formAction] = useActionState(action, initialActionState);
   const { formRef, onSubmit } = useKeepValuesOnError(state);
 
   useEffect(() => {
-    if (state.ok && !bill) formRef.current?.reset();
-  }, [formRef, state, bill]);
+    if (!state.ok) return;
+    if (!bill) formRef.current?.reset();
+    onDone?.();
+  }, [formRef, state, bill, onDone]);
 
   return (
     <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
