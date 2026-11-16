@@ -57,7 +57,9 @@ function BillRow({ bill, today }: { bill: ElectricityBill; today: string }) {
             <form action={markBillPaid} className="flex flex-wrap items-center gap-2">
               <input type="hidden" name="id" value={bill.id} />
               <Input type="date" name="paidDate" defaultValue={today} aria-label="Paid on" className="w-40" />
-              <SubmitButton size="sm">Mark paid</SubmitButton>
+              <SubmitButton size="sm" confirm={`Mark the ${formatMonth(monthOf(bill.readingDate))} bill${bill.amount !== null ? ` (${formatMoney(Number(bill.amount))})` : ""} as paid? You can undo it.`}>
+                Mark paid
+              </SubmitButton>
             </form>
           )}
           <details className="rounded-md border">
@@ -168,14 +170,33 @@ export function MeterView({
             </p>
             <p className="mt-1.5 flex flex-wrap items-center gap-2">
               <BillChip status={lastStatus} />
-              {lastStatus.state !== "paid" && last.dueDate ? <span className="text-xs text-muted-foreground">due {formatDate(last.dueDate)}</span> : null}
+              {lastStatus.state === "paid" ? (
+                <span className="text-xs text-muted-foreground">paid on {formatDate(lastStatus.paidDate)}</span>
+              ) : last.dueDate ? (
+                <span className="text-xs text-muted-foreground">due {formatDate(last.dueDate)}</span>
+              ) : null}
             </p>
           </div>
-          {lastStatus.state !== "paid" && active ? (
-            <form action={markBillPaid}>
-              <input type="hidden" name="id" value={last.id} />
-              <SubmitButton variant="outline" size="sm">Mark paid</SubmitButton>
-            </form>
+          {active ? (
+            lastStatus.state === "paid" ? (
+              <form action={markBillUnpaid}>
+                <input type="hidden" name="id" value={last.id} />
+                <SubmitButton variant="ghost" size="sm" aria-label={`Undo: mark the ${formatMonth(monthOf(last.readingDate))} bill unpaid again`}>
+                  Undo
+                </SubmitButton>
+              </form>
+            ) : (
+              <form action={markBillPaid}>
+                <input type="hidden" name="id" value={last.id} />
+                <SubmitButton
+                  variant="outline"
+                  size="sm"
+                  confirm={`Mark the ${formatMonth(monthOf(last.readingDate))} bill${last.amount !== null ? ` (${formatMoney(Number(last.amount))})` : ""} as paid today? You can undo it.`}
+                >
+                  Mark paid
+                </SubmitButton>
+              </form>
+            )
           ) : null}
         </section>
       ) : null}
