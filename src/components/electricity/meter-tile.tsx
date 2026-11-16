@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { BillChip } from "@/components/electricity/bill-chip";
 import { MeterBadge } from "@/components/electricity/meter-tone";
+import { CycleFacts, UsageGauge } from "@/components/electricity/usage-gauge";
 import type { ElectricityMeter } from "@/db/schema";
 import type { MeterData } from "@/features/electricity/meter-data";
 import { kwhParts } from "@/features/electricity/overview";
+import { toCents } from "@/lib/decimal";
 import { formatDate } from "@/lib/format";
 
 /** One meter in the Both view: a single big number (used since its last bill) and one status chip. A link to the meter's own view. */
@@ -31,13 +33,17 @@ export function MeterTile({ meter, toneIndex, data, href }: { meter: Electricity
           <span className="text-muted-foreground">–</span>
         )}
       </span>
-      <span className="text-sm text-muted-foreground">
-        {usage.state === "ok"
-          ? `used since the bill on ${formatDate(usage.sinceDate)}`
-          : usage.state === "no-reading"
-            ? `no reading since the bill on ${formatDate(usage.sinceDate)}`
-            : "no bill yet"}
-      </span>
+
+      {usage.state === "ok" ? (
+        <span className="mt-3 flex flex-col gap-2.5">
+          <UsageGauge used={usage.units} reference={last ? toCents(last.units) : null} projected={usage.projected} toneIndex={toneIndex} size="sm" />
+          <CycleFacts days={usage.days} perDay={usage.dailyAverage} from={last ? toCents(last.currentReading) : null} />
+        </span>
+      ) : (
+        <span className="mt-1 text-sm text-muted-foreground">
+          {usage.state === "no-reading" ? `Add a reading to count from the ${formatDate(usage.sinceDate)} bill` : "Add a bill to start counting"}
+        </span>
+      )}
 
       {last && lastStatus ? (
         <span className="mt-2">

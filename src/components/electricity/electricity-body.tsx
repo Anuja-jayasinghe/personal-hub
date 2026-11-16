@@ -79,6 +79,7 @@ export function ElectricityBody({
             <MeterView
               meter={selected}
               toneIndex={toneIndexOf(selected.id)}
+              allMeters={allMeters}
               data={data.get(selected.id)!}
               readings={readings.filter((r) => r.meterId === selected.id)}
               today={today}
