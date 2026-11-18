@@ -1,23 +1,30 @@
 /**
- * Fonts — the ONE place to change typefaces (DECISIONS C3).
+ * Fonts — the ONE place to change typefaces (DECISIONS C3, C90).
  *
- * To re-brand, swap the imports/constructors below for any next/font/google (or next/font/local)
- * font. Keep the `variable` names: theme wiring in src/app/globals.css reads
- * --font-brand-sans and --font-brand-mono, so nothing else changes.
+ * The hub brand: Sora for everything you read and tap, JetBrains Mono for dates, readings and labels,
+ * Oxanium for page titles and the big numbers (DESIGN.md). All three are variable fonts from
+ * next/font/google, which downloads them at build time and serves them from this app (no request to
+ * Google from the browser).
  *
- * Geist is a PLACEHOLDER until branding is decided (P9).
+ * Keep the `variable` names: src/app/globals.css reads --font-brand-sans, --font-brand-mono and
+ * --font-brand-display (utilities font-sans, font-mono, font-display).
  */
-import { Geist, Geist_Mono } from "next/font/google";
+import { JetBrains_Mono, Oxanium, Sora } from "next/font/google";
 
-export const brandSans = Geist({
+export const brandSans = Sora({
   variable: "--font-brand-sans",
   subsets: ["latin"],
 });
 
-export const brandMono = Geist_Mono({
+export const brandMono = JetBrains_Mono({
   variable: "--font-brand-mono",
   subsets: ["latin"],
 });
 
-/** Class names to put on <html> so both font CSS variables are defined. */
-export const fontVariables = `${brandSans.variable} ${brandMono.variable}`;
+export const brandDisplay = Oxanium({
+  variable: "--font-brand-display",
+  subsets: ["latin"],
+});
+
+/** Class names to put on <html> so every font CSS variable is defined. */
+export const fontVariables = `${brandSans.variable} ${brandMono.variable} ${brandDisplay.variable}`;

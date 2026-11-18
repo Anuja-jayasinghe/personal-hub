@@ -84,8 +84,8 @@ function SidebarTop() {
   const expanded = state === "expanded";
   return (
     <div className="flex items-center gap-2 px-1 py-1 group-data-[collapsible=icon]:flex-col">
-      <Logo size={32} />
-      <span className="truncate font-semibold group-data-[collapsible=icon]:hidden">{appConfig.name}</span>
+      <Logo size={30} decorative />
+      <span className="truncate text-lg font-semibold tracking-tight group-data-[collapsible=icon]:hidden">{appConfig.name}</span>
       {isMobile ? null : (
         <SidebarTrigger
           className="ml-auto group-data-[collapsible=icon]:ml-0"
