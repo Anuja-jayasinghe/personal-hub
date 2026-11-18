@@ -15,6 +15,8 @@ export type ModuleKey = "vehicles" | "electricity" | "bills";
 export type SharedPageConfig = {
   key: string;
   label: string;
+  /** Short name for the phone bar and desktop rail. */
+  navLabel: string;
   href: string;
   icon: string;
 };
@@ -22,9 +24,11 @@ export type SharedPageConfig = {
 export type ModuleConfig = {
   key: ModuleKey;
   label: string;
+  /** Short name for the phone bar and desktop rail. */
+  navLabel: string;
   description: string;
   href: string;
-  /** lucide-react icon name; resolved when the app shell is built (step 0.6). */
+  /** Icon name from src/components/shell/icons.tsx. */
   icon: string;
   enabled: boolean;
 };
@@ -122,8 +126,8 @@ export const appConfig = {
 
   // ---- Shared pages (DECISIONS C35) ------------------------------------------------------------
   sharedPages: [
-    { key: "reminders", label: "Reminders", href: "/reminders", icon: "bell" },
-    { key: "tasks", label: "Tasks & notes", href: "/tasks", icon: "tasks" },
+    { key: "reminders", label: "Reminders", navLabel: "Reminders", href: "/reminders", icon: "bell" },
+    { key: "tasks", label: "Tasks & notes", navLabel: "Tasks", href: "/tasks", icon: "tasks" },
   ] satisfies SharedPageConfig[],
 
   // ---- Modules (DECISIONS C1): flip `enabled` to show/hide a module in navigation ------------
@@ -131,6 +135,7 @@ export const appConfig = {
     {
       key: "vehicles",
       label: "Vehicles",
+      navLabel: "Vehicles",
       description: "Services, licence and insurance renewals, and notes.",
       href: "/vehicles",
       icon: "car",
@@ -139,6 +144,7 @@ export const appConfig = {
     {
       key: "electricity",
       label: "Electricity",
+      navLabel: "Electricity",
       description: "Meter readings, bills and a running total since your last bill.",
       href: "/electricity",
       icon: "zap",
@@ -147,6 +153,7 @@ export const appConfig = {
     {
       key: "bills",
       label: "Bills & subscriptions",
+      navLabel: "Bills",
       description: "Payment dates, amounts and history.",
       href: "/bills",
       icon: "receipt",

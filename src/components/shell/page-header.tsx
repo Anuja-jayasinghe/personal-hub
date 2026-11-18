@@ -1,3 +1,9 @@
+import { Logo } from "@/components/brand/logo";
+
+/**
+ * A page's title row. On a phone the J mark sits before the title, since there is no top bar
+ * (the rail carries it on desktop). Titles are Oxanium (DESIGN.md, Typography).
+ */
 export function PageHeader({
   title,
   description,
@@ -6,9 +12,14 @@ export function PageHeader({
   description?: string;
 }) {
   return (
-    <header className="flex flex-col gap-1">
-      <h1 className="font-display text-3xl font-semibold tracking-tight">{title}</h1>
-      {description ? <p className="text-muted-foreground">{description}</p> : null}
+    <header className="flex items-start gap-3">
+      <span className="pt-0.5 md:hidden">
+        <Logo size={30} decorative />
+      </span>
+      <div className="flex min-w-0 flex-col gap-1">
+        <h1 className="font-display text-[1.75rem] leading-none font-semibold tracking-tight md:text-4xl">{title}</h1>
+        {description ? <p className="text-muted-foreground">{description}</p> : null}
+      </div>
     </header>
   );
 }
