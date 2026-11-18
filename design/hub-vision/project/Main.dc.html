@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dye works identity</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Spline+Sans+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Bricolage Grotesque',system-ui,sans-serif;color:#141A2E}
+@keyframes dyeDrift{from{transform:translateX(0)}to{transform:translateX(-120px)}}
+@keyframes dyeRise{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+</style>
+</helmet>
+<div style="width:1440px;height:1000px;box-sizing:border-box;background:#EEEFEC;padding:56px 64px;display:grid;grid-template-columns:420px 1fr;gap:56px">
+
+<div style="display:flex;flex-direction:column;gap:28px">
+<div>
+<p style="margin:0;font-size:15px;color:#4A5068">Direction B</p>
+<h1 style="margin:6px 0 0;font-size:64px;line-height:0.95;font-weight:800;letter-spacing:-0.03em">Dye works</h1>
+<p style="margin:14px 0 0;font-size:18px;line-height:1.5;color:#2B3150;max-width:36ch">Usage is dye. Every meter is a cloth dipped in indigo: the deeper the dye, the more units used. The 120 and 180 limits are wax-resist lines the dye must not cross.</p>
+</div>
+
+<div style="display:flex;gap:22px;align-items:center">
+<svg width="132" height="132" viewBox="0 0 132 132" role="img" aria-label="Hub logo: a square cloth half dipped in indigo, with a wax-resist line">
+<defs><clipPath id="bLogoClip"><rect x="6" y="6" width="120" height="120" rx="30"></rect></clipPath></defs>
+<rect x="6" y="6" width="120" height="120" rx="30" fill="#FFFFFF" stroke="#172449" stroke-width="5"></rect>
+<g clip-path="url(#bLogoClip)">
+<path d="M0 70 Q 22 60 44 70 T 88 70 T 132 70 V 132 H 0 Z" fill="#172449"></path>
+<path d="M0 52 Q 22 46 44 52 T 88 52 T 132 52" fill="none" stroke="#172449" stroke-width="3" stroke-dasharray="7 6"></path>
+<path d="M30 132 L44 104 L38 92 L52 78" fill="none" stroke="#EEEFEC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+</g>
+</svg>
+<div>
+<p style="margin:0;font-size:58px;font-weight:800;letter-spacing:-0.04em;line-height:1">hub</p>
+<p style="margin:6px 0 0;font-size:14px;color:#4A5068">mark: a half-dipped cloth and its resist line</p>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<p style="margin:0;font-size:15px;font-weight:600">Colour: natural dyes on cotton</p>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+<sc-for list="{{swatches}}" as="s" hint-placeholder-count="6">
+<div style="background:#FFFFFF;border-radius:14px;overflow:hidden;box-shadow:0 0 0 1px rgba(20,26,46,.08)">
+<div style="height:56px;background:{{s.hex}}"></div>
+<div style="padding:8px 10px"><p style="margin:0;font-size:13px;font-weight:600">{{s.name}}</p><p style="margin:2px 0 0;font-family:'Spline Sans Mono',monospace;font-size:11px;color:#4A5068">{{s.hex}}</p><p style="margin:2px 0 0;font-size:11px;color:#4A5068">{{s.job}}</p></div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="margin:0;font-size:15px;font-weight:600">Type</p>
+<p style="margin:0;font-size:44px;font-weight:800;letter-spacing:-0.03em;line-height:1">96 units left</p>
+<p style="margin:0;font-size:16px;line-height:1.5;color:#2B3150">Bricolage Grotesque: wide, hand-cut, a little uneven, like stamped block letters.</p>
+<p style="margin:0;font-family:'Spline Sans Mono',monospace;font-size:22px;letter-spacing:0.02em">17,489.3 kWh</p>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:26px">
+<div>
+<p style="margin:0 0 12px;font-size:15px;font-weight:600">Signature: the dip</p>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px">
+<sc-for list="{{dips}}" as="d" hint-placeholder-count="3">
+<div style="position:relative;height:330px;border-radius:26px;overflow:hidden;background:#FFFFFF;box-shadow:0 0 0 1px rgba(20,26,46,.08),0 12px 24px -12px rgba(20,26,46,.25)">
+<div style="position:absolute;left:0;right:0;bottom:0;height:{{d.level}}%;animation:dyeRise 5s ease-in-out infinite">
+<svg width="480" height="22" viewBox="0 0 480 22" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;top:-21px;left:0;animation:dyeDrift 7s linear infinite">
+<path d="M0 12 Q 30 2 60 12 T 120 12 T 180 12 T 240 12 T 300 12 T 360 12 T 420 12 T 480 12 V 22 H 0 Z" fill="{{d.dye}}"></path>
+</svg>
+<div style="position:absolute;inset:0;background:{{d.dye}}"></div>
+<svg width="100%" height="100%" aria-hidden="true" style="position:absolute;inset:0;opacity:.22"><path d="M20 260 L60 200 L52 170 L96 120 M60 200 L110 230 M140 300 L170 240 L210 230 M170 240 L160 190" fill="none" stroke="#FFFFFF" stroke-width="1.4"></path></svg>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:{{d.limitAt}}%;border-top:2.5px dashed {{d.lineColor}}"></div>
+<span style="position:absolute;right:14px;bottom:calc({{d.limitAt}}% + 6px);font-family:'Spline Sans Mono',monospace;font-size:12px;color:#141A2E;background:#FFFFFF;padding:2px 6px;border-radius:6px">{{d.limitLabel}}</span>
+<div style="position:relative;padding:18px">
+<p style="margin:0;font-size:15px;font-weight:600">{{d.name}}</p>
+<p style="margin:8px 0 0;font-size:46px;font-weight:800;letter-spacing:-0.03em;line-height:1">{{d.left}}</p>
+<p style="margin:2px 0 0;font-size:14px;color:#2B3150">units left · {{d.used}}</p>
+</div>
+</div>
+</sc-for>
+</div>
+<p style="margin:10px 0 0;font-size:14px;line-height:1.5;color:#4A5068;max-width:80ch">The dye rises as units are used and drifts slowly while a meter is live. The dashed resist line is the limit (120, or 180 for the meter that crossed first). Near the line the dye turns turmeric; past it, madder.</p>
+</div>
+
+<div>
+<p style="margin:0 0 12px;font-size:15px;font-weight:600">Icons: one line, a resist edge</p>
+<div style="display:flex;gap:16px">
+<sc-for list="{{icons}}" as="ic" hint-placeholder-count="6">
+<div style="width:96px;display:flex;flex-direction:column;align-items:center;gap:8px">
+<div style="width:72px;height:72px;border-radius:20px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 1px rgba(20,26,46,.08)">
+<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#172449" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ic.d}}"></path><path d="M3 21.5h18" stroke="#3B5BA5" stroke-dasharray="2 2"></path></svg>
+</div>
+<span style="font-size:13px;color:#2B3150">{{ic.label}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+<sc-for list="{{rules}}" as="r" hint-placeholder-count="4">
+<div style="background:#FFFFFF;border-radius:18px;padding:14px 16px;box-shadow:0 0 0 1px rgba(20,26,46,.08)">
+<p style="margin:0;font-size:15px;font-weight:600">{{r.t}}</p>
+<p style="margin:4px 0 0;font-size:14px;line-height:1.45;color:#2B3150">{{r.b}}</p>
+</div>
+</sc-for>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+swatches: [
+{ name: 'Indigo vat', hex: '#172449', job: 'shell, primary, dye' },
+{ name: 'Indigo wash', hex: '#3B5BA5', job: 'a light dip, links' },
+{ name: 'Cotton', hex: '#EEEFEC', job: 'page ground' },
+{ name: 'Turmeric', hex: '#E0A526', job: 'close to a limit' },
+{ name: 'Madder', hex: '#B4442F', job: 'over a limit' },
+{ name: 'Ink', hex: '#141A2E', job: 'text' },
+],
+dips: [
+{ name: 'Meter A', left: '96', used: '24 of 120', level: 18, limitAt: 82, limitLabel: '120', dye: '#3B5BA5', lineColor: '#172449' },
+{ name: 'Meter B · live', left: '10', used: '110 of 120', level: 74, limitAt: 82, limitLabel: '120', dye: '#E0A526', lineColor: '#172449' },
+{ name: 'Meter A · 180 meter', left: '5 over', used: '185 of 180', level: 88, limitAt: 80, limitLabel: '180', dye: '#B4442F', lineColor: '#FFFFFF' },
+],
+icons: [
+{ label: 'Electricity', d: 'M13 2L5 13h6l-1 8 8-11h-6z' },
+{ label: 'Vehicles', d: 'M3 15h18v3H3zM6 15l1.8-5a2 2 0 0 1 1.9-1.3h4.6a2 2 0 0 1 1.9 1.3L18 15' },
+{ label: 'Bills', d: 'M6 3h12v16l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6' },
+{ label: 'Reminders', d: 'M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7M10 19a2 2 0 0 0 4 0' },
+{ label: 'Documents', d: 'M7 3h7l5 5v11H7zM14 3v5h5' },
+{ label: 'Warranty', d: 'M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z' },
+],
+rules: [
+{ t: 'Indigo is the only colour that carries data', b: 'Turmeric and madder appear only when a limit is near or crossed. Everything else is cotton and ink.' },
+{ t: 'Depth means amount', b: 'Anywhere a quantity matters (units, days to a renewal, bills paid) it is a dye level against a resist line.' },
+{ t: 'Calm, then urgent', b: 'Dye drifts slowly while a meter is live and stops when it is idle. Nothing else moves.' },
+{ t: 'Cloth, not costume', b: 'No fabric textures or patterns as wallpaper: the craft enters through colour, type and the dip, nowhere else.' },
+],
+};
+}
+}
+</script>
+</body>
+</html>

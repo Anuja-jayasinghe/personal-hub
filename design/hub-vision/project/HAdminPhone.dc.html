@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hub admin phone</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Oxanium:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Sora',Arial,sans-serif;color:#F2F5FA}
+.d{font-family:'Oxanium',Arial,sans-serif;letter-spacing:-.025em}
+.m{font-family:'JetBrains Mono',monospace}
+.eb{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#929EAF}
+.card{background:#1A2230;border:1px solid #303B4B;border-radius:18px}
+.back{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:#1A2230;box-shadow:inset 0 0 0 1px #303B4B}
+.chip{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:999px;font-size:13px;font-weight:500}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+</style>
+</helmet>
+<div style="display:flex;gap:60px;width:1290px;height:900px">
+
+<div style="position:relative;width:390px;height:900px;background:#11151D;overflow:hidden;flex:none">
+<div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:12px">
+<header style="display:flex;align-items:center;gap:10px">
+<a href="#" aria-label="Back to Settings" class="back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2F5FA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
+<div><span class="eb">/ Settings /</span><h1 class="d" style="margin:2px 0 0;font-size:26px;font-weight:600;line-height:1">People and roles</h1></div>
+</header>
+<a href="#" style="display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:12px;background:#4388F5;color:#0D1118;font-size:15px;font-weight:600;text-decoration:none">+ Invite someone</a>
+<section aria-label="People" class="card" style="padding:4px 14px">
+<sc-for list="{{people}}" as="p" hint-placeholder-count="3">
+<a href="#" style="display:flex;align-items:center;gap:12px;min-height:72px;border-top:{{p.line}};text-decoration:none;color:#F2F5FA">
+<span style="flex:none;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:{{p.avBg}};box-shadow:inset 0 0 0 1px {{p.avRing}};font-size:15px;font-weight:600;color:{{p.avInk}}">{{p.initial}}</span>
+<span style="flex:1;min-width:0"><span style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600">{{p.name}}<span class="m" style="display:inline-flex;align-items:center;min-height:20px;padding:0 7px;border-radius:999px;background:{{p.roleBg}};box-shadow:inset 0 0 0 1px {{p.roleRing}};font-size:9px;letter-spacing:.1em;color:{{p.roleInk}}">{{p.role}}</span></span><span style="display:block;margin-top:2px;font-size:12px;color:#A3ADBD">{{p.sub}}</span></span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#929EAF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"></path></svg>
+</a>
+</sc-for>
+</section>
+<section aria-label="Presets" class="card" style="padding:14px">
+<span class="eb">Presets you can start from</span>
+<sc-for list="{{presets}}" as="r" hint-placeholder-count="3">
+<div style="display:flex;gap:10px;align-items:flex-start;margin-top:10px"><span style="flex:none;width:8px;height:8px;margin-top:6px;border-radius:50%;background:{{r.dot}}"></span><span><span style="display:block;font-size:14px;font-weight:600">{{r.name}}</span><span style="display:block;font-size:12px;line-height:1.45;color:#A3ADBD">{{r.desc}}</span></span></div>
+</sc-for>
+</section>
+<a href="#" style="display:flex;align-items:center;gap:10px;min-height:52px;padding:0 14px;border-radius:14px;box-shadow:inset 0 0 0 1px #303B4B;color:#F2F5FA;text-decoration:none;font-size:14px;font-weight:600"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B7C0CD" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 4v16M6 8h12M6 14h9"></path><circle cx="6" cy="4" r="1.8" fill="#B7C0CD"></circle><circle cx="6" cy="20" r="1.8" fill="#B7C0CD"></circle></svg>Activity<span class="m" style="margin-left:auto;font-size:10.5px;color:#929EAF">6 THIS WEEK</span></a>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="HubNav" active="more" hint-size="390px,84px"></dc-import></div>
+</div>
+
+<div style="position:relative;width:390px;height:900px;background:#11151D;overflow:hidden;flex:none">
+<div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:12px">
+<header style="display:flex;align-items:center;gap:10px">
+<a href="#" aria-label="Back to People" class="back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2F5FA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
+<div><span class="eb">/ People /</span><h1 class="d" style="margin:2px 0 0;font-size:26px;font-weight:600;line-height:1">Father</h1></div>
+<span class="m" style="margin-left:auto;display:inline-flex;align-items:center;min-height:24px;padding:0 9px;border-radius:999px;box-shadow:inset 0 0 0 1px #4388F5;font-size:9.5px;letter-spacing:.1em;color:#4388F5">CUSTOM</span>
+</header>
+<p style="margin:0;font-size:13px;line-height:1.5;color:#A3ADBD">Slide each part to what Father may do. It saves straight away.</p>
+<section aria-label="Access per part" class="card" style="padding:4px 14px">
+<sc-for list="{{matrix}}" as="r" hint-placeholder-count="6">
+<div style="padding:10px 0 6px;border-top:{{r.line}}">
+<div style="display:flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="{{r.ink}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.d}}"></path></svg><span style="font-size:14px;font-weight:600;color:{{r.ink}}">{{r.name}}</span><span class="m" style="margin-left:auto;font-size:10px;letter-spacing:.12em;color:{{r.levelInk}}">{{r.levelName}}</span></div>
+<svg viewBox="0 0 330 34" width="100%" height="34" role="img" aria-label="{{r.name}}: {{r.levelName}}">
+<line x1="14" y1="12" x2="316" y2="12" stroke="#303B4B" stroke-width="2"></line>
+<line x1="14" y1="12" x2="{{r.x}}" y2="12" stroke="#4388F5" stroke-width="3.5" stroke-linecap="round" opacity="{{r.lineOp}}"></line>
+<sc-for list="{{r.nodes}}" as="n" hint-placeholder-count="5"><circle cx="{{n.x}}" cy="12" r="{{n.r}}" fill="{{n.fill}}" stroke="{{n.stroke}}" stroke-width="2"></circle><text x="{{n.x}}" y="31" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#929EAF">{{n.label}}</text></sc-for>
+</svg>
+</div>
+</sc-for>
+</section>
+<section class="card" style="padding:4px 14px">
+<sc-for list="{{extras}}" as="e" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px;min-height:50px;border-top:{{e.line}}"><span style="flex:1;font-size:14px">{{e.label}}</span><span role="switch" aria-checked="{{e.on}}" style="position:relative;width:44px;height:26px;border-radius:999px;background:{{e.track}};box-shadow:inset 0 0 0 1px {{e.ring}}"><span style="position:absolute;top:3px;left:{{e.knob}};width:20px;height:20px;border-radius:50%;background:{{e.knobBg}}"></span></span></div>
+</sc-for>
+</section>
+<a href="#" style="display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:12px;box-shadow:inset 0 0 0 1px #303B4B;color:#FF8F87;font-size:14px;font-weight:600;text-decoration:none">Remove Father’s access</a>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="HubNav" active="more" hint-size="390px,84px"></dc-import></div>
+</div>
+
+<div style="position:relative;width:390px;height:900px;background:#11151D;overflow:hidden;flex:none">
+<div aria-hidden="true" style="padding:18px 16px;display:flex;flex-direction:column;gap:12px"><div style="display:flex;align-items:center;gap:12px"><span style="width:40px;height:40px;border-radius:12px;background:#1A2230"></span><span class="d" style="font-size:26px;font-weight:600">People and roles</span></div><div style="height:52px;border-radius:12px;background:#1D355A"></div><div style="height:220px;border-radius:18px;background:#1A2230"></div></div>
+<div style="position:absolute;inset:0;background:rgba(5,7,11,.66)"></div>
+<section role="dialog" aria-modal="true" aria-labelledby="invTitle" style="position:absolute;left:0;right:0;bottom:0;background:#1A2230;border-top:1px solid #303B4B;border-radius:28px 28px 0 0;padding:10px 16px 28px;display:flex;flex-direction:column;gap:14px">
+<span aria-hidden="true" style="align-self:center;width:40px;height:5px;border-radius:3px;background:#303B4B"></span>
+<div style="display:flex;align-items:center;gap:10px"><div><span class="m" style="display:block;font-size:10.5px;letter-spacing:.14em;color:#4388F5">/ PEOPLE / INVITE</span><h2 id="invTitle" class="d" style="margin:2px 0 0;font-size:26px;font-weight:600">Invite someone</h2></div><button type="button" aria-label="Close" style="margin-left:auto;width:40px;height:40px;border:0;border-radius:12px;background:#222D3D;box-shadow:inset 0 0 0 1px #303B4B;color:#F2F5FA;font-size:18px">×</button></div>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:500;color:#B7C0CD">Their name, as you’ll see it
+<span style="display:flex;align-items:center;height:50px;padding:0 14px;border-radius:12px;background:#11151D;box-shadow:inset 0 0 0 1px #303B4B;font-size:16px">Father</span>
+</label>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:500;color:#B7C0CD">Their email
+<span style="display:flex;align-items:center;height:50px;padding:0 14px;border-radius:12px;background:#11151D;box-shadow:inset 0 0 0 1.5px #4388F5;font-size:16px">name@example.com<span style="width:2px;height:22px;margin-left:2px;background:#4388F5;animation:caret 1s steps(1) infinite"></span></span>
+</label>
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;font-weight:500;color:#B7C0CD">Start them as</span>
+<div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{presetChips}}" as="c" hint-placeholder-count="3"><span class="chip" style="background:{{c.bg}};color:{{c.ink}};box-shadow:inset 0 0 0 1px {{c.ring}}">{{c.label}}</span></sc-for></div>
+</div>
+<div style="padding:12px 14px;border-radius:14px;background:#11151D;box-shadow:inset 0 0 0 1px #222D3D;display:flex;flex-direction:column;gap:6px">
+<span class="eb">They will be able to</span>
+<sc-for list="{{preview}}" as="v" hint-placeholder-count="4"><span style="display:flex;align-items:center;gap:8px;font-size:13px;color:{{v.ink}}"><span style="width:7px;height:7px;border-radius:50%;background:{{v.dot}}"></span>{{v.text}}</span></sc-for>
+</div>
+<button type="button" style="min-height:56px;border:0;border-radius:14px;background:#4388F5;color:#0D1118;font-family:inherit;font-size:16px;font-weight:600">Send the invite</button>
+<p style="margin:-4px 0 0;text-align:center;font-size:12px;color:#929EAF">They sign in with this email. You can change anything later.</p>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1290,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const LX = [14, 89.5, 165, 240.5, 316];
+const names = ['HIDDEN', 'SEE', 'ADD', 'EDIT', 'MANAGE'];
+const row = (name, d, lvl, first) => ({
+name, d, levelName: names[lvl], line: first ? '0' : '1px solid #222D3D', ink: lvl === 0 ? '#929EAF' : '#F2F5FA', levelInk: lvl === 0 ? '#929EAF' : '#4388F5', x: LX[lvl], lineOp: lvl === 0 ? 0 : 1,
+nodes: LX.map((x, i) => ({ x, label: names[i], r: i === lvl ? 7.5 : 5, fill: i < lvl ? '#4388F5' : (i === lvl ? (lvl === 0 ? '#929EAF' : '#4388F5') : '#1A2230'), stroke: i === lvl ? '#1A2230' : (i < lvl ? '#4388F5' : '#4A5668') })),
+});
+const sw = (on) => ({ on: String(on), track: on ? '#4388F5' : '#222D3D', ring: on ? '#4388F5' : '#303B4B', knob: on ? '21px' : '3px', knobBg: on ? '#0D1118' : '#929EAF' });
+const on = { bg: '#1D355A', ink: '#F2F5FA', ring: 'rgba(67,136,245,.55)' };
+const off = { bg: 'transparent', ink: '#B7C0CD', ring: '#303B4B' };
+return {
+people: [
+{ name: 'You', role: 'OWNER', roleBg: '#4388F5', roleRing: '#4388F5', roleInk: '#0D1118', sub: 'everything, and who sees what', initial: 'A', avBg: '#1D355A', avRing: 'rgba(67,136,245,.55)', avInk: '#F2F5FA', line: '0' },
+{ name: 'Father', role: 'CUSTOM', roleBg: 'transparent', roleRing: '#4388F5', roleInk: '#4388F5', sub: 'last in 15 Nov · 3 parts', initial: 'F', avBg: '#222D3D', avRing: '#303B4B', avInk: '#F2F5FA', line: '1px solid #222D3D' },
+{ name: 'Invite pending', role: 'FAMILY READER', roleBg: 'transparent', roleRing: '#303B4B', roleInk: '#B7C0CD', sub: 'name@example.com · sent 17 Nov', initial: '?', avBg: 'transparent', avRing: '#4A5668', avInk: '#929EAF', line: '1px solid #222D3D' },
+],
+presets: [
+{ name: 'Family reader', desc: 'Sees Electricity and Bills, adds meter readings.', dot: '#4388F5' },
+{ name: 'Helper', desc: 'Adds readings and ticks tasks. Sees nothing about money.', dot: '#B7C0CD' },
+{ name: 'Co-owner', desc: 'Everything except People and roles.', dot: '#F5B94A' },
+],
+matrix: [
+row('Electricity', 'M13 3L6 13h6l-1 8 7-10h-6z', 2, true),
+row('Bills', 'M7 3h10v18l-2.5-1.5L12 21l-2.5-1.5L7 21z', 1),
+row('Vehicles', 'M3 16h18M5.5 16l2-5.5h9l2 5.5', 0),
+row('Documents', 'M6 3h8l4 4v14H6zM14 3v4h4', 0),
+row('Reminders', 'M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z', 1),
+row('Tasks and notes', 'M4 7l2 2 3.5-3.5M13 7.5h7M4 16l2 2 3.5-3.5M13 16.5h7', 0),
+],
+extras: [{ label: 'Can mark bills paid', line: '0', ...sw(false) }, { label: 'Gets meter-read reminders', line: '1px solid #222D3D', ...sw(true) }],
+presetChips: [{ label: 'Family reader', ...on }, { label: 'Helper', ...off }, { label: 'Co-owner', ...off }, { label: 'Start blank', ...off }],
+preview: [
+{ text: 'See Electricity and add meter readings', ink: '#F2F5FA', dot: '#4388F5' },
+{ text: 'See Bills, but not mark them paid', ink: '#F2F5FA', dot: '#4388F5' },
+{ text: 'Not see Vehicles, Documents, Tasks', ink: '#929EAF', dot: '#4A5668' },
+{ text: 'Never see People and roles', ink: '#929EAF', dot: '#4A5668' },
+],
+};
+}
+}
+</script>
+</body>
+</html>

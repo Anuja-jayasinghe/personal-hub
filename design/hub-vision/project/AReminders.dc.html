@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Reminders</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Archivo',system-ui,sans-serif;color:#16181D}
+@keyframes ring{0%,80%,100%{transform:rotate(0)}84%{transform:rotate(14deg)}88%{transform:rotate(-12deg)}92%{transform:rotate(8deg)}96%{transform:rotate(-4deg)}}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:900px;background:#ECEEF1;overflow:hidden">
+<div style="padding:20px 16px 0;display:flex;flex-direction:column;gap:12px">
+
+<header style="display:flex;align-items:center;gap:10px">
+<span style="position:relative;width:34px;height:34px;animation:ring 4s ease-in-out infinite;transform-origin:50% 10%"><span style="position:absolute;right:0;top:0;width:22px;height:22px;border-radius:50%;background:linear-gradient(140deg,#FF9DB0,#D93A65)"></span><span style="position:absolute;left:0;bottom:0;width:24px;height:24px;border-radius:8px;background:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7M10 19a2 2 0 0 0 4 0"></path></svg></span></span>
+<h1 style="margin:0;font-size:24px;font-weight:800;font-stretch:125%;letter-spacing:-0.02em">Reminders</h1>
+<a href="#" style="margin-left:auto;display:flex;align-items:center;min-height:40px;padding:0 14px;border-radius:12px;background:#16181D;color:#F2F3F5;font-size:14px;font-weight:700;text-decoration:none">+ Reminder</a>
+</header>
+
+<section aria-label="The next three weeks" style="background:#16181D;border-radius:24px;padding:16px 14px;color:#F2F3F5">
+<div style="display:flex;align-items:baseline;gap:8px;padding:0 2px"><span style="font-size:28px;font-weight:800;font-stretch:125%;line-height:1">5</span><span style="font-size:13px;color:#C9CED6">things in the next 3 weeks</span></div>
+<div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:12px">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="21">
+<span style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;border-radius:10px;background:{{d.bg}}">
+<span style="font-family:'Martian Mono',monospace;font-size:9px;color:{{d.dim}}">{{d.wd}}</span>
+<span style="font-size:14px;font-weight:{{d.weight}};color:{{d.ink}}">{{d.n}}</span>
+<span style="display:flex;gap:2px;height:6px"><sc-for list="{{d.dots}}" as="c" hint-placeholder-count="1"><span style="width:6px;height:6px;border-radius:50%;background:{{c}}"></span></sc-for></span>
+</span>
+</sc-for>
+</div>
+</section>
+
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="3">
+<section aria-label="{{g.title}}" style="background:#F8F9FA;border-radius:20px;padding:6px 14px;box-shadow:0 0 0 1px rgba(22,24,29,.1)">
+<h2 style="margin:8px 0 2px;font-size:13px;font-weight:700;color:#4B515C">{{g.title}}</h2>
+<sc-for list="{{g.items}}" as="r" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px;min-height:60px;border-top:1px solid #E3E6EA">
+<span style="position:relative;flex:none;width:30px;height:30px"><span style="position:absolute;right:0;top:0;width:18px;height:18px;border-radius:{{r.shape}};background:linear-gradient(140deg,{{r.c1}},{{r.c2}})"></span><span style="position:absolute;left:0;bottom:0;width:20px;height:20px;border-radius:7px;background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.9);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)"></span></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-size:15px;font-weight:700">{{r.title}}</span><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#4B515C">{{r.sub}}<span style="display:{{r.repeatShow}};padding:1px 6px;border-radius:6px;background:#E3E6EA;font-size:11px;font-weight:700;color:#2C3038">{{r.repeat}}</span></span></span>
+<span style="font-family:'Martian Mono',monospace;font-size:11px;color:{{r.whenInk}}">{{r.when}}</span>
+</div>
+</sc-for>
+</section>
+</sc-for>
+
+<section aria-label="Your own reminders" style="border-radius:20px;padding:14px;box-shadow:inset 0 0 0 1.5px #C9CED6;display:flex;align-items:center;gap:12px">
+<span style="flex:1"><span style="display:block;font-size:15px;font-weight:700">Your own reminders</span><span style="display:block;font-size:12px;line-height:1.4;color:#4B515C">None yet. Anything with a date can live here, and shows on the strip above.</span></span>
+<a href="#" style="display:flex;align-items:center;min-height:40px;padding:0 12px;border-radius:12px;background:#16181D;color:#F2F3F5;font-size:13px;font-weight:700;text-decoration:none">Add</a>
+</section>
+</div>
+
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="GlassNav" active="more" hint-size="390px,78px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const wds = ['W', 'T', 'F', 'S', 'S', 'M', 'T'];
+const amber = '#F2A417';
+const green = '#2BD08A';
+const marks = { 20: [amber], 21: [amber], 25: [amber], 26: [amber], 34: [green] };
+const days = [];
+for (let i = 0; i < 21; i++) {
+const date = 18 + i;
+const n = date > 30 ? date - 30 : date;
+days.push({ wd: wds[i % 7], n: String(n), dots: marks[date] || [], bg: i === 0 ? '#F2F3F5' : 'transparent', ink: i === 0 ? '#16181D' : '#F2F3F5', dim: i === 0 ? '#4B515C' : '#8A909A', weight: i === 0 ? 800 : 600 });
+}
+const elec = { c1: '#FFD54A', c2: '#E8930C', shape: '4px' };
+const bill = { c1: '#6FE7AE', c2: '#16935E', shape: '4px' };
+const car = { c1: '#7BB2FF', c2: '#2F5BFF', shape: '50% 50% 4px 4px' };
+return {
+days,
+groups: [
+{ title: 'This week', items: [
+{ title: 'Read Meter A', sub: 'from Electricity', repeat: 'every 5 days', repeatShow: 'inline-block', when: 'Fri 20', whenInk: '#7A4F06', ...elec },
+{ title: 'Read Meter B', sub: 'from Electricity', repeat: 'every 5 days', repeatShow: 'inline-block', when: 'Sat 21', whenInk: '#7A4F06', ...elec },
+] },
+{ title: 'Later', items: [
+{ title: 'Pay 2 electricity bills', sub: 'LKR 7,913.84', repeat: '', repeatShow: 'none', when: '4 Dec', whenInk: '#2C3038', ...bill },
+{ title: 'Vehicle renewals', sub: 'Add them on each vehicle to see them here', repeat: '', repeatShow: 'none', when: '–', whenInk: '#8A909A', ...car },
+] },
+],
+};
+}
+}
+</script>
+</body>
+</html>

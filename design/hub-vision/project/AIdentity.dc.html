@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Switchboard identity</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Archivo',system-ui,sans-serif;color:#16181D}
+@keyframes discMark{0%{transform:translateX(-38px) scaleX(.25);opacity:.35}25%{transform:translateX(0) scaleX(1);opacity:1}50%{transform:translateX(38px) scaleX(.25);opacity:.35}50.1%,100%{opacity:0}}
+@keyframes roll{0%{transform:translateY(0)}100%{transform:translateY(-340px)}}
+@keyframes flow{to{stroke-dashoffset:-24}}
+@keyframes led{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
+</helmet>
+<div style="width:1440px;height:1100px;box-sizing:border-box;background:#ECEEF1;padding:56px 64px;display:grid;grid-template-columns:440px 1fr;gap:56px">
+
+<div style="display:flex;flex-direction:column;gap:28px">
+<div>
+<p style="margin:0;font-size:15px;color:#4B515C">Direction A</p>
+<h1 style="margin:6px 0 0;font-size:62px;line-height:0.95;font-weight:800;font-stretch:125%;letter-spacing:-0.02em">Switchboard</h1>
+<p style="margin:14px 0 0;font-size:18px;line-height:1.5;color:#2C3038;max-width:38ch">The house's meter board, made precise. Readings sit on mechanical digits, the live meter's disc turns at its real pace, and the two meters are two breakers: one up, one down.</p>
+</div>
+
+<div style="display:flex;gap:22px;align-items:center">
+<svg width="132" height="132" viewBox="0 0 120 120" role="img" aria-label="Hub logo: the letters a and j inside a house; the dot of the j is a red lamp in the gable">
+<rect x="2" y="2" width="116" height="116" rx="28" fill="#16181D"></rect>
+<path d="M26 72 V 50 L 56 26 L 86 50 V 72 H 22" fill="none" stroke="#F2F3F5" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"></path>
+<circle cx="44" cy="60.5" r="7" fill="none" stroke="#F2F3F5" stroke-width="6"></circle>
+<path d="M51 53 V 68" stroke="#F2F3F5" stroke-width="6" stroke-linecap="round"></path>
+<path d="M66 54 V 90 C 66 99 59 102 51 99" fill="none" stroke="#F2F3F5" stroke-width="6" stroke-linecap="round"></path>
+<circle cx="66" cy="42" r="5.5" fill="#D2392C"></circle>
+</svg>
+<div>
+<p style="margin:0;font-size:60px;font-weight:800;font-stretch:125%;letter-spacing:-0.03em;line-height:1">hub</p>
+<p style="margin:6px 0 0;font-size:14px;color:#4B515C;max-width:26ch">mark: aj, at home. The dot of the j is the lamp in the gable.</p>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<p style="margin:0;font-size:15px;font-weight:700">Colour: the board and its lamps</p>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+<sc-for list="{{swatches}}" as="s" hint-placeholder-count="9">
+<div style="background:#F8F9FA;border-radius:12px;overflow:hidden;box-shadow:0 0 0 1px rgba(22,24,29,.1)">
+<div style="height:50px;background:{{s.hex}}"></div>
+<div style="padding:8px 10px"><p style="margin:0;font-size:13px;font-weight:700">{{s.name}}</p><p style="margin:2px 0 0;font-family:'Martian Mono',monospace;font-size:10px;color:#4B515C">{{s.hex}}</p><p style="margin:2px 0 0;font-size:11px;color:#4B515C">{{s.job}}</p></div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:8px">
+<p style="margin:0;font-size:15px;font-weight:700">Type</p>
+<p style="margin:0;font-size:46px;font-weight:800;font-stretch:125%;letter-spacing:-0.02em;line-height:1">96 units left</p>
+<p style="margin:0;font-size:16px;line-height:1.5;color:#2C3038">Archivo, stretched wide for numbers and titles, normal width for reading. It has the plain engineering voice of a rating plate.</p>
+<p style="margin:0;font-family:'Martian Mono',monospace;font-size:22px">17,489.3 kWh</p>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:22px">
+<p style="margin:0;font-size:15px;font-weight:700">Signature objects</p>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px">
+
+<div style="background:#F8F9FA;border-radius:22px;padding:18px;box-shadow:0 0 0 1px rgba(22,24,29,.1),0 14px 28px -18px rgba(22,24,29,.4)">
+<p style="margin:0 0 12px;font-size:14px;font-weight:700">The meter</p>
+<div style="background:#16181D;border-radius:16px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:12px">
+<div style="display:flex;width:100%;align-items:center;justify-content:space-between"><span style="font-family:'Martian Mono',monospace;font-size:11px;color:#8A909A">kWh</span><span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:20px;border-radius:4px;background:#F2F3F5;color:#16181D;font-family:'Martian Mono',monospace;font-size:12px;font-weight:600">B</span></div>
+<div style="display:flex;gap:3px" role="img" aria-label="Reading 37429.3">
+<sc-for list="{{digits}}" as="g" hint-placeholder-count="5"><span style="width:24px;height:34px;border-radius:5px;background:#F2F3F5;color:#16181D;font-family:'Martian Mono',monospace;font-size:20px;font-weight:600;line-height:34px;text-align:center">{{g}}</span></sc-for>
+<span style="position:relative;width:24px;height:34px;border-radius:5px;background:#D2392C;overflow:hidden"><span style="position:absolute;left:0;top:0;width:24px;animation:roll 12s steps(10) infinite"><sc-for list="{{rollDigits}}" as="r" hint-placeholder-count="10"><span style="display:block;height:34px;color:#FFFFFF;font-family:'Martian Mono',monospace;font-size:20px;font-weight:600;line-height:34px;text-align:center">{{r}}</span></sc-for></span></span>
+</div>
+<div style="position:relative;width:140px;height:36px">
+<div style="position:absolute;inset:0;border-radius:50%;background:#C9CED6;box-shadow:inset 0 -3px 0 #9AA1AC"></div>
+<div style="position:absolute;left:66px;top:13px;width:8px;height:10px;border-radius:2px;background:#D2392C;animation:discMark 1.6s linear infinite"></div>
+<div style="position:absolute;left:66px;top:13px;width:8px;height:10px;border-radius:2px;background:#D2392C;animation:discMark 1.6s linear infinite;animation-delay:-.8s"></div>
+</div>
+<span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#C9CED6"><span style="width:8px;height:8px;border-radius:50%;background:#1FA971;animation:led 2s ease-in-out infinite"></span>live · 7.3 a day</span>
+</div>
+<p style="margin:10px 0 0;font-size:13px;line-height:1.45;color:#4B515C">Mechanical digits with a red last digit, and the disc turning at the meter's real pace. An idle meter's disc stands still.</p>
+</div>
+
+<div style="background:#F8F9FA;border-radius:22px;padding:18px;box-shadow:0 0 0 1px rgba(22,24,29,.1),0 14px 28px -18px rgba(22,24,29,.4)">
+<p style="margin:0 0 12px;font-size:14px;font-weight:700">The slab rule</p>
+<div role="img" aria-label="Meter B: 87 of 120 units used, the price jumps after 120">
+<div style="position:relative;height:56px">
+<div style="position:absolute;left:0;right:0;top:22px;height:12px;border-radius:3px;background:#DDE0E5"></div>
+<div style="position:absolute;left:60%;width:30%;top:22px;height:12px;background:#F8DFA8"></div>
+<div style="position:absolute;left:90%;right:0;top:22px;height:12px;border-radius:0 3px 3px 0;background:#F2C1BB"></div>
+<div style="position:absolute;left:0;width:43.5%;top:22px;height:12px;border-radius:3px 0 0 3px;background:#16181D"></div>
+<div style="position:absolute;left:calc(43.5% - 7px);top:0;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:12px solid #D2392C"></div>
+<sc-for list="{{ticks}}" as="t" hint-placeholder-count="21"><span style="position:absolute;left:{{t.x}}%;top:36px;width:1.5px;height:{{t.h}}px;background:#16181D"></span></sc-for>
+</div>
+<div style="display:flex;justify-content:space-between;font-family:'Martian Mono',monospace;font-size:11px;color:#4B515C"><span>0</span><span style="margin-left:52%">120</span><span>180</span><span>200</span></div>
+</div>
+<p style="margin:14px 0 0;font-size:30px;font-weight:800;font-stretch:125%;line-height:1">33 <span style="font-size:14px;font-weight:600;font-stretch:100%">to 120</span></p>
+<p style="margin:8px 0 0;font-size:13px;line-height:1.45;color:#4B515C">A rating-plate ruler, ticks every 10 units. The red needle is now; amber is the 120 to 180 slab, red past 180.</p>
+</div>
+
+<div style="background:#F8F9FA;border-radius:22px;padding:18px;box-shadow:0 0 0 1px rgba(22,24,29,.1),0 14px 28px -18px rgba(22,24,29,.4)">
+<p style="margin:0 0 12px;font-size:14px;font-weight:700">The live switch</p>
+<div style="display:flex;gap:16px;justify-content:center;background:#16181D;border-radius:16px;padding:16px">
+<sc-for list="{{breakers}}" as="b" hint-placeholder-count="2">
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+<div style="position:relative;width:46px;height:96px;border-radius:12px;background:#2A2E35"><div style="position:absolute;left:5px;top:{{b.top}}px;width:36px;height:44px;border-radius:9px;background:{{b.cap}}"></div></div>
+<span style="width:8px;height:8px;border-radius:50%;background:{{b.led}}"></span>
+<span style="font-family:'Martian Mono',monospace;font-size:12px;color:#F2F3F5">{{b.name}}</span>
+</div>
+</sc-for>
+</div>
+<p style="margin:10px 0 0;font-size:13px;line-height:1.45;color:#4B515C">Which meter carries the house. Flick it when you switch at the board (issue 69).</p>
+</div>
+</div>
+
+<div style="background:#F8F9FA;border-radius:22px;padding:18px;box-shadow:0 0 0 1px rgba(22,24,29,.1)">
+<p style="margin:0 0 10px;font-size:14px;font-weight:700">The live wire</p>
+<svg width="100%" height="70" viewBox="0 0 860 70" role="img" aria-label="A copper wire with current flowing from the meter board to the house">
+<path d="M10 52 H 300 Q 330 52 340 30 T 380 14 H 840" fill="none" stroke="#DDE0E5" stroke-width="6" stroke-linecap="round"></path>
+<path d="M10 52 H 300 Q 330 52 340 30 T 380 14 H 840" fill="none" stroke="#B5713A" stroke-width="3" stroke-linecap="round"></path>
+<path d="M10 52 H 300 Q 330 52 340 30 T 380 14 H 840" fill="none" stroke="#F2A417" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 22" style="animation:flow .8s linear infinite"></path>
+</svg>
+<p style="margin:4px 0 0;font-size:13px;color:#4B515C">Copper only ever means current. It flows from the live meter, and nowhere else.</p>
+</div>
+
+<div>
+<p style="margin:0 0 12px;font-size:14px;font-weight:700">Icons: drawn like wiring, with a terminal dot</p>
+<div style="display:flex;gap:14px">
+<sc-for list="{{icons}}" as="ic" hint-placeholder-count="6">
+<div style="width:96px;display:flex;flex-direction:column;align-items:center;gap:8px">
+<div style="width:72px;height:72px;border-radius:18px;background:#F8F9FA;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 1px rgba(22,24,29,.1)">
+<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="1.75" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="{{ic.d}}"></path><circle cx="{{ic.cx}}" cy="{{ic.cy}}" r="1.6" fill="#D2392C" stroke="none"></circle></svg>
+</div>
+<span style="font-size:13px;color:#2C3038">{{ic.label}}</span>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+<sc-for list="{{rules}}" as="r" hint-placeholder-count="4">
+<div style="background:#F8F9FA;border-radius:16px;padding:14px 16px;box-shadow:0 0 0 1px rgba(22,24,29,.1)">
+<p style="margin:0;font-size:15px;font-weight:700">{{r.t}}</p>
+<p style="margin:4px 0 0;font-size:14px;line-height:1.45;color:#2C3038">{{r.b}}</p>
+</div>
+</sc-for>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+renderVals() {
+const ticks = [];
+for (let i = 0; i <= 20; i++) ticks.push({ x: (i / 20) * 100 - 0.2, h: i % 6 === 0 || i === 12 || i === 18 ? 12 : 6 });
+return {
+swatches: [
+{ name: 'Breaker black', hex: '#16181D', job: 'shell, ink, meter body' },
+{ name: 'Enamel', hex: '#ECEEF1', job: 'page ground' },
+{ name: 'Faceplate', hex: '#F8F9FA', job: 'modules, cards' },
+{ name: 'Meter red', hex: '#D2392C', job: 'now: needle, last digit, live' },
+{ name: 'Lamp green', hex: '#1FA971', job: 'on, fine, paid' },
+{ name: 'Lamp amber', hex: '#F2A417', job: 'close to a limit, due soon' },
+{ name: 'Copper', hex: '#B5713A', job: 'current, only' },
+{ name: 'Night panel', hex: '#0D0F12', job: 'dark ground' },
+{ name: 'Night module', hex: '#171A1F', job: 'dark modules' },
+],
+digits: ['3', '7', '4', '2', '9'],
+rollDigits: ['3', '4', '5', '6', '7', '8', '9', '0', '1', '2'],
+breakers: [
+{ name: 'A', top: 46, cap: '#8A909A', led: '#3A3F48' },
+{ name: 'B', top: 6, cap: '#D2392C', led: '#1FA971' },
+],
+ticks,
+icons: [
+{ label: 'Electricity', d: 'M13 2L5 13h6l-1 8 8-11h-6z', cx: 5, cy: 13 },
+{ label: 'Vehicles', d: 'M3 15h18v3H3zM6 15l1.8-5h8.4L18 15', cx: 3, cy: 18 },
+{ label: 'Bills', d: 'M6 3h12v16l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6', cx: 15, cy: 12 },
+{ label: 'Reminders', d: 'M6 16V9a6 6 0 0 1 12 0v7l2 2H4zM10 21h4', cx: 12, cy: 3 },
+{ label: 'Documents', d: 'M6 3h8l4 4v14H6zM14 3v4h4M9 12h6M9 16h4', cx: 9, cy: 16 },
+{ label: 'Warranty', d: 'M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6zM9 12l2 2 4-4', cx: 15, cy: 10 },
+],
+rules: [
+{ t: 'Red means now', b: 'Meter red marks only the present: the needle, the live meter, the turning digit. Nothing decorative is ever red.' },
+{ t: 'Lamps carry state', b: 'Green, amber and red appear as small lamps and chips, never as big fills, so the board stays calm until something needs you.' },
+{ t: 'Only live things move', b: 'The disc turns and the wire flows for the live meter alone; an idle meter, a paid bill or a quiet day is still.' },
+{ t: 'A board, not a costume', b: 'No screws, rivets or fake metal. The world lends type, colour, density and these objects, never the layout or the controls.' },
+],
+};
+}
+}
+</script>
+</body>
+</html>

@@ -2,9 +2,9 @@
 
 # Personal Hub — working notes for coding agents
 
-A personal "super app": one shell with plug-in modules (Vehicles, Electricity, later Bills & subscriptions) on shared services (reminders, tasks, notes, file attachments). Next.js 16 + TypeScript + Tailwind + shadcn/ui, Drizzle ORM on Supabase Postgres, files in a private Supabase Storage bucket. "Personal Hub" is a placeholder name — the real name and branding are decided later, so keep everything parameter-based and avoid putting any name in public-facing text.
+A personal "super app": one shell with plug-in modules (Vehicles, Electricity, later Bills & subscriptions) on shared services (reminders, tasks, notes, file attachments). Next.js 16 + TypeScript + Tailwind + shadcn/ui, Drizzle ORM on Supabase Postgres, files in a private Supabase Storage bucket. The brand is now **hub** (DECISIONS C90): the look is specified in [DESIGN.md](DESIGN.md), the brand kit is in `design/brand/`, and the design canvas source is in `design/hub-vision/`. Keep branding parameter-based (name in `app.config.ts`, tokens in `src/theme/`).
 
-Read first: [PLAN.md](PLAN.md) (phases and steps) and [DECISIONS.md](DECISIONS.md) (what the owner has confirmed, what is pending, what was rejected).
+Read first: [PLAN.md](PLAN.md) (phases and steps), [DECISIONS.md](DECISIONS.md) (what the owner has confirmed, what is pending, what was rejected), [PRODUCT.md](PRODUCT.md) (who and what it is for) and [DESIGN.md](DESIGN.md) (how it must look).
 
 ## How we work
 

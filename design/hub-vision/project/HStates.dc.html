@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hub odd states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Oxanium:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Sora',Arial,sans-serif;color:#F2F5FA}
+.d{font-family:'Oxanium',Arial,sans-serif;letter-spacing:-.025em}
+.m{font-family:'JetBrains Mono',monospace}
+.eb{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#929EAF}
+.card{background:#1A2230;border:1px solid #303B4B;border-radius:18px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes cut{0%,55%{transform:translateX(0)}65%,100%{transform:translateX(10px)}}
+@keyframes spark{0%,58%{opacity:0}62%{opacity:1}72%,100%{opacity:0}}
+</style>
+</helmet>
+<div style="display:flex;gap:60px;width:1290px;height:844px">
+
+<div style="position:relative;width:390px;height:844px;background:#0D1118;overflow:hidden;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:0 28px;box-sizing:border-box;text-align:center;background-image:radial-gradient(#1A2230 1px,transparent 1px);background-size:16px 16px">
+<div style="padding:24px;border-radius:28px;background:#11151D;border:1px solid #222D3D">
+<dc-import name="HubMark" size="110" color="#4A5668" hint-size="86px,110px"></dc-import>
+</div>
+<span class="m" style="display:inline-flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:.14em;color:#FF8F87"><span style="width:7px;height:7px;border-radius:50%;background:#FF6B61;animation:pulse 1.6s ease-in-out infinite"></span>NOT ON THE LIST</span>
+<h1 class="d" style="margin:0;font-size:32px;font-weight:600;line-height:1.1">This hub is invite-only</h1>
+<p style="margin:0;font-size:15px;line-height:1.55;color:#B7C0CD">You are signed in, but this account is not on the list yet. Ask Anuja to add you, then come back.</p>
+<div style="display:flex;flex-direction:column;gap:10px;width:100%;margin-top:6px">
+<a href="#" style="display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:12px;background:#4388F5;color:#0D1118;font-size:15px;font-weight:600;text-decoration:none">Use another account</a>
+<a href="#" style="display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:12px;box-shadow:inset 0 0 0 1px #303B4B;color:#F2F5FA;font-size:15px;font-weight:600;text-decoration:none">Sign out</a>
+</div>
+</div>
+
+<div style="position:relative;width:390px;height:844px;background:#11151D;overflow:hidden;flex:none">
+<div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:12px">
+<header style="display:flex;align-items:center;gap:12px">
+<dc-import name="HubMark" size="30" color="#4388F5" hint-size="24px,30px"></dc-import>
+<div><span class="eb">Day one</span><h1 style="margin:2px 0 0;font-size:26px;font-weight:400;letter-spacing:-.02em;line-height:1.1">Welcome home.</h1></div>
+</header>
+<section aria-label="An empty board waiting for its first meter" style="height:230px;background:radial-gradient(100% 90% at 50% 0%,#16233A 0%,#0D1118 62%);border:1px solid #222D3D;border-radius:24px;overflow:hidden">
+<svg width="100%" height="100%" viewBox="0 0 358 230" role="img" aria-label="A grid node with two empty meter slots, the first one waiting">
+<path d="M179 40V80H90V130" fill="none" stroke="#4388F5" stroke-width="2" stroke-dasharray="160" stroke-dashoffset="160" style="animation:draw 1.4s .2s ease-out forwards"></path>
+<path d="M179 80H268V130" fill="none" stroke="#303B4B" stroke-width="2" stroke-dasharray="5 7"></path>
+<circle cx="179" cy="36" r="7" fill="#4388F5"></circle>
+<text x="192" y="40" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="1.4" fill="#929EAF">GRID</text>
+<rect x="40" y="130" width="100" height="64" rx="16" fill="#1A2230" stroke="#4388F5" stroke-width="1.6" stroke-dasharray="6 5"></rect>
+<text x="90" y="160" text-anchor="middle" font-family="Oxanium, sans-serif" font-weight="600" font-size="26" fill="#4388F5">+</text>
+<text x="90" y="182" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" letter-spacing="1.2" fill="#B7C0CD">METER A</text>
+<rect x="218" y="130" width="100" height="64" rx="16" fill="none" stroke="#303B4B" stroke-width="1.6" stroke-dasharray="6 5"></rect>
+<text x="268" y="160" text-anchor="middle" font-family="Oxanium, sans-serif" font-weight="600" font-size="26" fill="#4A5668">+</text>
+<text x="268" y="182" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" letter-spacing="1.2" fill="#4A5668">METER B</text>
+<circle cx="90" cy="130" r="5" fill="#4388F5" style="animation:pulse 1.6s ease-in-out infinite"></circle>
+</svg>
+</section>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#B7C0CD">Nothing is connected yet. Three steps and the board lights up.</p>
+<ol aria-label="First steps" class="card" style="margin:0;padding:0;list-style:none">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="3">
+<li style="display:flex;align-items:center;gap:12px;min-height:66px;padding:0 14px;border-top:{{s.line}}">
+<span class="m" style="flex:none;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:{{s.bg}};box-shadow:inset 0 0 0 1.5px {{s.ring}};color:{{s.ink}};font-size:12px;font-weight:600">{{s.n}}</span>
+<span style="flex:1"><span style="display:block;font-size:15px;font-weight:600;color:{{s.title2}}">{{s.title}}</span><span style="display:block;font-size:12px;color:#A3ADBD">{{s.sub}}</span></span>
+<span style="font-size:13px;font-weight:600;color:#4388F5">{{s.go}}</span>
+</li>
+</sc-for>
+</ol>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="HubNav" active="home" hint-size="390px,84px"></dc-import></div>
+</div>
+
+<div style="position:relative;width:390px;height:844px;background:#11151D;overflow:hidden;flex:none">
+<div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:14px">
+<header style="display:flex;align-items:center;gap:12px">
+<dc-import name="HubMark" size="30" color="#4388F5" hint-size="24px,30px"></dc-import>
+<div><span class="eb">Wed 18 Nov</span><h1 class="d" style="margin:2px 0 0;font-size:28px;font-weight:600;line-height:1">Electricity</h1></div>
+</header>
+<section role="alert" style="background:#0D1118;border:1px solid #222D3D;border-radius:24px;padding:26px 20px;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;background-image:radial-gradient(#1A2230 1px,transparent 1px);background-size:14px 14px">
+<svg width="240" height="90" viewBox="0 0 240 90" role="img" aria-label="A line between two nodes, broken in the middle">
+<line x1="20" y1="45" x2="108" y2="45" stroke="#4388F5" stroke-width="3" stroke-linecap="round"></line>
+<g style="animation:cut 3s ease-out infinite"><line x1="132" y1="45" x2="220" y2="45" stroke="#4A5668" stroke-width="3" stroke-linecap="round"></line><circle cx="220" cy="45" r="9" fill="#11151D" stroke="#4A5668" stroke-width="3"></circle></g>
+<circle cx="20" cy="45" r="9" fill="#4388F5"></circle>
+<circle cx="108" cy="45" r="5" fill="#FF6B61"></circle>
+<g stroke="#F5B94A" stroke-width="2.4" stroke-linecap="round" style="animation:spark 3s linear infinite"><path d="M118 34l4-10M124 40l10-6M118 56l6 10"></path></g>
+<text x="20" y="80" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" fill="#929EAF">HUB</text>
+<text x="220" y="80" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1" fill="#929EAF">DATA</text>
+</svg>
+<h2 class="d" style="margin:0;font-size:28px;font-weight:600;line-height:1.1">Lost the connection</h2>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#B7C0CD">Electricity could not load just now. Your readings and bills are safe. Nothing was lost.</p>
+<button type="button" style="width:100%;min-height:52px;border:0;border-radius:12px;background:#4388F5;color:#0D1118;font-family:inherit;font-size:16px;font-weight:600">Reconnect</button>
+<span class="m" style="font-size:10px;letter-spacing:.1em;color:#4A5668">REF 7F3A · 18 NOV 21:04</span>
+</section>
+<p style="margin:0;font-size:13px;line-height:1.5;color:#A3ADBD">The rest of the hub still works. Only the part that failed shows the broken line.</p>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="HubNav" active="electricity" hint-size="390px,84px"></dc-import></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1290,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const P = (pts) => pts.map(([x, y]) => ({ x, y }));
+return {
+nodes: P([[390, 372], [262, 298], [262, 190], [390, 264], [540, 285], [540, 177], [412, 103]]),
+steps: [
+{ n: '1', title: 'Add your meters', title2: '#F2F5FA', sub: 'a name and the account number', go: 'Start', bg: '#1D355A', ring: '#4388F5', ink: '#F2F5FA', line: '0' },
+{ n: '2', title: 'Type the last bill', title2: '#B7C0CD', sub: 'so the hub knows where the cycle starts', go: '', bg: 'transparent', ring: '#303B4B', ink: '#929EAF', line: '1px solid #222D3D' },
+{ n: '3', title: 'Read the meters', title2: '#B7C0CD', sub: 'the slab rule lights up', go: '', bg: 'transparent', ring: '#303B4B', ink: '#929EAF', line: '1px solid #222D3D' },
+],
+};
+}
+}
+</script>
+</body>
+</html>

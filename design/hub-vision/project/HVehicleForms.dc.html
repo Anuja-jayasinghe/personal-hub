@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hub vehicle forms</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Oxanium:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Sora',Arial,sans-serif;color:#F2F5FA}
+.d{font-family:'Oxanium',Arial,sans-serif;letter-spacing:-.025em}
+.m{font-family:'JetBrains Mono',monospace}
+.eb{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#929EAF}
+.card{background:#1A2230;border:1px solid #303B4B;border-radius:18px}
+.chip{display:inline-flex;align-items:center;min-height:38px;padding:0 13px;border-radius:999px;font-size:13px;font-weight:500}
+.field{display:flex;align-items:center;height:52px;padding:0 14px;border-radius:12px;background:#11151D;font-size:16px;font-weight:500}
+@keyframes ringIn{from{stroke-dashoffset:var(--full)}}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes up{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+</style>
+</helmet>
+<div style="display:flex;gap:60px;width:1290px;height:900px">
+
+<div style="position:relative;width:390px;height:900px;background:#11151D;overflow:hidden;flex:none">
+<div aria-hidden="true" style="padding:18px 16px;display:flex;flex-direction:column;gap:12px"><div style="display:flex;align-items:center;gap:12px"><span style="width:24px;height:30px;border-radius:6px;background:#1D355A"></span><span class="d" style="font-size:28px;font-weight:600">Vehicles</span></div><div style="height:220px;border-radius:24px;background:#0D1118;border:1px solid #222D3D"></div></div>
+<div style="position:absolute;inset:0;background:rgba(5,7,11,.66)"></div>
+<section role="dialog" aria-modal="true" aria-labelledby="renTitle" style="position:absolute;left:0;right:0;bottom:0;background:#1A2230;border-top:1px solid #303B4B;border-radius:28px 28px 0 0;padding:10px 16px 28px;display:flex;flex-direction:column;gap:14px">
+<span aria-hidden="true" style="align-self:center;width:40px;height:5px;border-radius:3px;background:#303B4B"></span>
+<div style="display:flex;align-items:center;gap:10px"><div><span class="m" style="display:block;font-size:10.5px;letter-spacing:.14em;color:#4388F5">/ PREMIO / NEW RENEWAL</span><h2 id="renTitle" class="d" style="margin:2px 0 0;font-size:26px;font-weight:600">Add a renewal</h2></div><button type="button" aria-label="Close" style="margin-left:auto;width:40px;height:40px;border:0;border-radius:12px;background:#222D3D;box-shadow:inset 0 0 0 1px #303B4B;color:#F2F5FA;font-size:18px">×</button></div>
+<div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{kinds}}" as="k" hint-placeholder-count="4"><span class="chip" style="background:{{k.bg}};color:{{k.ink}};box-shadow:inset 0 0 0 1px {{k.ring}}">{{k.label}}</span></sc-for></div>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:500;color:#B7C0CD">Title <span style="color:#929EAF">needed, so you can find it later</span>
+<span class="field" style="box-shadow:inset 0 0 0 1.5px #4388F5">Revenue licence 2026–2027<span style="width:2px;height:22px;margin-left:2px;background:#4388F5;animation:caret 1s steps(1) infinite"></span></span>
+</label>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+<label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:500;color:#B7C0CD">Valid until<span class="field" style="box-shadow:inset 0 0 0 1px #303B4B">28 Dec 2026</span></label>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:500;color:#B7C0CD">Cost, LKR · optional<span class="field m" style="box-shadow:inset 0 0 0 1px #303B4B;color:#4A5668">–</span></label>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#B7C0CD">Remind me</span>
+<div style="display:flex;gap:8px"><sc-for list="{{remind}}" as="r" hint-placeholder-count="3"><span class="chip" style="background:{{r.bg}};color:{{r.ink}};box-shadow:inset 0 0 0 1px {{r.ring}}">{{r.label}}</span></sc-for></div>
+</div>
+<span style="display:flex;align-items:center;gap:10px;min-height:52px;padding:0 14px;border-radius:12px;border:1px dashed #303B4B;font-size:14px;font-weight:500;color:#B7C0CD"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B7C0CD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12l-8.5 8.5a5 5 0 0 1-7-7L14 5a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 8"></path></svg>Attach the licence photo<span class="m" style="margin-left:auto;font-size:10px;color:#929EAF">OPTIONAL</span></span>
+<button type="button" style="min-height:56px;border:0;border-radius:14px;background:#4388F5;color:#0D1118;font-family:inherit;font-size:16px;font-weight:600">Save renewal</button>
+</section>
+</div>
+
+<div style="position:relative;width:390px;height:900px;background:#11151D;overflow:hidden;flex:none">
+<div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:12px">
+<header style="display:flex;align-items:center;gap:10px">
+<a href="#" aria-label="Back to Vehicles" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:#1A2230;box-shadow:inset 0 0 0 1px #303B4B"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2F5FA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
+<div><span class="eb">/ Vehicles /</span><h1 class="d" style="margin:2px 0 0;font-size:28px;font-weight:600;line-height:1">Premio</h1></div>
+<span class="m" style="margin-left:auto;display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border-radius:6px;background:#3A2E12;color:#F8CB72;font-size:10px;letter-spacing:.1em">SAMPLE DATES</span>
+</header>
+<section aria-label="Next renewal" style="background:#0D1118;border:1px solid #222D3D;border-radius:24px;padding:18px;display:flex;align-items:center;gap:16px">
+<svg width="112" height="112" viewBox="0 0 112 112" role="img" aria-label="Emission test, 12 days left of 365">
+<circle cx="56" cy="56" r="46" fill="none" stroke="#222D3D" stroke-width="8"></circle>
+<circle cx="56" cy="56" r="46" fill="none" stroke="#F5B94A" stroke-width="8" stroke-linecap="round" stroke-dasharray="9.5 289" transform="rotate(-90 56 56)" style="--full:289;animation:ringIn 1s ease-out both"></circle>
+<circle cx="56" cy="10" r="5" fill="#F5B94A"></circle>
+<text x="56" y="60" text-anchor="middle" font-family="Oxanium, sans-serif" font-weight="600" font-size="36" fill="#F2F5FA">12</text>
+<text x="56" y="78" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1.5" fill="#929EAF">DAYS</text>
+</svg>
+<span><span class="m" style="display:block;font-size:10.5px;letter-spacing:.14em;color:#F8CB72">NEXT UP</span><span class="d" style="display:block;font-size:22px;font-weight:600;line-height:1.15">Emission test 2025–2026</span><span style="display:block;margin-top:4px;font-size:13px;color:#A3ADBD">ends 30 Nov · the licence needs it</span></span>
+</section>
+<section aria-label="All renewals" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px">
+<sc-for list="{{rings}}" as="g" hint-placeholder-count="3">
+<a href="#" class="card" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 6px;text-decoration:none;color:#F2F5FA">
+<svg width="70" height="70" viewBox="0 0 70 70" aria-hidden="true">
+<circle cx="35" cy="35" r="28" fill="none" stroke="#222D3D" stroke-width="6"></circle>
+<circle cx="35" cy="35" r="28" fill="none" stroke="{{g.color}}" stroke-width="6" stroke-linecap="round" stroke-dasharray="{{g.dash}} 176" transform="rotate(-90 35 35)" style="--full:176;animation:ringIn 1s ease-out both"></circle>
+<text x="35" y="41" text-anchor="middle" font-family="Oxanium, sans-serif" font-weight="600" font-size="18" fill="#F2F5FA">{{g.days}}</text>
+</svg>
+<span style="font-size:13px;font-weight:600;text-align:center;line-height:1.2">{{g.name}}</span>
+<span class="m" style="font-size:10px;color:#929EAF">{{g.date}}</span>
+</a>
+</sc-for>
+</section>
+<section aria-label="Notes" class="card" style="padding:14px">
+<div style="display:flex;align-items:center"><h2 style="margin:0;font-size:15px;font-weight:600">Notes</h2><a href="#" style="margin-left:auto;font-size:13px;font-weight:600;color:#4388F5;text-decoration:none">Add</a></div>
+<p style="margin:8px 0 0;font-size:13px;line-height:1.5;color:#B7C0CD">Rear tyres changed at 62,000 km. Next service due around 70,000.</p>
+</section>
+<p style="margin:0;font-size:12px;line-height:1.5;color:#929EAF">The Notes card shows only when a note exists. With none, a quiet "Add a note" link sits under Documents.</p>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="HubNav" active="vehicles" hint-size="390px,84px"></dc-import></div>
+</div>
+
+<div style="position:relative;width:390px;height:900px;background:#11151D;overflow:hidden;flex:none">
+<div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:12px">
+<header style="display:flex;align-items:center;gap:12px">
+<dc-import name="HubMark" size="30" color="#4388F5" hint-size="24px,30px"></dc-import>
+<div><span class="eb">/ Premio /</span><h1 class="d" style="margin:2px 0 0;font-size:28px;font-weight:600;line-height:1">Documents</h1></div>
+</header>
+<label style="display:flex;align-items:center;gap:10px;min-height:48px;padding:0 14px;border-radius:12px;background:#1A2230;box-shadow:inset 0 0 0 1px #303B4B"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#929EAF" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><span style="font-size:15px;font-weight:500">insurance</span><span class="m" style="margin-left:auto;font-size:10.5px;color:#929EAF">2 FOUND</span></label>
+<div style="display:flex;gap:8px"><sc-for list="{{sorts}}" as="s" hint-placeholder-count="3"><span class="chip" style="min-height:34px;font-size:12px;background:{{s.bg}};color:{{s.ink}};box-shadow:inset 0 0 0 1px {{s.ring}}">{{s.label}}</span></sc-for></div>
+<section aria-label="Found documents" class="card" style="padding:4px 14px">
+<sc-for list="{{docs}}" as="d" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px;min-height:66px;border-top:{{d.line}}">
+<span class="m" style="flex:none;display:flex;align-items:flex-end;justify-content:center;width:34px;height:42px;border-radius:5px 12px 5px 5px;background:#222D3D;box-shadow:inset 0 0 0 1px #303B4B;padding-bottom:5px;box-sizing:border-box;font-size:8px;font-weight:600;color:{{d.typeInk}}">{{d.type}}</span>
+<span style="flex:1;min-width:0"><span style="display:block;font-size:15px;font-weight:600">{{d.title}}</span><span class="m" style="display:block;font-size:10.5px;color:#929EAF">{{d.sub}}</span></span>
+<span style="display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border-radius:999px;background:{{d.chipBg}};color:{{d.chipInk}};font-size:11px;font-weight:500">{{d.chip}}</span>
+</div>
+</sc-for>
+</section>
+<section aria-label="Upload" style="background:#0D1118;border:1px solid #222D3D;border-radius:24px;padding:16px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:12px">
+<span class="m" style="flex:none;display:flex;align-items:flex-end;justify-content:center;width:38px;height:48px;border-radius:5px 14px 5px 5px;background:#222D3D;box-shadow:inset 0 0 0 1px #303B4B;padding-bottom:6px;box-sizing:border-box;font-size:9px;font-weight:600;color:#FF8F87">PDF</span>
+<span style="flex:1;min-width:0"><span class="m" style="display:block;font-size:11px;color:#929EAF">IMG_2231.PDF · 1.2 MB</span><span style="display:block;position:relative;height:4px;margin-top:8px;border-radius:2px;background:#222D3D;overflow:hidden"><span style="position:absolute;inset:0;background:#4388F5;transform-origin:left;animation:up 2.4s ease-out infinite"></span></span></span>
+</div>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:500;color:#B7C0CD">What is it?
+<span class="field" style="background:#1A2230;box-shadow:inset 0 0 0 1.5px #4388F5">Insurance 2026–2027<span style="width:2px;height:22px;margin-left:2px;background:#4388F5;animation:caret 1s steps(1) infinite"></span></span>
+</label>
+<div style="display:flex;gap:6px;flex-wrap:wrap"><sc-for list="{{suggest}}" as="t" hint-placeholder-count="3"><span class="chip" style="min-height:32px;font-size:12px;background:#1A2230;box-shadow:inset 0 0 0 1px #303B4B;color:#B7C0CD">{{t}}</span></sc-for></div>
+<button type="button" style="min-height:52px;border:0;border-radius:12px;background:#4388F5;color:#0D1118;font-family:inherit;font-size:15px;font-weight:600">Save document</button>
+</section>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="HubNav" active="vehicles" hint-size="390px,84px"></dc-import></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1290,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const on = { bg: '#1D355A', ink: '#F2F5FA', ring: 'rgba(67,136,245,.55)' };
+const off = { bg: 'transparent', ink: '#B7C0CD', ring: '#303B4B' };
+const ring = (days, of) => Math.max(4, Math.round((days / of) * 176));
+return {
+kinds: [{ label: 'Revenue licence', ...on }, { label: 'Insurance', ...off }, { label: 'Emission test', ...off }, { label: 'Other', ...off }],
+remind: [{ label: '30 days', ...off }, { label: '14 days', ...on }, { label: '3 days', ...on }],
+rings: [
+{ name: 'Emission test', days: '12', date: '30 NOV', color: '#F5B94A', dash: ring(12, 365) },
+{ name: 'Revenue licence', days: '40', date: '28 DEC', color: '#3DD68C', dash: ring(40, 365) },
+{ name: 'Insurance', days: '128', date: '26 MAR', color: '#3DD68C', dash: ring(128, 365) },
+],
+sorts: [{ label: 'Newest', ...on }, { label: 'A–Z', ...off }, { label: 'Expiring', ...off }],
+docs: [
+{ title: 'Insurance 2025–2026', sub: 'PDF · ADDED 2 APR', type: 'PDF', typeInk: '#FF8F87', chip: 'ends 26 Mar', chipBg: '#12352A', chipInk: '#5EE0A5', line: '0' },
+{ title: 'Insurance 2024–2025', sub: 'PHOTO · ADDED APR 2025', type: 'JPG', typeInk: '#4388F5', chip: 'old', chipBg: '#222D3D', chipInk: '#929EAF', line: '1px solid #222D3D' },
+],
+suggest: ['Insurance 2026–2027', 'Revenue licence 2026–2027', 'Vehicle book'],
+};
+}
+}
+</script>
+</body>
+</html>

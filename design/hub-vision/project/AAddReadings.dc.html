@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Add readings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Archivo',system-ui,sans-serif;color:#16181D}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+@keyframes sheetUp{from{transform:translateY(40px);opacity:.6}to{transform:translateY(0);opacity:1}}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;background:#ECEEF1;overflow:hidden">
+
+<div aria-hidden="true" style="padding:20px 16px;display:flex;flex-direction:column;gap:12px;filter:saturate(.6)">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:9px;background:#16181D"></span><span style="font-size:24px;font-weight:800;font-stretch:125%">Electricity</span></div>
+<div style="height:190px;border-radius:22px;background:#16181D"></div>
+<div style="height:74px;border-radius:18px;background:#F8F9FA"></div>
+<div style="height:74px;border-radius:18px;background:#F8F9FA"></div>
+</div>
+<div style="position:absolute;inset:0;background:rgba(13,15,18,.48)"></div>
+
+<section role="dialog" aria-modal="true" aria-labelledby="sheetTitle" style="position:absolute;left:0;right:0;bottom:0;background:#F8F9FA;border-radius:28px 28px 0 0;padding:10px 16px 28px;display:flex;flex-direction:column;gap:14px;box-shadow:0 -20px 50px -30px rgba(13,15,18,.6);animation:sheetUp .35s cubic-bezier(.2,.8,.2,1)">
+<span aria-hidden="true" style="align-self:center;width:40px;height:5px;border-radius:3px;background:#C9CED6"></span>
+<div style="display:flex;align-items:center;gap:10px">
+<h2 id="sheetTitle" style="margin:0;font-size:24px;font-weight:800;font-stretch:125%;letter-spacing:-0.02em">Read the meters</h2>
+<button type="button" aria-label="Close" style="margin-left:auto;width:40px;height:40px;border:0;border-radius:12px;background:#E3E6EA;font-size:18px;color:#16181D">×</button>
+</div>
+<p style="margin:-6px 0 0;font-size:14px;color:#4B515C">Type what each dial shows. Leave one blank if you only read one.</p>
+
+<sc-for list="{{fields}}" as="f" hint-placeholder-count="2">
+<label style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:20px;background:#FFFFFF;box-shadow:inset 0 0 0 {{f.ringW}} {{f.ring}}">
+<span style="display:flex;align-items:center;gap:8px">
+<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:20px;border-radius:5px;background:#16181D;color:#F2F3F5;font-family:'Martian Mono',monospace;font-size:12px;font-weight:600">{{f.letter}}</span>
+<span style="font-size:15px;font-weight:700">{{f.name}}</span>
+<span style="margin-left:auto;font-size:12px;color:#4B515C">last {{f.last}} · {{f.lastDate}}</span>
+</span>
+<span style="display:flex;align-items:center;gap:3px" aria-label="{{f.name}} reading, {{f.typed}}">
+<sc-for list="{{f.cells}}" as="c" hint-placeholder-count="5"><span style="width:44px;height:56px;border-radius:10px;background:{{c.bg}};color:{{c.ink}};font-family:'Martian Mono',monospace;font-size:28px;font-weight:600;line-height:56px;text-align:center">{{c.d}}</span></sc-for>
+<span style="width:3px;height:30px;margin-left:4px;background:#16181D;opacity:{{f.caret}};animation:caret 1s steps(1) infinite"></span>
+<span style="margin-left:auto;font-family:'Martian Mono',monospace;font-size:12px;color:#4B515C">kWh</span>
+</span>
+<span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:{{f.msgInk}}"><span style="width:8px;height:8px;border-radius:50%;background:{{f.dot}}"></span>{{f.msg}}</span>
+</label>
+</sc-for>
+
+<div style="display:flex;align-items:center;gap:8px">
+<span style="font-size:13px;color:#4B515C">Read on</span>
+<span style="display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:999px;background:#16181D;color:#F2F3F5;font-size:13px;font-weight:700">Today, 18 Nov</span>
+<span style="display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:999px;box-shadow:inset 0 0 0 1.5px #C9CED6;font-size:13px;font-weight:600">Yesterday</span>
+<span style="display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:999px;box-shadow:inset 0 0 0 1.5px #C9CED6;font-size:13px;font-weight:600">Pick…</span>
+</div>
+
+<button type="button" aria-disabled="true" style="min-height:56px;border:0;border-radius:16px;background:#16181D;color:#F2F3F5;font-family:inherit;font-size:16px;font-weight:700;font-stretch:112%;opacity:.45">Fix Meter B to save</button>
+<p style="margin:-6px 0 0;text-align:center;font-size:12px;color:#4B515C">Saving updates both slab rules at once.</p>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const cells = (s, bad) => s.split('').map((d, i, a) => ({ d, bg: i === a.length - 1 ? '#D2392C' : (bad ? '#FBE3E0' : '#ECEEF1'), ink: i === a.length - 1 ? '#FFFFFF' : (bad ? '#A3241A' : '#16181D') }));
+return {
+fields: [
+{ name: 'Meter A', letter: 'A', last: '17,465', lastDate: '15 Nov', typed: '17,489', cells: cells('17489', false), caret: 0, ring: '#C9CED6', ringW: '1.5px', msg: '+24 kWh since 15 Nov. 96 left before 120.', msgInk: '#14774D', dot: '#1FA971' },
+{ name: 'Meter B', letter: 'B', last: '37,429', lastDate: '16 Nov', typed: '37,249', cells: cells('37249', true), caret: 1, ring: '#D2392C', ringW: '2px', msg: 'Lower than the last reading, 37,429. Check the digits.', msgInk: '#A3241A', dot: '#D2392C' },
+],
+};
+}
+}
+</script>
+</body>
+</html>

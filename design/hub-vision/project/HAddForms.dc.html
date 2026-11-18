@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hub add forms</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Oxanium:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Sora',Arial,sans-serif;color:#F2F5FA}
+.d{font-family:'Oxanium',Arial,sans-serif;letter-spacing:-.025em}
+.m{font-family:'JetBrains Mono',monospace}
+.eb{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#929EAF}
+.lbl{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:500;color:#B7C0CD}
+.field{display:flex;align-items:center;height:50px;padding:0 14px;border-radius:12px;background:#11151D;box-shadow:inset 0 0 0 1px #303B4B;font-size:16px;color:#F2F5FA}
+.ph{color:#4A5668}
+.chip{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;border-radius:999px;font-size:13px;font-weight:500}
+.btn{display:flex;align-items:center;justify-content:center;min-height:54px;border:0;border-radius:14px;background:#4388F5;color:#0D1118;font-family:inherit;font-size:16px;font-weight:600}
+.close{margin-left:auto;width:40px;height:40px;border:0;border-radius:12px;background:#222D3D;box-shadow:inset 0 0 0 1px #303B4B;color:#F2F5FA;font-size:18px}
+@keyframes caret{0%,49%{opacity:1}50%,100%{opacity:0}}
+</style>
+</helmet>
+<div style="display:flex;gap:60px;width:1290px;height:900px">
+
+<div style="position:relative;width:390px;height:900px;background:#11151D;overflow:hidden;flex:none;padding:18px 16px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center"><span class="m" style="font-size:10.5px;letter-spacing:.14em;color:#4388F5">/ SET UP / STEP 1 OF 3</span><button type="button" aria-label="Close" class="close">×</button></div>
+<svg viewBox="0 0 358 40" width="100%" height="40" role="img" aria-label="Step 1 of 3: add your meters">
+<line x1="12" y1="12" x2="346" y2="12" stroke="#303B4B" stroke-width="2"></line>
+<line x1="12" y1="12" x2="60" y2="12" stroke="#4388F5" stroke-width="3" stroke-linecap="round"></line>
+<circle cx="12" cy="12" r="8" fill="#4388F5" stroke="#11151D" stroke-width="3"></circle><circle cx="179" cy="12" r="6" fill="#11151D" stroke="#4A5668" stroke-width="2"></circle><circle cx="346" cy="12" r="6" fill="#11151D" stroke="#4A5668" stroke-width="2"></circle>
+<text x="12" y="36" font-family="JetBrains Mono, monospace" font-size="9" fill="#F2F5FA">METERS</text><text x="179" y="36" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#929EAF">LAST BILL</text><text x="346" y="36" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="9" fill="#929EAF">FIRST READ</text>
+</svg>
+<h1 class="d" style="margin:0;font-size:28px;font-weight:600;line-height:1.1">Add your first meter</h1>
+<p style="margin:-6px 0 0;font-size:14px;line-height:1.5;color:#A3ADBD">Just a name and the account number from the bill. You can add the second one next.</p>
+<label class="lbl">Name<span class="field" style="box-shadow:inset 0 0 0 1.5px #4388F5">Meter A<span style="width:2px;height:22px;margin-left:2px;background:#4388F5;animation:caret 1s steps(1) infinite"></span></span></label>
+<div style="display:flex;gap:8px"><sc-for list="{{nameChips}}" as="c" hint-placeholder-count="3"><span class="chip" style="background:{{c.bg}};color:{{c.ink}};box-shadow:inset 0 0 0 1px {{c.ring}}">{{c.label}}</span></sc-for></div>
+<label class="lbl">Account number<span class="field m ph">10 digits, top of the bill</span></label>
+<label class="lbl">What the dial shows now <span style="color:#929EAF">optional, you can read it later</span><span class="field m ph">kWh</span></label>
+<div style="flex:1"></div>
+<div style="display:flex;gap:10px"><button type="button" class="btn" style="flex:1;background:transparent;color:#F2F5FA;box-shadow:inset 0 0 0 1px #303B4B">Add the second meter</button><button type="button" class="btn" style="flex:1">Next</button></div>
+</div>
+
+<div style="position:relative;width:390px;height:900px;background:#11151D;overflow:hidden;flex:none;padding:18px 16px 24px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center"><div><span class="m" style="display:block;font-size:10.5px;letter-spacing:.14em;color:#4388F5">/ VEHICLES / NEW</span><h1 class="d" style="margin:2px 0 0;font-size:26px;font-weight:600">Add a vehicle</h1></div><button type="button" aria-label="Close" class="close">×</button></div>
+<div style="display:flex;gap:8px"><sc-for list="{{types}}" as="c" hint-placeholder-count="4"><span class="chip" style="background:{{c.bg}};color:{{c.ink}};box-shadow:inset 0 0 0 1px {{c.ring}}">{{c.label}}</span></sc-for></div>
+<div style="border-radius:20px;background:radial-gradient(120% 80% at 50% 65%,#16233A 0%,#0D1118 62%);border:1px solid #222D3D;overflow:hidden;padding:4px 0 0">
+<dc-import name="HubCar" width="356" paint="graphite" label="Preview of the car" hint-size="356px,168px"></dc-import>
+<div style="display:flex;align-items:center;gap:8px;padding:0 14px 12px"><span class="eb">Colour</span><span style="margin-left:auto;display:flex;gap:8px"><sc-for list="{{paints}}" as="p" hint-placeholder-count="3"><span aria-label="{{p.label}}" style="width:24px;height:24px;border-radius:50%;background:{{p.c}};box-shadow:0 0 0 2px #0D1118,0 0 0 {{p.ringW}} {{p.ring}}"></span></sc-for></span></div>
+</div>
+<label class="lbl">Make and model<span class="field">Toyota Premio</span></label>
+<div style="display:grid;grid-template-columns:1fr 1.4fr;gap:10px">
+<label class="lbl">Year<span class="field m">2018</span></label>
+<label class="lbl">Number plate<span class="field m" style="box-shadow:inset 0 0 0 1.5px #4388F5">WP CBD-9754<span style="width:2px;height:22px;margin-left:2px;background:#4388F5;animation:caret 1s steps(1) infinite"></span></span></label>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#B7C0CD">Fuel</span><div style="display:flex;gap:8px"><sc-for list="{{fuels}}" as="c" hint-placeholder-count="4"><span class="chip" style="background:{{c.bg}};color:{{c.ink}};box-shadow:inset 0 0 0 1px {{c.ring}}">{{c.label}}</span></sc-for></div></div>
+<div style="flex:1"></div>
+<button type="button" class="btn">Save vehicle</button>
+</div>
+
+<div style="position:relative;width:390px;height:900px;background:#11151D;overflow:hidden;flex:none">
+<div aria-hidden="true" style="padding:18px 16px;display:flex;flex-direction:column;gap:12px"><div style="display:flex;align-items:center;gap:12px"><span style="width:24px;height:30px;border-radius:6px;background:#1D355A"></span><span class="d" style="font-size:28px;font-weight:600">Reminders</span></div><div style="height:200px;border-radius:24px;background:#0D1118;border:1px solid #222D3D"></div></div>
+<div style="position:absolute;inset:0;background:rgba(5,7,11,.66)"></div>
+<section role="dialog" aria-modal="true" aria-labelledby="remTitle" style="position:absolute;left:0;right:0;bottom:0;background:#1A2230;border-top:1px solid #303B4B;border-radius:28px 28px 0 0;padding:10px 16px 28px;display:flex;flex-direction:column;gap:14px">
+<span aria-hidden="true" style="align-self:center;width:40px;height:5px;border-radius:3px;background:#303B4B"></span>
+<div style="display:flex;align-items:center"><div><span class="m" style="display:block;font-size:10.5px;letter-spacing:.14em;color:#4388F5">/ REMINDERS / NEW</span><h2 id="remTitle" class="d" style="margin:2px 0 0;font-size:26px;font-weight:600">Add a reminder</h2></div><button type="button" aria-label="Close" class="close">×</button></div>
+<label class="lbl">What<span class="field" style="box-shadow:inset 0 0 0 1.5px #4388F5">Service the Premio<span style="width:2px;height:22px;margin-left:2px;background:#4388F5;animation:caret 1s steps(1) infinite"></span></span></label>
+<label class="lbl">When<span class="field">Sat 12 Dec · 09:00</span></label>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#B7C0CD">Repeat</span><div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{repeats}}" as="c" hint-placeholder-count="5"><span class="chip" style="background:{{c.bg}};color:{{c.ink}};box-shadow:inset 0 0 0 1px {{c.ring}}">{{c.label}}</span></sc-for></div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;font-weight:500;color:#B7C0CD">Belongs to</span><div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{links}}" as="c" hint-placeholder-count="4"><span class="chip" style="background:{{c.bg}};color:{{c.ink}};box-shadow:inset 0 0 0 1px {{c.ring}}">{{c.label}}</span></sc-for></div></div>
+<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:#11151D;box-shadow:inset 0 0 0 1px #222D3D">
+<svg width="40" height="14" viewBox="0 0 40 14" aria-hidden="true"><line x1="4" y1="7" x2="36" y2="7" stroke="#303B4B" stroke-width="2"></line><circle cx="4" cy="7" r="3.5" fill="#4388F5"></circle><circle cx="36" cy="7" r="3.5" fill="#B7C0CD"></circle></svg>
+<span style="flex:1;font-size:13px;color:#B7C0CD">Shows on the Premio page and the 30-day line on Home</span>
+</div>
+<button type="button" class="btn">Save reminder</button>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1290,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const on = { bg: '#1D355A', ink: '#F2F5FA', ring: 'rgba(67,136,245,.55)' };
+const off = { bg: 'transparent', ink: '#B7C0CD', ring: '#303B4B' };
+const set = (labels, pick) => labels.map((label) => ({ label, ...(pick.includes(label) ? on : off) }));
+return {
+nameChips: set(['Meter A', 'Meter B', 'Upstairs'], ['Meter A']),
+types: set(['Car', 'Motorbike', 'Van', 'Other'], ['Car']),
+fuels: set(['Petrol', 'Diesel', 'Hybrid', 'Electric'], ['Petrol']),
+paints: [
+{ label: 'Graphite', c: 'linear-gradient(140deg,#56667F,#1A2230)', ring: '#4388F5', ringW: '4px' },
+{ label: 'Pearl', c: 'linear-gradient(140deg,#FFFFFF,#A9B3C2)', ring: '#303B4B', ringW: '3px' },
+{ label: 'Blue', c: 'linear-gradient(140deg,#7FB0FF,#1D4A99)', ring: '#303B4B', ringW: '3px' },
+],
+repeats: set(['Once', 'Every month', 'Every 6 months', 'Every year', 'Custom'], ['Every 6 months']),
+links: set(['Nothing', 'Electricity', 'Premio', 'Discover'], ['Premio']),
+};
+}
+}
+</script>
+</body>
+</html>

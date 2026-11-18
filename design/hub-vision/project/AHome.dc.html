@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Switchboard Home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Archivo',system-ui,sans-serif;color:#16181D}
+@keyframes flow{to{stroke-dashoffset:-26}}
+@keyframes led{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes trace{to{stroke-dashoffset:-400}}
+</style>
+</helmet>
+<div style="display:flex;width:1440px;height:900px;background:#ECEEF1;overflow:hidden">
+
+<aside style="width:84px;flex:0 0 84px;background:#16181D;display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 0">
+<svg width="48" height="48" viewBox="0 0 120 120" role="img" aria-label="hub"><path d="M22 66 V 44 L 56 18 L 90 44 V 66" fill="none" stroke="#F2F3F5" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"></path><path d="M14 66 H 100" stroke="#F2F3F5" stroke-width="8" stroke-linecap="round"></path><circle cx="104" cy="66" r="6" fill="#B5713A"></circle><circle cx="42" cy="54.5" r="7" fill="none" stroke="#F2F3F5" stroke-width="7"></circle><path d="M49 47 V 62M66 48 V 92 C 66 104 56 108 46 103" fill="none" stroke="#F2F3F5" stroke-width="7" stroke-linecap="round"></path><circle cx="66" cy="35" r="6.5" fill="#D2392C"></circle></svg>
+<div style="height:18px"></div>
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="6">
+<a href="#" aria-label="{{n.label}}" style="position:relative;display:block;width:56px;height:56px;border-radius:16px;background:{{n.bg}}">
+<span style="position:absolute;right:8px;top:7px;width:26px;height:26px;border-radius:{{n.shape}};background:linear-gradient(140deg,{{n.c1}},{{n.c2}})"></span>
+<span style="position:absolute;left:8px;bottom:8px;width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2F3F5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.d}}"></path></svg></span>
+</a>
+</sc-for>
+<button type="button" aria-label="Collapse navigation" style="margin-top:auto;width:44px;height:44px;border:0;border-radius:12px;background:#20242B;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C9CED6" stroke-width="1.75" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path></svg></button>
+</aside>
+
+<main style="flex:1;min-width:0;padding:28px 36px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;align-items:baseline;gap:16px">
+<h1 style="margin:0;font-size:38px;font-weight:800;font-stretch:125%;letter-spacing:-0.02em">Home</h1>
+<span style="font-family:'Martian Mono',monospace;font-size:12px;color:#4B515C">Tue 17 Nov · day 13 of the cycle</span>
+<a href="#" style="margin-left:auto;display:flex;align-items:center;min-height:48px;padding:0 22px;border-radius:14px;background:#16181D;color:#F2F3F5;font-size:15px;font-weight:700;font-stretch:112%;text-decoration:none">Read the meters</a>
+</div>
+
+<div style="display:grid;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);gap:20px;flex:1;min-height:0">
+
+<section aria-label="The house" style="position:relative;background:#F8F9FA;border-radius:26px;overflow:hidden;box-shadow:0 0 0 1px rgba(22,24,29,.1),0 18px 36px -24px rgba(22,24,29,.45)">
+<svg width="100%" height="100%" viewBox="0 0 760 470" preserveAspectRatio="xMidYMid meet" role="img" aria-label="The house: the meter board on the wall with Meter B live, the garage with two vehicles, and the letterbox with two bills">
+<g opacity="0.55" stroke="#DDE0E5" stroke-width="1">
+<sc-for list="{{gridA}}" as="l" hint-placeholder-count="14"><line x1="{{l.x1}}" y1="{{l.y1}}" x2="{{l.x2}}" y2="{{l.y2}}"></line></sc-for>
+</g>
+<path d="M40 420 L200 327 L330 400" fill="none" stroke="#B5713A" stroke-width="1.6" stroke-dasharray="3 9" opacity="0.6" style="animation:trace 9s linear infinite"></path>
+<path d="M720 420 L600 350 L700 292" fill="none" stroke="#B5713A" stroke-width="1.6" stroke-dasharray="3 9" opacity="0.6" style="animation:trace 11s linear infinite"></path>
+
+<ellipse cx="380" cy="352" rx="250" ry="58" fill="#E3E6EA"></ellipse>
+
+<polygon points="200,330 110,278 110,214 200,266" fill="#DDE0E5" stroke="#16181D" stroke-width="2"></polygon>
+<polygon points="200,330 262,294 262,230 200,266" fill="#F2F3F5" stroke="#16181D" stroke-width="2"></polygon>
+<polygon points="200,266 110,214 172,178 262,230" fill="#C9CED6" stroke="#16181D" stroke-width="2"></polygon>
+<polygon points="210,320 252,296 252,254 210,278" fill="#16181D"></polygon>
+<path d="M216 304 l8 -4 l4 -6 l10 -6 l6 2 l6 -2 v6 l-34 20 z" fill="#8A909A"></path>
+
+<polygon points="390,372 262,298 262,190 390,264" fill="#DDE0E5" stroke="#16181D" stroke-width="2"></polygon>
+<polygon points="390,372 540,285 540,177 390,264" fill="#F8F9FA" stroke="#16181D" stroke-width="2"></polygon>
+<polygon points="390,264 262,190 412,103 540,177" fill="#C9CED6" stroke="#16181D" stroke-width="2"></polygon>
+<polygon points="292,280 330,302 330,262 292,240" fill="#F8DFA8" stroke="#16181D" stroke-width="1.5"></polygon>
+<polygon points="300,229 340,252 340,224 300,201" fill="#2A2E35" stroke="#16181D" stroke-width="1.5"></polygon>
+<polygon points="470,270 512,246 512,206 470,230" fill="#F8DFA8" stroke="#16181D" stroke-width="1.5"></polygon>
+
+<polygon points="404,300 452,272 452,226 404,254" fill="#16181D"></polygon>
+<rect x="0" y="0" width="12" height="16" rx="2" fill="#F2F3F5" transform="translate(412 262) skewY(-30)"></rect>
+<rect x="0" y="0" width="12" height="16" rx="2" fill="#F2F3F5" transform="translate(432 250) skewY(-30)"></rect>
+<circle cx="418" cy="290" r="3" fill="#3A3F48"></circle>
+<circle cx="438" cy="279" r="3.5" fill="#1FA971" style="animation:led 2s ease-in-out infinite"></circle>
+
+<line x1="680" y1="300" x2="680" y2="118" stroke="#16181D" stroke-width="5" stroke-linecap="round"></line>
+<line x1="660" y1="132" x2="700" y2="122" stroke="#16181D" stroke-width="4" stroke-linecap="round"></line>
+<path d="M664 134 C 600 170 520 200 446 238" fill="none" stroke="#B5713A" stroke-width="3"></path>
+<path d="M664 134 C 600 170 520 200 446 238" fill="none" stroke="#F2A417" stroke-width="3.5" stroke-dasharray="2 24" stroke-linecap="round" style="animation:flow .9s linear infinite"></path>
+
+<line x1="600" y1="380" x2="600" y2="344" stroke="#16181D" stroke-width="3"></line>
+<polygon points="586,344 614,328 614,310 586,326" fill="#D2392C" stroke="#16181D" stroke-width="1.5"></polygon>
+<polygon points="586,326 572,318 600,302 614,310" fill="#E3594C" stroke="#16181D" stroke-width="1.5"></polygon>
+<rect x="0" y="0" width="16" height="6" fill="#F8F9FA" transform="translate(590 318) skewY(-30)"></rect>
+</svg>
+
+<a href="#" style="position:absolute;left:58%;top:21%;display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:#16181D;color:#F2F3F5;text-decoration:none;box-shadow:0 10px 20px -10px rgba(0,0,0,.5)">
+<span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#C9CED6"><span style="width:7px;height:7px;border-radius:50%;background:#1FA971"></span>Meter board · B live</span>
+<span style="font-size:22px;font-weight:800;font-stretch:125%">33 <span style="font-size:12px;font-weight:600;font-stretch:100%;color:#C9CED6">to 120</span></span>
+</a>
+<a href="#" style="position:absolute;left:5%;top:30%;display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:#F8F9FA;color:#16181D;text-decoration:none;box-shadow:0 0 0 1px rgba(22,24,29,.12),0 10px 20px -12px rgba(22,24,29,.4)">
+<span style="font-size:12px;color:#4B515C">Garage · 2 vehicles</span>
+<span style="font-size:14px;font-weight:700">Add the first renewal</span>
+</a>
+<a href="#" style="position:absolute;right:3%;bottom:8%;display:flex;flex-direction:column;gap:2px;padding:10px 12px;border-radius:14px;background:#F8F9FA;color:#16181D;text-decoration:none;box-shadow:0 0 0 1px rgba(22,24,29,.12),0 10px 20px -12px rgba(22,24,29,.4)">
+<span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#4B515C"><span style="width:7px;height:7px;border-radius:50%;background:#F2A417"></span>Letterbox · 2 bills</span>
+<span style="font-size:14px;font-weight:700">LKR 7,913.84 by 4 Dec</span>
+</a>
+</section>
+
+<section aria-label="Needs you next" style="background:#F8F9FA;border-radius:26px;padding:20px;display:flex;flex-direction:column;gap:6px;box-shadow:0 0 0 1px rgba(22,24,29,.1)">
+<h2 style="margin:0 0 6px;font-size:16px;font-weight:700">Needs you next</h2>
+<sc-for list="{{todo}}" as="t" hint-placeholder-count="4">
+<a href="#" style="display:flex;align-items:center;gap:12px;min-height:64px;padding:8px 4px;border-top:1px solid #E3E6EA;text-decoration:none;color:#16181D">
+<span style="width:10px;height:10px;border-radius:50%;background:{{t.lamp}};flex:0 0 10px"></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-size:15px;font-weight:700">{{t.title}}</span><span style="display:block;font-size:13px;color:#4B515C">{{t.sub}}</span></span>
+<span style="font-family:'Martian Mono',monospace;font-size:12px;color:#2C3038">{{t.when}}</span>
+</a>
+</sc-for>
+</section>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px">
+<sc-for list="{{tiles}}" as="m" hint-placeholder-count="4">
+<a href="#" style="display:flex;flex-direction:column;gap:6px;padding:16px;border-radius:20px;background:#F8F9FA;text-decoration:none;color:#16181D;box-shadow:0 0 0 1px rgba(22,24,29,.1)">
+<span style="display:flex;align-items:center;gap:8px;font-size:13px;color:#4B515C"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16181D" stroke-width="1.75" stroke-linecap="square" aria-hidden="true"><path d="{{m.d}}"></path></svg>{{m.name}}</span>
+<span style="font-size:28px;font-weight:800;font-stretch:125%;line-height:1">{{m.big}}</span>
+<span style="font-size:13px;color:#2C3038">{{m.sub}}</span>
+</a>
+</sc-for>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const nav = [
+{ label: 'Home', d: 'M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z', c1: '#FF9A6B', c2: '#E5532E', shape: '50%', on: true },
+{ label: 'Electricity', d: 'M13 2L5 13h6l-1 8 8-11h-6z', c1: '#FFD54A', c2: '#E8930C', shape: '8px' },
+{ label: 'Vehicles', d: 'M3 15h18v3H3zM6 15l1.8-5a2 2 0 0 1 1.9-1.3h4.6a2 2 0 0 1 1.9 1.3L18 15', c1: '#7BB2FF', c2: '#2F5BFF', shape: '50% 50% 8px 8px' },
+{ label: 'Bills', d: 'M6 3h12v16l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6', c1: '#6FE7AE', c2: '#16935E', shape: '8px' },
+{ label: 'Reminders', d: 'M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7M10 19a2 2 0 0 0 4 0', c1: '#FF9DB0', c2: '#D93A65', shape: '50%' },
+{ label: 'Settings', d: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3M12 19v3M2 12h3M19 12h3', c1: '#D5DAE1', c2: '#7A818C', shape: '50%' },
+];
+const gridA = [];
+for (let i = -6; i <= 8; i++) {
+gridA.push({ x1: 380 + i * 60 - 400, y1: 470, x2: 380 + i * 60 + 410, y2: 0 });
+gridA.push({ x1: 380 + i * 60 + 400, y1: 470, x2: 380 + i * 60 - 410, y2: 0 });
+}
+return {
+nav: nav.map((n) => ({ ...n, bg: n.on ? '#2A2E35' : 'transparent', stroke: n.on ? '#F2F3F5' : '#8A909A' })),
+gridA,
+todo: [
+{ title: 'Pay 2 electricity bills', sub: 'LKR 7,913.84 in total', when: '4 Dec', lamp: '#F2A417' },
+{ title: 'Read Meter A', sub: 'last read 6 days ago', when: 'today', lamp: '#F2A417' },
+{ title: 'Add the Premio renewals', sub: 'licence, insurance, emission', when: '–', lamp: '#C9CED6' },
+{ title: 'Meter B is live', sub: '33 units to 120 · about 4 days at this pace', when: 'watch', lamp: '#1FA971' },
+],
+tiles: [
+{ name: 'Electricity', big: '189', sub: 'units before a price jump', d: 'M13 2L5 13h6l-1 8 8-11h-6z' },
+{ name: 'Vehicles', big: '2', sub: 'no renewals added yet', d: 'M3 15h18v3H3zM6 15l1.8-5h8.4L18 15' },
+{ name: 'Bills', big: '7,913', sub: 'LKR to pay by 4 Dec', d: 'M6 3h12v16l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6' },
+{ name: 'Documents', big: '0', sub: 'add the vehicle books', d: 'M6 3h8l4 4v14H6zM14 3v4h4' },
+],
+};
+}
+}
+</script>
+</body>
+</html>
