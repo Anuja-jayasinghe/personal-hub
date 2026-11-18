@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hub Sign in</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Oxanium:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Sora',Arial,sans-serif;color:#F2F5FA}
+.d{font-family:'Oxanium',Arial,sans-serif;letter-spacing:-.025em}
+.m{font-family:'JetBrains Mono',monospace}
+@keyframes flow{to{stroke-dashoffset:-30}}
+@keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+</style>
+</helmet>
+<div style="display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);width:1440px;height:900px">
+
+<section aria-label="hub" style="position:relative;background:#0D1118;padding:64px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;background-image:radial-gradient(#1A2230 1px,transparent 1px);background-size:18px 18px">
+<svg width="100%" height="100%" viewBox="0 0 760 900" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;inset:0">
+<sc-for list="{{links}}" as="l" hint-placeholder-count="10"><line x1="{{l.x1}}" y1="{{l.y1}}" x2="{{l.x2}}" y2="{{l.y2}}" stroke="#222D3D" stroke-width="1.5"></line></sc-for>
+<sc-for list="{{flows}}" as="l" hint-placeholder-count="3"><line x1="{{l.x1}}" y1="{{l.y1}}" x2="{{l.x2}}" y2="{{l.y2}}" stroke="#4388F5" stroke-width="2" stroke-dasharray="2 28" stroke-linecap="round" style="animation:flow 1.6s linear infinite"></line></sc-for>
+<sc-for list="{{dots}}" as="n" hint-placeholder-count="10"><circle cx="{{n.x}}" cy="{{n.y}}" r="4" fill="#303B4B" style="animation:blink 3s ease-in-out infinite;animation-delay:{{n.delay}}"></circle></sc-for>
+</svg>
+<div style="position:relative;display:flex;align-items:center;gap:14px">
+<dc-import name="HubMark" size="44" color="#4388F5" hint-size="34px,44px"></dc-import>
+<span style="font-size:34px;font-weight:650;letter-spacing:-.06em">hub</span>
+</div>
+<div style="position:relative;display:flex;justify-content:center">
+<dc-import name="HubMark" size="330" color="#4388F5" hint-size="258px,330px"></dc-import>
+</div>
+<div style="position:relative">
+<span class="m" style="font-size:12px;letter-spacing:.3em;color:#A3ADBD">ACCESS. TRACK. MANAGE.</span>
+<p class="d" style="margin:10px 0 0;font-size:52px;font-weight:600;line-height:1.02;max-width:14ch">Everything, connected.</p>
+</div>
+</section>
+
+<section aria-label="Sign in" style="background:#11151D;display:flex;align-items:center;justify-content:center;padding:48px">
+<form style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px;background:#1A2230;border:1px solid #303B4B;border-radius:24px;padding:32px">
+<span class="m" style="font-size:11px;letter-spacing:.14em;color:#4388F5">/ SIGN IN</span>
+<h1 style="margin:-6px 0 0;font-size:34px;font-weight:400;letter-spacing:-.03em">Welcome back.</h1>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#B7C0CD">Only people you invite can open the hub.</p>
+<label style="display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:#B7C0CD">Email
+<input type="email" placeholder="you@example.com" style="height:50px;border-radius:12px;border:0;box-shadow:inset 0 0 0 1px #303B4B;background:#11151D;color:#F2F5FA;padding:0 14px;font-family:inherit;font-size:15px"></input>
+</label>
+<button type="button" style="min-height:52px;border:0;border-radius:12px;background:#4388F5;color:#0D1118;font-family:inherit;font-size:16px;font-weight:600">Send me a code</button>
+<div class="m" style="display:flex;align-items:center;gap:10px;color:#929EAF;font-size:10.5px;letter-spacing:.14em"><span style="flex:1;height:1px;background:#303B4B"></span>OR<span style="flex:1;height:1px;background:#303B4B"></span></div>
+<button type="button" style="min-height:52px;border:0;border-radius:12px;background:transparent;color:#F2F5FA;font-family:inherit;font-size:15px;font-weight:600;box-shadow:inset 0 0 0 1px #303B4B">Continue with Google</button>
+<p style="margin:0;display:flex;align-items:center;gap:8px;font-size:12px;color:#929EAF"><span style="width:7px;height:7px;border-radius:50%;background:#3DD68C"></span>The code arrives in a few seconds and works once.</p>
+</form>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const pts = [[60, 140], [210, 90], [380, 170], [600, 110], [700, 260], [120, 360], [560, 400], [90, 620], [300, 760], [520, 700], [690, 820], [420, 560]];
+const pairs = [[0, 1], [1, 2], [2, 3], [3, 4], [0, 5], [5, 11], [4, 6], [6, 11], [5, 7], [7, 8], [8, 9], [9, 10], [9, 11], [2, 11]];
+const seg = ([a, b]) => ({ x1: pts[a][0], y1: pts[a][1], x2: pts[b][0], y2: pts[b][1] });
+return {
+links: pairs.map(seg),
+flows: [[1, 2], [7, 8], [4, 6]].map(seg),
+dots: pts.map(([x, y], i) => ({ x, y, delay: `${-i * 0.4}s` })),
+};
+}
+}
+</script>
+</body>
+</html>

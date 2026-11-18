@@ -1,0 +1,44 @@
+/* hub design tokens — v1.0 */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Oxanium:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Brand palette */
+  --hub-blue: #4388F5;
+  --hub-blue-hover: #3478E8;
+  --hub-blue-soft: #1D355A;
+  --hub-bg: #11151D;
+  --hub-bg-deep: #0D1118;
+  --hub-surface: #1A2230;
+  --hub-surface-raised: #222D3D;
+  --hub-border: #303B4B;
+  --hub-gray: #929EAF;
+  --hub-gray-soft: #B7C0CD;
+  --hub-text: #F2F5FA;
+  --hub-text-muted: #A3ADBD;
+
+  /* Brand typography */
+  --font-display: 'Oxanium', 'Arial', sans-serif;
+  --font-ui: 'Sora', 'Arial', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Type scale */
+  --text-xs: .75rem;
+  --text-sm: .875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.875rem;
+  --text-3xl: 2.5rem;
+  --text-4xl: 3.25rem;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+}
+
+html { background: var(--hub-bg); color: var(--hub-text); font-family: var(--font-ui); }
+h1, h2, h3, .brand-display { font-family: var(--font-display); font-weight: 600; letter-spacing: -.025em; }
+body, button, input, select, textarea { font-family: var(--font-ui); }
+code, pre, .metadata, .eyebrow, time, .technical-label { font-family: var(--font-mono); }
+a, .interactive-accent { color: var(--hub-blue); }

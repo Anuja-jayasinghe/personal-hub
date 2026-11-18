@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hub Electricity desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Oxanium:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Sora',Arial,sans-serif;color:#F2F5FA}
+.d{font-family:'Oxanium',Arial,sans-serif;letter-spacing:-.025em}
+.m{font-family:'JetBrains Mono',monospace}
+.eb{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#929EAF}
+.card{background:#1A2230;border:1px solid #303B4B;border-radius:22px}
+@keyframes flow{to{stroke-dashoffset:-20}}
+@keyframes disc{0%{transform:translateX(-46px) scaleX(.3);opacity:.3}25%{transform:translateX(0) scaleX(1);opacity:1}50%{transform:translateX(46px) scaleX(.3);opacity:.3}50.1%,100%{opacity:0}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
+</helmet>
+<div style="display:flex;width:1440px;height:900px;background:#11151D;overflow:hidden">
+<dc-import name="HubRail" active="electricity" hint-size="88px,900px"></dc-import>
+
+<main style="flex:1;min-width:0;padding:28px 36px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;align-items:flex-end;gap:16px">
+<div><span class="eb">/ Electricity · Wed 18 Nov · day 13 of 30</span><h1 class="d" style="margin:4px 0 0;font-size:44px;font-weight:600;line-height:1">Electricity</h1></div>
+<a href="#" style="margin-left:auto;display:flex;align-items:center;min-height:48px;padding:0 18px;border-radius:12px;box-shadow:inset 0 0 0 1px #303B4B;color:#F2F5FA;font-size:15px;font-weight:600;text-decoration:none">+ Bill</a>
+<a href="#" style="display:flex;align-items:center;min-height:48px;padding:0 22px;border-radius:12px;background:#4388F5;color:#0D1118;font-size:15px;font-weight:600;text-decoration:none">Read the meters</a>
+</div>
+
+<div style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px">
+<section aria-label="The meter board" style="background:#0D1118;border:1px solid #222D3D;border-radius:26px;padding:14px 20px 20px;background-image:radial-gradient(#1A2230 1px,transparent 1px);background-size:16px 16px">
+<svg width="100%" height="54" viewBox="0 0 700 54" preserveAspectRatio="none" aria-hidden="true" style="display:block">
+<path d="M350 12V28H172V54" fill="none" stroke="#303B4B" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+<path d="M350 12V28H528V54" fill="none" stroke="#4388F5" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+<path d="M350 12V28H528V54" fill="none" stroke="#F2F5FA" stroke-width="2.4" stroke-dasharray="2 18" stroke-linecap="round" vector-effect="non-scaling-stroke" style="animation:flow .8s linear infinite"></path>
+</svg>
+<div style="position:relative;margin-top:-54px;height:54px;pointer-events:none"><span style="position:absolute;left:calc(50% - 6px);top:6px;width:12px;height:12px;border-radius:50%;background:#4388F5"></span><span class="m" style="position:absolute;left:calc(50% + 12px);top:4px;font-size:10px;letter-spacing:.14em;color:#929EAF">GRID</span></div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px">
+<sc-for list="{{meters}}" as="m" hint-placeholder-count="2">
+<a href="#" style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:18px 14px;border-radius:20px;background:#1A2230;color:#F2F5FA;text-decoration:none;box-shadow:inset 0 0 0 1px {{m.ring}}">
+<span style="display:flex;width:100%;align-items:center;justify-content:space-between"><span class="m" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:22px;border-radius:6px;background:#222D3D;box-shadow:inset 0 0 0 1px #303B4B;font-size:12px;font-weight:600">{{m.letter}}</span><span class="m" style="display:flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:.12em;color:{{m.stateInk}}"><span style="width:7px;height:7px;border-radius:50%;background:{{m.led}};animation:{{m.blink}}"></span>{{m.state}}</span></span>
+<span style="display:flex;gap:3px" role="img" aria-label="Reading {{m.reading}}">
+<sc-for list="{{m.digits}}" as="g" hint-placeholder-count="4"><span class="m" style="width:30px;height:42px;border-radius:7px;background:#222D3D;font-size:22px;font-weight:600;line-height:42px;text-align:center">{{g}}</span></sc-for>
+<span class="m" style="width:30px;height:42px;border-radius:7px;background:{{m.lastBg}};color:{{m.lastInk}};font-size:22px;font-weight:600;line-height:42px;text-align:center">9</span>
+</span>
+<span style="position:relative;width:150px;height:30px" aria-hidden="true"><span style="position:absolute;inset:0;border-radius:50%;background:#222D3D;box-shadow:inset 0 -4px 0 #0D1118,inset 0 0 0 1px #303B4B"></span><span style="position:absolute;left:70px;top:10px;width:10px;height:10px;border-radius:2px;background:{{m.mark}};animation:{{m.disc}}"></span></span>
+<span style="display:flex;align-items:baseline;gap:8px"><span class="d" style="font-size:52px;font-weight:600;line-height:1">{{m.left}}</span><span style="font-size:13px;color:#A3ADBD">to 120</span></span>
+<span class="m" style="font-size:11px;color:#929EAF">{{m.checked}}</span>
+</a>
+</sc-for>
+</div>
+</section>
+
+<div style="display:flex;flex-direction:column;gap:20px">
+<section aria-label="Room before a price jump" class="card" style="padding:22px">
+<span class="eb">Both meters</span>
+<div style="display:flex;align-items:baseline;gap:10px;margin-top:4px"><span class="d" style="font-size:72px;font-weight:600;line-height:.9">189</span><span style="font-size:15px;color:#B7C0CD">units before a price jump</span></div>
+<p style="margin:12px 0 0;display:flex;gap:8px;font-size:14px;line-height:1.5;color:#B7C0CD"><span style="flex:none;width:8px;height:8px;margin-top:7px;border-radius:50%;background:#F5B94A"></span>B passes 120 around 23 Nov. From then it is the 180 meter and A must stay under 120.</p>
+</section>
+<section aria-label="Pace this cycle" class="card" style="flex:1;padding:18px 22px;display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:14px;font-size:13px"><span style="font-weight:600">This cycle</span><span style="display:flex;align-items:center;gap:6px;color:#A3ADBD"><span style="width:14px;height:3px;border-radius:2px;background:#4388F5"></span>B</span><span style="display:flex;align-items:center;gap:6px;color:#A3ADBD"><span style="width:14px;height:3px;border-radius:2px;background:#929EAF"></span>A</span><span class="m" style="margin-left:auto;font-size:10.5px;color:#929EAF">KWH</span></div>
+<svg viewBox="0 0 400 150" style="flex:1;width:100%;margin-top:8px" role="img" aria-label="Cumulative use: B 87 by day 12, on pace for 217; A 24, on pace for 60">
+<line x1="0" y1="62" x2="400" y2="62" stroke="#FF6B61" stroke-width="1" stroke-dasharray="2 4" opacity=".7"></line>
+<text x="398" y="57" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="9" fill="#FF8F87">180</text>
+<line x1="0" y1="86" x2="400" y2="86" stroke="#F5B94A" stroke-width="1" stroke-dasharray="2 4" opacity=".7"></line>
+<text x="398" y="81" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="9" fill="#F8CB72">120</text>
+<line x1="0" y1="134" x2="400" y2="134" stroke="#303B4B"></line>
+<polyline points="0,134 53,121 107,113 160,99" fill="none" stroke="#4388F5" stroke-width="3" stroke-linejoin="round"></polyline>
+<line x1="160" y1="99" x2="400" y2="47" stroke="#4388F5" stroke-width="2" stroke-dasharray="5 5" style="animation:flow 1.2s linear infinite"></line>
+<polyline points="0,134 133,126 147,124" fill="none" stroke="#929EAF" stroke-width="3" stroke-linejoin="round"></polyline>
+<line x1="147" y1="124" x2="400" y2="110" stroke="#929EAF" stroke-width="2" stroke-dasharray="5 5"></line>
+<circle cx="0" cy="134" r="3.5" fill="#B7C0CD"></circle><circle cx="53" cy="121" r="3.5" fill="#4388F5"></circle><circle cx="107" cy="113" r="3.5" fill="#4388F5"></circle><circle cx="133" cy="126" r="3.5" fill="#929EAF"></circle><circle cx="147" cy="124" r="4" fill="#929EAF"></circle>
+<circle cx="160" cy="99" r="5.5" fill="#4388F5" stroke="#1A2230" stroke-width="2.5"></circle>
+<text x="0" y="148" font-family="JetBrains Mono, monospace" font-size="9" fill="#929EAF">6 NOV</text>
+<text x="160" y="148" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#F2F5FA">TODAY</text>
+<text x="400" y="148" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="9" fill="#929EAF">6 DEC</text>
+</svg>
+</section>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) minmax(0,1fr);gap:20px;flex:1;min-height:0">
+<sc-for list="{{meters}}" as="m" hint-placeholder-count="2">
+<section aria-label="{{m.name}} against the slabs" class="card" style="padding:16px 18px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:15px;font-weight:600">{{m.name}}</span><span style="font-size:12px;color:#A3ADBD">{{m.used}} used since 6 Nov</span><a href="#" style="margin-left:auto;font-size:13px;font-weight:600;color:#4388F5;text-decoration:none">Open</a></div>
+<svg viewBox="0 0 330 44" width="100%" height="44" role="img" aria-label="{{m.used}} of 120 used" style="margin-top:8px">
+<line x1="6" y1="16" x2="324" y2="16" stroke="#303B4B" stroke-width="2"></line>
+<line x1="6" y1="16" x2="{{m.x}}" y2="16" stroke="#4388F5" stroke-width="4" stroke-linecap="round"></line>
+<line x1="{{m.x}}" y1="16" x2="{{m.px}}" y2="16" stroke="#4388F5" stroke-width="2" stroke-dasharray="3 6"></line>
+<circle cx="196.8" cy="16" r="6" fill="#1A2230" stroke="#F5B94A" stroke-width="2.2"></circle>
+<circle cx="292" cy="16" r="6" fill="#1A2230" stroke="#FF6B61" stroke-width="2.2"></circle>
+<circle cx="{{m.x}}" cy="16" r="5.5" fill="#4388F5" stroke="#1A2230" stroke-width="2.5"></circle>
+<text x="196.8" y="39" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#B7C0CD">120</text>
+<text x="292" y="39" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#B7C0CD">180</text>
+</svg>
+<p style="margin:6px 0 0;font-size:13px;color:#A3ADBD">{{m.bill}}</p>
+</section>
+</sc-for>
+<section aria-label="Bills" style="background:#1D355A;border:1px solid rgba(67,136,245,.45);border-radius:22px;padding:16px 18px;display:flex;flex-direction:column;gap:6px">
+<span class="eb" style="color:#B7C0CD">Both Nov bills</span>
+<span class="d" style="font-size:34px;font-weight:600;line-height:1">LKR 7,913.84</span>
+<span style="display:flex;align-items:center;gap:6px;font-size:13px;color:#F8CB72"><span style="width:7px;height:7px;border-radius:50%;background:#F5B94A"></span>due 4 Dec · 16 days</span>
+</section>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const X = (u) => Math.min(324, 6 + (u / 200) * 318);
+return {
+meters: [
+{ name: 'Meter A', letter: 'A', state: 'IDLE', stateInk: '#929EAF', led: '#303B4B', blink: 'none', ring: '#303B4B', reading: '17,489', digits: ['1', '7', '4', '8'], lastBg: '#303B4B', lastInk: '#F2F5FA', mark: '#4A5668', disc: 'none', left: '96', checked: 'READ 3 DAYS AGO', used: '24', x: X(24), px: X(60), bill: 'Nov bill LKR 3,204.10 · to pay' },
+{ name: 'Meter B', letter: 'B', state: 'LIVE', stateInk: '#4388F5', led: '#4388F5', blink: 'pulse 2s ease-in-out infinite', ring: 'rgba(67,136,245,.6)', reading: '37,429', digits: ['3', '7', '4', '2'], lastBg: '#4388F5', lastInk: '#0D1118', mark: '#4388F5', disc: 'disc 1.6s linear infinite', left: '33', checked: 'READ TODAY', used: '87', x: X(87), px: X(217), bill: 'Nov bill LKR 4,709.74 · to pay' },
+],
+};
+}
+}
+</script>
+</body>
+</html>

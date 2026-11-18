@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Electricity on desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Archivo',system-ui,sans-serif;color:#16181D}
+@keyframes discMark{0%{transform:translateX(-46px) scaleX(.25);opacity:.35}25%{transform:translateX(0) scaleX(1);opacity:1}50%{transform:translateX(46px) scaleX(.25);opacity:.35}50.1%,100%{opacity:0}}
+@keyframes led{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes dash{to{stroke-dashoffset:-16}}
+</style>
+</helmet>
+<div style="display:flex;width:1440px;height:900px;background:#ECEEF1;overflow:hidden">
+
+<aside style="width:84px;flex:0 0 84px;background:#16181D;display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 0">
+<svg width="48" height="48" viewBox="0 0 120 120" role="img" aria-label="hub"><path d="M22 66 V 44 L 56 18 L 90 44 V 66" fill="none" stroke="#F2F3F5" stroke-width="8" stroke-linejoin="round" stroke-linecap="round"></path><path d="M14 66 H 100" stroke="#F2F3F5" stroke-width="8" stroke-linecap="round"></path><circle cx="104" cy="66" r="6" fill="#B5713A"></circle><circle cx="42" cy="54.5" r="7" fill="none" stroke="#F2F3F5" stroke-width="7"></circle><path d="M49 47 V 62M66 48 V 92 C 66 104 56 108 46 103" fill="none" stroke="#F2F3F5" stroke-width="7" stroke-linecap="round"></path><circle cx="66" cy="35" r="6.5" fill="#D2392C"></circle></svg>
+<div style="height:18px"></div>
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="6">
+<a href="#" aria-label="{{n.label}}" style="position:relative;display:block;width:56px;height:56px;border-radius:16px;background:{{n.bg}}">
+<span style="position:absolute;right:8px;top:7px;width:26px;height:26px;border-radius:{{n.shape}};background:linear-gradient(140deg,{{n.c1}},{{n.c2}})"></span>
+<span style="position:absolute;left:8px;bottom:8px;width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2F3F5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.d}}"></path></svg></span>
+</a>
+</sc-for>
+</aside>
+
+<main style="flex:1;min-width:0;padding:28px 36px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;align-items:baseline;gap:16px">
+<h1 style="margin:0;font-size:38px;font-weight:800;font-stretch:125%;letter-spacing:-0.02em">Electricity</h1>
+<span style="font-family:'Martian Mono',monospace;font-size:12px;color:#4B515C">Wed 18 Nov · day 13 of 30</span>
+<a href="#" style="margin-left:auto;display:flex;align-items:center;min-height:48px;padding:0 18px;border-radius:14px;box-shadow:inset 0 0 0 1.5px #16181D;color:#16181D;font-size:15px;font-weight:700;text-decoration:none">+ Bill</a>
+<a href="#" style="display:flex;align-items:center;min-height:48px;padding:0 22px;border-radius:14px;background:#16181D;color:#F2F3F5;font-size:15px;font-weight:700;font-stretch:112%;text-decoration:none">Read the meters</a>
+</div>
+
+<div style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px">
+
+<section aria-label="The meter board" style="background:#16181D;border-radius:26px;padding:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px">
+<sc-for list="{{meters}}" as="m" hint-placeholder-count="2">
+<a href="#" style="display:flex;flex-direction:column;align-items:center;gap:14px;padding:20px 14px;border-radius:20px;background:#20242B;color:#F2F3F5;text-decoration:none;box-shadow:inset 0 0 0 1px {{m.ring}},0 0 30px -10px {{m.glow}}">
+<span style="display:flex;width:100%;align-items:center;justify-content:space-between"><span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:22px;border-radius:5px;background:#F2F3F5;color:#16181D;font-family:'Martian Mono',monospace;font-size:13px;font-weight:600">{{m.letter}}</span><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#C9CED6"><span style="width:8px;height:8px;border-radius:50%;background:{{m.led}};animation:{{m.blink}}"></span>{{m.state}}</span></span>
+<span style="display:flex;gap:3px" role="img" aria-label="Reading {{m.reading}}">
+<sc-for list="{{m.digits}}" as="g" hint-placeholder-count="5"><span style="width:28px;height:40px;border-radius:6px;background:#2A2E35;font-family:'Martian Mono',monospace;font-size:22px;font-weight:600;line-height:40px;text-align:center">{{g}}</span></sc-for>
+<span style="width:28px;height:40px;border-radius:6px;background:#D2392C;font-family:'Martian Mono',monospace;font-size:22px;font-weight:600;line-height:40px;text-align:center">{{m.last}}</span>
+</span>
+<span style="position:relative;width:160px;height:34px" aria-hidden="true">
+<span style="position:absolute;inset:0;border-radius:50%;background:#4B515C;box-shadow:inset 0 -4px 0 #2A2E35"></span>
+<span style="position:absolute;left:76px;top:12px;width:9px;height:10px;border-radius:2px;background:#FF5A4A;animation:{{m.disc}}"></span>
+</span>
+<span style="display:flex;align-items:baseline;gap:8px"><span style="font-size:44px;font-weight:800;font-stretch:125%;line-height:1">{{m.left}}</span><span style="font-size:13px;color:#C9CED6">to {{m.limit}}</span></span>
+<span style="font-size:12px;color:{{m.checkInk}}">{{m.checked}}</span>
+</a>
+</sc-for>
+</section>
+
+<div style="display:flex;flex-direction:column;gap:20px">
+<section aria-label="Room before a price jump" style="background:#F8F9FA;border-radius:26px;padding:22px;box-shadow:0 0 0 1px rgba(22,24,29,.1)">
+<div style="display:flex;align-items:baseline;gap:10px"><span style="font-size:64px;font-weight:800;font-stretch:125%;letter-spacing:-0.03em;line-height:.9">189</span><span style="font-size:15px;color:#2C3038">units before a price jump, both meters</span></div>
+<p style="margin:12px 0 0;display:flex;gap:8px;font-size:14px;line-height:1.5;color:#2C3038"><span style="flex:none;width:9px;height:9px;margin-top:6px;border-radius:50%;background:#F2A417"></span>B passes 120 around 23 Nov. From then it is the 180 meter and A must stay under 120.</p>
+</section>
+<section aria-label="Pace this cycle" style="flex:1;background:#F8F9FA;border-radius:26px;padding:18px 22px;box-shadow:0 0 0 1px rgba(22,24,29,.1);display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:14px;font-size:13px"><span style="font-weight:700">This cycle</span><span style="display:flex;align-items:center;gap:6px;color:#4B515C"><span style="width:14px;height:3px;background:#16181D"></span>B</span><span style="display:flex;align-items:center;gap:6px;color:#4B515C"><span style="width:14px;height:3px;background:#8A909A"></span>A</span><span style="margin-left:auto;font-family:'Martian Mono',monospace;font-size:11px;color:#4B515C">kWh</span></div>
+<svg viewBox="0 0 400 150" style="flex:1;width:100%;margin-top:8px" role="img" aria-label="Cumulative use: B 87 by day 12, on pace for 217; A 24, on pace for 60">
+<line x1="0" y1="62" x2="400" y2="62" stroke="#F3C2BC" stroke-width="1.5"></line>
+<text x="398" y="58" text-anchor="end" font-family="Martian Mono, monospace" font-size="9" fill="#A3241A">180</text>
+<line x1="0" y1="86" x2="400" y2="86" stroke="#F6DFA8" stroke-width="1.5"></line>
+<text x="398" y="82" text-anchor="end" font-family="Martian Mono, monospace" font-size="9" fill="#7A4F06">120</text>
+<line x1="0" y1="134" x2="400" y2="134" stroke="#DDE0E5"></line>
+<polyline points="0,134 53,121 107,113 160,99" fill="none" stroke="#16181D" stroke-width="3" stroke-linejoin="round"></polyline>
+<line x1="160" y1="99" x2="400" y2="47" stroke="#16181D" stroke-width="2" stroke-dasharray="5 5" style="animation:dash 1s linear infinite"></line>
+<polyline points="0,134 133,126 147,124" fill="none" stroke="#8A909A" stroke-width="3" stroke-linejoin="round"></polyline>
+<line x1="147" y1="124" x2="400" y2="110" stroke="#8A909A" stroke-width="2" stroke-dasharray="5 5"></line>
+<circle cx="160" cy="99" r="5" fill="#D2392C"></circle>
+<text x="0" y="148" font-family="Martian Mono, monospace" font-size="9" fill="#4B515C">6 Nov</text>
+<text x="160" y="148" text-anchor="middle" font-family="Martian Mono, monospace" font-size="9" fill="#16181D">today</text>
+<text x="400" y="148" text-anchor="end" font-family="Martian Mono, monospace" font-size="9" fill="#4B515C">6 Dec</text>
+</svg>
+</section>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) minmax(0,1fr);gap:20px;flex:1;min-height:0">
+<sc-for list="{{meters}}" as="m" hint-placeholder-count="2">
+<section aria-label="{{m.name}} against its limit" style="background:#F8F9FA;border-radius:22px;padding:16px 18px;box-shadow:0 0 0 1px rgba(22,24,29,.1)">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:15px;font-weight:700">{{m.name}}</span><span style="font-size:12px;color:#4B515C">{{m.used}} used since {{m.billDate}}</span><a href="#" style="margin-left:auto;font-size:13px;font-weight:700;color:#16181D">Open</a></div>
+<div style="position:relative;height:36px;margin-top:12px" role="img" aria-label="{{m.used}} of {{m.limit}} used">
+<div style="position:absolute;left:0;right:0;top:12px;height:10px;border-radius:4px;background:#E3E6EA"></div>
+<div style="position:absolute;left:60%;width:30%;top:12px;height:10px;background:#F6DFA8"></div>
+<div style="position:absolute;left:90%;right:0;top:12px;height:10px;border-radius:0 4px 4px 0;background:#F3C2BC"></div>
+<div style="position:absolute;left:0;width:{{m.pct}}%;top:12px;height:10px;border-radius:4px 0 0 4px;background:#16181D"></div>
+<div style="position:absolute;left:calc({{m.pct}}% - 6px);top:0;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:10px solid #D2392C"></div>
+<span style="position:absolute;left:60%;top:25px;transform:translateX(-50%);font-family:'Martian Mono',monospace;font-size:10px;font-weight:600">120</span>
+<span style="position:absolute;left:90%;top:25px;transform:translateX(-50%);font-family:'Martian Mono',monospace;font-size:10px;font-weight:600">180</span>
+</div>
+<p style="margin:10px 0 0;font-size:13px;color:#2C3038">{{m.bill}}</p>
+</section>
+</sc-for>
+<section aria-label="Bills" style="background:#16181D;border-radius:22px;padding:16px 18px;color:#F2F3F5;display:flex;flex-direction:column;gap:6px">
+<span style="font-size:13px;color:#C9CED6">Both Nov bills</span>
+<span style="font-size:30px;font-weight:800;font-stretch:125%;line-height:1">LKR 7,913.84</span>
+<span style="display:flex;align-items:center;gap:6px;font-size:13px;color:#F5BE4D"><span style="width:8px;height:8px;border-radius:50%;background:#F2A417"></span>due 4 Dec · 16 days</span>
+</section>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const nav = [
+{ label: 'Home', d: 'M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z', c1: '#FF9A6B', c2: '#E5532E', shape: '50%' },
+{ label: 'Electricity', d: 'M13 2L5 13h6l-1 8 8-11h-6z', c1: '#FFD54A', c2: '#E8930C', shape: '8px', on: true },
+{ label: 'Vehicles', d: 'M3 15h18v3H3zM6 15l1.8-5a2 2 0 0 1 1.9-1.3h4.6a2 2 0 0 1 1.9 1.3L18 15', c1: '#7BB2FF', c2: '#2F5BFF', shape: '50% 50% 8px 8px' },
+{ label: 'Bills', d: 'M6 3h12v16l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6', c1: '#6FE7AE', c2: '#16935E', shape: '8px' },
+{ label: 'Reminders', d: 'M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7M10 19a2 2 0 0 0 4 0', c1: '#FF9DB0', c2: '#D93A65', shape: '50%' },
+{ label: 'Settings', d: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v3M12 19v3M2 12h3M19 12h3', c1: '#D5DAE1', c2: '#7A818C', shape: '50%' },
+];
+return {
+nav: nav.map((n) => ({ ...n, bg: n.on ? '#2A2E35' : 'transparent' })),
+meters: [
+{ name: 'Meter A', letter: 'A', state: 'idle', led: '#4B515C', blink: 'none', ring: '#2A2E35', glow: 'transparent', reading: '17,489', digits: ['1', '7', '4', '8'], last: '9', disc: 'none', left: '96', limit: '120', checked: 'read 3 days ago', checkInk: '#F5BE4D', used: '24', pct: 12, billDate: '6 Nov', bill: 'Nov bill LKR 3,204.10 · to pay' },
+{ name: 'Meter B', letter: 'B', state: 'live', led: '#2BD08A', blink: 'led 2s ease-in-out infinite', ring: 'rgba(255,90,74,.7)', glow: 'rgba(255,90,74,.5)', reading: '37,429', digits: ['3', '7', '4', '2'], last: '9', disc: 'discMark 1.6s linear infinite', left: '33', limit: '120', checked: 'read today', checkInk: '#C9CED6', used: '87', pct: 43.5, billDate: '6 Nov', bill: 'Nov bill LKR 4,709.74 · to pay' },
+],
+};
+}
+}
+</script>
+</body>
+</html>

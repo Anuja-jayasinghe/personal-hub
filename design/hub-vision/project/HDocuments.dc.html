@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hub Documents</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Oxanium:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Sora',Arial,sans-serif;color:#F2F5FA}
+.d{font-family:'Oxanium',Arial,sans-serif;letter-spacing:-.025em}
+.m{font-family:'JetBrains Mono',monospace}
+.eb{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#929EAF}
+.card{background:#1A2230;border:1px solid #303B4B;border-radius:18px}
+.chip{display:inline-flex;align-items:center;min-height:34px;padding:0 12px;border-radius:999px;font-size:12px;font-weight:500}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:900px;background:#11151D;overflow:hidden">
+<div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:12px">
+
+<header style="display:flex;align-items:center;gap:12px">
+<dc-import name="HubMark" size="30" color="#4388F5" hint-size="24px,30px"></dc-import>
+<div><span class="eb">4 files · 3.1 MB</span><h1 class="d" style="margin:2px 0 0;font-size:28px;font-weight:600;line-height:1">Documents</h1></div>
+<span class="m" style="margin-left:auto;display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border-radius:6px;background:#3A2E12;color:#F8CB72;font-size:10px;letter-spacing:.1em">SAMPLE ROWS</span>
+</header>
+
+<label style="display:flex;align-items:center;gap:10px;min-height:48px;padding:0 14px;border-radius:12px;background:#1A2230;box-shadow:inset 0 0 0 1px #303B4B"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#929EAF" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><span style="font-size:15px;color:#929EAF">Search by title, like “insurance 2026”</span></label>
+<div style="display:flex;gap:8px"><sc-for list="{{filters}}" as="f" hint-placeholder-count="4"><span class="chip" style="background:{{f.bg}};color:{{f.ink}};box-shadow:inset 0 0 0 1px {{f.ring}}">{{f.label}}</span></sc-for></div>
+
+<section aria-label="Ending soon" style="background:radial-gradient(120% 90% at 85% 0%,#2B2414 0%,#0D1118 62%);border:1px solid #3A2E12;border-radius:20px;padding:14px;display:flex;align-items:center;gap:12px">
+<svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="22" fill="none" stroke="#222D3D" stroke-width="5"></circle><circle cx="28" cy="28" r="22" fill="none" stroke="#F5B94A" stroke-width="5" stroke-linecap="round" stroke-dasharray="5 138" transform="rotate(-90 28 28)"></circle><text x="28" y="33" text-anchor="middle" font-family="Oxanium, sans-serif" font-weight="600" font-size="15" fill="#F2F5FA">12</text></svg>
+<span style="flex:1"><span class="m" style="display:block;font-size:10px;letter-spacing:.14em;color:#F8CB72">ENDS IN 12 DAYS</span><span style="display:block;font-size:15px;font-weight:600">Emission test 2025–2026</span><span style="display:block;font-size:12px;color:#A3ADBD">Premio · renew before the licence</span></span>
+</section>
+
+<sc-for list="{{groups}}" as="g" hint-placeholder-count="2">
+<section aria-label="{{g.title}}" class="card" style="padding:4px 14px">
+<div style="display:flex;align-items:center;min-height:40px"><span class="eb">{{g.title}}</span><span class="m" style="margin-left:auto;font-size:10px;color:#929EAF">{{g.count}}</span></div>
+<sc-for list="{{g.docs}}" as="d" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px;min-height:64px;border-top:1px solid #222D3D">
+<span class="m" style="flex:none;display:flex;align-items:flex-end;justify-content:center;width:34px;height:42px;border-radius:5px 12px 5px 5px;background:#222D3D;box-shadow:inset 0 0 0 1px #303B4B;padding-bottom:5px;box-sizing:border-box;font-size:8px;font-weight:600;color:{{d.typeInk}}">{{d.type}}</span>
+<span style="flex:1;min-width:0"><span style="display:block;font-size:15px;font-weight:600">{{d.title}}</span><span class="m" style="display:block;font-size:10.5px;color:#929EAF">{{d.sub}}</span></span>
+<span style="display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border-radius:999px;background:{{d.chipBg}};color:{{d.chipInk}};font-size:11px;font-weight:500">{{d.chip}}</span>
+</div>
+</sc-for>
+</section>
+</sc-for>
+
+<a href="#" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border-radius:12px;background:#4388F5;color:#0D1118;font-size:15px;font-weight:600;text-decoration:none">+ Add a document</a>
+</div>
+
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="HubNav" active="more" hint-size="390px,84px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const on = { bg: '#1D355A', ink: '#F2F5FA', ring: 'rgba(67,136,245,.55)' };
+const off = { bg: 'transparent', ink: '#B7C0CD', ring: '#303B4B' };
+const ok = { chipBg: '#12352A', chipInk: '#5EE0A5' };
+const old = { chipBg: '#222D3D', chipInk: '#929EAF' };
+return {
+filters: [{ label: 'All', ...on }, { label: 'Premio', ...off }, { label: 'Discover', ...off }, { label: 'House', ...off }],
+groups: [
+{ title: 'Premio', count: '3', docs: [
+{ title: 'Insurance 2025–2026', sub: 'PDF · 1.2 MB', type: 'PDF', typeInk: '#FF8F87', chip: 'ends 26 Mar', ...ok },
+{ title: 'Vehicle book', sub: 'PHOTO · 0.8 MB', type: 'JPG', typeInk: '#4388F5', chip: 'no expiry', ...old },
+{ title: 'Emission test 2025–2026', sub: 'PDF · 0.4 MB', type: 'PDF', typeInk: '#FF8F87', chip: '12 days', chipBg: '#3A2E12', chipInk: '#F8CB72' },
+] },
+{ title: 'Discover', count: '1', docs: [
+{ title: 'Revenue licence 2026–2027', sub: 'PHOTO · 0.7 MB', type: 'JPG', typeInk: '#4388F5', chip: 'ends 2 Aug', ...ok },
+] },
+],
+};
+}
+}
+</script>
+</body>
+</html>

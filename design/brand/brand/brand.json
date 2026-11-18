@@ -1,0 +1,21 @@
+{
+  "brand": "hub",
+  "tagline": "ACCESS. TRACK. MANAGE.",
+  "url": "https://hub.anujajay.com",
+  "fonts": {
+    "display": "Oxanium",
+    "ui": "Sora",
+    "utility": "JetBrains Mono"
+  },
+  "palette": {
+    "blue": "#4388F5",
+    "background": "#11151D",
+    "deepest": "#0D1118",
+    "surface": "#1A2230",
+    "surface_raised": "#222D3D",
+    "border": "#303B4B",
+    "grey": "#929EAF",
+    "soft_grey": "#B7C0CD",
+    "text": "#F2F5FA"
+  }
+}

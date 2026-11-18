@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Odd states</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Archivo',system-ui,sans-serif;color:#16181D}
+@keyframes lamp{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes trip{0%,60%{transform:rotate(0)}70%{transform:rotate(-38deg)}76%{transform:rotate(-30deg)}82%,100%{transform:rotate(-34deg)}}
+@keyframes spark{0%,62%{opacity:0}66%{opacity:1}74%,100%{opacity:0}}
+@keyframes draw{to{stroke-dashoffset:0}}
+</style>
+</helmet>
+<div style="display:flex;gap:60px;width:1290px;height:844px">
+
+<div style="position:relative;width:390px;height:844px;background:#0D0F12;color:#F2F3F5;overflow:hidden;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:0 28px;box-sizing:border-box;text-align:center">
+<svg width="180" height="180" viewBox="0 0 120 120" role="img" aria-label="The hub mark with its door shut and the lamp red">
+<path d="M22 66 V 44 L 56 18 L 90 44 V 66" fill="none" stroke="#4B515C" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"></path>
+<path d="M6 66 H 106" stroke="#4B515C" stroke-width="4.5" stroke-linecap="round"></path>
+<rect x="46" y="40" width="22" height="26" rx="2" fill="#20242B" stroke="#F2F3F5" stroke-width="2.5"></rect>
+<circle cx="63" cy="54" r="1.8" fill="#F2F3F5"></circle>
+<circle cx="57" cy="30" r="4.5" fill="#D2392C" style="animation:lamp 1.6s ease-in-out infinite"></circle>
+</svg>
+<h1 style="margin:0;font-size:30px;font-weight:800;font-stretch:125%;letter-spacing:-0.02em;line-height:1.1">This hub is invite-only</h1>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#C9CED6">You are signed in, but this account is not on the list yet. Ask Anuja to add you, then come back.</p>
+<div style="display:flex;flex-direction:column;gap:10px;width:100%;margin-top:6px">
+<a href="#" style="display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:16px;background:#F2F3F5;color:#16181D;font-size:15px;font-weight:700;text-decoration:none">Use another account</a>
+<a href="#" style="display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:16px;box-shadow:inset 0 0 0 1.5px #4B515C;color:#F2F3F5;font-size:15px;font-weight:700;text-decoration:none">Sign out</a>
+</div>
+</div>
+
+<div style="position:relative;width:390px;height:844px;background:#ECEEF1;overflow:hidden;flex:none">
+<div style="padding:20px 16px 0;display:flex;flex-direction:column;gap:12px">
+<header style="display:flex;align-items:center;gap:10px">
+<svg width="34" height="34" viewBox="0 0 120 120" aria-hidden="true"><rect x="2" y="2" width="116" height="116" rx="28" fill="#16181D"></rect><path d="M26 72 V 50 L 56 26 L 86 50 V 72 H 22" fill="none" stroke="#F2F3F5" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"></path><path d="M66 56 V 90 C 66 99 59 102 51 99" fill="none" stroke="#F2F3F5" stroke-width="9" stroke-linecap="round"></path><circle cx="66" cy="42" r="7" fill="#D2392C"></circle></svg>
+<h1 style="margin:0;font-size:24px;font-weight:800;font-stretch:125%;letter-spacing:-0.02em">Welcome home</h1>
+</header>
+<section aria-label="An empty house waiting to be wired" style="background:#F8F9FA;border-radius:24px;height:230px;box-shadow:0 0 0 1px rgba(22,24,29,.1);overflow:hidden">
+<svg width="100%" height="100%" viewBox="230 90 340 300" role="img" aria-label="The house drawn in outline, with nothing connected yet">
+<g fill="none" stroke="#8A909A" stroke-width="2" stroke-dasharray="6 6">
+<polygon points="390,372 262,298 262,190 390,264"></polygon>
+<polygon points="390,372 540,285 540,177 390,264"></polygon>
+<polygon points="390,264 262,190 412,103 540,177"></polygon>
+</g>
+<polygon points="404,300 452,272 452,226 404,254" fill="none" stroke="#16181D" stroke-width="2.5" stroke-dasharray="200" stroke-dashoffset="200" style="animation:draw 1.6s .3s ease-out forwards"></polygon>
+<circle cx="428" cy="266" r="5" fill="#D2392C" style="animation:lamp 1.6s ease-in-out infinite"></circle>
+</svg>
+</section>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#2C3038">Nothing is wired up yet. Three steps and the board lights up.</p>
+<ol aria-label="First steps" style="margin:0;padding:0;list-style:none;background:#F8F9FA;border-radius:20px;box-shadow:0 0 0 1px rgba(22,24,29,.1)">
+<sc-for list="{{steps}}" as="s" hint-placeholder-count="3">
+<li style="display:flex;align-items:center;gap:12px;min-height:64px;padding:0 14px;border-top:{{s.line}}">
+<span style="flex:none;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:10px;background:{{s.bg}};color:{{s.ink}};font-family:'Martian Mono',monospace;font-size:13px;font-weight:600">{{s.n}}</span>
+<span style="flex:1"><span style="display:block;font-size:15px;font-weight:700">{{s.title}}</span><span style="display:block;font-size:12px;color:#4B515C">{{s.sub}}</span></span>
+<span style="font-size:13px;font-weight:700;color:{{s.goInk}}">{{s.go}}</span>
+</li>
+</sc-for>
+</ol>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="GlassNav" active="home" hint-size="390px,78px"></dc-import></div>
+</div>
+
+<div style="position:relative;width:390px;height:844px;background:#ECEEF1;overflow:hidden;flex:none">
+<div style="padding:20px 16px 0;display:flex;flex-direction:column;gap:14px">
+<header style="display:flex;align-items:center;gap:10px">
+<svg width="34" height="34" viewBox="0 0 120 120" aria-hidden="true"><rect x="2" y="2" width="116" height="116" rx="28" fill="#16181D"></rect><path d="M26 72 V 50 L 56 26 L 86 50 V 72 H 22" fill="none" stroke="#F2F3F5" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"></path><path d="M66 56 V 90 C 66 99 59 102 51 99" fill="none" stroke="#F2F3F5" stroke-width="9" stroke-linecap="round"></path><circle cx="66" cy="42" r="7" fill="#D2392C"></circle></svg>
+<h1 style="margin:0;font-size:24px;font-weight:800;font-stretch:125%;letter-spacing:-0.02em">Electricity</h1>
+</header>
+<section role="alert" style="background:#16181D;border-radius:26px;padding:26px 20px;color:#F2F3F5;display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center">
+<svg width="150" height="150" viewBox="0 0 150 150" role="img" aria-label="A breaker switch that has tripped">
+<rect x="35" y="15" width="80" height="120" rx="14" fill="#20242B" stroke="#4B515C" stroke-width="2"></rect>
+<rect x="55" y="40" width="40" height="70" rx="8" fill="#0D0F12"></rect>
+<g style="transform-origin:75px 75px;animation:trip 3.2s ease-out infinite">
+<rect x="63" y="44" width="24" height="34" rx="6" fill="#D2392C"></rect>
+<rect x="63" y="44" width="24" height="6" rx="3" fill="#FF5A4A"></rect>
+</g>
+<g stroke="#F2A417" stroke-width="2.5" stroke-linecap="round" style="animation:spark 3.2s linear infinite">
+<path d="M108 30l10-8M112 42l14-2M104 20l4-12"></path>
+</g>
+<text x="75" y="126" text-anchor="middle" font-family="Martian Mono, monospace" font-size="9" fill="#8A909A">OFF</text>
+</svg>
+<h2 style="margin:0;font-size:26px;font-weight:800;font-stretch:125%;letter-spacing:-0.02em;line-height:1.1">A fuse tripped</h2>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#C9CED6">Electricity could not load just now. Your readings and bills are safe. Nothing was lost.</p>
+<button type="button" style="width:100%;min-height:52px;border:0;border-radius:16px;background:#F2F3F5;color:#16181D;font-family:inherit;font-size:16px;font-weight:700;font-stretch:112%">Flip it back on</button>
+<span style="font-family:'Martian Mono',monospace;font-size:10px;color:#8A909A">ref 7f3a · 18 Nov 21:04</span>
+</section>
+<p style="margin:0;font-size:13px;line-height:1.5;color:#4B515C">The rest of the hub still works. Only the part that failed shows this switch, with the others still on.</p>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="GlassNav" active="electricity" hint-size="390px,78px"></dc-import></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1290,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+steps: [
+{ n: '1', title: 'Add your meters', sub: 'a name and the account number', go: 'Start', goInk: '#16181D', bg: '#16181D', ink: '#F2F3F5', line: '0' },
+{ n: '2', title: 'Type the last bill', sub: 'so the hub knows where the cycle starts', go: '', goInk: '#4B515C', bg: '#E3E6EA', ink: '#4B515C', line: '1px solid #E3E6EA' },
+{ n: '3', title: 'Read the meters', sub: 'the slab rule lights up', go: '', goInk: '#4B515C', bg: '#E3E6EA', ink: '#4B515C', line: '1px solid #E3E6EA' },
+],
+};
+}
+}
+</script>
+</body>
+</html>

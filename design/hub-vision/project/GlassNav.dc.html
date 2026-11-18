@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Glass bottom bar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>body{margin:0}</style>
+</helmet>
+<nav aria-label="Main" style="width:390px;height:78px;box-sizing:border-box;padding:6px 18px 18px;background:{{bar}};box-shadow:0 -1px 0 {{line}};display:flex;justify-content:space-between;align-items:center">
+<sc-for list="{{items}}" as="n" hint-placeholder-count="5">
+<a href="#" aria-label="{{n.label}}" style="position:relative;display:block;width:52px;height:52px;border-radius:16px;background:{{n.bg}}">
+<span style="position:absolute;right:7px;top:6px;width:24px;height:24px;border-radius:{{n.shape}};background:linear-gradient(140deg,{{n.c1}},{{n.c2}})"></span>
+<span style="position:absolute;left:7px;bottom:7px;width:32px;height:32px;border-radius:11px;background:{{glass}};border:1px solid {{glassLine}};backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{ink}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.d}}"></path></svg></span>
+</a>
+</sc-for>
+</nav>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","default":"home","options":["home","vehicles","electricity","bills","more"]},"dark":{"editor":"boolean","default":false},"$preview":{"width":390,"height":78}}'>
+class Component extends DCLogic {
+renderVals() {
+const active = this.props.active ?? 'home';
+const dark = this.props.dark === true || this.props.dark === 'true';
+const defs = [
+{ key: 'home', label: 'Home', d: 'M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z', c1: '#FF9A6B', c2: '#E5532E', shape: '50%' },
+{ key: 'vehicles', label: 'Vehicles', d: 'M3 15h18v3H3zM6 15l1.8-5a2 2 0 0 1 1.9-1.3h4.6a2 2 0 0 1 1.9 1.3L18 15', c1: '#7BB2FF', c2: '#2F5BFF', shape: '50% 50% 8px 8px' },
+{ key: 'electricity', label: 'Electricity', d: 'M13 2L5 13h6l-1 8 8-11h-6z', c1: '#FFD54A', c2: '#E8930C', shape: '8px' },
+{ key: 'bills', label: 'Bills', d: 'M6 3h12v16l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6', c1: '#6FE7AE', c2: '#16935E', shape: '8px' },
+{ key: 'more', label: 'More', d: 'M5 12h.01M12 12h.01M19 12h.01', c1: '#D5DAE1', c2: '#7A818C', shape: '50%' },
+];
+return {
+bar: dark ? '#121418' : '#F8F9FA',
+line: dark ? '#20242B' : 'rgba(22,24,29,.1)',
+glass: dark ? 'rgba(255,255,255,.12)' : 'rgba(255,255,255,.4)',
+glassLine: dark ? 'rgba(255,255,255,.3)' : 'rgba(255,255,255,.9)',
+ink: dark ? '#F2F3F5' : '#16181D',
+items: defs.map((n) => ({ ...n, bg: n.key === active ? (dark ? '#20242B' : '#E3E6EA') : 'transparent' })),
+};
+}
+}
+</script>
+</body>
+</html>

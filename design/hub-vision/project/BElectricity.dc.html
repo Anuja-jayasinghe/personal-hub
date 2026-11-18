@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dye works Electricity</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Spline+Sans+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Bricolage Grotesque',system-ui,sans-serif;color:#141A2E}
+@keyframes dyeDrift{from{transform:translateX(0)}to{transform:translateX(-120px)}}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:844px;box-sizing:border-box;background:#EEEFEC;overflow:hidden">
+<div style="padding:22px 18px 0;display:flex;flex-direction:column;gap:14px">
+
+<header style="display:flex;align-items:center;gap:10px">
+<svg width="34" height="34" viewBox="0 0 132 132" aria-hidden="true"><defs><clipPath id="bSmall"><rect x="6" y="6" width="120" height="120" rx="30"></rect></clipPath></defs><rect x="6" y="6" width="120" height="120" rx="30" fill="#FFFFFF" stroke="#172449" stroke-width="8"></rect><g clip-path="url(#bSmall)"><path d="M0 70 Q 22 60 44 70 T 88 70 T 132 70 V 132 H 0 Z" fill="#172449"></path></g></svg>
+<h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-0.02em">Electricity</h1>
+<a href="#" aria-label="Electricity settings" style="margin-left:auto;width:44px;height:44px;border-radius:14px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 1px rgba(20,26,46,.08)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#172449" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h.01M12 12h.01M19 12h.01"></path></svg></a>
+</header>
+
+<nav aria-label="Meters" style="display:flex;gap:4px;padding:4px;background:#DFE1DC;border-radius:999px;width:fit-content">
+<a href="#" aria-current="page" style="min-height:40px;display:flex;align-items:center;padding:0 16px;border-radius:999px;background:#172449;color:#FFFFFF;font-size:14px;font-weight:600;text-decoration:none">Both</a>
+<a href="#" style="min-height:40px;display:flex;align-items:center;padding:0 14px;border-radius:999px;color:#2B3150;font-size:14px;text-decoration:none">Meter A</a>
+<a href="#" style="min-height:40px;display:flex;align-items:center;padding:0 14px;border-radius:999px;color:#2B3150;font-size:14px;text-decoration:none">Meter B</a>
+</nav>
+
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+<sc-for list="{{meters}}" as="m" hint-placeholder-count="2">
+<a href="#" style="position:relative;display:block;height:286px;border-radius:24px;overflow:hidden;background:#FFFFFF;text-decoration:none;color:#141A2E;box-shadow:0 0 0 1px rgba(20,26,46,.08),0 12px 24px -14px rgba(20,26,46,.3)">
+<div style="position:absolute;left:0;right:0;bottom:0;height:{{m.level}}%">
+<svg width="480" height="18" viewBox="0 0 480 18" preserveAspectRatio="none" aria-hidden="true" style="position:absolute;top:-17px;left:0;animation:dyeDrift {{m.speed}} linear infinite"><path d="M0 10 Q 30 2 60 10 T 120 10 T 180 10 T 240 10 T 300 10 T 360 10 T 420 10 T 480 10 V 18 H 0 Z" fill="{{m.dye}}"></path></svg>
+<div style="position:absolute;inset:0;background:{{m.dye}}"></div>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:82%;border-top:2.5px dashed #172449"></div>
+<span style="position:absolute;right:10px;bottom:calc(82% + 5px);font-family:'Spline Sans Mono',monospace;font-size:11px;background:#FFFFFF;padding:1px 5px;border-radius:5px">120</span>
+<div style="position:relative;padding:14px">
+<p style="margin:0;font-size:14px;font-weight:600">{{m.name}}</p>
+<p style="margin:2px 0 0;font-size:12px;color:#4A5068">{{m.state}}</p>
+</div>
+<div style="position:absolute;left:14px;bottom:14px;color:{{m.ink}}">
+<p style="margin:0;font-size:40px;font-weight:800;letter-spacing:-0.03em;line-height:1">{{m.left}}</p>
+<p style="margin:2px 0 0;font-size:13px">units left</p>
+<p style="margin:6px 0 0;font-family:'Spline Sans Mono',monospace;font-size:12px">{{m.reading}}</p>
+</div>
+</a>
+</sc-for>
+</div>
+
+<section aria-label="Room before a price jump" style="background:#FFFFFF;border-radius:22px;padding:14px 16px;box-shadow:0 0 0 1px rgba(20,26,46,.08)">
+<div style="display:flex;align-items:baseline;justify-content:space-between">
+<p style="margin:0;font-size:28px;font-weight:800;letter-spacing:-0.02em">189 <span style="font-size:15px;font-weight:600">units</span></p>
+<p style="margin:0;font-size:13px;color:#4A5068">before a price jump</p>
+</div>
+<div style="position:relative;height:16px;margin-top:10px;border-radius:999px;background:#E3E5EA;overflow:hidden" role="img" aria-label="111 of 300 units used across both meters">
+<div style="position:absolute;inset:0 63% 0 0;background:#3B5BA5"></div>
+<div style="position:absolute;top:0;bottom:0;left:40%;border-left:2px dashed #172449"></div>
+<div style="position:absolute;top:0;bottom:0;left:60%;border-left:2px dashed #172449"></div>
+</div>
+<p style="margin:8px 0 0;font-size:13px;line-height:1.4;color:#2B3150">On pace for about 283 this cycle. That fits in the 300.</p>
+</section>
+
+<p style="margin:0;display:flex;gap:8px;align-items:center;font-size:13px;color:#7A4F00"><span style="width:10px;height:10px;border-radius:50%;background:#E0A526"></span>Meter A was last read 6 days ago.</p>
+
+<a href="#" style="display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:18px;background:#172449;color:#FFFFFF;font-size:16px;font-weight:600;text-decoration:none">Read the meters</a>
+</div>
+
+<nav aria-label="Main" style="position:absolute;left:0;right:0;bottom:0;height:78px;box-sizing:border-box;padding:8px 18px 18px;background:#FFFFFF;box-shadow:0 -1px 0 rgba(20,26,46,.08);display:flex;justify-content:space-between;align-items:center">
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="5">
+<a href="#" aria-label="{{n.label}}" style="width:52px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:{{n.bg}}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{{n.stroke}}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.d}}"></path></svg></a>
+</sc-for>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const nav = [
+{ label: 'Home', d: 'M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z' },
+{ label: 'Vehicles', d: 'M3 15h18v3H3zM6 15l1.8-5a2 2 0 0 1 1.9-1.3h4.6a2 2 0 0 1 1.9 1.3L18 15' },
+{ label: 'Electricity', d: 'M13 2L5 13h6l-1 8 8-11h-6z', on: true },
+{ label: 'Bills', d: 'M6 3h12v16l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6' },
+{ label: 'More', d: 'M5 12h.01M12 12h.01M19 12h.01' },
+];
+return {
+nav: nav.map((n) => ({ ...n, bg: n.on ? '#172449' : 'transparent', stroke: n.on ? '#FFFFFF' : '#2B3150' })),
+meters: [
+{ name: 'Meter A', state: 'idle · read 6 days ago', left: '96', reading: '17,489', level: 16, dye: '#3B5BA5', ink: '#141A2E', speed: '0s' },
+{ name: 'Meter B', state: 'live · read today', left: '33', reading: '37,429', level: 59, dye: '#172449', ink: '#FFFFFF', speed: '6s' },
+],
+};
+}
+}
+</script>
+</body>
+</html>

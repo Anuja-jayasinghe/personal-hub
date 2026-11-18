@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hub One meter</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Oxanium:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Sora',Arial,sans-serif;color:#F2F5FA}
+.d{font-family:'Oxanium',Arial,sans-serif;letter-spacing:-.025em}
+.m{font-family:'JetBrains Mono',monospace}
+.eb{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#929EAF}
+.card{background:#1A2230;border:1px solid #303B4B;border-radius:18px}
+@keyframes flow{to{stroke-dashoffset:-18}}
+@keyframes disc{0%{transform:translateX(-30px) scaleX(.3);opacity:.3}25%{transform:translateX(0) scaleX(1);opacity:1}50%{transform:translateX(30px) scaleX(.3);opacity:.3}50.1%,100%{opacity:0}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:1100px;background:#11151D;overflow:hidden">
+<div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:12px">
+
+<header style="display:flex;align-items:center;gap:10px">
+<a href="#" aria-label="Back to Electricity" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:#1A2230;box-shadow:inset 0 0 0 1px #303B4B"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2F5FA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
+<div><span class="eb">/ Electricity /</span><h1 class="d" style="margin:2px 0 0;font-size:28px;font-weight:600;line-height:1">Meter B</h1></div>
+<span class="m" style="display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:0 9px;border-radius:999px;background:#1D355A;box-shadow:inset 0 0 0 1px rgba(67,136,245,.5);color:#F2F5FA;font-size:10.5px;letter-spacing:.1em;align-self:flex-end"><span style="width:6px;height:6px;border-radius:50%;background:#4388F5;animation:pulse 2s ease-in-out infinite"></span>LIVE</span>
+<button type="button" aria-label="More for Meter B" aria-expanded="true" style="margin-left:auto;width:40px;height:40px;border:0;border-radius:12px;background:#222D3D;box-shadow:inset 0 0 0 1px #4388F5;color:#F2F5FA;font-size:16px;font-weight:700;letter-spacing:1px">···</button>
+</header>
+
+<div role="menu" aria-label="More for Meter B" style="position:absolute;right:16px;top:70px;z-index:2;width:228px;background:#222D3D;border:1px solid #303B4B;border-radius:16px;padding:6px;box-shadow:0 24px 40px -16px rgba(0,0,0,.7)">
+<sc-for list="{{menu}}" as="i" hint-placeholder-count="4">
+<a href="#" role="menuitem" style="display:flex;align-items:center;gap:10px;min-height:44px;padding:0 10px;border-radius:10px;background:{{i.bg}};color:#F2F5FA;font-size:14px;font-weight:500;text-decoration:none"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{i.ink}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{i.d}}"></path></svg>{{i.label}}</a>
+</sc-for>
+</div>
+
+<section aria-label="Room left on Meter B" style="background:#0D1118;border:1px solid #222D3D;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:14px;background-image:radial-gradient(#1A2230 1px,transparent 1px);background-size:14px 14px">
+<div style="display:flex;align-items:flex-end;gap:10px">
+<span class="d" style="font-size:84px;font-weight:600;line-height:.82">33</span>
+<span style="padding-bottom:4px"><span style="display:block;font-size:15px;font-weight:600">units to 120</span><span style="display:block;font-size:13px;color:#A3ADBD">then 93 more to 180</span></span>
+</div>
+<div style="display:flex;align-items:center;gap:12px">
+<span style="display:flex;gap:2px" role="img" aria-label="Reading 37,429">
+<sc-for list="{{digits}}" as="g" hint-placeholder-count="4"><span class="m" style="width:22px;height:30px;border-radius:5px;background:#222D3D;font-size:16px;font-weight:600;line-height:30px;text-align:center">{{g}}</span></sc-for>
+<span class="m" style="width:22px;height:30px;border-radius:5px;background:#4388F5;color:#0D1118;font-size:16px;font-weight:600;line-height:30px;text-align:center">9</span>
+</span>
+<span style="position:relative;width:84px;height:22px" aria-hidden="true"><span style="position:absolute;inset:0;border-radius:50%;background:#222D3D;box-shadow:inset 0 -3px 0 #0D1118,inset 0 0 0 1px #303B4B"></span><span style="position:absolute;left:38px;top:7px;width:8px;height:8px;border-radius:2px;background:#4388F5;animation:disc 1.6s linear infinite"></span></span>
+<span class="m" style="margin-left:auto;font-size:10.5px;color:#929EAF">READ TODAY</span>
+</div>
+</section>
+
+<section aria-label="Meter B against the slabs" class="card" style="padding:14px">
+<div style="display:flex;align-items:baseline;gap:8px"><span style="font-size:15px;font-weight:600">87 used since the bill</span><span class="m" style="margin-left:auto;font-size:10.5px;color:#929EAF">DAY 12 / 30</span></div>
+<svg viewBox="0 0 330 48" width="100%" height="48" role="img" aria-label="87 of 120 used, on pace for about 217" style="margin-top:6px">
+<line x1="6" y1="18" x2="324" y2="18" stroke="#303B4B" stroke-width="2"></line>
+<line x1="6" y1="18" x2="144.3" y2="18" stroke="#4388F5" stroke-width="4" stroke-linecap="round"></line>
+<line x1="144.3" y1="18" x2="324" y2="18" stroke="#4388F5" stroke-width="2" stroke-dasharray="3 6" style="animation:flow 1.2s linear infinite"></line>
+<circle cx="6" cy="18" r="4" fill="#4388F5"></circle>
+<circle cx="196.8" cy="18" r="6.5" fill="#1A2230" stroke="#F5B94A" stroke-width="2.2"></circle>
+<circle cx="292" cy="18" r="6.5" fill="#1A2230" stroke="#FF6B61" stroke-width="2.2"></circle>
+<circle cx="324" cy="18" r="4" fill="#1A2230" stroke="#4388F5" stroke-width="1.8"></circle>
+<circle cx="144.3" cy="18" r="6" fill="#4388F5" stroke="#1A2230" stroke-width="2.5"></circle>
+<text x="6" y="42" font-family="JetBrains Mono, monospace" font-size="10" fill="#929EAF">0</text>
+<text x="196.8" y="42" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#F2F5FA">120</text>
+<text x="292" y="42" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#F2F5FA">180</text>
+<text x="324" y="42" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="10" fill="#4388F5">217</text>
+</svg>
+<p style="margin:8px 0 0;display:flex;gap:8px;font-size:13px;line-height:1.5;color:#B7C0CD"><span style="flex:none;width:7px;height:7px;margin-top:6px;border-radius:50%;background:#F5B94A"></span>At this pace B passes 120 around 23 Nov and 180 around 1 Dec. Switch the house to Meter A before then.</p>
+</section>
+
+<section aria-label="Last bill" class="card" style="padding:14px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:8px"><span style="font-size:15px;font-weight:600">Last bill</span><span class="m" style="font-size:10.5px;color:#929EAF">NOV 2026</span><span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:0 9px;border-radius:999px;background:#3A2E12;color:#F8CB72;font-size:12px;font-weight:500"><span style="width:6px;height:6px;border-radius:50%;background:#F5B94A"></span>due 4 Dec</span></div>
+<div style="display:flex;align-items:center;gap:10px">
+<span style="flex:1"><span class="d" style="display:block;font-size:26px;font-weight:600;line-height:1.1">LKR 4,709.74</span><span style="display:block;font-size:12px;color:#A3ADBD">143 kWh · cycle started at <span class="m">37,342</span> on 6 Nov</span></span>
+<a href="#" style="display:flex;align-items:center;min-height:44px;padding:0 14px;border-radius:12px;background:#4388F5;color:#0D1118;font-size:14px;font-weight:600;text-decoration:none">Mark paid</a>
+</div>
+</section>
+
+<section aria-label="Readings" class="card" style="padding:6px 14px">
+<div style="display:flex;align-items:center;min-height:38px"><h2 style="margin:0;font-size:15px;font-weight:600">Readings</h2><a href="#" style="margin-left:auto;font-size:13px;font-weight:600;color:#4388F5;text-decoration:none">All 14</a></div>
+<sc-for list="{{readings}}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:10px;min-height:46px;border-top:1px solid #222D3D">
+<span style="width:9px;height:9px;border-radius:{{r.shape}};background:{{r.dot}}"></span>
+<span class="m" style="width:64px;font-size:11px;color:#929EAF">{{r.date}}</span>
+<span class="m" style="flex:1;font-size:14px;font-weight:600">{{r.value}}</span>
+<span class="m" style="font-size:12px;color:{{r.deltaInk}}">{{r.delta}}</span>
+</div>
+</sc-for>
+</section>
+
+<section aria-label="Bills" class="card" style="padding:6px 14px">
+<div style="display:flex;align-items:center;min-height:38px"><h2 style="margin:0;font-size:15px;font-weight:600">Bills</h2></div>
+<sc-for list="{{bills}}" as="b" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:10px;min-height:46px;border-top:1px solid #222D3D">
+<span style="width:11px;height:11px;border-radius:50%;box-sizing:border-box;background:{{b.fill}};border:2px solid {{b.ring}}"></span>
+<span class="m" style="width:40px;font-size:12px;font-weight:600">{{b.month}}</span>
+<span style="flex:1;font-size:13px;color:#A3ADBD">{{b.kwh}}</span>
+<span style="font-size:12px;font-weight:600;color:{{b.stateInk}}">{{b.state}}</span>
+</div>
+</sc-for>
+</section>
+</div>
+
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="HubNav" active="electricity" hint-size="390px,84px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1100}}'>
+class Component extends DCLogic {
+renderVals() {
+const paid = { fill: '#3DD68C', ring: '#3DD68C', state: 'paid', stateInk: '#5EE0A5' };
+return {
+digits: ['3', '7', '4', '2'],
+menu: [
+{ label: 'Add this month’s bill', d: 'M12 5v14M5 12h14', bg: '#1D355A', ink: '#4388F5' },
+{ label: 'Fix a reading', d: 'M4 20h4L19 9l-4-4L4 16zM14 6l4 4', bg: 'transparent', ink: '#B7C0CD' },
+{ label: 'Rename meter', d: 'M4 7h16M4 12h10M4 17h7', bg: 'transparent', ink: '#B7C0CD' },
+{ label: 'Account details', d: 'M12 8h.01M11 12h1v5h1M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z', bg: 'transparent', ink: '#B7C0CD' },
+],
+readings: [
+{ date: 'TODAY', value: '37,429', delta: '+54', dot: '#4388F5', shape: '50%', deltaInk: '#F2F5FA' },
+{ date: '10 NOV', value: '37,375', delta: '+33', dot: '#929EAF', shape: '50%', deltaInk: '#A3ADBD' },
+{ date: '6 NOV', value: '37,342', delta: 'bill', dot: '#F5B94A', shape: '2px', deltaInk: '#F8CB72' },
+],
+bills: [
+{ month: 'NOV', kwh: '143 kWh · LKR 4,709.74', fill: 'transparent', ring: '#F5B94A', state: 'to pay', stateInk: '#F8CB72' },
+{ month: 'OCT', kwh: 'from the paper bill', ...paid },
+{ month: 'SEP', kwh: 'from the paper bill', ...paid },
+],
+};
+}
+}
+</script>
+</body>
+</html>

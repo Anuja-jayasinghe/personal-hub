@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hub Bills</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Oxanium:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Sora',Arial,sans-serif;color:#F2F5FA}
+.d{font-family:'Oxanium',Arial,sans-serif;letter-spacing:-.025em}
+.m{font-family:'JetBrains Mono',monospace}
+.eb{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#929EAF}
+.card{background:#1A2230;border:1px solid #303B4B;border-radius:18px}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes flow{to{stroke-dashoffset:-16}}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:900px;background:#11151D;overflow:hidden">
+<div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:12px">
+
+<header style="display:flex;align-items:center;gap:12px">
+<dc-import name="HubMark" size="30" color="#4388F5" hint-size="24px,30px"></dc-import>
+<div><span class="eb">2 to pay · 4 Dec</span><h1 class="d" style="margin:2px 0 0;font-size:28px;font-weight:600;line-height:1">Bills</h1></div>
+<a href="#" style="margin-left:auto;display:flex;align-items:center;min-height:40px;padding:0 14px;border-radius:12px;background:#4388F5;color:#0D1118;font-size:14px;font-weight:600;text-decoration:none">+ Bill</a>
+</header>
+
+<section aria-label="To pay in the next 30 days" style="background:#0D1118;border:1px solid #222D3D;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline"><span class="eb">To pay</span><span class="eb" style="margin-left:auto">Next 30 days</span></div>
+<p class="d" style="margin:0;font-size:44px;font-weight:600;line-height:1">LKR 7,913.84</p>
+<svg viewBox="0 0 330 64" width="100%" height="64" role="img" aria-label="A 30-day line: today on 18 November, two bills due on 4 December">
+<line x1="6" y1="30" x2="324" y2="30" stroke="#303B4B" stroke-width="2"></line>
+<line x1="6" y1="30" x2="175.6" y2="30" stroke="#4388F5" stroke-width="2" stroke-dasharray="3 5" style="animation:flow 1s linear infinite"></line>
+<sc-for list="{{ticks}}" as="t" hint-placeholder-count="5"><circle cx="{{t}}" cy="30" r="2.5" fill="#303B4B"></circle></sc-for>
+<circle cx="6" cy="30" r="6" fill="#4388F5" stroke="#0D1118" stroke-width="2.5"></circle>
+<line x1="175.6" y1="30" x2="175.6" y2="8" stroke="#F5B94A" stroke-width="1.5"></line>
+<circle cx="175.6" cy="30" r="7" fill="#0D1118" stroke="#F5B94A" stroke-width="2.5"></circle>
+<rect x="159.6" y="0" width="32" height="14" rx="4" fill="#3A2E12" stroke="#F5B94A" stroke-width="1"></rect>
+<text x="175.6" y="10.5" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" font-weight="600" fill="#F8CB72">×2</text>
+<text x="6" y="56" font-family="JetBrains Mono, monospace" font-size="9.5" fill="#F2F5FA">TODAY</text>
+<text x="175.6" y="56" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" fill="#F8CB72">4 DEC</text>
+<text x="324" y="56" text-anchor="end" font-family="JetBrains Mono, monospace" font-size="9.5" fill="#929EAF">18 DEC</text>
+</svg>
+</section>
+
+<section aria-label="Due" class="card" style="padding:4px 14px">
+<sc-for list="{{due}}" as="b" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px;min-height:66px;border-bottom:1px solid #222D3D">
+<span style="width:9px;height:9px;border-radius:50%;background:#F5B94A;animation:pulse 2.4s ease-in-out infinite"></span>
+<span style="flex:1"><span style="display:block;font-size:15px;font-weight:600">{{b.name}}</span><span class="m" style="display:block;font-size:11px;color:#929EAF">{{b.sub}}</span></span>
+<span class="m" style="font-size:13px;font-weight:600">{{b.amount}}</span>
+<a href="#" style="display:flex;align-items:center;min-height:40px;padding:0 12px;border-radius:12px;box-shadow:inset 0 0 0 1px #4388F5;color:#4388F5;font-size:12px;font-weight:600;text-decoration:none">Paid</a>
+</div>
+</sc-for>
+<p style="margin:10px 0;font-size:12px;color:#A3ADBD">Marking one paid asks first, and can be undone.</p>
+</section>
+
+<section aria-label="Paid so far" class="card" style="padding:14px">
+<h2 style="margin:0 0 8px;font-size:15px;font-weight:600">Paid so far</h2>
+<sc-for list="{{history}}" as="h" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:10px;min-height:44px">
+<span style="width:64px;font-size:13px;font-weight:600">{{h.meter}}</span>
+<svg width="150" height="30" viewBox="0 0 150 30" aria-hidden="true">
+<line x1="12" y1="10" x2="138" y2="10" stroke="#303B4B" stroke-width="2"></line>
+<line x1="12" y1="10" x2="75" y2="10" stroke="#3DD68C" stroke-width="2"></line>
+<circle cx="12" cy="10" r="6" fill="#3DD68C"></circle><circle cx="75" cy="10" r="6" fill="#3DD68C"></circle><circle cx="138" cy="10" r="6" fill="#11151D" stroke="#F5B94A" stroke-width="2.2"></circle>
+<text x="12" y="28" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#929EAF">SEP</text><text x="75" y="28" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#929EAF">OCT</text><text x="138" y="28" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#F8CB72">NOV</text>
+</svg>
+</div>
+</sc-for>
+</section>
+
+<section aria-label="Subscriptions" style="border-radius:18px;padding:14px;border:1px dashed #303B4B;display:flex;align-items:center;gap:12px">
+<span style="flex:1"><span style="display:block;font-size:15px;font-weight:600">Subscriptions</span><span style="display:block;font-size:12px;line-height:1.45;color:#A3ADBD">Nothing tracked yet. Add one to see it on the line above.</span></span>
+<a href="#" style="display:flex;align-items:center;min-height:40px;padding:0 12px;border-radius:12px;box-shadow:inset 0 0 0 1px #303B4B;color:#F2F5FA;font-size:13px;font-weight:600;text-decoration:none">Add</a>
+</section>
+</div>
+
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="HubNav" active="bills" hint-size="390px,84px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const ticks = [];
+for (let i = 7; i <= 30; i += 7) ticks.push(6 + (i / 30) * 318);
+return {
+ticks,
+due: [
+{ name: 'Electricity, Meter B', sub: 'NOV 2026 · 143 KWH', amount: '4,709.74' },
+{ name: 'Electricity, Meter A', sub: 'NOV 2026 · 117 KWH', amount: '3,204.10' },
+],
+history: [{ meter: 'Meter A' }, { meter: 'Meter B' }],
+};
+}
+}
+</script>
+</body>
+</html>

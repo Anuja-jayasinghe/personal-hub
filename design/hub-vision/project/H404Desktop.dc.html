@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hub 404 desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Oxanium:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Sora',Arial,sans-serif;color:#F2F5FA}
+.d{font-family:'Oxanium',Arial,sans-serif;letter-spacing:-.025em}
+.m{font-family:'JetBrains Mono',monospace}
+@keyframes dash{to{stroke-dashoffset:-16}}
+@keyframes swing{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+@keyframes flow{to{stroke-dashoffset:-26}}
+</style>
+</helmet>
+<div style="display:flex;width:1440px;height:900px;background:#11151D;overflow:hidden">
+<dc-import name="HubRail" active="home" hint-size="88px,900px"></dc-import>
+<main style="flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:40px;padding:0 90px;background:radial-gradient(60% 70% at 70% 45%,#16233A 0%,#11151D 65%)">
+<div>
+<span class="m" style="font-size:11px;letter-spacing:.14em;color:#4388F5">/ 404 / NOT FOUND</span>
+<h1 class="d" style="margin:12px 0 0;font-size:56px;font-weight:600;line-height:1.02;max-width:12ch">This page isn’t connected to anything.</h1>
+<p style="margin:18px 0 0;font-size:17px;line-height:1.6;color:#B7C0CD;max-width:42ch">The link may be old, or the page moved. Everything else in the hub is where you left it.</p>
+<span class="m" style="display:inline-flex;align-items:center;margin-top:18px;min-height:32px;padding:0 12px;border-radius:8px;background:#1A2230;box-shadow:inset 0 0 0 1px #303B4B;font-size:12px;color:#929EAF">hub.anujajay.com/vehicles/premio-2017</span>
+<div style="display:flex;gap:12px;margin-top:28px">
+<a href="#" style="display:flex;align-items:center;min-height:50px;padding:0 24px;border-radius:12px;background:#4388F5;color:#0D1118;font-size:15px;font-weight:600;text-decoration:none">Go home</a>
+<a href="#" style="display:flex;align-items:center;min-height:50px;padding:0 22px;border-radius:12px;box-shadow:inset 0 0 0 1px #303B4B;color:#F2F5FA;font-size:15px;font-weight:600;text-decoration:none">Search the hub</a>
+</div>
+<div style="display:flex;gap:18px;margin-top:34px;font-size:14px">
+<span class="m" style="font-size:10.5px;letter-spacing:.14em;color:#929EAF;align-self:center">OR JUMP TO</span>
+<a href="#" style="color:#4388F5;text-decoration:none;font-weight:600">Electricity</a><a href="#" style="color:#4388F5;text-decoration:none;font-weight:600">Bills</a><a href="#" style="color:#4388F5;text-decoration:none;font-weight:600">Vehicles</a>
+</div>
+</div>
+<svg viewBox="0 0 520 520" width="100%" role="img" aria-label="The hub's network of nodes, with one line ending in a node that connects to nothing">
+<sc-for list="{{links}}" as="l" hint-placeholder-count="8"><line x1="{{l.x1}}" y1="{{l.y1}}" x2="{{l.x2}}" y2="{{l.y2}}" stroke="#303B4B" stroke-width="2"></line></sc-for>
+<sc-for list="{{flows}}" as="l" hint-placeholder-count="3"><line x1="{{l.x1}}" y1="{{l.y1}}" x2="{{l.x2}}" y2="{{l.y2}}" stroke="#4388F5" stroke-width="2.4" stroke-dasharray="2 24" stroke-linecap="round" style="animation:flow 1.4s linear infinite"></line></sc-for>
+<sc-for list="{{nodes}}" as="n" hint-placeholder-count="8"><circle cx="{{n.x}}" cy="{{n.y}}" r="{{n.r}}" fill="{{n.fill}}" stroke="#11151D" stroke-width="3"></circle><text x="{{n.x}}" y="{{n.ty}}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="1.4" fill="#929EAF">{{n.label}}</text></sc-for>
+<path d="M330 330 L420 420" fill="none" stroke="#4A5668" stroke-width="2.5" stroke-dasharray="6 8" style="animation:dash 1.2s linear infinite"></path>
+<g style="transform-origin:420px 420px;animation:swing 3s ease-in-out infinite"><circle cx="420" cy="420" r="34" fill="#11151D" stroke="#4A5668" stroke-width="2.5" stroke-dasharray="6 6"></circle><text x="420" y="434" text-anchor="middle" font-family="Oxanium, sans-serif" font-weight="600" font-size="40" fill="#929EAF">?</text></g>
+</svg>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const N = { hub: [230, 230], el: [110, 110], bi: [380, 120], ve: [90, 340], re: [250, 420], doc: [330, 330] };
+const seg = (a, b) => ({ x1: N[a][0], y1: N[a][1], x2: N[b][0], y2: N[b][1] });
+return {
+links: [seg('hub', 'el'), seg('hub', 'bi'), seg('hub', 've'), seg('hub', 're'), seg('hub', 'doc'), seg('el', 'bi'), seg('ve', 're')],
+flows: [seg('hub', 'el'), seg('hub', 'bi'), seg('hub', 've')],
+nodes: [
+{ x: 230, y: 230, r: 16, fill: '#4388F5', label: 'HUB', ty: 266 },
+{ x: 110, y: 110, r: 9, fill: '#B7C0CD', label: 'ELECTRICITY', ty: 92 },
+{ x: 380, y: 120, r: 9, fill: '#B7C0CD', label: 'BILLS', ty: 102 },
+{ x: 90, y: 340, r: 9, fill: '#B7C0CD', label: 'VEHICLES', ty: 370 },
+{ x: 250, y: 420, r: 9, fill: '#B7C0CD', label: 'REMINDERS', ty: 450 },
+{ x: 330, y: 330, r: 7, fill: '#929EAF', label: '', ty: 0 },
+],
+};
+}
+}
+</script>
+</body>
+</html>

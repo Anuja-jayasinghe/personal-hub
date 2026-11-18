@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hub Vehicles</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Oxanium:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Sora',Arial,sans-serif;color:#F2F5FA}
+.d{font-family:'Oxanium',Arial,sans-serif;letter-spacing:-.025em}
+.m{font-family:'JetBrains Mono',monospace}
+.eb{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#929EAF}
+.card{background:#1A2230;border:1px solid #303B4B;border-radius:18px}
+@keyframes drive{0%,100%{transform:translateX(-6px)}50%{transform:translateX(6px)}}
+@keyframes flow{to{stroke-dashoffset:-20}}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:1000px;background:#11151D;overflow:hidden">
+<div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:12px">
+
+<header style="display:flex;align-items:center;gap:12px">
+<dc-import name="HubMark" size="30" color="#4388F5" hint-size="24px,30px"></dc-import>
+<div><span class="eb">2 vehicles</span><h1 class="d" style="margin:2px 0 0;font-size:28px;font-weight:600;line-height:1">Vehicles</h1></div>
+</header>
+
+<nav aria-label="Your vehicles" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<sc-for list="{{vehicles}}" as="v" hint-placeholder-count="2">
+<a href="#" aria-current="{{v.current}}" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;background:{{v.bg}};box-shadow:inset 0 0 0 1px {{v.ring}};text-decoration:none;color:#F2F5FA">
+<svg width="34" height="22" viewBox="0 0 24 24" fill="none" stroke="{{v.ink}}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{v.d}}"></path><sc-for list="{{v.nodes}}" as="p" hint-placeholder-count="2"><circle cx="{{p.x}}" cy="{{p.y}}" r="2.2" fill="{{v.ink}}" stroke="none"></circle></sc-for></svg>
+<span><span style="display:block;font-size:14px;font-weight:600">{{v.name}}</span><span class="m" style="display:block;font-size:10px;color:#929EAF">{{v.sub}}</span></span>
+</a>
+</sc-for>
+</nav>
+
+<section aria-label="Toyota Premio" style="background:radial-gradient(120% 70% at 50% 62%,#16233A 0%,#0D1118 62%);border:1px solid #222D3D;border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+<div style="display:flex;align-items:center;gap:12px">
+<span style="display:inline-flex;align-items:baseline;gap:6px;padding:6px 10px;border-radius:8px;background:#F2F5FA;color:#0D1118"><span class="m" style="font-size:10px;font-weight:600">WP</span><span class="m" style="font-size:19px;font-weight:600;line-height:1">CBD-9754</span></span>
+<span style="margin-left:auto;text-align:right"><span class="d" style="display:block;font-size:22px;font-weight:600">Toyota Premio</span><span class="m" style="display:block;font-size:10.5px;color:#929EAF">2018 · PETROL</span></span>
+</div>
+<div style="margin:0 -18px"><dc-import name="HubCar" width="358" paint="graphite" label="Toyota Premio, side view" hint-size="358px,169px"></dc-import></div>
+<div style="display:flex;align-items:center;justify-content:space-between">
+<span class="eb">Odometer</span>
+<span style="display:flex;gap:2px" role="img" aria-label="No mileage reading yet"><sc-for list="{{odo}}" as="g" hint-placeholder-count="6"><span class="m" style="width:20px;height:28px;border-radius:5px;background:#1A2230;box-shadow:inset 0 0 0 1px #303B4B;color:#4A5668;font-size:15px;font-weight:600;line-height:28px;text-align:center">{{g}}</span></sc-for></span>
+<a href="#" style="font-size:13px;font-weight:600;color:#4388F5;text-decoration:none">Add km</a>
+</div>
+</section>
+
+<section aria-label="Renewals" class="card" style="padding:14px">
+<div style="display:flex;align-items:baseline;justify-content:space-between"><h2 style="margin:0;font-size:15px;font-weight:600">Renewals</h2><span class="m" style="font-size:10.5px;color:#929EAF">NONE ADDED YET</span></div>
+<sc-for list="{{renewals}}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;border-top:1px solid #222D3D;margin-top:8px;padding-top:8px">
+<svg width="76" height="14" viewBox="0 0 76 14" aria-hidden="true"><line x1="5" y1="7" x2="71" y2="7" stroke="#303B4B" stroke-width="2" stroke-dasharray="4 4"></line><circle cx="5" cy="7" r="4" fill="#11151D" stroke="#4A5668" stroke-width="1.6"></circle><circle cx="71" cy="7" r="4" fill="#11151D" stroke="#4A5668" stroke-width="1.6"></circle></svg>
+<span style="flex:1;font-size:14px;font-weight:600">{{r.name}}</span>
+<a href="#" style="display:flex;align-items:center;min-height:40px;padding:0 12px;border-radius:12px;box-shadow:inset 0 0 0 1px #4388F5;color:#4388F5;font-size:13px;font-weight:600;text-decoration:none">Add expiry</a>
+</div>
+</sc-for>
+<p style="margin:10px 0 0;font-size:12px;line-height:1.45;color:#A3ADBD">Once a date is in, the dashed line becomes a countdown ring: green over a month, amber inside 30 days, red inside 7.</p>
+</section>
+
+<section aria-label="Documents" class="card" style="padding:14px">
+<div style="display:flex;align-items:baseline;justify-content:space-between"><h2 style="margin:0;font-size:15px;font-weight:600">Documents</h2><a href="#" style="font-size:13px;font-weight:600;color:#4388F5;text-decoration:none">+ Add</a></div>
+<div style="display:flex;gap:8px;margin-top:10px">
+<sc-for list="{{docs}}" as="d" hint-placeholder-count="3">
+<a href="#" style="flex:1;display:flex;flex-direction:column;justify-content:space-between;height:78px;padding:8px;border-radius:6px 14px 6px 6px;border:1px dashed #303B4B;text-decoration:none;color:#A3ADBD;font-size:12px;font-weight:500"><span class="m" style="font-size:16px;color:#4A5668">+</span>{{d}}</a>
+</sc-for>
+</div>
+<a href="#" style="display:inline-block;margin-top:12px;font-size:13px;font-weight:500;color:#929EAF;text-decoration:none">Add a note</a>
+</section>
+</div>
+
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="HubNav" active="vehicles" hint-size="390px,84px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() {
+const P = (pts) => pts.map(([x, y]) => ({ x, y }));
+return {
+vehicles: [
+{ name: 'Premio', sub: 'CAR · 2018', current: 'page', bg: '#1D355A', ring: 'rgba(67,136,245,.5)', ink: '#4388F5', d: 'M3 16h18M5.5 16l2-5.5h9l2 5.5', nodes: P([[7.5, 19], [16.5, 19]]) },
+{ name: 'Discover', sub: 'MOTORBIKE · 2015', current: 'false', bg: '#1A2230', ring: '#303B4B', ink: '#B7C0CD', d: 'M6 17l5-7h5l3 7M11 10l-1-3H7', nodes: P([[6, 17], [19, 17]]) },
+],
+carNodes: P([[56, 66], [85, 31], [173, 31], [218, 66], [40, 66], [290, 66]]),
+odo: ['–', '–', '–', '–', '–', '–'],
+renewals: [{ name: 'Revenue licence' }, { name: 'Insurance' }, { name: 'Emission test' }],
+docs: ['Vehicle book', 'Licence', 'Insurance'],
+};
+}
+}
+</script>
+</body>
+</html>

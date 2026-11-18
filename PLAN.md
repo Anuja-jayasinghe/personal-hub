@@ -236,6 +236,21 @@ Data model
 
 Not in this phase: per-item currencies (C59), card or bank details of any kind, automatic payment.
 
+## Phase R — Redesign to the hub brand (C90, C91, DESIGN.md)
+
+Goal: the app looks and works like the Hub vision boards. The spec is `DESIGN.md`; the boards are in `design/hub-vision/` and the Artifact. Each piece is its own issue and pull request, checked at phone and desktop width. No database change is expected except where noted. Waits on P41 (the four additions) and P42 (PR 83).
+
+| Piece | What |
+|-------|------|
+| R.1 | **Tokens, fonts and the mark**: brand colours (dark default, light variant) in `src/theme/theme.css`; Oxanium, Sora and JetBrains Mono in `src/theme/fonts.ts` via `next/font/google`; the J mark as a component; favicon and app icons from `design/brand/icons`; app name "hub" in `app.config.ts` |
+| R.2 | **Shell**: the phone bar (Home, Vehicles, Electricity, Bills, More), the desktop rail, the node-ended icon set, the More page, focus rings, reduced motion |
+| R.3 | **Electricity**: the meter board, the slab rule component, Read the meters as a sheet, one meter, Add a bill, Mark paid with the PAID stamp and Undo, the desktop cycle chart |
+| R.4 | **Home**: electricity summary, the next 30 days line, needs you next, the tiles; the first-day setup |
+| R.5 | **Bills, Vehicles, Reminders, Tasks and notes**: the 30-day line and paid-so-far, the car render and countdown rings, renewal and document sheets, the reminders strip |
+| R.6 | **Settings and states**: Settings with Meters and rules and Data and backup, sign in styled through Clerk's appearance options, not allowed, 404, loading, error and offline |
+
+People and roles (designed in `HAdmin` and `HAdminPhone`) is built in Phase 5; the Notifications page and a Documents page wait for their own decisions (C63, P39).
+
 ## Phase 4 — Daily use
 
 Goal: the hub works from your phone anywhere and reaches you, instead of only showing things while the dev server runs on your Mac. Decisions C61–C64; open details P34–P38 (`DECISIONS.md`). Every piece that touches an outside service is confirmed again when it starts. Suggested order: **4.4 first** (no dependencies, protects your data now), then 4.1, 4.2, 4.3, 4.5.
@@ -258,6 +273,6 @@ Goal: your father and one other person can add readings and see usage, and you c
 
 - Push notifications (decided against for now, C63)
 - Global search
-- Branding session
+- ~~Branding session~~ (done: C90, `DESIGN.md`)
 - Electricity tariff and cost estimates (C22), import API for your automation project (C54), a Documents page (C45), per-item currencies (C59)
 - More modules: warranties (purchased items, warranty periods, alerts before they end), home maintenance, documents

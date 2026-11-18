@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>hub settings pages</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Oxanium:wght@400;500;600;700&family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Sora',Arial,sans-serif;color:#F2F5FA}
+.d{font-family:'Oxanium',Arial,sans-serif;letter-spacing:-.025em}
+.m{font-family:'JetBrains Mono',monospace}
+.eb{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#929EAF}
+.card{background:#1A2230;border:1px solid #303B4B;border-radius:18px}
+.back{display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:#1A2230;box-shadow:inset 0 0 0 1px #303B4B}
+.step{display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:9px;background:#222D3D;box-shadow:inset 0 0 0 1px #303B4B;font-size:16px;color:#B7C0CD}
+</style>
+</helmet>
+<div style="display:flex;gap:60px;width:1290px;height:900px">
+
+<div style="position:relative;width:390px;height:900px;background:#11151D;overflow:hidden;flex:none">
+<div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:12px">
+<header style="display:flex;align-items:center;gap:10px">
+<a href="#" aria-label="Back to Settings" class="back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2F5FA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
+<div><span class="eb">/ Settings /</span><h1 class="d" style="margin:2px 0 0;font-size:26px;font-weight:600;line-height:1">Meters and rules</h1></div>
+</header>
+<section aria-label="Meters" class="card" style="padding:4px 14px">
+<sc-for list="{{meters}}" as="m" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px;min-height:66px;border-top:{{m.line}}">
+<span class="m" style="flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:24px;border-radius:7px;background:#222D3D;box-shadow:inset 0 0 0 1px {{m.ring}};font-size:12px;font-weight:600">{{m.letter}}</span>
+<span style="flex:1"><span style="display:block;font-size:15px;font-weight:600">{{m.name}}</span><span class="m" style="display:block;font-size:10.5px;color:#929EAF">{{m.sub}}</span></span>
+<span style="font-size:13px;font-weight:600;color:#4388F5">Edit</span>
+</div>
+</sc-for>
+<a href="#" style="display:flex;align-items:center;gap:8px;min-height:50px;border-top:1px solid #222D3D;color:#4388F5;font-size:14px;font-weight:600;text-decoration:none">+ Add a meter</a>
+</section>
+<section aria-label="Live meter" class="card" style="padding:14px;display:flex;flex-direction:column;gap:10px">
+<span class="eb">Which meter is live now</span>
+<div role="radiogroup" style="display:grid;grid-template-columns:1fr 1fr;padding:4px;border-radius:12px;background:#11151D;box-shadow:inset 0 0 0 1px #222D3D">
+<span role="radio" aria-checked="false" style="display:flex;align-items:center;justify-content:center;min-height:40px;border-radius:9px;font-size:14px;color:#929EAF">Meter A</span>
+<span role="radio" aria-checked="true" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:40px;border-radius:9px;background:#1D355A;box-shadow:inset 0 0 0 1px rgba(67,136,245,.55);font-size:14px;font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:#4388F5"></span>Meter B</span>
+</div>
+<p style="margin:0;font-size:12px;line-height:1.45;color:#A3ADBD">Switching asks first and shows in Activity with the time, so the pace maths stays right.</p>
+</section>
+<section aria-label="Rules" class="card" style="padding:4px 14px">
+<sc-for list="{{rules}}" as="r" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:12px;min-height:58px;border-top:{{r.line}}">
+<span style="flex:1"><span style="display:block;font-size:14px;font-weight:600">{{r.label}}</span><span style="display:block;font-size:11.5px;color:#A3ADBD">{{r.hint}}</span></span>
+<span class="step" aria-hidden="true">−</span>
+<span class="d" style="width:44px;text-align:center;font-size:20px;font-weight:600">{{r.value}}</span>
+<span class="step" aria-hidden="true">+</span>
+</div>
+</sc-for>
+</section>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="HubNav" active="more" hint-size="390px,84px"></dc-import></div>
+</div>
+
+<div style="position:relative;width:390px;height:900px;background:#11151D;overflow:hidden;flex:none">
+<div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:12px">
+<header style="display:flex;align-items:center;gap:10px">
+<a href="#" aria-label="Back to Settings" class="back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2F5FA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
+<div><span class="eb">/ Settings /</span><h1 class="d" style="margin:2px 0 0;font-size:26px;font-weight:600;line-height:1">Notifications</h1></div>
+</header>
+<section aria-label="Where" class="card" style="padding:4px 14px">
+<span class="eb" style="display:block;margin:10px 0 4px">Where to tell you</span>
+<sc-for list="{{channels}}" as="c" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px;min-height:60px;border-top:1px solid #222D3D">
+<span style="flex:1"><span style="display:block;font-size:14px;font-weight:600">{{c.label}}</span><span style="display:block;font-size:11.5px;color:#A3ADBD">{{c.hint}}</span></span>
+<span role="switch" aria-checked="{{c.on}}" style="position:relative;width:44px;height:26px;border-radius:999px;background:{{c.track}};box-shadow:inset 0 0 0 1px {{c.ring}}"><span style="position:absolute;top:3px;left:{{c.knob}};width:20px;height:20px;border-radius:50%;background:{{c.knobBg}}"></span></span>
+</div>
+</sc-for>
+</section>
+<section aria-label="What" class="card" style="padding:4px 14px">
+<span class="eb" style="display:block;margin:10px 0 4px">What to tell you about</span>
+<sc-for list="{{kinds}}" as="c" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;border-top:1px solid #222D3D">
+<span style="width:8px;height:8px;border-radius:50%;background:{{c.dot}}"></span>
+<span style="flex:1"><span style="display:block;font-size:14px;font-weight:500">{{c.label}}</span><span class="m" style="display:block;font-size:10px;color:#929EAF">{{c.hint}}</span></span>
+<span role="switch" aria-checked="{{c.on}}" style="position:relative;width:44px;height:26px;border-radius:999px;background:{{c.track}};box-shadow:inset 0 0 0 1px {{c.ring}}"><span style="position:absolute;top:3px;left:{{c.knob}};width:20px;height:20px;border-radius:50%;background:{{c.knobBg}}"></span></span>
+</div>
+</sc-for>
+</section>
+<section aria-label="Quiet hours" class="card" style="padding:14px;display:flex;align-items:center;gap:12px">
+<span style="flex:1"><span style="display:block;font-size:14px;font-weight:600">Quiet hours</span><span style="display:block;font-size:11.5px;color:#A3ADBD">Nothing buzzes in this window</span></span>
+<span class="m" style="display:inline-flex;align-items:center;min-height:34px;padding:0 10px;border-radius:9px;background:#11151D;box-shadow:inset 0 0 0 1px #303B4B;font-size:13px">22:00 → 07:00</span>
+</section>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="HubNav" active="more" hint-size="390px,84px"></dc-import></div>
+</div>
+
+<div style="position:relative;width:390px;height:900px;background:#11151D;overflow:hidden;flex:none">
+<div style="padding:18px 16px 0;display:flex;flex-direction:column;gap:12px">
+<header style="display:flex;align-items:center;gap:10px">
+<a href="#" aria-label="Back to Settings" class="back"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F2F5FA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg></a>
+<div><span class="eb">/ Settings /</span><h1 class="d" style="margin:2px 0 0;font-size:26px;font-weight:600;line-height:1">Data and backup</h1></div>
+</header>
+<section aria-label="Backups" style="background:radial-gradient(120% 90% at 85% 0%,#16233A 0%,#0D1118 60%);border:1px solid #222D3D;border-radius:22px;padding:16px;display:flex;flex-direction:column;gap:12px">
+<span class="eb">Backups</span>
+<svg viewBox="0 0 330 46" width="100%" height="46" role="img" aria-label="Daily backups for the last 7 days, all good">
+<line x1="10" y1="16" x2="320" y2="16" stroke="#303B4B" stroke-width="2"></line>
+<sc-for list="{{backups}}" as="b" hint-placeholder-count="7"><circle cx="{{b.x}}" cy="16" r="{{b.r}}" fill="{{b.fill}}" stroke="#0D1118" stroke-width="2"></circle><text x="{{b.x}}" y="40" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8.5" fill="#929EAF">{{b.label}}</text></sc-for>
+</svg>
+<div style="display:flex;align-items:center;gap:10px"><span style="flex:1;font-size:13px;color:#B7C0CD">Last copy today at <span class="m" style="color:#F2F5FA">03:00</span>. Kept for 30 days.</span><a href="#" style="font-size:13px;font-weight:600;color:#4388F5;text-decoration:none">Back up now</a></div>
+</section>
+<section aria-label="Export" class="card" style="padding:4px 14px">
+<span class="eb" style="display:block;margin:10px 0 4px">Take a copy</span>
+<sc-for list="{{exports}}" as="e" hint-placeholder-count="4">
+<a href="#" style="display:flex;align-items:center;gap:12px;min-height:54px;border-top:1px solid #222D3D;text-decoration:none;color:#F2F5FA">
+<span class="m" style="flex:none;display:flex;align-items:flex-end;justify-content:center;width:30px;height:36px;border-radius:4px 10px 4px 4px;background:#222D3D;box-shadow:inset 0 0 0 1px #303B4B;padding-bottom:4px;box-sizing:border-box;font-size:7.5px;font-weight:600;color:#4388F5">{{e.type}}</span>
+<span style="flex:1;font-size:14px;font-weight:500">{{e.label}}</span>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4388F5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>
+</a>
+</sc-for>
+</section>
+<section aria-label="Storage" class="card" style="padding:14px">
+<div style="display:flex;align-items:baseline"><span class="eb">Document storage</span><span class="m" style="margin-left:auto;font-size:11px;color:#B7C0CD">0 MB OF 1 GB</span></div>
+<span style="display:block;height:4px;margin-top:10px;border-radius:2px;background:#222D3D"><span style="display:block;width:1%;height:100%;border-radius:2px;background:#4388F5"></span></span>
+</section>
+<section aria-label="Danger zone" style="border-radius:18px;padding:14px;border:1px solid rgba(255,107,97,.4);background:#1F171B;display:flex;flex-direction:column;gap:8px">
+<span class="m" style="font-size:10.5px;letter-spacing:.14em;color:#FF8F87">DANGER ZONE</span>
+<span style="font-size:13px;line-height:1.45;color:#B7C0CD">Delete every reading, bill, vehicle and document. You will type DELETE to confirm, and it cannot be undone.</span>
+<a href="#" style="align-self:flex-start;display:flex;align-items:center;min-height:40px;padding:0 14px;border-radius:10px;box-shadow:inset 0 0 0 1px #FF6B61;color:#FF8F87;font-size:13px;font-weight:600;text-decoration:none">Delete all data…</a>
+</section>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="HubNav" active="more" hint-size="390px,84px"></dc-import></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1290,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const sw = (on) => ({ on: String(on), track: on ? '#4388F5' : '#222D3D', ring: on ? '#4388F5' : '#303B4B', knob: on ? '21px' : '3px', knobBg: on ? '#0D1118' : '#929EAF' });
+const days = ['12', '13', '14', '15', '16', '17', 'TODAY'];
+return {
+meters: [
+{ letter: 'A', name: 'Meter A', sub: 'ACCOUNT …6601 · IDLE', ring: '#303B4B', line: '0' },
+{ letter: 'B', name: 'Meter B', sub: 'ACCOUNT ON FILE · LIVE', ring: '#4388F5', line: '1px solid #222D3D' },
+],
+rules: [
+{ label: 'Low slab', hint: 'one meter stays under this', value: '120', line: '0' },
+{ label: 'High slab', hint: 'the other stays under this', value: '180', line: '1px solid #222D3D' },
+{ label: 'Warn when this close', hint: 'units before a slab', value: '10', line: '1px solid #222D3D' },
+{ label: 'Read each meter every', hint: 'days, drives the reminders', value: '5', line: '1px solid #222D3D' },
+{ label: 'Billing cycle', hint: 'days between bills', value: '30', line: '1px solid #222D3D' },
+],
+channels: [
+{ label: 'On this phone', hint: 'a notification when something is due', ...sw(true) },
+{ label: 'Weekly email', hint: 'a Monday summary of the week ahead', ...sw(false) },
+],
+kinds: [
+{ label: 'A meter read is due', hint: 'EVERY 5 DAYS PER METER', dot: '#4388F5', ...sw(true) },
+{ label: 'A meter nears its slab', hint: '10 UNITS BEFORE 120 OR 180', dot: '#F5B94A', ...sw(true) },
+{ label: 'A bill is due', hint: '3 DAYS BEFORE, AND ON THE DAY', dot: '#F5B94A', ...sw(true) },
+{ label: 'A renewal is coming', hint: 'AS SET ON EACH RENEWAL', dot: '#3DD68C', ...sw(true) },
+{ label: 'Someone changed something', hint: 'OWNER ONLY', dot: '#929EAF', ...sw(false) },
+],
+backups: days.map((label, i) => ({ label, x: 10 + i * (310 / 6), r: i === 6 ? 7 : 5, fill: i === 6 ? '#4388F5' : '#3DD68C' })),
+exports: [
+{ type: 'CSV', label: 'Electricity readings and bills' },
+{ type: 'CSV', label: 'Bills and payments' },
+{ type: 'CSV', label: 'Vehicles and renewals' },
+{ type: 'ZIP', label: 'Everything, with documents' },
+],
+};
+}
+}
+</script>
+</body>
+</html>

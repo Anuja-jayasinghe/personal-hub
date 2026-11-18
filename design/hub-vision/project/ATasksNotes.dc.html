@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tasks and notes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Martian+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:'Archivo',system-ui,sans-serif;color:#16181D}
+@keyframes tick{from{stroke-dashoffset:20}to{stroke-dashoffset:0}}
+@keyframes strike{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+</style>
+</helmet>
+<div style="position:relative;width:390px;height:900px;background:#ECEEF1;overflow:hidden">
+<div style="padding:20px 16px 0;display:flex;flex-direction:column;gap:12px">
+
+<header style="display:flex;align-items:center;gap:10px">
+<svg width="34" height="34" viewBox="0 0 120 120" aria-hidden="true"><rect x="2" y="2" width="116" height="116" rx="28" fill="#16181D"></rect><path d="M26 72 V 50 L 56 26 L 86 50 V 72 H 22" fill="none" stroke="#F2F3F5" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"></path><path d="M66 56 V 90 C 66 99 59 102 51 99" fill="none" stroke="#F2F3F5" stroke-width="9" stroke-linecap="round"></path><circle cx="66" cy="42" r="7" fill="#D2392C"></circle></svg>
+<h1 style="margin:0;font-size:24px;font-weight:800;font-stretch:125%;letter-spacing:-0.02em">Tasks</h1>
+<span style="margin-left:auto;display:inline-flex;align-items:center;min-height:24px;padding:0 8px;border-radius:6px;background:#FDF0D2;color:#7A4F06;font-size:11px;font-weight:700">sample rows</span>
+</header>
+
+<div role="tablist" aria-label="Tasks or notes" style="display:grid;grid-template-columns:1fr 1fr;padding:4px;border-radius:14px;background:#DDE0E5">
+<button type="button" role="tab" aria-selected="true" style="min-height:40px;border:0;border-radius:11px;background:#F8F9FA;font-family:inherit;font-size:14px;font-weight:700;box-shadow:0 2px 6px -3px rgba(22,24,29,.4)">Tasks · 3</button>
+<button type="button" role="tab" aria-selected="false" style="min-height:40px;border:0;border-radius:11px;background:transparent;font-family:inherit;font-size:14px;font-weight:600;color:#2C3038">Notes · 2</button>
+</div>
+
+<label style="display:flex;align-items:center;gap:10px;min-height:52px;padding:0 6px 0 14px;border-radius:16px;background:#FFFFFF;box-shadow:inset 0 0 0 1.5px #C9CED6">
+<span style="flex:1;font-size:15px;color:#8A909A">Add a task…</span>
+<span style="display:inline-flex;align-items:center;min-height:32px;padding:0 10px;border-radius:9px;background:#ECEEF1;font-size:12px;font-weight:700;color:#2C3038">no date</span>
+<span style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:#16181D;color:#F2F3F5;font-size:20px;font-weight:700">+</span>
+</label>
+
+<section aria-label="Open tasks" style="background:#F8F9FA;border-radius:20px;padding:4px 14px;box-shadow:0 0 0 1px rgba(22,24,29,.1)">
+<sc-for list="{{open}}" as="t" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;min-height:62px;border-bottom:1px solid #E3E6EA">
+<span role="checkbox" aria-checked="false" style="flex:none;width:24px;height:24px;border-radius:8px;box-shadow:inset 0 0 0 2px #16181D"></span>
+<span style="flex:1;min-width:0"><span style="display:block;font-size:15px;font-weight:700">{{t.title}}</span><span style="display:flex;align-items:center;gap:6px;font-size:12px;color:#4B515C"><span style="width:7px;height:7px;border-radius:{{t.shape}};background:{{t.tag}}"></span>{{t.sub}}</span></span>
+<span style="font-family:'Martian Mono',monospace;font-size:11px;color:{{t.whenInk}}">{{t.when}}</span>
+</div>
+</sc-for>
+<div style="display:flex;align-items:center;gap:12px;min-height:56px;opacity:.6">
+<span role="checkbox" aria-checked="true" style="flex:none;display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:8px;background:#1FA971"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10" stroke-dasharray="20" style="animation:tick .4s ease-out both"></path></svg></span>
+<span style="position:relative;flex:1;font-size:15px;font-weight:600">Add both meters to the hub<span aria-hidden="true" style="position:absolute;left:0;right:30%;top:50%;height:1.5px;background:#16181D;transform-origin:left;animation:strike .4s .2s ease-out both"></span></span>
+<span style="font-size:12px;font-weight:700;color:#4B515C">Undo</span>
+</div>
+</section>
+
+<h2 style="margin:6px 0 0;font-size:15px;font-weight:700">Notes</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start">
+<article style="padding:14px;border-radius:18px;background:#FFF6DA;box-shadow:0 0 0 1px rgba(122,79,6,.15)">
+<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#7A4F06"><span style="width:6px;height:6px;border-radius:2px;background:#F2A417"></span>Electricity</span>
+<p style="margin:6px 0 0;font-size:14px;font-weight:700;line-height:1.3">Meter seal check</p>
+<p style="margin:4px 0 0;font-size:13px;line-height:1.45;color:#2C3038">The board on the wall is the one with the red reset. Note the seal number next visit.</p>
+</article>
+<article style="padding:14px;border-radius:18px;background:#F8F9FA;box-shadow:0 0 0 1px rgba(22,24,29,.1)">
+<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#4B515C"><span style="width:6px;height:6px;border-radius:50%;background:#8A909A"></span>House</span>
+<p style="margin:6px 0 0;font-size:14px;font-weight:700;line-height:1.3">Spare keys</p>
+<p style="margin:4px 0 0;font-size:13px;line-height:1.45;color:#2C3038">Second drawer.</p>
+</article>
+</div>
+</div>
+
+<div style="position:absolute;left:0;right:0;bottom:0"><dc-import name="GlassNav" active="more" hint-size="390px,78px"></dc-import></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+return {
+open: [
+{ title: 'Ask the CEB for a second meter seal', sub: 'Electricity', tag: '#F2A417', shape: '2px', when: 'Fri 20', whenInk: '#7A4F06' },
+{ title: 'Find the Premio revenue licence', sub: 'Vehicles', tag: '#2F5BFF', shape: '50%', when: '', whenInk: '#4B515C' },
+{ title: 'Change the porch bulb', sub: 'House', tag: '#8A909A', shape: '50%', when: '', whenInk: '#4B515C' },
+],
+};
+}
+}
+</script>
+</body>
+</html>
