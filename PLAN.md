@@ -238,7 +238,7 @@ Not in this phase: per-item currencies (C59), card or bank details of any kind, 
 
 ## Phase R — Redesign to the hub brand (C90, C91, DESIGN.md)
 
-Goal: the app looks and works like the Hub vision boards. The spec is `DESIGN.md`; the boards are in `design/hub-vision/` and the Artifact. Each piece is its own issue and pull request, checked at phone and desktop width. No database change is expected except where noted. Waits on P41 (the four additions) and P42 (PR 83).
+Goal: the app looks and works like the Hub vision boards. The spec is `DESIGN.md`; the boards are in `design/hub-vision/` and the Artifact. Each piece is its own issue and pull request, checked at phone and desktop width. No database change is expected except where noted. The four additions to the brand are kept (C92) and PR 83 is closed (C93), so R.1 can start.
 
 | Piece | What |
 |-------|------|

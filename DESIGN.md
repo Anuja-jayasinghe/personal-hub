@@ -154,7 +154,7 @@ This is the build spec for the redesign. It turns two sources into one set of ru
 - **The brand kit** you made, saved as supplied in [`design/brand/`](design/brand) (logo, icons, `tokens.css`, guidelines PDF). The kit wins on anything it covers.
 - **The Hub vision canvas**, the screens designed from the kit: https://claude.ai/artifact/1mAjLJsLdmjmT7E25ZfM4x, with its source in [`design/hub-vision/`](design/hub-vision). Board names below (for example `HElectricity`) are files there.
 
-What the Hub is for, and for whom, is in [`PRODUCT.md`](PRODUCT.md). Decisions are C90 to C91 and P41 to P42 in [`DECISIONS.md`](DECISIONS.md); the build order is Phase R in [`PLAN.md`](PLAN.md).
+What the Hub is for, and for whom, is in [`PRODUCT.md`](PRODUCT.md). Decisions are C90 to C93 in [`DECISIONS.md`](DECISIONS.md); the build order is Phase R in [`PLAN.md`](PLAN.md).
 
 ## Overview
 
@@ -181,7 +181,7 @@ A charcoal-and-cool-grey dark palette with a single electric blue; three state c
 
 - **Signal Blue** (#4388F5): primary buttons, the selected tab, links, the live meter's line, LED and last digit, the used part of a slab rule. Hover #3478E8. Blue Soft (#1D355A) is the fill for selected chips, tabs and the live state.
 
-### State colours (added for the meters, pending P41)
+### State colours (added for the meters, C92)
 
 - **On track** (#3DD68C, text #5EE0A5, fill #12352A): paid, under the limit, a renewal more than 30 days away.
 - **Near** (#F5B94A, text #F8CB72, fill #3A2E12): 120 mark, within 10 units of a slab, bills due, renewals inside 30 days.
@@ -383,5 +383,5 @@ Designed but needing a decision before building: the **Notifications** page show
 - **Tokens:** `src/theme/theme.css` takes the colours above as CSS variables (dark under `:root`, light under the light theme). `design/brand/brand/tokens.css` is the brand's own version to copy from.
 - **Fonts:** `src/theme/fonts.ts` loads Oxanium, Sora and JetBrains Mono with `next/font/google` (part of Next.js, no new package).
 - **Logo and icons:** the J path as a React component; favicon and app icons from `design/brand/icons`.
-- **Palettes:** the four palettes in the open PR 83 are replaced by dark and light from this file (P42).
+- **Palettes:** the four palettes in the closed PR 83 are replaced by dark and light from this file (C93; PR 83 was closed).
 - **Order:** Phase R in `PLAN.md`.
