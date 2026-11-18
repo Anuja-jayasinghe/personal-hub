@@ -1,25 +1,10 @@
-import Image from "next/image";
 import { appConfig } from "@/config/app.config";
+import { HubMark } from "./hub-mark";
 
 /**
- * Logo shown in the header/sidebar. Reads everything from app.config.ts: a real image when
- * `logo.src` is set, otherwise a text mark in the primary colour.
+ * Logo shown in the header and sidebar: the J mark in the brand blue (C90). `size` is its height.
+ * Pass `decorative` when the app name is written right next to it, so screen readers do not hear it twice.
  */
-export function Logo({ size = 32 }: { size?: number }) {
-  const { src, mark, alt } = appConfig.logo;
-
-  if (src) {
-    return <Image src={src} alt={alt} width={size} height={size} priority />;
-  }
-
-  return (
-    <span
-      aria-label={alt}
-      role="img"
-      className="inline-flex items-center justify-center rounded-lg bg-primary font-semibold text-primary-foreground"
-      style={{ width: size, height: size, fontSize: size * 0.5 }}
-    >
-      {mark}
-    </span>
-  );
+export function Logo({ size = 32, decorative = false }: { size?: number; decorative?: boolean }) {
+  return <HubMark size={size} title={decorative ? "" : appConfig.logo.alt} className="shrink-0 text-primary" />;
 }

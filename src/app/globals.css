@@ -13,7 +13,18 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-brand-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-brand-mono), ui-monospace, SFMono-Regular, monospace;
+  /* Oxanium: page titles and the big numbers only (DESIGN.md). Use the font-display class. */
+  --font-display: var(--font-brand-display), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
+  /* Brand extras and the state colours' text and fill shades (src/theme/theme.css). */
+  --color-deepest: var(--deepest);
+  --color-raised: var(--raised);
+  --color-quiet: var(--quiet);
+  --color-label: var(--label);
+  --color-status-ok-soft: var(--status-ok-soft);
+  --color-status-soon-mark: var(--status-soon-mark);
+  --color-status-soon-soft: var(--status-soon-soft);
+  --color-status-overdue-soft: var(--status-overdue-soft);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

@@ -1,8 +1,7 @@
 /**
  * Central app configuration — the ONE place for identity, locale and module settings.
  *
- * Branding is deliberately placeholder (DECISIONS C3, C14): the real name, logo, colours and
- * fonts are decided in a separate session. Nothing else in the codebase hard-codes the app
+ * The brand is "hub" (DECISIONS C90, DESIGN.md). Nothing else in the codebase hard-codes the app
  * name, currency or reminder lead times; everything reads from here.
  *
  *   Colours / radius  → src/theme/theme.css
@@ -31,18 +30,21 @@ export type ModuleConfig = {
 };
 
 export const appConfig = {
-  // ---- Identity (placeholder until branding is decided — P9) ----------------------------
-  name: "Personal Hub",
-  shortName: "Hub",
-  tagline: "Everything you need to keep on top of, in one place.",
-  description: "Personal dashboard for vehicles, electricity and bills.",
+  // ---- Identity (the hub brand, DECISIONS C90; the look is in DESIGN.md) ---------------------
+  name: "hub",
+  shortName: "hub",
+  tagline: "Access. Track. Manage.",
+  description: "One private place to keep on top of the house: two meters, bills, vehicles and reminders.",
 
   logo: {
-    /** Set to a path under /public (e.g. "/brand/logo.svg") once a real logo exists. */
-    src: null as string | null,
-    /** Text mark shown while there is no logo image. */
-    mark: "H",
-    alt: "Personal Hub logo",
+    /** The mark itself is src/components/brand/hub-mark.tsx; this is its accessible name. */
+    alt: "hub",
+  },
+
+  /** Background colours for the browser bar and the installed app (match --background in theme.css). */
+  themeColors: {
+    dark: "#11151d",
+    light: "#ecf0f5",
   },
 
   // ---- Locale & money (DECISIONS C21) -----------------------------------------------------

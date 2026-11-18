@@ -1,5 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Providers } from "@/components/providers";
 import { appConfig } from "@/config/app.config";
@@ -12,6 +12,15 @@ export const metadata: Metadata = {
     template: `%s · ${appConfig.name}`,
   },
   description: appConfig.description,
+};
+
+/** Browser bar colour follows the theme: dark by default (C92), light when the phone is in light mode. */
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: appConfig.themeColors.light },
+    { media: "(prefers-color-scheme: dark)", color: appConfig.themeColors.dark },
+  ],
+  colorScheme: "dark light",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
