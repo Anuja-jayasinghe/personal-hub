@@ -9,6 +9,7 @@ export const SETTINGS_PAGES = [
   { href: "/settings", label: "Settings", hint: "look, parts of the hub, the slab rule" },
   { href: "/settings/meters", label: "Meters and rules", hint: "your meters, 120 / 180, read every few days" },
   { href: "/settings/backup", label: "Data and backup", hint: "backups, exports, files stored" },
+  { href: "/settings/people", label: "People and roles", hint: "who can see and do what" },
 ] as const;
 
 export function SettingsSection({ label, note, children }: { label: string; note?: React.ReactNode; children: React.ReactNode }) {

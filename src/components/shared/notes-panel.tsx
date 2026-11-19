@@ -1,3 +1,5 @@
+import { sharedVisible } from "@/features/people/access";
+import { getAccess } from "@/lib/auth";
 import { Pin, PinOff, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { AttachmentsPanel } from "@/components/shared/attachments-panel";
@@ -22,7 +24,12 @@ export async function NotesPanel({
   /** With no notes, show only a small "Add a note" link: no heading, no empty-state box. */
   quietWhenEmpty?: boolean;
 }) {
-  const list = await listNotes(scope);
+  // Only what this person may see (S.8, C114): Tasks & notes, and the section of an attached record.
+  const access = (await getAccess()) ?? { owner: false as const, grants: {} };
+  const owner0 = scope.kind === "owner" ? scope.owner : null;
+  if (!sharedVisible(access, owner0?.ownerType ?? null)) return null;
+  const canAdd = sharedVisible(access, owner0?.ownerType ?? null, "add");
+  const list = (await listNotes(scope)).filter((x) => sharedVisible(access, x.ownerType));
   const files = await attachmentsByOwner("note", list.map((n) => n.id));
   const labels = scope.kind === "all" ? await ownerLabels(list) : new Map<string, OwnerLabel>();
   const owner = scope.kind === "owner" ? scope.owner : null;
@@ -30,7 +37,7 @@ export async function NotesPanel({
   if (quietWhenEmpty && list.length === 0) {
     return (
       <div>
-        <AddNoteSheet owner={owner} quiet />
+        {canAdd ? <AddNoteSheet owner={owner} quiet /> : null}
       </div>
     );
   }
@@ -42,7 +49,7 @@ export async function NotesPanel({
           {title} · {list.length}
         </h2>
         <span className="ml-auto">
-          <AddNoteSheet owner={owner} />
+          {canAdd ? <AddNoteSheet owner={owner} /> : null}
         </span>
       </div>
 

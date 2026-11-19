@@ -1,25 +1,36 @@
 import "server-only";
 import { auth, currentUser } from "@clerk/nextjs/server";
+import { eq } from "drizzle-orm";
+import { notFound } from "next/navigation";
 import { cache } from "react";
+import { db } from "@/db";
+import { accessGrants, people } from "@/db/schema";
+import { accessFromGrants, allows, type Access, type Area, type Level } from "@/features/people/access";
 import { ValidationError } from "@/features/shared/validation";
 import { isAllowedEmail, parseAllowedEmails } from "./allowed-emails";
 
 /**
- * Who is making this request (Phase 4.1, DECISIONS C61). Signing in is done by Clerk; whether that
- * person may use the hub is decided here, against the `ALLOWED_EMAILS` list. Every page, file link
- * and Server Action goes through this, so a signed-in stranger sees and changes nothing.
+ * Who is making this request, and what they may do (Phase 4.1, C61; S.8, C114). Signing in is done by
+ * Clerk. The owners are the addresses in `ALLOWED_EMAILS` and may do everything. Anyone else is looked
+ * up in the people table: active people get the access the owner gave them per section, someone who
+ * signs in unasked is added as pending (waiting for the owner's approval), and blocked people get
+ * nothing. Every page, file link and Server Action goes through this.
  */
 export type AuthState =
-  | { status: "ok"; userId: string; email: string }
+  | { status: "ok"; userId: string; email: string; access: Access; personId: string | null }
   | { status: "signed-out" }
+  /** Signed in, not yet approved by the owner (S.8). */
+  | { status: "pending"; email: string }
   | { status: "not-allowed"; email: string | null }
   /** `ALLOWED_EMAILS` is empty or missing: closed to everyone rather than open to everyone. */
   | { status: "not-configured" };
 
-/** Memoised per request, so a page and the actions it calls ask Clerk at most once. */
+const SEEN_EVERY_MS = 60 * 60 * 1000;
+
+/** Memoised per request, so a page and the actions it calls ask Clerk and the database at most once. */
 export const getAuthState = cache(async (): Promise<AuthState> => {
-  const allowed = parseAllowedEmails(process.env.ALLOWED_EMAILS);
-  if (allowed.length === 0) return { status: "not-configured" };
+  const owners = parseAllowedEmails(process.env.ALLOWED_EMAILS);
+  if (owners.length === 0) return { status: "not-configured" };
 
   const { userId, sessionClaims } = await auth();
   if (!userId) return { status: "signed-out" };
@@ -33,17 +44,68 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
     const primary = user?.primaryEmailAddress;
     email = primary && primary.verification?.status === "verified" ? primary.emailAddress : null;
   }
-  return isAllowedEmail(email, allowed) ? { status: "ok", userId, email: email as string } : { status: "not-allowed", email };
+  if (isAllowedEmail(email, owners)) return { status: "ok", userId, email: email as string, access: { owner: true }, personId: null };
+  if (!email) return { status: "not-allowed", email: null };
+
+  const address = email.trim().toLowerCase();
+  const [person] = await db.select().from(people).where(eq(people.email, address));
+  if (!person) {
+    // Signed in by themselves: they wait for the owner's approval (S.8; a demo comes later).
+    await db.insert(people).values({ email: address, status: "pending", lastSeenAt: new Date() }).onConflictDoNothing();
+    return { status: "pending", email: address };
+  }
+  if (person.status === "pending") return { status: "pending", email: address };
+  if (person.status !== "active") return { status: "not-allowed", email: address };
+
+  const grants = await db.select({ area: accessGrants.area, level: accessGrants.level }).from(accessGrants).where(eq(accessGrants.personId, person.id));
+  if (!person.lastSeenAt || Date.now() - person.lastSeenAt.getTime() > SEEN_EVERY_MS) {
+    await db.update(people).set({ lastSeenAt: new Date() }).where(eq(people.id, person.id));
+  }
+  return { status: "ok", userId, email: address, access: accessFromGrants(grants), personId: person.id };
 });
 
 /** Thrown by `requireUser`; a ValidationError so forms show its message instead of a generic one. */
 export class AuthError extends ValidationError {}
 
-/** Call first in every Server Action: returns the signed-in, allowed user or throws `AuthError`. */
-export async function requireUser(): Promise<{ userId: string; email: string }> {
+/**
+ * What an action or page needs: the owner, at least `level` in `area`, or just "signed-in" when the
+ * section depends on the record and is checked right after (files: S.8).
+ */
+export type Requirement = "owner" | "signed-in" | { area: Area; level: Level };
+
+function meets(access: Access, need: Requirement): boolean {
+  if (need === "signed-in") return true;
+  return need === "owner" ? access.owner : allows(access, need.area, need.level);
+}
+
+/**
+ * Call first in every Server Action, saying what it needs (S.8: a test fails if one does not): returns
+ * the signed-in, allowed person or throws `AuthError`.
+ */
+export async function requireUser(need: Requirement): Promise<{ userId: string; email: string; access: Access }> {
   const state = await getAuthState();
   if (state.status !== "ok") throw new AuthError("You are not signed in as an allowed user. Reload the page and sign in.");
-  return { userId: state.userId, email: state.email };
+  if (!meets(state.access, need)) throw new AuthError("You do not have access to do that. Ask the owner if you need it.");
+  return { userId: state.userId, email: state.email, access: state.access };
+}
+
+/** The signed-in person's access, or null. For pages and components deciding what to show. */
+export async function getAccess(): Promise<Access | null> {
+  const state = await getAuthState();
+  return state.status === "ok" ? state.access : null;
+}
+
+/** True when the signed-in person meets `need`. */
+export async function can(need: Requirement): Promise<boolean> {
+  const access = await getAccess();
+  return access !== null && meets(access, need);
+}
+
+/** For pages: a part the person may not see answers "not found", as if it were not there. */
+export async function requirePage(need: Requirement): Promise<Access> {
+  const access = await getAccess();
+  if (!access || !meets(access, need)) notFound();
+  return access;
 }
 
 /** The signed-in person's first name from their account, for the greeting on Home; null when unknown. */

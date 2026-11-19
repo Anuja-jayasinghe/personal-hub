@@ -43,6 +43,7 @@ export function ElectricityOverview({
   checks,
   live,
   cycleDays,
+  seeBills = true,
 }: {
   meters: ElectricityMeter[];
   allMeters: ElectricityMeter[];
@@ -56,6 +57,8 @@ export function ElectricityOverview({
   checks: Map<string, LastChecked>;
   live: LiveMeter | null;
   cycleDays: number;
+  /** Without Electricity bills access (S.8) the amount to pay is not shown. */
+  seeBills?: boolean;
 }) {
   const unpaid = unpaidTotal(bills.filter((b) => meters.some((m) => m.id === b.meterId)));
   const advice = adviceLine(limits.advice, limits, nameOf, units, live?.meterId ?? null);
@@ -109,7 +112,7 @@ export function ElectricityOverview({
           ) : null}
           {nudge ? <Note tone="near">{nudge}</Note> : null}
 
-          {unpaid.cents > 0 ? (
+          {seeBills && unpaid.cents > 0 ? (
             <Link
               href="/bills#electricity"
               className="flex flex-col gap-1 rounded-2xl border border-primary/40 bg-accent p-4 outline-none hover:border-primary focus-visible:ring-2 focus-visible:ring-ring"

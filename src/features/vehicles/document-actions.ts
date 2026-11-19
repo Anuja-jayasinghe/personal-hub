@@ -23,7 +23,7 @@ function titleFrom(fd: FormData): string {
 /** Adds a titled document (image or PDF) to a vehicle. The title is required. */
 export async function uploadVehicleDocument(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser({ area: "vehicle_documents", level: "add" });
     const vehicleId = idFrom(fd, "vehicleId");
     const title = titleFrom(fd);
     const file = fd.get("file");
@@ -47,7 +47,7 @@ export async function uploadVehicleDocument(_prev: ActionState, fd: FormData): P
 /** Changes the title of a vehicle's document. */
 export async function renameVehicleDocument(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser({ area: "vehicle_documents", level: "edit" });
     const id = idFrom(fd);
     const title = titleFrom(fd);
     const updated = await db

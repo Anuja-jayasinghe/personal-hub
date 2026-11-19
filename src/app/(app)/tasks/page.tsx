@@ -1,3 +1,4 @@
+import { requirePage } from "@/lib/auth";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -24,6 +25,7 @@ const VIEWS = [
 ] as const;
 
 async function TasksContent({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  await requirePage({ area: "tasks_notes", level: "see" });
   const { view } = await searchParams;
   const current = view === "notes" ? "notes" : "tasks";
   // The title says where you are (S.1, owner's list item 36); the switcher below changes it.

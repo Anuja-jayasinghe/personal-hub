@@ -10,10 +10,11 @@ const meta = {
 } as const;
 
 /** Small tiles for the other areas (boards HHomePhone, HHome): how much each has due in the window, with its node icon. Only areas that are switched on. */
-export function AreaTiles({ counts, windowDays }: { counts: AreaCount[]; windowDays: number }) {
+export function AreaTiles({ counts, windowDays, visible = () => true }: { counts: AreaCount[]; windowDays: number; visible?: (area: AreaCount["area"]) => boolean }) {
   const on = (area: AreaCount["area"]) =>
     area === "tasks" ? appConfig.sharedPages.some((p) => p.key === "tasks") : enabledModules.some((m) => m.key === area);
-  const shown = counts.filter((c) => on(c.area));
+  // `visible`: only the parts this person may see (S.8, C114).
+  const shown = counts.filter((c) => on(c.area) && visible(c.area));
   if (shown.length === 0) return null;
 
   return (

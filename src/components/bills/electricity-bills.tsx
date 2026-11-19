@@ -17,7 +17,7 @@ import { formatDate, formatMoney, formatMonth } from "@/lib/format";
 const SHOWN = 6;
 
 /** One electricity bill with everything you can do to it: mark paid or unpaid, edit, delete. */
-function BillRow({ bill, today, meterName }: { bill: ElectricityBill; today: string; meterName: string }) {
+function BillRow({ bill, today, meterName, canEdit }: { bill: ElectricityBill; today: string; meterName: string; canEdit: boolean }) {
   const status = billStatus(bill, today);
   const month = formatMonth(monthOf(bill.readingDate));
   return (
@@ -31,9 +31,10 @@ function BillRow({ bill, today, meterName }: { bill: ElectricityBill; today: str
       </span>
       {bill.amount !== null ? <span className="font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums">{formatMoney(Number(bill.amount))}</span> : null}
       {status.state === "paid" ? <PaidStamp billId={bill.id} /> : <BillChip status={status} />}
-      {status.state !== "paid" ? (
+      {canEdit && status.state !== "paid" ? (
         <MarkPaidButton billId={bill.id} what={`${meterName}'s ${month} bill`} amount={bill.amount !== null ? formatMoney(Number(bill.amount)) : null} today={today} size="sm" />
       ) : null}
+      {canEdit ? (
       <span className="ml-auto">
         <PopoverButton variant="ghost" icon="more" ariaLabel={`More for the ${month} bill`} align="end">
           <div className="flex flex-col gap-2 p-1">
@@ -60,6 +61,7 @@ function BillRow({ bill, today, meterName }: { bill: ElectricityBill; today: str
           </div>
         </PopoverButton>
       </span>
+      ) : null}
     </li>
   );
 }
@@ -69,7 +71,18 @@ function BillRow({ bill, today, meterName }: { bill: ElectricityBill; today: str
  * Bills. One group per active meter, labelled by the account number so it matches the paper bill, with
  * "Add bill" and each bill's actions. Electricity shows the same bills read-only and links here.
  */
-export function ElectricityBills({ meters, bills, today }: { meters: ElectricityMeter[]; bills: ElectricityBill[]; today: string }) {
+export function ElectricityBills({
+  meters,
+  bills,
+  today,
+  can = { add: true, edit: true },
+}: {
+  meters: ElectricityMeter[];
+  bills: ElectricityBill[];
+  today: string;
+  /** What this person may do (S.8, C114): add bills, and pay, change or delete them. */
+  can?: { add: boolean; edit: boolean };
+}) {
   if (meters.length === 0) return null;
   return (
     <section id="electricity" aria-labelledby="electricity-bills-title" className="flex scroll-mt-24 flex-col gap-3">
@@ -88,7 +101,7 @@ export function ElectricityBills({ meters, bills, today }: { meters: Electricity
                   <span className="block truncate text-[15px] font-semibold">{meterBillLabel(m)}</span>
                   {m.accountNumber ? <span className="block text-xs text-muted-foreground">{m.name}</span> : null}
                 </span>
-                <AddBillButton meterId={m.id} meterName={m.name} defaultDate={today} defaultPrevious={last?.currentReading} previousDate={last?.readingDate} />
+                {can.add ? <AddBillButton meterId={m.id} meterName={m.name} defaultDate={today} defaultPrevious={last?.currentReading} previousDate={last?.readingDate} /> : null}
               </div>
               {own.length === 0 ? (
                 <p className="border-t border-raised py-3 text-sm text-muted-foreground">No bills yet. Add the last one so the cycle has a start.</p>
@@ -96,7 +109,7 @@ export function ElectricityBills({ meters, bills, today }: { meters: Electricity
                 <>
                   <ul>
                     {own.slice(0, SHOWN).map((b) => (
-                      <BillRow key={b.id} bill={b} today={today} meterName={m.name} />
+                      <BillRow key={b.id} bill={b} today={today} meterName={m.name} canEdit={can.edit} />
                     ))}
                   </ul>
                   {own.length > SHOWN ? (
@@ -104,7 +117,7 @@ export function ElectricityBills({ meters, bills, today }: { meters: Electricity
                       <summary className="cursor-pointer border-t border-raised py-2.5 text-sm text-muted-foreground hover:text-foreground">Show all {own.length} bills</summary>
                       <ul>
                         {own.slice(SHOWN).map((b) => (
-                          <BillRow key={b.id} bill={b} today={today} meterName={m.name} />
+                          <BillRow key={b.id} bill={b} today={today} meterName={m.name} canEdit={can.edit} />
                         ))}
                       </ul>
                     </details>

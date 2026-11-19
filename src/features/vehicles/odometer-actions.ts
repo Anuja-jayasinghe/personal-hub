@@ -28,7 +28,7 @@ function fieldsFrom(fd: FormData) {
 
 export async function addOdometerReading(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser({ area: "vehicles", level: "add" });
     const vehicleId = idFrom(fd, "vehicleId");
     const [vehicle] = await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, vehicleId));
     if (!vehicle) throw new ValidationError("That vehicle could not be found.");
@@ -45,7 +45,7 @@ export async function addOdometerReading(_prev: ActionState, fd: FormData): Prom
 
 export async function updateOdometerReading(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser({ area: "vehicles", level: "edit" });
     const id = idFrom(fd);
     const [existing] = await db.select().from(vehicleOdometerReadings).where(eq(vehicleOdometerReadings.id, id));
     if (!existing) throw new ValidationError("That reading could not be found.");
@@ -61,7 +61,7 @@ export async function updateOdometerReading(_prev: ActionState, fd: FormData): P
 }
 
 export async function deleteOdometerReading(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser({ area: "vehicles", level: "edit" });
   await db.delete(vehicleOdometerReadings).where(eq(vehicleOdometerReadings.id, idFrom(fd)));
   refresh();
 }

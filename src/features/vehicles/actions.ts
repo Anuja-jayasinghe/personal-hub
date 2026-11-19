@@ -58,7 +58,7 @@ function vehicleAndOdometer(fd: FormData) {
 export async function createVehicle(_prev: ActionState, fd: FormData): Promise<ActionState> {
   let path: string;
   try {
-    await requireUser();
+    await requireUser({ area: "vehicles", level: "add" });
     // The odometer typed on the form becomes the first dated reading (today); the old undated
     // column is no longer written.
     const { fields, odometerKm } = vehicleAndOdometer(fd);
@@ -78,7 +78,7 @@ export async function createVehicle(_prev: ActionState, fd: FormData): Promise<A
 export async function updateVehicle(_prev: ActionState, fd: FormData): Promise<ActionState> {
   let path: string;
   try {
-    await requireUser();
+    await requireUser({ area: "vehicles", level: "edit" });
     const id = idFrom(fd);
     // Mileage is edited as dated readings on the vehicle's Overview, not here.
     const { fields } = vehicleAndOdometer(fd);
@@ -92,13 +92,13 @@ export async function updateVehicle(_prev: ActionState, fd: FormData): Promise<A
 }
 
 export async function archiveVehicle(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser({ area: "vehicles", level: "edit" });
   await db.update(vehicles).set({ archivedAt: new Date() }).where(eq(vehicles.id, idFrom(fd)));
   redirect("/vehicles");
 }
 
 export async function unarchiveVehicle(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser({ area: "vehicles", level: "edit" });
   const id = idFrom(fd);
   const [row] = await db.update(vehicles).set({ archivedAt: null }).where(eq(vehicles.id, id)).returning({ registrationNumber: vehicles.registrationNumber });
   redirect(vehiclePath({ id, registrationNumber: row?.registrationNumber ?? null }));
@@ -106,7 +106,7 @@ export async function unarchiveVehicle(fd: FormData): Promise<void> {
 
 /** Permanent. Removes the vehicle and everything it owns: tasks, notes, files and the cover photo. */
 export async function deleteVehicle(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser({ area: "vehicles", level: "edit" });
   const id = idFrom(fd);
   // Renewal documents are attachments owned by each renewal, which the database cannot cascade to.
   const renewals = await db.select({ id: vehicleRenewals.id }).from(vehicleRenewals).where(eq(vehicleRenewals.vehicleId, id));
@@ -119,7 +119,7 @@ export async function deleteVehicle(fd: FormData): Promise<void> {
 /** Sets or replaces the cover photo (DECISIONS C47). The old photo is deleted once the new one is saved. */
 export async function setVehicleCover(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser({ area: "vehicles", level: "edit" });
     const id = idFrom(fd, "vehicleId");
     const file = fd.get("file");
     if (!(file instanceof File)) throw new ValidationError("Choose a photo to upload.");
@@ -152,7 +152,7 @@ export async function setVehicleCover(_prev: ActionState, fd: FormData): Promise
 }
 
 export async function removeVehicleCover(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser({ area: "vehicles", level: "edit" });
   const id = idFrom(fd);
   const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, id));
   if (!vehicle?.coverAttachmentId) return;

@@ -80,6 +80,7 @@ export function MeterView({
   units,
   check,
   live = null,
+  can = { addReadings: true, editReadings: true, seeBills: true },
 }: {
   meter: ElectricityMeter;
   /** Every meter, active first: gives the chart each meter's colour. */
@@ -93,6 +94,8 @@ export function MeterView({
   check: LastChecked;
   /** True when this meter carries the house, false when idle, null when not set (#69). */
   live?: boolean | null;
+  /** What this person may do here (S.8, C114). */
+  can?: { addReadings: boolean; editReadings: boolean; seeBills: boolean };
 }) {
   const { usage, last, lastStatus, bills, readingRows } = data;
   const readingById = new Map(readings.map((r) => [r.id, r]));
@@ -144,7 +147,7 @@ export function MeterView({
               </p>
             )}
           </section>
-      {last && lastStatus ? (
+      {can.seeBills && last && lastStatus ? (
         <section aria-label="Last bill" className="flex flex-wrap items-center gap-3 rounded-2xl border bg-card p-4">
           <div className="min-w-48 flex-1 text-sm">
             <p>
@@ -178,32 +181,34 @@ export function MeterView({
       {bills.length > 0 ? <MonthlyChart meters={allMeters} bills={bills} /> : null}
 
       <div className="grid grid-cols-1 gap-3 md:gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        {can.seeBills ? (
         <section aria-label="Bills" className="rounded-2xl border bg-card px-4 pb-1">
-          <SectionTitle>Bills</SectionTitle>
-          {bills.length === 0 ? (
-            <p className="border-t py-3 text-sm text-muted-foreground">No bills yet.</p>
-          ) : (
-            <>
-              <ul>
-                {bills.slice(0, SHOWN).map((b) => (
-                  <BillLine key={b.id} bill={b} today={today} />
-                ))}
-              </ul>
-              {bills.length > SHOWN ? (
-                <details className="group">
-                  <summary className="cursor-pointer border-t py-2.5 text-sm text-muted-foreground hover:text-foreground">
-                    Show all {bills.length} bills
-                  </summary>
-                  <ul>
-                    {bills.slice(SHOWN).map((b) => (
-                      <BillLine key={b.id} bill={b} today={today} />
-                    ))}
-                  </ul>
-                </details>
-              ) : null}
-            </>
-          )}
-        </section>
+            <SectionTitle>Bills</SectionTitle>
+            {bills.length === 0 ? (
+              <p className="border-t py-3 text-sm text-muted-foreground">No bills yet.</p>
+            ) : (
+              <>
+                <ul>
+                  {bills.slice(0, SHOWN).map((b) => (
+                    <BillLine key={b.id} bill={b} today={today} />
+                  ))}
+                </ul>
+                {bills.length > SHOWN ? (
+                  <details className="group">
+                    <summary className="cursor-pointer border-t py-2.5 text-sm text-muted-foreground hover:text-foreground">
+                      Show all {bills.length} bills
+                    </summary>
+                    <ul>
+                      {bills.slice(SHOWN).map((b) => (
+                        <BillLine key={b.id} bill={b} today={today} />
+                      ))}
+                    </ul>
+                  </details>
+                ) : null}
+              </>
+            )}
+          </section>
+        ) : null}
 
         <section aria-label="Readings" className="rounded-2xl border bg-card px-4 pb-1">
           <SectionTitle>Readings</SectionTitle>
@@ -213,7 +218,7 @@ export function MeterView({
             <>
               <ul>
                 {readingRows.slice(0, SHOWN).map((r) => (
-                  <ReadingRowItem key={r.id} row={r} reading={readingById.get(r.id)} />
+                  <ReadingRowItem key={r.id} row={r} reading={can.editReadings ? readingById.get(r.id) : undefined} />
                 ))}
               </ul>
               {readingRows.length > SHOWN ? (
@@ -223,7 +228,7 @@ export function MeterView({
                   </summary>
                   <ul>
                     {readingRows.slice(SHOWN).map((r) => (
-                      <ReadingRowItem key={r.id} row={r} reading={readingById.get(r.id)} />
+                      <ReadingRowItem key={r.id} row={r} reading={can.editReadings ? readingById.get(r.id) : undefined} />
                     ))}
                   </ul>
                 </details>

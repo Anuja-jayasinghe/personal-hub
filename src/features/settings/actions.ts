@@ -27,7 +27,7 @@ async function store(rules: HubRules) {
 /** Saves the slab rule, the meter-check interval and the billing cycle. */
 export async function saveSlabRules(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser("owner");
     const keys = ["lowUnits", "highUnits", "nearUnits", "checkEveryDays", "billingCycleDays"];
     const parsed = parseSlabRules(Object.fromEntries(keys.map((k) => [k, fd.get(k)])));
     if (!parsed.ok) throw new ValidationError(parsed.error);
@@ -42,7 +42,7 @@ export async function saveSlabRules(_prev: ActionState, fd: FormData): Promise<A
 /** Saves which days before a due date reminders start. */
 export async function saveReminderDays(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser("owner");
     const leadDays = cleanLeadDays(fd.getAll("leadDays"));
     if (leadDays.length === 0) throw new ValidationError("Pick at least one day.");
     await store({ ...(await savedRules()), leadDays });

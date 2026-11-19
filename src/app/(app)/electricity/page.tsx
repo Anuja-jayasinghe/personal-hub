@@ -1,3 +1,5 @@
+import { allows } from "@/features/people/access";
+import { requirePage } from "@/lib/auth";
 import { getRules } from "@/features/settings/queries";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -15,6 +17,7 @@ export const metadata: Metadata = { title: "Electricity" };
 type Search = { archived?: string; meter?: string };
 
 async function ElectricityContent({ searchParams }: { searchParams: Promise<Search> }) {
+  const access = await requirePage({ area: "electricity_readings", level: "see" });
   const { archived, meter } = await searchParams;
   const showArchived = archived === "1";
   const [active, archivedMeters, readings, bills, switches, rules] = await Promise.all([listMeters(false), listMeters(true), listAllReadings(), listAllBills(), listLiveSwitches(), getRules()]);
@@ -29,6 +32,7 @@ async function ElectricityContent({ searchParams }: { searchParams: Promise<Sear
       bills={bills}
       live={currentLive(switches, active.map((m) => m.id))}
       rules={rules}
+      can={{ addReadings: allows(access, "electricity_readings", "add"), editReadings: allows(access, "electricity_readings", "edit"), seeBills: allows(access, "electricity_bills", "see") }}
       today={today}
       showArchived={showArchived}
       meterParam={meter}

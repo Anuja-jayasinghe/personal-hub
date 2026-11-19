@@ -1,3 +1,5 @@
+import { allows } from "@/features/people/access";
+import { requirePage } from "@/lib/auth";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageTopBar } from "@/components/shell/page-header";
@@ -43,6 +45,7 @@ async function VehicleContent({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ tab?: string; q?: string; sort?: string }>;
 }) {
+  const access = await requirePage({ area: "vehicles", level: "see" });
   const [{ id }, { tab, q, sort }] = await Promise.all([params, searchParams]);
   const vehicle = await getVehicle(id);
   if (!vehicle) notFound();
@@ -52,7 +55,9 @@ async function VehicleContent({
     const query = new URLSearchParams(Object.entries({ tab, q, sort }).filter((e): e is [string, string] => typeof e[1] === "string")).toString();
     redirect(query ? `${canonical}?${query}` : canonical);
   }
-  const current = TABS.find((t) => t.key === tab) ?? TABS[0];
+  // Documents only for people who may see Vehicle documents (S.8, C114).
+  const tabs = TABS.filter((t) => t.key !== "documents" || allows(access, "vehicle_documents", "see"));
+  const current = tabs.find((t) => t.key === tab) ?? tabs[0];
   const subtitle = [vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(" ");
   const type = findVehicleType(appConfig.vehicles.types, vehicle.vehicleType);
 
@@ -78,12 +83,12 @@ async function VehicleContent({
           className="mx-auto h-44 w-full max-w-xl md:h-56"
         />
         <div className="flex justify-end px-4 pb-3 md:px-6">
-          <VehicleManageMenu vehicle={vehicle} />
+          {allows(access, "vehicles", "edit") ? <VehicleManageMenu vehicle={vehicle} /> : null}
         </div>
       </section>
 
       <nav aria-label="Vehicle sections" className="flex w-fit max-w-full flex-wrap gap-1 rounded-xl bg-deepest p-1 ring-1 ring-border">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <Link
             key={t.key}
             href={t.key === "overview" ? vehiclePath(vehicle) : vehiclePath(vehicle, `?tab=${t.key}`)}

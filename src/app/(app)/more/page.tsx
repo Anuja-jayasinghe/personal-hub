@@ -1,3 +1,5 @@
+import { navItemVisible } from "@/features/people/access";
+import { getAccess } from "@/lib/auth";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -15,8 +17,10 @@ const SettingsIcon = getIcon("settings");
  * The phone's fifth tab (DESIGN.md, Navigation; board HMore): your account, the parts that do not fit
  * in the bar, Settings and sign out. Only pages that exist today are listed.
  */
-export default function MorePage() {
-  const items = morePageItems();
+export default async function MorePage() {
+  // Only the parts this person may see (S.8, C114).
+  const access = (await getAccess()) ?? { owner: false as const, grants: {} };
+  const items = morePageItems().filter((i) => navItemVisible(access, i.key));
   const parts = items.filter((i) => i.key !== "settings");
   const settings = items.find((i) => i.key === "settings");
 

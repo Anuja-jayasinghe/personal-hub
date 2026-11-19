@@ -9,7 +9,9 @@ import { todayInAppTz } from "@/lib/format";
  * Holds real data, so only a signed-in, allowed person gets it (C61), and it is never cached.
  */
 export async function GET(_request: Request, ctx: { params: Promise<{ file: string }> }) {
-  if ((await getAuthState()).status !== "ok") return new Response("Not allowed", { status: 403, headers: { "Cache-Control": "no-store" } });
+  // The downloads hold everything, so they are the owner's only (S.8, C114).
+  const state = await getAuthState();
+  if (state.status !== "ok" || !state.access.owner) return new Response("Not allowed", { status: 403, headers: { "Cache-Control": "no-store" } });
 
   const { file } = await ctx.params;
   const key = file;
