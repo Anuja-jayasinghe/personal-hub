@@ -3,6 +3,7 @@ import { asc, count, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { db } from "@/db";
 import { vehicleOdometerReadings, vehicleRenewals, vehicleServices, vehicles } from "@/db/schema";
+import { plateKey } from "./plate";
 import { UUID_RE } from "@/features/shared/validation";
 
 /** Active vehicles, or archived ones (sold; hidden, no reminders, history kept: DECISIONS C48). */
@@ -22,10 +23,20 @@ export async function countArchivedVehicles(): Promise<number> {
 }
 
 /** One vehicle by id, or null when the id is not a uuid or nothing matches. */
-export async function getVehicle(id: string) {
+/** A vehicle by its id or by its plate as written in its address ("cbd-9754", S.6). */
+export async function getVehicle(idOrPlate: string) {
   await connection();
-  if (!UUID_RE.test(id)) return null;
-  const [row] = await db.select().from(vehicles).where(eq(vehicles.id, id));
+  if (UUID_RE.test(idOrPlate)) {
+    const [row] = await db.select().from(vehicles).where(eq(vehicles.id, idOrPlate));
+    return row ?? null;
+  }
+  const key = plateKey(decodeURIComponent(idOrPlate));
+  if (!key) return null;
+  const [row] = await db
+    .select()
+    .from(vehicles)
+    .where(sql`upper(regexp_replace(coalesce(${vehicles.registrationNumber}, ''), '[^a-zA-Z0-9]', '', 'g')) = ${key}`)
+    .limit(1);
   return row ?? null;
 }
 

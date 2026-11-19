@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { vehiclePath } from "@/features/vehicles/plate";
 import { useActionState } from "react";
 import { labelClass, labelTextClass, selectClass } from "@/components/shared/form-styles";
 import { SubmitButton } from "@/components/shared/submit-button";
@@ -98,7 +99,7 @@ export function VehicleForm({ action, fuelTypes, vehicleTypes, vehicle }: Props)
 
       <div className="flex flex-wrap gap-2">
         <SubmitButton pendingLabel="Saving…">{vehicle ? "Save changes" : "Add vehicle"}</SubmitButton>
-        <Link href={vehicle ? `/vehicles/${vehicle.id}` : "/vehicles"} className={buttonVariants({ variant: "outline" })}>
+        <Link href={vehicle ? vehiclePath(vehicle) : "/vehicles"} className={buttonVariants({ variant: "outline" })}>
           Cancel
         </Link>
       </div>
