@@ -263,7 +263,7 @@ People and roles (designed in `HAdmin` and `HAdminPhone`) is built in Phase 5; t
 | S.4 | ✅ *(issue #114, C109)* **Electricity from the boards**: usage in units only (no price predictions until the tariff is added), the instrument, readings with values on the cycle chart, each meter's share on hover in the monthly chart |
 | S.5 | ✅ *(S.5b issue #118, C111: the circuit calendar family; S.5a ✅ issue #116, C110: choose first, bill day, To pay now, account numbers; S.5b: the circuit calendar family)* **Bills**: choose recurring or one-time first; recurring asks for the bill day of the month (stored in the existing `anchor_day`); To pay counts the current period plus anything unpaid; electricity bills by account number; the new calendar in Bills, Reminders and Home |
 | S.6 | ✅ *(issue #120, C112)* **Vehicles**: bigger photo-first cards, the plate, one menu for photo / edit / archive / delete, addresses by plate number (id when there is none), new icons |
-| S.7 | **Data and backup**: CSV downloads from Settings; the full backup stays a command until 4.4 |
+| S.7 | ✅ *(issue #122, C113)* **Data and backup**: CSV downloads from Settings; the full backup stays a command until 4.4 |
 | S.8 | **Admin and sharing** = Phase 5, after hosting (4.2) |
 
 Reminders is reviewed again once there are real items in it.
