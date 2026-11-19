@@ -1,6 +1,7 @@
 import type { ElectricityBill, ElectricityReading } from "@/db/schema";
 import { toCents } from "@/lib/decimal";
 import { billStatus } from "./bill-logic";
+import { cycleSeries } from "./cycle";
 import { readingRows } from "./overview";
 import { latestBill, sinceLastBill } from "./since-bill";
 import { toReading } from "./usage";
@@ -24,7 +25,9 @@ export function describeMeter(input: { bills: readonly ElectricityBill[]; readin
   const billsNewestFirst = [...input.bills].sort(
     (a, b) => b.readingDate.localeCompare(a.readingDate) || b.createdAt.getTime() - a.createdAt.getTime(),
   );
-  return { last, lastStatus, usage, latest, readingRows: rows, bills: billsNewestFirst };
+  // Units used so far this cycle, a point per reading (the cycle chart, R.3a).
+  const cycle = cycleSeries(marks, readings);
+  return { last, lastStatus, usage, latest, readingRows: rows, bills: billsNewestFirst, cycle };
 }
 
 export type MeterData = ReturnType<typeof describeMeter>;

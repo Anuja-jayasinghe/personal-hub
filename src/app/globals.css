@@ -83,6 +83,13 @@
   }
 }
 
+/* Current moving along a line: a dashed stroke whose dashes travel (DESIGN.md, Motion). */
+@keyframes hub-flow {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
 /* Reduced motion: stop every animation and transition (DESIGN.md, Motion). */
 @media (prefers-reduced-motion: reduce) {
   *,

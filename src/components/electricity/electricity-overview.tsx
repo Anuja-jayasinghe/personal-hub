@@ -1,14 +1,36 @@
-import { MeterTile } from "@/components/electricity/meter-tile";
+import Link from "next/link";
+import { CycleChart } from "@/components/electricity/cycle-chart";
+import { MeterBoard } from "@/components/electricity/meter-board";
+import { MeterBadge, toneFor } from "@/components/electricity/meter-tone";
 import { MonthlyChart } from "@/components/electricity/monthly-chart";
+import { SlabRule } from "@/components/electricity/slab-rule";
+import { appConfig } from "@/config/app.config";
 import type { ElectricityBill, ElectricityMeter } from "@/db/schema";
 import type { MeterData } from "@/features/electricity/meter-data";
 import { checkNudge, type LastChecked } from "@/features/electricity/last-checked";
 import type { LimitsResult } from "@/features/electricity/limits";
-import { adviceLine, paceLine, type LimitUnits } from "@/features/electricity/limits-text";
-import { unpaidTotal } from "@/features/electricity/overview";
+import { adviceLine, paceLine, usedOfLimit, type LimitUnits } from "@/features/electricity/limits-text";
+import { badgeLetter, unpaidTotal } from "@/features/electricity/overview";
 import { formatMoney } from "@/lib/format";
 
-/** The "Both" view (C78, C87): a tile per meter against its limit, the room left before a price jump with the pace check and any warning, what is still to pay, and the monthly chart. */
+/** A short note in a state colour: amber for "near" or a due check, red for "over". */
+function Note({ tone, children, role = "status" }: { tone: "near" | "over"; children: React.ReactNode; role?: "status" | "alert" }) {
+  return (
+    <p
+      role={role}
+      className={`flex gap-2.5 rounded-xl px-4 py-3 text-sm leading-relaxed ${tone === "over" ? "bg-status-overdue-soft text-status-overdue" : "bg-status-soon-soft text-status-soon"}`}
+    >
+      <span aria-hidden className={`mt-1.5 size-2 shrink-0 rounded-full ${tone === "over" ? "bg-status-overdue" : "bg-status-soon-mark"}`} />
+      <span>{children}</span>
+    </p>
+  );
+}
+
+/**
+ * The "Both" view (C78, C87; restyled in R.3a, boards HElectricity and HElectricityDesktop): the meter
+ * board, a slab rule per meter, any warning, the room left before a price jump with the pace, what is
+ * still to pay, the cycle chart on wide screens, and the monthly chart.
+ */
 export function ElectricityOverview({
   meters,
   allMeters,
@@ -37,47 +59,106 @@ export function ElectricityOverview({
   const advice = adviceLine(limits.advice, limits, nameOf, units);
   const nudge = checkNudge(meters.map((m) => ({ name: m.name, check: checks.get(m.id)! })));
   const room = Math.floor(limits.headroom / 100);
+  const low = units.low * 100;
+  const high = units.high * 100;
+  const limitOf = (id: string) => limits.meters.find((l) => l.id === id)!;
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="grid gap-3 sm:grid-cols-2">
-        {meters.map((m) => (
-          <MeterTile key={m.id} meter={m} toneIndex={toneIndexOf(m.id)} data={data.get(m.id)!} href={hrefFor(m.id)} limit={limits.meters.find((l) => l.id === m.id)!} units={units} check={checks.get(m.id)!} />
-        ))}
-      </div>
+    <div className="flex flex-col gap-3 md:gap-5">
+      <MeterBoard
+        units={units}
+        meters={meters.map((m) => {
+          const d = data.get(m.id)!;
+          return {
+            id: m.id,
+            name: m.name,
+            href: hrefFor(m.id),
+            limit: limitOf(m.id),
+            check: checks.get(m.id)!,
+            reading: d.readingRows[0]?.value ?? null,
+            flowing: d.usage.state === "ok" && (d.usage.dailyAverage ?? 0) > 0,
+          };
+        })}
+      />
 
       {advice ? (
-        <p
-          role={limits.advice?.kind === "over" ? "alert" : "status"}
-          className={`rounded-xl px-4 py-3 text-sm ${
-            limits.advice?.kind === "over"
-              ? "bg-red-100 text-red-900 dark:bg-red-500/20 dark:text-red-100"
-              : "bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-100"
-          }`}
-        >
+        <Note tone={limits.advice?.kind === "over" ? "over" : "near"} role={limits.advice?.kind === "over" ? "alert" : "status"}>
           {advice}
-        </p>
+        </Note>
       ) : null}
+      {nudge ? <Note tone="near">{nudge}</Note> : null}
 
-      {nudge ? (
-        <p role="status" className="rounded-xl bg-amber-100 px-4 py-3 text-sm text-amber-900 dark:bg-amber-500/20 dark:text-amber-100">
-          {nudge}
-        </p>
-      ) : null}
-
-      <dl className="flex flex-wrap gap-x-10 gap-y-3 px-1">
-        <div>
-          <dd className="text-xl font-medium tabular-nums">{room} units</dd>
-          <dt className="text-sm text-muted-foreground">left before a price jump, both meters together</dt>
-          {pace ? <p className={`mt-1 max-w-prose text-sm ${pace.tone === "warn" ? "text-amber-800 dark:text-amber-200" : "text-muted-foreground"}`}>{pace.text}</p> : null}
+      <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:gap-5">
+        <div className="flex flex-col gap-3">
+          {meters.map((m) => {
+            const d = data.get(m.id)!;
+            const limit = limitOf(m.id);
+            return (
+              <Link
+                key={m.id}
+                href={hrefFor(m.id)}
+                aria-label={`${m.name}: ${usedOfLimit(limit)}`}
+                className="flex flex-col gap-1 rounded-2xl border bg-card px-4 pt-3 pb-1.5 outline-none hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span className="flex items-baseline gap-2">
+                  <MeterBadge name={m.name} className="self-center" />
+                  <span className="text-sm font-semibold">{m.name}</span>
+                  <span className="text-xs text-muted-foreground">{limit.known ? `${Math.round(limit.used / 100)} used` : "not counting yet"}</span>
+                  {d.usage.state === "ok" && d.usage.projected !== null ? (
+                    <span className="ml-auto font-mono text-[10.5px] text-label">PACE ~{Math.round(d.usage.projected / 100)}</span>
+                  ) : null}
+                </span>
+                <SlabRule used={limit.used} projected={d.usage.state === "ok" ? d.usage.projected : null} low={low} high={high} state={limit.state} size="sm" />
+              </Link>
+            );
+          })}
         </div>
-        {unpaid.cents > 0 ? (
-          <div>
-            <dd className="text-xl font-medium tabular-nums">{formatMoney(unpaid.cents / 100)}</dd>
-            <dt className="text-sm text-muted-foreground">to pay{unpaid.withoutAmount > 0 ? ` (plus ${unpaid.withoutAmount} bill without an amount)` : ""}</dt>
-          </div>
-        ) : null}
-      </dl>
+
+        <div className="flex flex-col gap-3">
+          <section aria-label="Room before a price jump" className="flex flex-col gap-2 rounded-2xl border bg-card p-4">
+            <span className="font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">Both meters</span>
+            <p className="flex items-baseline gap-2.5">
+              <span className="font-display text-5xl leading-none font-semibold tracking-tight md:text-6xl">{room}</span>
+              <span className="text-sm text-muted-foreground">units before a price jump</span>
+            </p>
+            {pace ? (
+              <p className={`flex gap-2 text-sm leading-relaxed ${pace.tone === "warn" ? "text-status-soon" : "text-muted-foreground"}`}>
+                <span aria-hidden className={`mt-1.5 size-2 shrink-0 rounded-full ${pace.tone === "warn" ? "bg-status-soon-mark" : "bg-status-ok"}`} />
+                {pace.text}
+              </p>
+            ) : null}
+          </section>
+
+          {unpaid.cents > 0 ? (
+            <section aria-label="To pay" className="flex flex-col gap-1 rounded-2xl border border-primary/40 bg-accent p-4">
+              <span className="font-mono text-[10.5px] tracking-[0.14em] text-muted-foreground uppercase">To pay</span>
+              <span className="font-display text-3xl leading-none font-semibold tracking-tight">{formatMoney(unpaid.cents / 100)}</span>
+              {unpaid.withoutAmount > 0 ? (
+                <span className="text-xs text-muted-foreground">plus {unpaid.withoutAmount} bill without an amount</span>
+              ) : null}
+            </section>
+          ) : null}
+        </div>
+      </div>
+
+      <div className="hidden md:block">
+        <CycleChart
+          low={low}
+          high={high}
+          cycleDays={appConfig.electricity.billingCycleDays}
+          lines={meters.map((m) => {
+            const d = data.get(m.id)!;
+            return {
+              id: m.id,
+              name: m.name,
+              letter: badgeLetter(m.name),
+              stroke: toneFor(toneIndexOf(m.id)).stroke,
+              points: d.cycle,
+              projected: d.usage.state === "ok" ? d.usage.projected : null,
+            };
+          })}
+        />
+      </div>
 
       <MonthlyChart meters={allMeters} bills={bills} />
     </div>

@@ -63,32 +63,3 @@ export function unpaidTotal(bills: readonly { amount: string | null; paidDate: s
   return { cents, withoutAmount };
 }
 
-/**
- * Widths for the usage gauge, as percentages of its track. `used` is what the meter has used since
- * the last bill, `reference` what the last bill itself billed, `projected` the usage a full
- * billing cycle would reach at the current pace. All in hundredths of a kWh. The scale is the
- * largest of the three plus a little room, so the bar never fills the track edge to edge.
- */
-export function gaugeScale(input: { used: number; reference: number | null; projected: number | null }): {
-  usedPct: number;
-  projectedPct: number;
-  referencePct: number | null;
-} {
-  const used = Math.max(0, input.used);
-  const reference = input.reference === null ? null : Math.max(0, input.reference);
-  const projected = input.projected === null ? null : Math.max(used, input.projected);
-  const top = Math.max(used, reference ?? 0, projected ?? 0) * 1.08;
-  if (top <= 0) return { usedPct: 0, projectedPct: 0, referencePct: reference === null ? null : 0 };
-  const pct = (v: number) => Math.min(100, Math.round((v / top) * 1000) / 10);
-  return {
-    usedPct: pct(used),
-    projectedPct: projected === null ? pct(used) : pct(projected),
-    referencePct: reference === null ? null : pct(reference),
-  };
-}
-
-/** The widest bar share for a row of figures, so a list of bills or readings can draw small comparable bars. 0 when there is nothing to draw. */
-export function barShare(value: number, max: number): number {
-  if (max <= 0 || value <= 0) return 0;
-  return Math.min(100, Math.max(2, Math.round((value / max) * 100)));
-}

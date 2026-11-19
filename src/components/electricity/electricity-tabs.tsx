@@ -8,14 +8,12 @@ import type { ElectricityMeter } from "@/db/schema";
  */
 export function ElectricityTabs({
   meters,
-  toneIndexOf,
   selectedId,
   showBoth,
   archived,
   basePath = "/electricity",
 }: {
   meters: ElectricityMeter[];
-  toneIndexOf: (id: string) => number;
   selectedId: string | null;
   showBoth: boolean;
   archived: boolean;
@@ -24,12 +22,12 @@ export function ElectricityTabs({
   const base = archived ? `${basePath}?archived=1` : basePath;
   const join = archived ? "&" : "?";
   const item = (active: boolean) =>
-    `flex items-center gap-2 rounded-lg px-3.5 py-1.5 text-sm transition-colors ${
-      active ? "bg-background font-medium text-foreground shadow-xs ring-1 ring-border" : "text-muted-foreground hover:text-foreground"
+    `flex min-h-9 items-center gap-2 rounded-[10px] px-3.5 text-sm transition-colors ${
+      active ? "bg-accent font-semibold text-foreground ring-1 ring-primary/45" : "text-muted-foreground hover:text-foreground"
     }`;
 
   return (
-    <nav aria-label="Meters" className="flex w-fit max-w-full flex-wrap gap-1 rounded-xl bg-muted p-1">
+    <nav aria-label="Meters" className="flex w-fit max-w-full flex-wrap gap-1 rounded-xl bg-deepest p-1 ring-1 ring-border">
       {showBoth ? (
         <Link href={base} aria-current={selectedId === null ? "page" : undefined} className={item(selectedId === null)}>
           Both
@@ -42,7 +40,7 @@ export function ElectricityTabs({
           aria-current={selectedId === m.id ? "page" : undefined}
           className={item(selectedId === m.id)}
         >
-          <MeterBadge name={m.name} index={toneIndexOf(m.id)} className="size-5 text-[11px]" />
+          <MeterBadge name={m.name} />
           {m.name}
         </Link>
       ))}
