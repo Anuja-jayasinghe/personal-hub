@@ -251,7 +251,23 @@ Goal: the app looks and works like the Hub vision boards. The spec is `DESIGN.md
 
 People and roles (designed in `HAdmin` and `HAdminPhone`) is built in Phase 5; the Notifications page and a Documents page wait for their own decisions (C63, P39).
 
-## Phase 4 — Daily use
+## Phase S — The owner's quick-fix list (C104)
+
+44 items collected on 2026-11-19 (Home, Electricity, Vehicles, Bills, Reminders, Tasks, Settings, Admin), under three standing rules: no duplication or generic look; one home per action, with configuration kept apart from display; rarely used things tucked away. Steps:
+
+| Step | What |
+|------|------|
+| S.1 | ✅ *(issue #107, C105)* **Shell and Home quick wins**: the J mark links to Home, an icon-only rail with Settings at the bottom, the profile circle at the top right of every app page, "day N of 365", Read the meters inside the Home electricity card, sheets as a larger centred window on desktop, Tasks or Notes in the title |
+| S.2 | **One home per action, and a real Settings**: Electricity display-only (live switch, Manage meters, per-tab Add reading, Add bill and Mark paid leave it); electricity bills handled in Bills; Settings edits meters, the live switch, the slab rules and reminder days (saved in `app_settings`), no "Parts of the hub", currency and time zone display-only, nothing redirects out of Settings |
+| S.3 | **Design round** on the canvas: the meter instrument (merging the board and the slab lines), Home's usage rings, one look for the Bills calendar, the Reminders strip and the 30-day line, the Sri Lankan plate, a photo-first vehicle card, new vehicle and Settings icons |
+| S.4 | **Electricity from the boards**: usage in units only (no price predictions until the tariff is added), the instrument, readings with values on the cycle chart, each meter's share on hover in the monthly chart |
+| S.5 | **Bills**: choose recurring or one-time first; recurring asks for the bill day of the month (stored in the existing `anchor_day`); To pay counts the current period plus anything unpaid; electricity bills by account number; the new calendar in Bills, Reminders and Home |
+| S.6 | **Vehicles**: bigger photo-first cards, the plate, one menu for photo / edit / archive / delete, addresses by plate number (id when there is none), new icons |
+| S.7 | **Data and backup**: CSV downloads from Settings; the full backup stays a command until 4.4 |
+| S.8 | **Admin and sharing** = Phase 5, after hosting (4.2) |
+
+Reminders is reviewed again once there are real items in it.
+
 
 Goal: the hub works from your phone anywhere and reaches you, instead of only showing things while the dev server runs on your Mac. Decisions C61–C64; open details P34–P38 (`DECISIONS.md`). Every piece that touches an outside service is confirmed again when it starts. Suggested order: **4.4 first** (no dependencies, protects your data now), then 4.1, 4.2, 4.3, 4.5.
 
@@ -270,6 +286,9 @@ Risks to keep in mind: the free Vercel plan limits scheduled jobs to once a day 
 Goal: your father and one other person can add readings and see usage, and you control exactly what each person can see and do. Needs the Hub hosted (4.2) and a roles and permissions model on top of the login; the questions to settle first are in P40. Not planned in detail yet.
 
 ## Later (each needs its own decision)
+
+- **Vehicle photo treatment** (C104): make an uploaded photo look its best in-house (no outside AI service), for example cut-out, lighting and the stage around it. For now the photo is shown as it is.
+
 
 - Push notifications (decided against for now, C63)
 - Global search

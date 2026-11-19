@@ -55,12 +55,15 @@ export default function VehiclesPage(props: PageProps<"/vehicles">) {
 
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <PageHeader title="Vehicles" description="Services, licence and insurance renewals, and notes." />
-        <Link href="/vehicles/new" className={buttonVariants()}>
-          Add vehicle
-        </Link>
-      </div>
+      <PageHeader
+        title="Vehicles"
+        description="Services, licence and insurance renewals, and notes."
+        actions={
+          <Link href="/vehicles/new" className={buttonVariants()}>
+            Add vehicle
+          </Link>
+        }
+      />
       <Suspense fallback={<Skeleton className="h-28 w-full rounded-xl" aria-label="Loading vehicles" />}>
         <VehiclesContent searchParams={props.searchParams as Promise<{ archived?: string }>} />
       </Suspense>

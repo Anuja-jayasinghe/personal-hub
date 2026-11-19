@@ -234,7 +234,7 @@ Built from the light logo colours: background #ECF0F5, surface #FFFFFF, raised #
 ## Layout
 
 - **Phone (the main target, 390 px boards):** 16 px side gutter, 12 px between blocks, cards padded 14 px. A fixed bottom bar (84 px) with five tabs: Home, Vehicles, Electricity, Bills, More. Primary action is a full-width blue button, 54 px tall, placed after the information it acts on. Forms open as bottom sheets.
-- **Desktop (1440 px boards):** an 88 px left rail (J mark, seven items with labels, avatar), content padded 28 by 36 px and using the width up to 1600 px (so it suits 80% to 110% browser zoom, C103), 20 px gaps. Electricity and Home use a wide left column and a narrower right one; Settings adds a 224 px sub-menu.
+- **Desktop (1440 px boards):** a 72 px left rail (the J mark linking to Home, six icon-only items, Settings at the bottom; C105) with your profile circle at the top right of each page header, content padded 28 by 36 px and using the width up to 1600 px (so it suits 80% to 110% browser zoom, C103), 20 px gaps. Electricity and Home use a wide left column and a narrower right one; Settings adds a 224 px sub-menu.
 - **Order on every page:** what matters now (hero number), the action, then lists, then history.
 - **Empty states** take the space of the thing they replace, with one line saying what goes there and one action. A section with nothing in it and nothing to do is not shown (for example the vehicle Notes card).
 
@@ -264,7 +264,7 @@ Line icons on a 24 px grid, stroke 1.7, where key ends carry a 1.9 px node (home
 ### Navigation
 
 - **Phone bar (`HubNav`):** five tabs, icon in a 52 by 32 pill plus a 10.5 px label; the current tab gets the Blue Soft pill, blue icon and white label. Background `rgba(13,17,24,.9)` with blur, top border.
-- **Desktop rail (`HubRail`):** J mark, then Home, Electricity, Vehicles, Bills, Reminders, Tasks, Settings, avatar at the bottom.
+- **Desktop rail (`HubRail`, changed by C105):** the J mark (a link to Home), then icon-only Home, Electricity, Vehicles, Bills, Reminders, Tasks; Settings pinned to the bottom. Names show on hover and stay the accessible names. The profile circle is at the top right of every page header, not in the rail.
 - **More tab (`HMore`):** profile card, search, a two-column grid of the other parts (Reminders, Tasks, Notes, Documents, Warranties when on, Activity), then Settings, People and roles, Data and backup, Help, About, Sign out.
 
 ### Buttons, chips, inputs, switches
@@ -301,7 +301,7 @@ A Deepest panel with a dot grid. A "GRID" node at the top feeds a line to each m
 
 ### Sheets, dialogs, messages
 
-- **Bottom sheet:** Surface, 28 px top radius, a 40 by 5 handle, breadcrumb plus title, a close button top right, the primary action last.
+- **Bottom sheet:** Surface, 28 px top radius, a 40 by 5 handle, breadcrumb plus title, a close button top right, the primary action last. On desktop the same content opens as a larger window in the middle of the screen (C105).
 - **Confirm dialog** (Mark paid): an icon drawn as nodes, a question as the title, the amount and the fact it can be undone, "Not yet" and "Yes, paid".
 - **Undo message:** Raised, a green dot, the sentence, a blue Undo button and a 3 px blue bar that drains over 6 seconds.
 - **Offline banner:** Raised strip at the top, amber wifi icon, the time the data is from, Retry.
