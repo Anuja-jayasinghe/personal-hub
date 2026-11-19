@@ -42,6 +42,11 @@ export function todayInAppTz(): string {
   return todayIn(appConfig.timeZone, new Date());
 }
 
+/** The hour it is now (0 to 23) in the app time zone, for the greeting on Home. Request time only. */
+export function hourInAppTz(): number {
+  return Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: appConfig.timeZone }).format(new Date()));
+}
+
 const monthFormatter = new Intl.DateTimeFormat(locale, { month: "short", year: "numeric", timeZone: "UTC" });
 
 /** Formats a "YYYY-MM" month, e.g. "Oct 2026" (the full year, so it is never read as a day). */

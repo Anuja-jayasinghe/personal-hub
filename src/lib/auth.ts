@@ -45,3 +45,12 @@ export async function requireUser(): Promise<{ userId: string; email: string }> 
   if (state.status !== "ok") throw new AuthError("You are not signed in as an allowed user. Reload the page and sign in.");
   return { userId: state.userId, email: state.email };
 }
+
+/** The signed-in person's first name from their account, for the greeting on Home; null when unknown. */
+export async function getFirstName(): Promise<string | null> {
+  const state = await getAuthState();
+  if (state.status !== "ok") return null;
+  const user = await currentUser();
+  const name = user?.firstName?.trim();
+  return name ? name : null;
+}

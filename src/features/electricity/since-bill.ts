@@ -66,25 +66,3 @@ export function sinceLastBill(bills: readonly BillMark[], readings: readonly Rea
     projected: days > 0 ? Math.round((units * cycleDays) / days) : null,
   };
 }
-
-export type Combined = {
-  /** How many meters had a usable figure, out of how many were counted. */
-  counted: number;
-  of: number;
-  units: number;
-  dailyAverage: number;
-  projected: number;
-};
-
-/** Adds up the meters that have a figure (units, daily average and projection are all additive). Null when none do. */
-export function combineUsage(results: readonly SinceLastBill[]): Combined | null {
-  const ok = results.filter((r): r is Extract<SinceLastBill, { state: "ok" }> => r.state === "ok");
-  if (ok.length === 0) return null;
-  return {
-    counted: ok.length,
-    of: results.length,
-    units: ok.reduce((s, r) => s + r.units, 0),
-    dailyAverage: ok.reduce((s, r) => s + (r.dailyAverage ?? 0), 0),
-    projected: ok.reduce((s, r) => s + (r.projected ?? 0), 0),
-  };
-}
