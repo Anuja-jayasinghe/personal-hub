@@ -34,7 +34,7 @@ export async function TasksPanel({
   const owner = scope.kind === "owner" ? scope.owner : null;
 
   return (
-    <section aria-labelledby="tasks-heading" className="flex flex-col gap-4">
+    <section aria-labelledby="tasks-heading" className="flex max-w-4xl flex-col gap-4">
       <div className="flex items-center gap-3">
         <h2 id="tasks-heading" className="font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase">
           {title} · {list.filter((t) => t.status !== "done").length} open

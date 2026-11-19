@@ -11,6 +11,7 @@ import { OfflineBanner } from "@/components/shell/offline-banner";
  * - desktop (md and up): an 88px rail on the left with the J mark, labelled links and your account;
  * - phone: a bar fixed to the bottom with Home, Vehicles, Electricity, Bills and More.
  * It replaces the collapsible sidebar and the slide-out panel (C30, C77; see C95).
+ * The content area uses the width of the window (issue #105), so it fits at 80% to 110% browser zoom.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const rail = railItems();
@@ -33,9 +34,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pt-7 md:pb-10 md:pl-[calc(88px+2.25rem)] md:pr-9">
-        <OfflineBanner />
-        {children}
+      {/* Desktop: the content starts right after the rail, padded 28 × 36 px as on the boards, and uses the
+          width up to 1600 px, centred in what is left on very wide windows (issue #105: it used to be a
+          fixed ~860 px column, which looked oversized at 100% zoom and lost in space at 80%). */}
+      <main className="flex w-full flex-1 flex-col px-4 pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pt-7 md:pr-9 md:pb-10 md:pl-[calc(88px+2.25rem)]">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6">
+          <OfflineBanner />
+          {children}
+        </div>
       </main>
 
       <nav

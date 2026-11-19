@@ -51,7 +51,7 @@ export async function NotesPanel({
           No notes yet.
         </p>
       ) : (
-        <ul className="grid items-start gap-2.5 sm:grid-cols-2">
+        <ul className="grid items-start gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
           {list.map((note) => (
             <NoteItem key={note.id} note={note} files={files.get(note.id) ?? []} ownerLabel={note.ownerType && note.ownerId ? labels.get(`${note.ownerType}:${note.ownerId}`) : undefined} showOwner={scope.kind === "all"} />
           ))}

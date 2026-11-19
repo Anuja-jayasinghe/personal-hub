@@ -234,7 +234,7 @@ Built from the light logo colours: background #ECF0F5, surface #FFFFFF, raised #
 ## Layout
 
 - **Phone (the main target, 390 px boards):** 16 px side gutter, 12 px between blocks, cards padded 14 px. A fixed bottom bar (84 px) with five tabs: Home, Vehicles, Electricity, Bills, More. Primary action is a full-width blue button, 54 px tall, placed after the information it acts on. Forms open as bottom sheets.
-- **Desktop (1440 px boards):** an 88 px left rail (J mark, seven items with labels, avatar), content padded 28 by 36 px, 20 px gaps. Electricity and Home use a wide left column and a narrower right one; Settings adds a 224 px sub-menu.
+- **Desktop (1440 px boards):** an 88 px left rail (J mark, seven items with labels, avatar), content padded 28 by 36 px and using the width up to 1600 px (so it suits 80% to 110% browser zoom, C103), 20 px gaps. Electricity and Home use a wide left column and a narrower right one; Settings adds a 224 px sub-menu.
 - **Order on every page:** what matters now (hero number), the action, then lists, then history.
 - **Empty states** take the space of the thing they replace, with one line saying what goes there and one action. A section with nothing in it and nothing to do is not shown (for example the vehicle Notes card).
 
