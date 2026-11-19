@@ -11,7 +11,7 @@ describe("electricityOccurrences", () => {
     { id: "b3", meterName: "Main", dueDate: null, amount: "100.00" }, // no due date: nothing to show
   ];
 
-  it("turns unpaid bills with a due date into entries that link to the Electricity page", () => {
+  it("turns unpaid bills with a due date into entries that link to their row on the Bills page (C106)", () => {
     const os = electricityOccurrences(bills, TODAY);
     expect(os).toHaveLength(2);
     expect(os[0]).toEqual({
@@ -23,7 +23,7 @@ describe("electricityOccurrences", () => {
       autopay: false,
       overdue: true,
       itemId: null,
-      href: "/electricity",
+      href: "/bills#electricity-bill-b1",
     });
     expect(os[1]).toMatchObject({ date: "2026-11-26", amount: null, overdue: false });
   });

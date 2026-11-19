@@ -81,9 +81,10 @@ export function dueByArea(reminders: readonly ReminderResult[], days: number): A
 /** What first-day setup still needs: each step is done once its records exist (board HStates). */
 export function setupSteps(input: { meters: number; bills: number; readingsSinceBill: number }) {
   return [
-    { key: "meters", title: "Add your meters", hint: "a name and the account number", done: input.meters > 0 },
-    { key: "bill", title: "Type the last bill", hint: "so the hub knows where the cycle starts", done: input.bills > 0 },
-    { key: "reading", title: "Read the meters", hint: "the slab rule lights up", done: input.readingsSinceBill > 0 },
+    // Each step opens the one place where that thing is done (S.2a, C106).
+    { key: "meters", title: "Add your meters", hint: "a name and the account number", done: input.meters > 0, href: "/settings/meters" },
+    { key: "bill", title: "Type the last bill", hint: "so the hub knows where the cycle starts", done: input.bills > 0, href: "/bills#electricity" },
+    { key: "reading", title: "Read the meters", hint: "the slab rule lights up", done: input.readingsSinceBill > 0, href: "/electricity" },
   ] as const;
 }
 

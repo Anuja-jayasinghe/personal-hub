@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { BillItemCard } from "@/components/bills/bill-item-card";
 import { BillsCalendar } from "@/components/bills/bills-calendar";
 import { CommitmentsCard } from "@/components/bills/commitments-card";
+import { ElectricityBills } from "@/components/bills/electricity-bills";
 import { UpcomingList } from "@/components/bills/upcoming-list";
 import { NextDaysLine } from "@/components/home/next-days-line";
 import { AddBillItemSheet } from "@/components/shared/add-sheets";
@@ -14,7 +15,7 @@ import { appConfig, isModuleEnabled } from "@/config/app.config";
 import { electricityOccurrences } from "@/features/bills/electricity";
 import { listBillItems, listPayments } from "@/features/bills/queries";
 import { commitments, lastDayOf, occurrencesOf, toBillLike, upcoming } from "@/features/bills/upcoming";
-import { listUnpaidBillsWithDueDate } from "@/features/electricity/queries";
+import { listAllBills, listMeters, listUnpaidBillsWithDueDate } from "@/features/electricity/queries";
 import { attachmentsByOwner } from "@/features/shared/queries";
 import { occurrenceDays, toPay } from "@/features/bills/line";
 import { addMonths, monthOf } from "@/lib/dates";
@@ -25,10 +26,13 @@ export const metadata: Metadata = { title: "Bills & subscriptions" };
 async function BillsContent({ searchParams }: { searchParams: Promise<{ archived?: string; month?: string }> }) {
   const params = await searchParams;
   const showArchived = params.archived === "1";
-  const [items, archivedItems, unpaidElectricity] = await Promise.all([
+  const electricityOn = !showArchived && isModuleEnabled("electricity");
+  const [items, archivedItems, unpaidElectricity, electricityMeters, electricityBills] = await Promise.all([
     listBillItems(showArchived),
     listBillItems(true),
-    showArchived || !isModuleEnabled("electricity") ? Promise.resolve([]) : listUnpaidBillsWithDueDate(),
+    electricityOn ? listUnpaidBillsWithDueDate() : Promise.resolve([]),
+    electricityOn ? listMeters(false) : Promise.resolve([]),
+    electricityOn ? listAllBills() : Promise.resolve([]),
   ]);
   const files = await attachmentsByOwner("bill_item", items.map((i) => i.id));
   const payments = await listPayments(items.map((i) => i.id));
@@ -42,7 +46,7 @@ async function BillsContent({ searchParams }: { searchParams: Promise<{ archived
   const lastMonth = addMonths(thisMonth, appConfig.bills.calendarMonthsAhead);
   const requested = params.month && /^\d{4}-(0[1-9]|1[0-2])$/.test(params.month) ? params.month : thisMonth;
   const month = requested < thisMonth ? thisMonth : requested > lastMonth ? lastMonth : requested;
-  // Unpaid electricity bills are shown read-only (C57): they are managed on the Electricity page.
+  // Electricity bills are handled here too (C106, reversing C57): due ones join the list, and each meter's bills have their own group below.
   const electricity = electricityOccurrences(unpaidElectricity, today);
   const inMonth = [...bills.flatMap((b) => occurrencesOf(b, today, lastDayOf(month))), ...electricity].filter((o) => monthOf(o.date) === month);
   const soon = upcoming(bills, electricity, today, horizon);
@@ -75,6 +79,7 @@ async function BillsContent({ searchParams }: { searchParams: Promise<{ archived
             prevMonth={month > thisMonth ? addMonths(month, -1) : null}
             nextMonth={month < lastMonth ? addMonths(month, 1) : null}
           />
+          <ElectricityBills meters={electricityMeters} bills={electricityBills} today={today} />
           <h2 className="mt-2 font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase">All bills and subscriptions</h2>
         </>
       ) : null}

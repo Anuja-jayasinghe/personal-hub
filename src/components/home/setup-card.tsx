@@ -6,7 +6,8 @@ type Step = ReturnType<typeof setupSteps>[number];
 /**
  * First-day setup (board HStates): an empty board waiting for its first meter, then the three steps
  * with the next one highlighted. Shown on Home in place of the electricity card until electricity is
- * counting. Every step opens Electricity, where meters, bills and readings are added.
+ * counting. Each step opens the one place where it is done: Settings for meters, Bills for the bill,
+ * Electricity for readings (S.2a).
  */
 export function SetupCard({ steps }: { steps: readonly Step[] }) {
   const next = steps.find((s) => !s.done)?.key;
@@ -44,7 +45,7 @@ export function SetupCard({ steps }: { steps: readonly Step[] }) {
           const current = s.key === next;
           return (
             <li key={s.key} className={i > 0 ? "border-t border-raised" : ""}>
-              <Link href="/electricity" className="flex min-h-16 items-center gap-3 px-4 outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <Link href={s.href} className="flex min-h-16 items-center gap-3 px-4 outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <span
                   className={`flex size-8 shrink-0 items-center justify-center rounded-full font-mono text-xs font-semibold ring-[1.5px] ${
                     s.done ? "bg-status-ok-soft text-status-ok ring-status-ok" : current ? "bg-accent text-foreground ring-primary" : "text-label ring-border"

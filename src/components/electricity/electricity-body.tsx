@@ -1,13 +1,11 @@
 import Link from "next/link";
 import { ElectricityOverview } from "@/components/electricity/electricity-overview";
 import { ElectricityTabs } from "@/components/electricity/electricity-tabs";
-import { MeterForm } from "@/components/electricity/meter-form";
 import { AddBothReadingsButton } from "@/components/electricity/popover-button";
 import { MeterView } from "@/components/electricity/meter-view";
 import { EmptyState } from "@/components/shell/page-header";
 import { appConfig } from "@/config/app.config";
 import type { ElectricityBill, ElectricityMeter, ElectricityReading } from "@/db/schema";
-import { createMeter } from "@/features/electricity/actions";
 import { lastChecked } from "@/features/electricity/last-checked";
 import { computeLimits } from "@/features/electricity/limits";
 import { limitInputFromUsage, limitRulesFromConfig } from "@/features/electricity/limits-input";
@@ -80,7 +78,7 @@ export function ElectricityBody({
       {meters.length === 0 ? (
         <EmptyState
           title={showArchived ? "No archived meters" : "No meters yet"}
-          hint={showArchived ? "Meters you archive show up here with their history." : "Add your electricity meter(s) under Manage meters below, then log readings and bills."}
+          hint={showArchived ? "Meters you archive show up here with their history." : "Add your meters in Settings › Meters and rules, the last bill in Bills, then read the meters here."}
         />
       ) : (
         <>
@@ -117,7 +115,7 @@ export function ElectricityBody({
               check={checks.get(selected.id)!}
             />
           ) : (
-            <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} limits={limits} units={units} nameOf={nameOf} checks={checks} live={live} today={today} />
+            <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} limits={limits} units={units} nameOf={nameOf} checks={checks} live={live} />
           )}
         </>
       )}
@@ -126,22 +124,11 @@ export function ElectricityBody({
         <Link href={basePath} className="text-sm underline-offset-2 hover:underline">
           ← Back to active meters
         </Link>
-      ) : (
-        <details className="@container rounded-2xl border bg-card text-sm" open={meters.length === 0}>
-          <summary className="cursor-pointer px-4 py-2.5 text-muted-foreground">Manage meters</summary>
-          <div className="flex flex-col gap-4 border-t p-4">
-            <div>
-              <h2 className="mb-2 font-medium">Add a meter</h2>
-              <MeterForm action={createMeter} />
-            </div>
-            {archivedCount > 0 ? (
-              <Link href={`${basePath}?archived=1`} className="underline-offset-2 hover:underline">
-                Show archived meters ({archivedCount})
-              </Link>
-            ) : null}
-          </div>
-        </details>
-      )}
+      ) : archivedCount > 0 ? (
+          <Link href={`${basePath}?archived=1`} className="self-start text-sm text-muted-foreground underline-offset-2 hover:underline">
+            Archived meters ({archivedCount})
+          </Link>
+      ) : null}
     </>
   );
 }

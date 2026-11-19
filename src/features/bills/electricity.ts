@@ -1,3 +1,4 @@
+import { electricityBillHref } from "@/features/electricity/links";
 import { toCents } from "@/lib/decimal";
 import type { Occurrence } from "./upcoming";
 
@@ -28,7 +29,7 @@ export function electricityOccurrences(bills: readonly UnpaidElectricityBill[], 
             autopay: false,
             overdue: b.dueDate < today,
             itemId: null,
-            href: "/electricity",
+            href: electricityBillHref(b.id),
           },
         ]
       : [],
