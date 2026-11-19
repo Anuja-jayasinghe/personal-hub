@@ -13,7 +13,19 @@ const LINE_PX = 320;
  * grey for a meter read), and a short label above or below, left out where it would collide. The full
  * list of the same items is there for screen readers, and "Needs you next" shows the nearest ones.
  */
-export function NextDaysLine({ days, windowDays }: { days: TimelineDay[]; windowDays: number }) {
+export function NextDaysLine({
+  days,
+  windowDays,
+  title,
+  link = { href: "/reminders", label: "Reminders" },
+}: {
+  days: TimelineDay[];
+  windowDays: number;
+  /** Defaults to "Next N days". */
+  title?: string;
+  /** The link at the top right; null for none. */
+  link?: { href: string; label: string } | null;
+}) {
   const at = (day: number) => `${(day / windowDays) * 100}%`;
   const toneOf = (d: TimelineDay) => (d.items.some((i) => i.tone === "overdue") ? "overdue" : d.items.some((i) => i.tone === "due") ? "due" : "check");
   const labels = placeLabels(days, windowDays, LINE_PX);
@@ -22,11 +34,13 @@ export function NextDaysLine({ days, windowDays }: { days: TimelineDay[]; window
     <section aria-labelledby="next-days-title" className="flex flex-col gap-2 rounded-2xl border bg-card px-4 pt-3 pb-2.5">
       <div className="flex items-baseline">
         <h2 id="next-days-title" className="font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase">
-          Next {windowDays} days
+          {title ?? `Next ${windowDays} days`}
         </h2>
-        <Link href="/reminders" className="ml-auto text-xs font-semibold text-primary hover:underline">
-          Reminders
-        </Link>
+        {link ? (
+          <Link href={link.href} className="ml-auto text-xs font-semibold text-primary hover:underline">
+            {link.label}
+          </Link>
+        ) : null}
       </div>
 
       {days.length === 0 ? (

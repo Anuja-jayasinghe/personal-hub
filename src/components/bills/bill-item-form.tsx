@@ -15,19 +15,23 @@ type Props = {
   item?: BillItem;
   /** Add: pre-filled next due date, usually today in the app time zone. */
   defaultDate?: string;
+  /** Called after a successful save, e.g. to close the sheet the form sits in. */
+  onDone?: () => void;
 };
 
 const selectClass =
-  "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50";
+  "h-11 w-full rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30";
 
 /** Add / edit form for a bill or subscription (createBillItem / updateBillItem). */
-export function BillItemForm({ action, item, defaultDate }: Props) {
+export function BillItemForm({ action, item, defaultDate, onDone }: Props) {
   const [state, formAction] = useActionState(action, initialActionState);
   const { formRef, onSubmit } = useKeepValuesOnError(state);
 
   useEffect(() => {
-    if (state.ok && !item) formRef.current?.reset();
-  }, [formRef, state, item]);
+    if (!state.ok) return;
+    if (!item) formRef.current?.reset();
+    onDone?.();
+  }, [formRef, state, item, onDone]);
 
   return (
     <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
@@ -88,9 +92,15 @@ export function BillItemForm({ action, item, defaultDate }: Props) {
           {state.error}
         </p>
       ) : null}
-      <div>
-        <SubmitButton pendingLabel="Saving…">{item ? "Save changes" : "Add item"}</SubmitButton>
-      </div>
+      {item ? (
+        <div>
+          <SubmitButton pendingLabel="Saving…">Save changes</SubmitButton>
+        </div>
+      ) : (
+        <SubmitButton pendingLabel="Saving…" size="lg" className="w-full">
+          Save
+        </SubmitButton>
+      )}
     </form>
   );
 }

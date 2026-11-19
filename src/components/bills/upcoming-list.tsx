@@ -1,66 +1,64 @@
-import { CalendarClock } from "lucide-react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { describeDays } from "@/features/reminders/engine";
 import { daysUntil, type Occurrence } from "@/features/bills/upcoming";
 import { formatDate, formatMoney } from "@/lib/format";
 
 const SHOWN = 10;
 
-function UpcomingRow({ o, today }: { o: Occurrence; today: string }) {
+function UpcomingRow({ o, today, first }: { o: Occurrence; today: string; first: boolean }) {
   const d = daysUntil(today, o);
+  const tone = o.overdue ? "overdue" : d <= 7 ? "soon" : "later";
   return (
-    <li className="px-3 py-2">
-      <div className="flex items-baseline justify-between gap-3">
-        <Link href={o.href} className="min-w-0 truncate font-medium underline-offset-2 hover:underline">
-          {o.title}
-        </Link>
-        <span className={`shrink-0 text-sm ${o.overdue ? "font-medium text-status-overdue" : d <= 7 ? "text-status-soon" : "text-muted-foreground"}`}>{describeDays(d)}</span>
-      </div>
-      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <Badge variant="outline">{o.kind === "electricity" ? "Electricity" : o.kind === "subscription" ? "Subscription" : "Bill"}</Badge>
-        {o.autopay ? <Badge variant="secondary">Autopay</Badge> : null}
-        <span>{formatDate(o.date)}</span>
-        {o.amount !== null ? <span>· {formatMoney(o.amount / 100)}</span> : null}
-      </div>
+    <li className={first ? "" : "border-t border-raised"}>
+      <Link href={o.href} className="flex min-h-15 items-center gap-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <span aria-hidden className={`size-2.5 shrink-0 rounded-full ${tone === "overdue" ? "bg-status-overdue" : tone === "soon" ? "bg-status-soon-mark" : "bg-label"}`} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[15px] font-semibold">{o.title}</span>
+          <span className="block truncate font-mono text-[10.5px] tracking-wide text-label uppercase">
+            {o.kind === "electricity" ? "Electricity" : o.kind === "subscription" ? "Subscription" : "Bill"}
+            {o.autopay ? " · autopay" : ""} · {formatDate(o.date)}
+          </span>
+        </span>
+        <span className="flex shrink-0 flex-col items-end gap-0.5">
+          {o.amount !== null ? <span className="font-mono text-[13px] font-semibold tabular-nums">{formatMoney(o.amount / 100)}</span> : null}
+          <span className={`font-mono text-[10.5px] uppercase ${tone === "overdue" ? "text-status-overdue" : tone === "soon" ? "text-status-soon" : "text-muted-foreground"}`}>
+            {describeDays(d)}
+          </span>
+        </span>
+      </Link>
     </li>
   );
 }
 
-/** What is overdue and what is due in the next few weeks, soonest first. */
+/** What is overdue and what is due in the next few weeks, soonest first (restyled in R.5b, board HBills). */
 export function UpcomingList({ occurrences, today, days }: { occurrences: Occurrence[]; today: string; days: number }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CalendarClock className="size-4" aria-hidden /> Upcoming
-        </CardTitle>
-        <CardDescription>Overdue items and everything due in the next {days} days. Unpaid electricity bills are shown here too; they are managed on the Electricity page.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {occurrences.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing due in the next {days} days.</p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            <ul className="flex flex-col divide-y rounded-lg border">
-              {occurrences.slice(0, SHOWN).map((o) => (
-                <UpcomingRow key={o.key} o={o} today={today} />
-              ))}
-            </ul>
-            {occurrences.length > SHOWN ? (
-              <details className="rounded-lg border">
-                <summary className="cursor-pointer px-3 py-1.5 text-sm text-muted-foreground">Show {occurrences.length - SHOWN} more</summary>
-                <ul className="flex flex-col divide-y border-t">
-                  {occurrences.slice(SHOWN).map((o) => (
-                    <UpcomingRow key={o.key} o={o} today={today} />
-                  ))}
-                </ul>
-              </details>
-            ) : null}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <section aria-labelledby="upcoming-title" className="flex flex-col rounded-2xl border bg-card px-4 pt-3 pb-1">
+      <h2 id="upcoming-title" className="font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase">
+        Due
+      </h2>
+      <p className="pb-1 text-xs text-muted-foreground">Electricity bills show here too; they are managed on the Electricity page.</p>
+      {occurrences.length === 0 ? (
+        <p className="border-t border-raised py-3 text-sm text-muted-foreground">Nothing due in the next {days} days.</p>
+      ) : (
+        <>
+          <ul>
+            {occurrences.slice(0, SHOWN).map((o, i) => (
+              <UpcomingRow key={o.key} o={o} today={today} first={i === 0} />
+            ))}
+          </ul>
+          {occurrences.length > SHOWN ? (
+            <details className="border-t border-raised">
+              <summary className="cursor-pointer py-2.5 text-sm text-muted-foreground">Show {occurrences.length - SHOWN} more</summary>
+              <ul>
+                {occurrences.slice(SHOWN).map((o) => (
+                  <UpcomingRow key={o.key} o={o} today={today} first={false} />
+                ))}
+              </ul>
+            </details>
+          ) : null}
+        </>
+      )}
+    </section>
   );
 }

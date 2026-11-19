@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
 import { NotesPanel } from "@/components/shared/notes-panel";
 import { TasksPanel } from "@/components/shared/tasks-panel";
@@ -17,23 +18,45 @@ function PanelSkeleton() {
   );
 }
 
-/**
- * Standalone tasks and notes (DECISIONS C35). Scope is "all": today that means standalone items;
- * as modules start attaching tasks and notes to their records, those show up here too, labelled
- * with their owner type.
- */
-export default function TasksPage() {
+const VIEWS = [
+  { key: "tasks", label: "Tasks", href: "/tasks" },
+  { key: "notes", label: "Notes", href: "/tasks?view=notes" },
+] as const;
+
+async function TasksContent({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
+  const { view } = await searchParams;
+  const current = view === "notes" ? "notes" : "tasks";
   return (
     <>
-      <PageHeader
-        title="Tasks & notes"
-        description="Everything you need to do or remember, in one place. Files can be attached to any task or note."
-      />
+      <nav aria-label="Tasks or notes" className="grid grid-cols-2 gap-1 rounded-xl bg-deepest p-1 ring-1 ring-border sm:w-80">
+        {VIEWS.map((v) => (
+          <Link
+            key={v.key}
+            href={v.href}
+            aria-current={v.key === current ? "page" : undefined}
+            className={`flex min-h-10 items-center justify-center rounded-[10px] text-sm transition-colors ${
+              v.key === current ? "bg-accent font-semibold text-foreground ring-1 ring-primary/45" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {v.label}
+          </Link>
+        ))}
+      </nav>
+      <Suspense fallback={<PanelSkeleton />}>{current === "notes" ? <NotesPanel scope={{ kind: "all" }} /> : <TasksPanel scope={{ kind: "all" }} />}</Suspense>
+    </>
+  );
+}
+
+/**
+ * Standalone tasks and notes (DECISIONS C35; R.5b, board HTasksNotes): one switcher, then either list.
+ * Scope is "all": standalone items plus anything attached to a record, labelled with its owner.
+ */
+export default function TasksPage(props: PageProps<"/tasks">) {
+  return (
+    <>
+      <PageHeader title="Tasks & notes" description="Everything you need to do or remember. Files can be attached to any task or note." />
       <Suspense fallback={<PanelSkeleton />}>
-        <TasksPanel scope={{ kind: "all" }} />
-      </Suspense>
-      <Suspense fallback={<PanelSkeleton />}>
-        <NotesPanel scope={{ kind: "all" }} />
+        <TasksContent searchParams={props.searchParams as Promise<{ view?: string }>} />
       </Suspense>
     </>
   );

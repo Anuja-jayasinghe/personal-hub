@@ -13,16 +13,20 @@ type Props = {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
   owner?: OwnerRef | null;
   note?: Note;
+  /** Called after a successful save, e.g. to close the sheet the form sits in. */
+  onDone?: () => void;
 };
 
 /** Create / edit form for a note. Works with the createNote and updateNote Server Actions. */
-export function NoteForm({ action, owner, note }: Props) {
+export function NoteForm({ action, owner, note, onDone }: Props) {
   const [state, formAction] = useActionState(action, initialActionState);
   const { formRef, onSubmit } = useKeepValuesOnError(state);
 
   useEffect(() => {
-    if (state.ok && !note) formRef.current?.reset();
-  }, [formRef, state, note]);
+    if (!state.ok) return;
+    if (!note) formRef.current?.reset();
+    onDone?.();
+  }, [formRef, state, note, onDone]);
 
   return (
     <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
@@ -49,9 +53,15 @@ export function NoteForm({ action, owner, note }: Props) {
         </p>
       ) : null}
 
-      <div>
-        <SubmitButton pendingLabel="Saving…">{note ? "Save changes" : "Add note"}</SubmitButton>
-      </div>
+      {note ? (
+        <div>
+          <SubmitButton pendingLabel="Saving…">Save changes</SubmitButton>
+        </div>
+      ) : (
+        <SubmitButton pendingLabel="Saving…" size="lg" className="w-full">
+          Save note
+        </SubmitButton>
+      )}
     </form>
   );
 }

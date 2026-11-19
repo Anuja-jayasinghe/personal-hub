@@ -1,5 +1,3 @@
-import { Wallet } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FREQUENCY_LABELS } from "@/features/bills/schedule";
 import type { Commitments } from "@/features/bills/upcoming";
 import { formatMoney } from "@/lib/format";
@@ -9,20 +7,19 @@ const money = (hundredths: number) => formatMoney(hundredths / 100);
 /** What your recurring bills and subscriptions cost per month (and per year), item by item. */
 export function CommitmentsCard({ data }: { data: Commitments }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Wallet className="size-4" aria-hidden /> Monthly commitments
-        </CardTitle>
-        <CardDescription>Recurring items with a usual amount, converted to a monthly figure.</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+    <section aria-labelledby="commitments-title" className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
+      <div>
+        <h2 id="commitments-title" className="font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase">
+          Monthly commitments
+        </h2>
+        <p className="text-xs text-muted-foreground">Recurring items with a usual amount, as a monthly figure.</p>
+      </div>
         {data.lines.length === 0 ? (
           <p className="text-sm text-muted-foreground">Give your recurring bills and subscriptions a usual amount to see what they add up to.</p>
         ) : (
           <>
             <div>
-              <p className="text-2xl font-semibold">{money(data.total)} <span className="text-sm font-normal text-muted-foreground">a month</span></p>
+              <p className="flex items-baseline gap-2"><span className="font-display text-3xl font-semibold tracking-tight">{money(data.total)}</span> <span className="text-sm text-muted-foreground">a month</span></p>
               <p className="text-sm text-muted-foreground">
                 About {money(data.perYear)} a year · Bills {money(data.bills)} · Subscriptions {money(data.subscriptions)}
               </p>
@@ -48,7 +45,6 @@ export function CommitmentsCard({ data }: { data: Commitments }) {
           </p>
         ) : null}
         <p className="text-xs text-muted-foreground">One-off items and electricity bills (their amount varies) are not included.</p>
-      </CardContent>
-    </Card>
+    </section>
   );
 }

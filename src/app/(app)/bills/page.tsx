@@ -3,21 +3,22 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { BillItemCard } from "@/components/bills/bill-item-card";
-import { BillItemForm } from "@/components/bills/bill-item-form";
 import { BillsCalendar } from "@/components/bills/bills-calendar";
 import { CommitmentsCard } from "@/components/bills/commitments-card";
 import { UpcomingList } from "@/components/bills/upcoming-list";
+import { NextDaysLine } from "@/components/home/next-days-line";
+import { AddBillItemSheet } from "@/components/shared/add-sheets";
 import { EmptyState, PageHeader } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { appConfig, isModuleEnabled } from "@/config/app.config";
-import { createBillItem } from "@/features/bills/actions";
 import { electricityOccurrences } from "@/features/bills/electricity";
 import { listBillItems, listPayments } from "@/features/bills/queries";
 import { commitments, lastDayOf, occurrencesOf, toBillLike, upcoming } from "@/features/bills/upcoming";
 import { listUnpaidBillsWithDueDate } from "@/features/electricity/queries";
 import { attachmentsByOwner } from "@/features/shared/queries";
+import { occurrenceDays, toPay } from "@/features/bills/line";
 import { addMonths, monthOf } from "@/lib/dates";
-import { todayInAppTz } from "@/lib/format";
+import { formatMoney, todayInAppTz } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Bills & subscriptions" };
 
@@ -44,13 +45,27 @@ async function BillsContent({ searchParams }: { searchParams: Promise<{ archived
   // Unpaid electricity bills are shown read-only (C57): they are managed on the Electricity page.
   const electricity = electricityOccurrences(unpaidElectricity, today);
   const inMonth = [...bills.flatMap((b) => occurrencesOf(b, today, lastDayOf(month))), ...electricity].filter((o) => monthOf(o.date) === month);
+  const soon = upcoming(bills, electricity, today, horizon);
+  const due = toPay(soon);
 
   return (
     <>
       {!showArchived ? (
         <>
+          <section aria-label={`To pay in the next ${horizon} days`} className="flex flex-col gap-1 rounded-3xl border border-raised bg-deepest p-4 md:p-5">
+            <div className="flex items-baseline font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">
+              <span>To pay</span>
+              <span className="ml-auto">Next {horizon} days</span>
+            </div>
+            <p className="font-display text-4xl leading-none font-semibold tracking-tight md:text-5xl">{formatMoney(due.cents / 100)}</p>
+            <p className="text-sm text-muted-foreground">
+              {soon.length === 0 ? "Nothing due." : `${soon.length} payment${soon.length === 1 ? "" : "s"}`}
+              {due.withoutAmount > 0 ? `, ${due.withoutAmount} without an amount` : ""}
+            </p>
+          </section>
+          <NextDaysLine days={occurrenceDays(soon, today, horizon)} windowDays={horizon} title={`Due in the next ${horizon} days`} link={null} />
           <div className="grid gap-4 lg:grid-cols-2">
-            <UpcomingList occurrences={upcoming(bills, electricity, today, horizon)} today={today} days={horizon} />
+            <UpcomingList occurrences={soon} today={today} days={horizon} />
             <CommitmentsCard data={commitments(bills)} />
           </div>
           <BillsCalendar
@@ -60,17 +75,14 @@ async function BillsContent({ searchParams }: { searchParams: Promise<{ archived
             prevMonth={month > thisMonth ? addMonths(month, -1) : null}
             nextMonth={month < lastMonth ? addMonths(month, 1) : null}
           />
-          <h2 className="mt-2 text-lg font-medium">All bills and subscriptions</h2>
+          <h2 className="mt-2 font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase">All bills and subscriptions</h2>
         </>
       ) : null}
 
       {!showArchived ? (
-        <details className="rounded-lg border">
-          <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">Add a bill or subscription</summary>
-          <div className="border-t p-4">
-            <BillItemForm action={createBillItem} defaultDate={today} />
-          </div>
-        </details>
+        <div>
+          <AddBillItemSheet defaultDate={today} />
+        </div>
       ) : null}
 
       {items.length === 0 ? (
