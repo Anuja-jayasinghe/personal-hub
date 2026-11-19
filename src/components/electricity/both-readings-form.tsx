@@ -46,13 +46,13 @@ export function BothReadingsForm({ meters, defaultDate, onDone }: { meters: Mete
         const preview = previewReading(m.lastValue, typed[m.id] ?? "");
         const hintId = `reading-hint-${m.id}`;
         return (
-          <div key={m.id} className="flex flex-col gap-1.5">
+          <div key={m.id} className="flex flex-col gap-2 rounded-2xl bg-background p-3.5 ring-1 ring-border has-[[aria-invalid=true]]:ring-destructive">
             <label htmlFor={`reading-${m.id}`} className="flex items-center gap-2 text-sm font-medium">
-              <MeterBadge name={m.name} index={m.toneIndex} />
+              <MeterBadge name={m.name} />
               {m.name}
               {m.lastValue !== null && m.lastDate ? (
-                <span className="ml-auto text-xs font-normal text-muted-foreground">
-                  last {formatKwh(m.lastValue)} on {formatDate(m.lastDate)}
+                <span className="ml-auto font-mono text-[11px] font-normal text-label">
+                  last {formatKwh(m.lastValue)} · {formatDate(m.lastDate)}
                 </span>
               ) : null}
             </label>
@@ -65,17 +65,17 @@ export function BothReadingsForm({ meters, defaultDate, onDone }: { meters: Mete
               aria-describedby={hintId}
               aria-invalid={preview.state === "lower" || preview.state === "invalid" ? true : undefined}
               onChange={(e) => setTyped((t) => ({ ...t, [m.id]: e.target.value }))}
-              className="h-12 text-lg tabular-nums"
+              className="h-14 font-mono text-2xl font-semibold tracking-[0.12em] tabular-nums"
             />
-            <p id={hintId} aria-live="polite" className="min-h-5 text-sm">
+            <p id={hintId} aria-live="polite" className="min-h-5 text-[13px] font-medium">
               {preview.state === "ok" && preview.delta !== null ? (
-                <span className="text-emerald-700 dark:text-emerald-300">+{formatKwh(preview.delta)} since the last reading</span>
+                <span className="text-status-ok">+{formatKwh(preview.delta)} since the last reading</span>
               ) : null}
               {preview.state === "lower" ? (
                 <span className="text-destructive">Lower than the last reading ({formatKwh(preview.last)}). Check the number.</span>
               ) : null}
               {preview.state === "invalid" ? <span className="text-destructive">Enter a number like 17489 or 17489.5.</span> : null}
-              {preview.state === "empty" ? <span className="text-muted-foreground">Leave empty to skip this meter.</span> : null}
+              {preview.state === "empty" ? <span className="font-normal text-muted-foreground">Leave empty to skip this meter.</span> : null}
             </p>
           </div>
         );
@@ -92,9 +92,9 @@ export function BothReadingsForm({ meters, defaultDate, onDone }: { meters: Mete
         </p>
       ) : null}
 
-      <div>
-        <SubmitButton pendingLabel="Saving…">Save readings</SubmitButton>
-      </div>
+      <SubmitButton pendingLabel="Saving…" size="lg" className="w-full">
+        Save readings
+      </SubmitButton>
     </form>
   );
 }

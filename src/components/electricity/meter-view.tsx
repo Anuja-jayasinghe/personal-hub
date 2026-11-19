@@ -4,6 +4,7 @@ import { BillForm } from "@/components/electricity/bill-form";
 import { MeterForm } from "@/components/electricity/meter-form";
 import { LastCheckedLine } from "@/components/electricity/last-checked-line";
 import { LimitChips } from "@/components/electricity/limit-chips";
+import { MarkPaidButton, PaidStamp } from "@/components/electricity/mark-paid";
 import { MeterBadge } from "@/components/electricity/meter-tone";
 import { MonthlyChart } from "@/components/electricity/monthly-chart";
 import { AddBillButton, AddReadingButton, PopoverButton } from "@/components/electricity/popover-button";
@@ -11,14 +12,12 @@ import { ReadingForm } from "@/components/electricity/reading-form";
 import { SlabRule } from "@/components/electricity/slab-rule";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import type { ElectricityBill, ElectricityMeter, ElectricityReading } from "@/db/schema";
 import {
   archiveMeter,
   deleteBill,
   deleteMeter,
   deleteReading,
-  markBillPaid,
   markBillUnpaid,
   unarchiveMeter,
   updateBill,
@@ -54,8 +53,9 @@ function CycleFacts({ days, perDay, from }: { days: number | null; perDay: numbe
   );
 }
 
-function BillRow({ bill, today }: { bill: ElectricityBill; today: string }) {
+function BillRow({ bill, today, meterName }: { bill: ElectricityBill; today: string; meterName: string }) {
   const status = billStatus(bill, today);
+  const month = formatMonth(monthOf(bill.readingDate));
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-raised py-2.5 text-sm">
       <span className="min-w-40 flex-1 whitespace-nowrap">
@@ -63,7 +63,7 @@ function BillRow({ bill, today }: { bill: ElectricityBill; today: string }) {
         <span className="text-muted-foreground"> · {formatKwh(toCents(bill.units))}</span>
       </span>
       {bill.amount !== null ? <span className="font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums">{formatMoney(Number(bill.amount))}</span> : null}
-      <BillChip status={status} />
+      {status.state === "paid" ? <PaidStamp billId={bill.id} /> : <BillChip status={status} />}
       <span className="ml-auto">
       <PopoverButton variant="ghost" icon="more" ariaLabel={`Actions for the ${formatDate(bill.billDate)} bill`} align="end">
         <div className="flex flex-col gap-2 p-1">
@@ -73,13 +73,13 @@ function BillRow({ bill, today }: { bill: ElectricityBill; today: string }) {
               <SubmitButton variant="outline" size="sm">Mark unpaid</SubmitButton>
             </form>
           ) : (
-            <form action={markBillPaid} className="flex flex-wrap items-center gap-2">
-              <input type="hidden" name="id" value={bill.id} />
-              <Input type="date" name="paidDate" defaultValue={today} aria-label="Paid on" className="w-40" />
-              <SubmitButton size="sm" confirm={`Mark the ${formatMonth(monthOf(bill.readingDate))} bill${bill.amount !== null ? ` (${formatMoney(Number(bill.amount))})` : ""} as paid? You can undo it.`}>
-                Mark paid
-              </SubmitButton>
-            </form>
+            <MarkPaidButton
+              billId={bill.id}
+              what={`${meterName}'s ${month} bill`}
+              amount={bill.amount !== null ? formatMoney(Number(bill.amount)) : null}
+              today={today}
+              size="sm"
+            />
           )}
           <details className="rounded-md border">
             <summary className="cursor-pointer px-3 py-1.5 text-sm">Edit this bill</summary>
@@ -239,7 +239,7 @@ export function MeterView({
               </span>
             </p>
             <p className="mt-1.5 flex flex-wrap items-center gap-2">
-              <BillChip status={lastStatus} />
+              {lastStatus.state === "paid" ? <PaidStamp billId={last.id} /> : <BillChip status={lastStatus} />}
               {lastStatus.state === "paid" ? (
                 <span className="text-xs text-muted-foreground">paid on {formatDate(lastStatus.paidDate)}</span>
               ) : last.dueDate ? (
@@ -256,15 +256,13 @@ export function MeterView({
                 </SubmitButton>
               </form>
             ) : (
-              <form action={markBillPaid}>
-                <input type="hidden" name="id" value={last.id} />
-                <SubmitButton
-                  size="lg"
-                  confirm={`Mark the ${formatMonth(monthOf(last.readingDate))} bill${last.amount !== null ? ` (${formatMoney(Number(last.amount))})` : ""} as paid today? You can undo it.`}
-                >
-                  Mark paid
-                </SubmitButton>
-              </form>
+              <MarkPaidButton
+                billId={last.id}
+                what={`${meter.name}'s ${formatMonth(monthOf(last.readingDate))} bill`}
+                amount={last.amount !== null ? formatMoney(Number(last.amount)) : null}
+                today={today}
+                size="lg"
+              />
             )
           ) : null}
         </section>
@@ -272,8 +270,8 @@ export function MeterView({
 
       {active ? (
         <div className="flex flex-wrap gap-2">
-          <AddReadingButton meterId={meter.id} defaultDate={today} />
-          <AddBillButton meterId={meter.id} defaultDate={today} defaultPrevious={last?.currentReading} previousDate={last?.readingDate} />
+          <AddReadingButton meterId={meter.id} meterName={meter.name} defaultDate={today} />
+          <AddBillButton meterId={meter.id} meterName={meter.name} defaultDate={today} defaultPrevious={last?.currentReading} previousDate={last?.readingDate} />
         </div>
       ) : null}
 
@@ -288,7 +286,7 @@ export function MeterView({
             <>
               <ul>
                 {bills.slice(0, SHOWN).map((b) => (
-                  <BillRow key={b.id} bill={b} today={today} />
+                  <BillRow key={b.id} bill={b} today={today} meterName={meter.name} />
                 ))}
               </ul>
               {bills.length > SHOWN ? (
@@ -298,7 +296,7 @@ export function MeterView({
                   </summary>
                   <ul>
                     {bills.slice(SHOWN).map((b) => (
-                      <BillRow key={b.id} bill={b} today={today} />
+                      <BillRow key={b.id} bill={b} today={today} meterName={meter.name} />
                     ))}
                   </ul>
                 </details>
