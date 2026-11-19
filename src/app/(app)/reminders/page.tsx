@@ -1,3 +1,4 @@
+import { getRules } from "@/features/settings/queries";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ReminderList } from "@/components/reminders/reminder-list";
@@ -23,7 +24,7 @@ const groupOrder: ReminderLevel[] = ["overdue", "today", "soon", "upcoming"];
 async function Reminders() {
   const { today, results, failedSources } = await getReminders();
   const groups = groupByLevel(results);
-  const { leadDays } = appConfig.reminders;
+  const { leadDays } = await getRules();
   const strip = reminderStrip(results, today);
 
   return (
@@ -79,7 +80,7 @@ export default function RemindersPage() {
     <>
       <PageHeader
         title="Reminders"
-        description={`Everything overdue or coming up in the next ${Math.max(...appConfig.reminders.leadDays)} days, across all modules.`}
+        description="Everything overdue or coming up soon, across all modules."
       />
       <Suspense
         fallback={

@@ -69,13 +69,3 @@ export function RowMeta({ children, tone = "label" }: { children: React.ReactNod
   const colour = { label: "text-label", blue: "text-primary", ok: "text-status-ok", quiet: "text-quiet" }[tone];
   return <span className={`shrink-0 font-mono text-[10.5px] tracking-[0.12em] uppercase ${colour}`}>{children}</span>;
 }
-
-/** A setting's value, read-only: the number in Oxanium with its unit (the stepper on the board, without − and +). */
-export function RuleValue({ value, unit }: { value: number | string; unit?: string }) {
-  return (
-    <span className="flex shrink-0 items-baseline gap-1.5 rounded-xl border bg-background px-3 py-1.5">
-      <span className="font-display text-xl leading-none font-semibold tabular-nums">{value}</span>
-      {unit ? <span className="font-mono text-[10px] tracking-[0.12em] text-label uppercase">{unit}</span> : null}
-    </span>
-  );
-}

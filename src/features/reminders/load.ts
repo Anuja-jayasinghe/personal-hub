@@ -1,6 +1,6 @@
+import { getRules } from "@/features/settings/queries";
 import "server-only";
 import { connection } from "next/server";
-import { appConfig } from "@/config/app.config";
 import { todayInAppTz } from "@/lib/format";
 import { computeReminders, type ReminderResult } from "./engine";
 import { reminderSources } from "./sources";
@@ -30,5 +30,5 @@ export async function getReminders(): Promise<RemindersData> {
     return [reminderSources[i].label];
   });
 
-  return { today, results: computeReminders(items, today, appConfig.reminders.leadDays), failedSources };
+  return { today, results: computeReminders(items, today, (await getRules()).leadDays), failedSources };
 }

@@ -4,12 +4,12 @@ import { ElectricityTabs } from "@/components/electricity/electricity-tabs";
 import { AddBothReadingsButton } from "@/components/electricity/popover-button";
 import { MeterView } from "@/components/electricity/meter-view";
 import { EmptyState } from "@/components/shell/page-header";
-import { appConfig } from "@/config/app.config";
 import type { ElectricityBill, ElectricityMeter, ElectricityReading } from "@/db/schema";
 import { lastChecked } from "@/features/electricity/last-checked";
 import { computeLimits } from "@/features/electricity/limits";
 import { limitInputFromUsage, limitRulesFromConfig } from "@/features/electricity/limits-input";
 import type { LiveMeter } from "@/features/electricity/live";
+import { unitsOf, type HubRules } from "@/features/settings/rules";
 import { describeMeter } from "@/features/electricity/meter-data";
 
 /**
@@ -26,6 +26,7 @@ export function ElectricityBody({
   readings,
   bills,
   live = null,
+  rules,
   today,
   showArchived,
   meterParam,
@@ -38,6 +39,8 @@ export function ElectricityBody({
   bills: ElectricityBill[];
   /** The meter carrying the house (issue #69), among the active meters; null when not set. */
   live?: LiveMeter | null;
+  /** The rules in force (Settings, C107). */
+  rules: HubRules;
   today: string;
   showArchived: boolean;
   meterParam: string | undefined;
@@ -52,22 +55,22 @@ export function ElectricityBody({
         bills: bills.filter((b) => b.meterId === m.id),
         readings: readings.filter((r) => r.meterId === m.id),
         today,
-        cycleDays: appConfig.electricity.billingCycleDays,
+        cycleDays: rules.billingCycleDays,
       }),
     ]),
   );
 
   // The 120 / 180 rule (C82): worked out across the active meters; an archived meter is looked at on its own.
-  const rules = limitRulesFromConfig();
-  const units = { low: appConfig.electricity.limits.lowUnits, high: appConfig.electricity.limits.highUnits };
+  const limitRules = limitRulesFromConfig(rules);
+  const units = unitsOf(rules);
   const inputs = meters.map((m) => limitInputFromUsage(m.id, data.get(m.id)!.usage));
-  const limits = computeLimits(inputs, rules);
+  const limits = computeLimits(inputs, limitRules);
   const limitFor = (id: string) =>
-    showArchived ? computeLimits(inputs.filter((i) => i.id === id), rules).meters[0] : limits.meters.find((l) => l.id === id)!;
+    showArchived ? computeLimits(inputs.filter((i) => i.id === id), limitRules).meters[0] : limits.meters.find((l) => l.id === id)!;
   const nameOf = (id: string) => meters.find((m) => m.id === id)?.name ?? "Meter";
 
   // When each meter was last read by a person (2b.4).
-  const checks = new Map(meters.map((m) => [m.id, lastChecked(data.get(m.id)!.readingRows[0]?.date ?? null, today, appConfig.electricity.checkEveryDays)]));
+  const checks = new Map(meters.map((m) => [m.id, lastChecked(data.get(m.id)!.readingRows[0]?.date ?? null, today, rules.checkEveryDays)]));
 
   const picked = meters.find((m) => m.id === meterParam) ?? null;
   const selected = picked ?? (showArchived ? (meters[0] ?? null) : null);
@@ -115,7 +118,7 @@ export function ElectricityBody({
               check={checks.get(selected.id)!}
             />
           ) : (
-            <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} limits={limits} units={units} nameOf={nameOf} checks={checks} live={live} />
+            <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} limits={limits} units={units} nameOf={nameOf} checks={checks} live={live} cycleDays={rules.billingCycleDays} />
           )}
         </>
       )}

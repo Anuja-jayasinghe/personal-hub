@@ -1,3 +1,4 @@
+import { getRules } from "@/features/settings/queries";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { AddBothReadingsButton } from "@/components/electricity/popover-button";
@@ -8,7 +9,7 @@ import { NextDaysLine } from "@/components/home/next-days-line";
 import { SetupCard } from "@/components/home/setup-card";
 import { HeaderAccount, PhoneMark } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { appConfig, isModuleEnabled } from "@/config/app.config";
+import { isModuleEnabled } from "@/config/app.config";
 import { listAllBills, listAllReadings, listLiveSwitches, listMeters } from "@/features/electricity/queries";
 import { electricitySnapshot } from "@/features/electricity/snapshot";
 import { dayOfYear, dayStamp, dueByArea, greetingFor, meterCheckDue, nextDays, setupSteps } from "@/features/home/home";
@@ -28,17 +29,18 @@ const NEXT_SHOWN = 4;
 async function HomeContent() {
   await connection();
   const electricityOn = isModuleEnabled("electricity");
-  const [meters, readings, bills, switches, reminders, firstName] = await Promise.all([
+  const [meters, readings, bills, switches, reminders, firstName, rules] = await Promise.all([
     electricityOn ? listMeters(false) : Promise.resolve([]),
     electricityOn ? listAllReadings() : Promise.resolve([]),
     electricityOn ? listAllBills() : Promise.resolve([]),
     electricityOn ? listLiveSwitches() : Promise.resolve([]),
     getReminders(),
     getFirstName(),
+    getRules(),
   ]);
   const { today, results } = reminders;
-  const snap = electricitySnapshot({ meters, readings, bills, switches, today });
-  const { checkEveryDays } = appConfig.electricity;
+  const snap = electricitySnapshot({ meters, readings, bills, switches, rules, today });
+  const { checkEveryDays } = rules;
   const year = dayOfYear(today);
 
   // First day: until every meter has a bill and a reading after it, Home shows the setup steps.

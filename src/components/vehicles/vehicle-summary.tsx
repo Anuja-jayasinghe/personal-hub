@@ -1,7 +1,7 @@
+import { getRules } from "@/features/settings/queries";
 import Link from "next/link";
 import { ReminderList } from "@/components/reminders/reminder-list";
 import { DaysRing } from "@/components/shared/days-ring";
-import { appConfig } from "@/config/app.config";
 import { getReminders } from "@/features/reminders/load";
 import { getVehicleSummary } from "@/features/vehicles/queries";
 import { splitCurrentAndPast } from "@/features/vehicles/renewal-logic";
@@ -18,6 +18,7 @@ function spanOf(startDate: string | null, expiryDate: string): number {
  * small ring for each current renewal, the last service, and what is due.
  */
 export async function VehicleSummary({ vehicleId }: { vehicleId: string }) {
+  const rules = await getRules();
   const [{ services, renewals }, reminders] = await Promise.all([getVehicleSummary(vehicleId), getReminders()]);
   const today = todayInAppTz();
   const due = reminders.results.filter((r) => r.item.ownerId === vehicleId);
@@ -83,7 +84,7 @@ export async function VehicleSummary({ vehicleId }: { vehicleId: string }) {
             <ReminderList results={due.slice(0, 5)} />
           ) : (
             <p className="rounded-2xl border border-dashed p-4 text-center text-sm text-muted-foreground">
-              Nothing due in the next {Math.max(...appConfig.reminders.leadDays)} days.
+              Nothing due in the next {Math.max(...rules.leadDays)} days.
             </p>
           )}
           {due.length > 5 ? (

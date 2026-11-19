@@ -3,13 +3,13 @@ import { Trash2 } from "lucide-react";
 import { LiveControls } from "@/components/electricity/live-switch";
 import { MeterForm } from "@/components/electricity/meter-form";
 import { MeterBadge } from "@/components/electricity/meter-tone";
-import { RowCard, Row, RowMeta, RuleValue } from "@/components/settings/settings-ui";
+import { RowCard, Row, RowMeta } from "@/components/settings/settings-ui";
 import { SubmitButton } from "@/components/shared/submit-button";
-import { getIcon } from "@/components/shell/icons";
 import { appConfig } from "@/config/app.config";
 import type { ElectricityMeter } from "@/db/schema";
 import { archiveMeter, createMeter, deleteMeter, unarchiveMeter, updateMeter } from "@/features/electricity/actions";
 import { liveForText, type LiveMeter } from "@/features/electricity/live";
+import type { HubRules } from "@/features/settings/rules";
 import { formatDate } from "@/lib/format";
 
 /**
@@ -17,41 +17,9 @@ import { formatDate } from "@/lib/format";
  * read the data and pass it in. Everything here comes from app.config.ts or from the props.
  */
 
-const CONFIG_FILE = <code className="font-mono text-[11.5px]">src/config/app.config.ts</code>;
-export const configFileNote = (lead: string) => (
-  <>
-    {lead} {CONFIG_FILE}.
-  </>
-);
-
-/** The parts of the hub and their icons (built once, outside render). */
-const PARTS = [
-  ...appConfig.modules.map((m) => ({ key: m.key, name: m.label, Icon: getIcon(m.icon), on: m.enabled })),
-  ...appConfig.sharedPages.map((p) => ({ key: p.key, name: p.label, Icon: getIcon(p.icon), on: true })),
-];
-
-export function PartsList() {
-  return (
-    <RowCard>
-      {PARTS.map(({ key, name, Icon, on }) => (
-        <Row
-          key={key}
-          label={name}
-          icon={
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-raised/70 text-muted-foreground shadow-[inset_0_1px_0_rgb(255_255_255/0.06)]">
-              <Icon className="size-[18px]" />
-            </span>
-          }
-          end={<RowMeta tone={on ? "ok" : "quiet"}>{on ? "On" : "Off"}</RowMeta>}
-        />
-      ))}
-    </RowCard>
-  );
-}
-
 /** The three numbers of the slab rule as tiles, linking to Meters and rules. */
-export function SlabRuleTiles() {
-  const { lowUnits, highUnits, nearUnits } = appConfig.electricity.limits;
+export function SlabRuleTiles({ rules }: { rules: HubRules }) {
+  const { lowUnits, highUnits, nearUnits } = rules;
   const tiles = [
     [lowUnits, "low slab, units"],
     [highUnits, "high slab, units"],
@@ -73,14 +41,12 @@ export function SlabRuleTiles() {
   );
 }
 
-/** Currency, time zone and reminder lead times. */
+/** Currency and time zone: shown, not changed (only one of each is supported for now; S.2b, owner's list item 39). */
 export function HubFacts() {
-  const leadDays = appConfig.reminders.leadDays.map((d) => (d === 0 ? "on the day" : `${d}`)).join(", ");
   return (
     <RowCard>
-      <Row label="Currency" end={<RowMeta>{appConfig.currency.code}</RowMeta>} />
-      <Row label="Time zone" end={<RowMeta>{appConfig.timeZone}</RowMeta>} />
-      <Row label="Reminders" hint={`days before something is due: ${leadDays}`} />
+      <Row label="Currency" hint="all amounts are shown in this" end={<RowMeta>{appConfig.currency.code}</RowMeta>} />
+      <Row label="Time zone" hint="decides what today is" end={<RowMeta>{appConfig.timeZone}</RowMeta>} />
     </RowCard>
   );
 }
@@ -178,28 +144,9 @@ export function MeterList({ meters, archived }: { meters: ManagedMeter[]; archiv
   );
 }
 
-/** The slab rule's numbers, read-only, with what each one does. */
-export function RuleRows() {
-  const { limits, checkEveryDays, billingCycleDays } = appConfig.electricity;
-  const rules = [
-    { label: "Low slab", hint: "one meter stays at or under this", value: limits.lowUnits, unit: "units" },
-    { label: "High slab", hint: "the other stays at or under this", value: limits.highUnits, unit: "units" },
-    { label: "Warn when this close", hint: "units left before a slab", value: limits.nearUnits, unit: "units" },
-    { label: "Read each meter every", hint: "drives the meter check on Home and Reminders", value: checkEveryDays, unit: "days" },
-    { label: "Billing cycle", hint: "days between bills, for the pace", value: billingCycleDays, unit: "days" },
-  ];
-  return (
-    <RowCard>
-      {rules.map((r) => (
-        <Row key={r.label} label={r.label} hint={r.hint} end={<RuleValue value={r.value} unit={r.unit} />} />
-      ))}
-    </RowCard>
-  );
-}
-
 /** The rule in words. */
-export function RuleInWords() {
-  const { limits } = appConfig.electricity;
+export function RuleInWords({ rules }: { rules: HubRules }) {
+  const limits = rules;
   return (
     <p className="rounded-2xl border bg-card p-4 text-sm leading-relaxed text-muted-foreground">
       In each billing cycle one meter stays at <span className="font-semibold text-foreground">{limits.lowUnits}</span> units or under and the other may run

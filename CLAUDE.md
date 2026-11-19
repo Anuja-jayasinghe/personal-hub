@@ -34,7 +34,8 @@ Read first: [PLAN.md](PLAN.md) (phases and steps), [DECISIONS.md](DECISIONS.md) 
 
 ## Conventions that are easy to miss
 
-- **Branding is parameters:** name, currency, time zone, reminder lead times and modules live in `src/config/app.config.ts`; colours and radius in `src/theme/theme.css`; fonts in `src/theme/fonts.ts`.
+- **Branding is parameters:** name, currency, time zone and modules live in `src/config/app.config.ts`; colours and radius in `src/theme/theme.css`; fonts in `src/theme/fonts.ts`.
+- **Rules you can change in Settings (C107):** the slab rule (low, high, near), the meter-check interval, the billing cycle and the reminder days. `app.config.ts` only holds their defaults; read the values in force with `getRules()` from `src/features/settings/queries.ts` and pass them down, never `appConfig.electricity.limits` or `appConfig.reminders.leadDays` directly.
 - **A new module** registers itself in `app.config.ts`, adds its pages under `src/app/(app)/`, adds its owner type to `src/lib/owners.ts`, and adds a reminder source in `src/features/reminders/sources.ts`.
 - **Shared tasks, notes and files** attach to any record through `owner_type` + `owner_id` (no foreign keys). When a record is deleted, call `deleteSharedDataOf(ownerType, ownerId)` from `src/features/shared/cleanup.ts`.
 - **Every table** gets row-level security enabled in the same migration that creates it (no policies; the app uses the server connection only).
