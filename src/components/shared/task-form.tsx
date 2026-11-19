@@ -81,9 +81,15 @@ export function TaskForm({ action, owner, task, onDone, addLabel = "Add task" }:
         </p>
       ) : null}
 
-      <div>
-        <SubmitButton pendingLabel="Saving…">{task ? "Save changes" : addLabel}</SubmitButton>
-      </div>
+      {task ? (
+        <div>
+          <SubmitButton pendingLabel="Saving…">Save changes</SubmitButton>
+        </div>
+      ) : (
+        <SubmitButton pendingLabel="Saving…" size="lg" className="w-full">
+          {addLabel}
+        </SubmitButton>
+      )}
     </form>
   );
 }

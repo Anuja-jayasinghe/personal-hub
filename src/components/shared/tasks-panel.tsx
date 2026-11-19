@@ -1,11 +1,12 @@
-import { Check, CircleDot, RotateCcw, Trash2 } from "lucide-react";
+import { Check, CircleDot, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { AttachmentsPanel } from "@/components/shared/attachments-panel";
 import { SubmitButton } from "@/components/shared/submit-button";
+import { AddTaskSheet } from "@/components/shared/add-sheets";
 import { TaskForm } from "@/components/shared/task-form";
 import { Badge } from "@/components/ui/badge";
 import type { Attachment, Task, TaskStatus } from "@/db/schema";
-import { createTask, deleteTask, setTaskStatus, updateTask } from "@/features/shared/actions";
+import { deleteTask, setTaskStatus, updateTask } from "@/features/shared/actions";
 import { ownerLabels, type OwnerLabel } from "@/features/shared/owner-labels";
 import { attachmentsByOwner, listTasks, type OwnerScope } from "@/features/shared/queries";
 import { formatDate, formatMoney, todayInAppTz } from "@/lib/format";
@@ -34,23 +35,21 @@ export async function TasksPanel({
 
   return (
     <section aria-labelledby="tasks-heading" className="flex flex-col gap-4">
-      <h2 id="tasks-heading" className="text-lg font-medium">
-        {title}
-      </h2>
-
-      <details className="rounded-lg border">
-        <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">Add a {itemName}</summary>
-        <div className="border-t p-4">
-          <TaskForm action={createTask} owner={owner} addLabel={`Add ${itemName}`} />
-        </div>
-      </details>
+      <div className="flex items-center gap-3">
+        <h2 id="tasks-heading" className="font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase">
+          {title} · {list.filter((t) => t.status !== "done").length} open
+        </h2>
+        <span className="ml-auto">
+          <AddTaskSheet owner={owner} itemName={itemName} />
+        </span>
+      </div>
 
       {list.length === 0 ? (
-        <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+        <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">
           No {itemNamePlural} yet.
         </p>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2.5">
           {list.map((task) => (
             <TaskItem key={task.id} task={task} files={files.get(task.id) ?? []} today={today} ownerLabel={task.ownerType && task.ownerId ? labels.get(`${task.ownerType}:${task.ownerId}`) : undefined} showOwner={scope.kind === "all"} />
           ))}
@@ -61,6 +60,25 @@ export async function TasksPanel({
 }
 
 const priorityLabel = { low: "Low", normal: "Normal", high: "High" } as const;
+
+/** The round tick on the left of a task: ticks it done, or reopens it when it already is. */
+function TickForm({ id, done, title }: { id: string; done: boolean; title: string }) {
+  return (
+    <form action={setTaskStatus}>
+      <input type="hidden" name="id" value={id} />
+      <input type="hidden" name="status" value={done ? "todo" : "done"} />
+      <button
+        type="submit"
+        aria-label={done ? `Reopen "${title}"` : `Mark "${title}" done`}
+        className={`flex size-7 items-center justify-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+          done ? "bg-status-ok text-background" : "ring-[1.5px] ring-quiet hover:ring-primary"
+        }`}
+      >
+        {done ? <Check className="size-4" strokeWidth={3} aria-hidden /> : null}
+      </button>
+    </form>
+  );
+}
 
 function StatusForm({ id, status, label, icon }: { id: string; status: TaskStatus; label: string; icon: React.ReactNode }) {
   return (
@@ -79,16 +97,17 @@ function TaskItem({ task, files, today, ownerLabel, showOwner }: { task: Task; f
   const overdue = !done && task.dueDate !== null && task.dueDate < today;
 
   return (
-    <li className="rounded-lg border bg-card p-3 text-card-foreground">
+    <li className={`rounded-2xl border bg-card p-3.5 text-card-foreground ${done ? "opacity-60" : ""}`}>
       <div className="flex flex-wrap items-start gap-3">
+        <TickForm id={task.id} done={done} title={task.title} />
         <div className="min-w-0 flex-1">
-          <p className={done ? "text-muted-foreground line-through" : "font-medium"}>{task.title}</p>
+          <p className={`text-[15px] ${done ? "text-muted-foreground line-through" : "font-semibold"}`}>{task.title}</p>
           <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
             <Badge variant={task.priority === "high" ? "default" : "secondary"}>{priorityLabel[task.priority]}</Badge>
             {task.status === "doing" ? <Badge variant="outline">In progress</Badge> : null}
             {task.dueDate ? (
-              <span className={overdue ? "font-medium text-status-overdue" : "text-muted-foreground"}>
-                {overdue ? "Overdue · " : "Due "}
+              <span className={`font-mono text-[10.5px] uppercase ${overdue ? "font-medium text-status-overdue" : "text-label"}`}>
+                {overdue ? "Late · " : "Due "}
                 {formatDate(task.dueDate)}
               </span>
             ) : null}
@@ -114,8 +133,6 @@ function TaskItem({ task, files, today, ownerLabel, showOwner }: { task: Task; f
 
         <div className="flex flex-wrap items-center gap-2">
           {task.status === "todo" ? <StatusForm id={task.id} status="doing" label="Start" icon={<CircleDot aria-hidden />} /> : null}
-          {!done ? <StatusForm id={task.id} status="done" label="Done" icon={<Check aria-hidden />} /> : null}
-          {done ? <StatusForm id={task.id} status="todo" label="Reopen" icon={<RotateCcw aria-hidden />} /> : null}
           <form action={deleteTask}>
             <input type="hidden" name="id" value={task.id} />
             <SubmitButton
@@ -131,7 +148,7 @@ function TaskItem({ task, files, today, ownerLabel, showOwner }: { task: Task; f
       </div>
 
       <div className="mt-2 flex flex-col gap-2">
-        <details className="rounded-md border">
+        <details className="rounded-lg border">
           <summary className="cursor-pointer px-3 py-1.5 text-sm text-muted-foreground">Edit</summary>
           <div className="border-t p-3">
             <TaskForm action={updateTask} task={task} />

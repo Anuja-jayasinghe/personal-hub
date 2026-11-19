@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ReminderList } from "@/components/reminders/reminder-list";
+import { ReminderStrip } from "@/components/reminders/reminder-strip";
 import { EmptyState, PageHeader } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { appConfig } from "@/config/app.config";
 import { groupByLevel, type ReminderLevel } from "@/features/reminders/engine";
 import { getReminders } from "@/features/reminders/load";
+import { reminderStrip } from "@/features/reminders/strip";
 import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Reminders" };
@@ -22,9 +24,12 @@ async function Reminders() {
   const { today, results, failedSources } = await getReminders();
   const groups = groupByLevel(results);
   const { leadDays } = appConfig.reminders;
+  const strip = reminderStrip(results, today);
 
   return (
     <>
+      <ReminderStrip strip={strip} />
+
       {failedSources.length > 0 ? (
         <p role="alert" className="text-sm text-destructive">
           Couldn&apos;t load reminders from: {failedSources.join(", ")}. The rest are shown below.
@@ -41,8 +46,8 @@ async function Reminders() {
           .filter((level) => groups[level].length > 0)
           .map((level) => (
             <section key={level} aria-labelledby={`g-${level}`} className="flex flex-col gap-2">
-              <h2 id={`g-${level}`} className="text-lg font-medium">
-                {groupTitles[level]} <span className="text-sm font-normal text-muted-foreground">({groups[level].length})</span>
+              <h2 id={`g-${level}`} className={`font-mono text-[10.5px] font-normal tracking-[0.14em] uppercase ${level === "overdue" ? "text-status-overdue" : "text-label"}`}>
+                {groupTitles[level]} · {groups[level].length}
               </h2>
               <ReminderList results={groups[level]} />
             </section>
