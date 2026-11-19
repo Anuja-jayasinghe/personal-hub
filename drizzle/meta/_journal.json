@@ -85,6 +85,13 @@
       "when": 1794745597559,
       "tag": "0011_premium_catseye",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1795071012659,
+      "tag": "0012_wooden_khan",
+      "breakpoints": true
     }
   ]
 }

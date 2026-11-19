@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { connection } from "next/server";
 import { db } from "@/db";
-import { electricityBills, electricityMeters, electricityReadings } from "@/db/schema";
+import { electricityBills, electricityLiveSwitches, electricityMeters, electricityReadings } from "@/db/schema";
 import { UUID_RE } from "@/features/shared/validation";
 
 /** Active meters, or archived ones, by name. */
@@ -59,4 +59,10 @@ export async function listUnpaidBillsWithDueDate() {
     .from(electricityBills)
     .innerJoin(electricityMeters, eq(electricityMeters.id, electricityBills.meterId))
     .where(and(isNull(electricityBills.paidDate), isNotNull(electricityBills.dueDate)));
+}
+
+/** Every switch of the house between meters, newest first (issue #69). Small: one row per switch. */
+export async function listLiveSwitches() {
+  await connection();
+  return db.select().from(electricityLiveSwitches).orderBy(desc(electricityLiveSwitches.switchedOn), desc(electricityLiveSwitches.createdAt));
 }

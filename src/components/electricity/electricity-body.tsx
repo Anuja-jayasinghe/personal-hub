@@ -11,6 +11,7 @@ import { createMeter } from "@/features/electricity/actions";
 import { lastChecked } from "@/features/electricity/last-checked";
 import { computeLimits } from "@/features/electricity/limits";
 import { limitInputFromUsage, limitRulesFromConfig } from "@/features/electricity/limits-input";
+import type { LiveMeter } from "@/features/electricity/live";
 import { describeMeter } from "@/features/electricity/meter-data";
 
 /**
@@ -26,6 +27,7 @@ export function ElectricityBody({
   archivedCount,
   readings,
   bills,
+  live = null,
   today,
   showArchived,
   meterParam,
@@ -36,6 +38,8 @@ export function ElectricityBody({
   archivedCount: number;
   readings: ElectricityReading[];
   bills: ElectricityBill[];
+  /** The meter carrying the house (issue #69), among the active meters; null when not set. */
+  live?: LiveMeter | null;
   today: string;
   showArchived: boolean;
   meterParam: string | undefined;
@@ -113,7 +117,7 @@ export function ElectricityBody({
               check={checks.get(selected.id)!}
             />
           ) : (
-            <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} limits={limits} units={units} nameOf={nameOf} checks={checks} />
+            <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} limits={limits} units={units} nameOf={nameOf} checks={checks} live={live} today={today} />
           )}
         </>
       )}

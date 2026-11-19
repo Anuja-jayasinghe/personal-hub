@@ -3,7 +3,7 @@
 import { eq, inArray, isNull } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { db } from "@/db";
-import { electricityBills, electricityMeters, electricityReadings } from "@/db/schema";
+import { electricityBills, electricityLiveSwitches, electricityMeters, electricityReadings } from "@/db/schema";
 import { toActionState } from "@/features/shared/errors";
 import type { ActionState } from "@/features/shared/types";
 import { idFrom, ValidationError } from "@/features/shared/validation";
@@ -11,6 +11,7 @@ import { toCents } from "@/lib/decimal";
 import { isValidDate } from "@/lib/dates";
 import { todayInAppTz } from "@/lib/format";
 import { parseBill } from "./bill-validate";
+import { currentLive, switchProblem } from "./live";
 import { parseBatch } from "./readings-batch";
 import { checkReadingFits, toReading } from "./usage";
 import { parseMeter, parseReading } from "./validate";
@@ -235,5 +236,38 @@ export async function markBillPaid(fd: FormData): Promise<void> {
 export async function markBillUnpaid(fd: FormData): Promise<void> {
   await requireUser();
   await db.update(electricityBills).set({ paidDate: null }).where(eq(electricityBills.id, idFrom(fd)));
+  refresh();
+}
+
+/**
+ * Switches the house to another meter (issue #69, C102): one new row in the switch history, dated the
+ * day it happened (today unless given). Returns the new row's id so the Undo message can take it back.
+ */
+export async function switchLiveMeter(fd: FormData): Promise<ActionState & { switchId?: string }> {
+  try {
+    await requireUser();
+    const meterId = idFrom(fd, "meterId");
+    const given = fd.get("switchedOn");
+    const today = todayInAppTz();
+    const switchedOn = typeof given === "string" && given.trim() ? given.trim() : today;
+    const [active, switches] = await Promise.all([
+      db.select({ id: electricityMeters.id }).from(electricityMeters).where(isNull(electricityMeters.archivedAt)),
+      db.select().from(electricityLiveSwitches),
+    ]);
+    const activeIds = active.map((m) => m.id);
+    const problem = switchProblem({ meterId, date: switchedOn, today, live: currentLive(switches, activeIds), activeIds });
+    if (problem) throw new ValidationError(problem);
+    const [row] = await db.insert(electricityLiveSwitches).values({ meterId, switchedOn }).returning({ id: electricityLiveSwitches.id });
+    refresh();
+    return { ok: true, switchId: row.id };
+  } catch (err) {
+    return toActionState(err);
+  }
+}
+
+/** Takes a switch back (the Undo message after switching). Only removes that one row. */
+export async function undoLiveSwitch(fd: FormData): Promise<void> {
+  await requireUser();
+  await db.delete(electricityLiveSwitches).where(eq(electricityLiveSwitches.id, idFrom(fd)));
   refresh();
 }

@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { LiveControls } from "@/components/electricity/live-switch";
 import { MeterBadge } from "@/components/electricity/meter-tone";
 import { RowCard, Row, RowMeta, RuleValue } from "@/components/settings/settings-ui";
 import { getIcon } from "@/components/shell/icons";
 import { appConfig } from "@/config/app.config";
+import { liveForText, type LiveMeter } from "@/features/electricity/live";
+import { formatDate } from "@/lib/format";
 
 /**
  * The sections of the Settings pages (R.6; boards HSettings, HSettingsMore). Display only: the pages
@@ -153,5 +156,28 @@ export function RuleInWords() {
       up to <span className="font-semibold text-foreground">{limits.highUnits}</span>. The first meter to pass {limits.lowUnits} becomes the high one. A meter
       counts as near its limit with {limits.nearUnits} units or fewer left.
     </p>
+  );
+}
+
+/** "Which meter is live now" (issue #69, board HSettingsMore): the meter carrying the house, since when, and the switch. */
+export function LiveNow({ meters, live, today }: { meters: { id: string; name: string }[]; live: LiveMeter | null; today: string }) {
+  const current = live ? meters.find((m) => m.id === live.meterId) : undefined;
+  if (meters.length < 2) return null;
+  return (
+    <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
+      {current && live ? (
+        <p className="flex items-center gap-3">
+          <MeterBadge name={current.name} className="h-7 min-w-8 text-[13px]" />
+          <span className="flex flex-col">
+            <span className="text-[15px] font-semibold">{current.name} is live</span>
+            <span className="text-[12.5px] text-muted-foreground">
+              {liveForText(live.since, today)} · switched on {formatDate(live.since)}
+            </span>
+          </span>
+        </p>
+      ) : null}
+      <LiveControls meters={meters} live={live} today={today} framed={false} showStatus={false} />
+      <p className="text-xs text-muted-foreground">Switching asks first and keeps the history, so the pace stays right.</p>
+    </div>
   );
 }

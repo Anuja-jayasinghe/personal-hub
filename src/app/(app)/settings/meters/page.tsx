@@ -1,21 +1,35 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { configFileNote, MeterList, RuleInWords, RuleRows } from "@/components/settings/settings-sections";
+import { configFileNote, LiveNow, MeterList, RuleInWords, RuleRows } from "@/components/settings/settings-sections";
 import { SettingsSection } from "@/components/settings/settings-ui";
 import { PageHeader } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { listMeters } from "@/features/electricity/queries";
+import { currentLive } from "@/features/electricity/live";
+import { listLiveSwitches, listMeters } from "@/features/electricity/queries";
+import { todayInAppTz } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Meters and rules" };
 
 async function Meters() {
-  const [active, archived] = await Promise.all([listMeters(false), listMeters(true)]);
-  return <MeterList meters={active} archivedCount={archived.length} />;
+  const [active, archived, switches] = await Promise.all([listMeters(false), listMeters(true), listLiveSwitches()]);
+  const live = currentLive(switches, active.map((m) => m.id));
+  return (
+    <>
+      <MeterList meters={active} archivedCount={archived.length} />
+      {active.length > 1 ? (
+        <div className="mt-3.5 flex flex-col gap-2.5">
+          <h2 className="font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">Which meter is live now</h2>
+          <LiveNow meters={active.map((m) => ({ id: m.id, name: m.name }))} live={live} today={todayInAppTz()} />
+        </div>
+      ) : null}
+    </>
+  );
 }
 
 /**
- * Settings › Meters and rules (R.6, board HSettingsMore). Read-only: the meters are added and edited on
- * the Electricity page, and the rule's numbers live in app.config.ts. Which meter is live is issue #69.
+ * Settings › Meters and rules (R.6, board HSettingsMore). Mostly read-only: the meters are added and edited on
+ * the Electricity page, and the rule's numbers live in app.config.ts. Which meter is live can be switched
+ * here and on Electricity (issue #69).
  */
 export default function MetersAndRulesPage() {
   return (
