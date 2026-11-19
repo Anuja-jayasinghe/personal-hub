@@ -4,7 +4,7 @@ import path from "node:path";
 import { count, eq, sum } from "drizzle-orm";
 import { cache } from "react";
 import { connection } from "next/server";
-import { db } from "@/db";
+import { readDb } from "@/db/read";
 import { appSettings, attachments } from "@/db/schema";
 import { latestBackup, type BackupStamp } from "./backup";
 import { mergeRules, RULES_KEY, type HubRules } from "./rules";
@@ -12,6 +12,7 @@ import { mergeRules, RULES_KEY, type HubRules } from "./rules";
 /** How many files are stored and their total size in bytes (Settings › Data and backup). */
 export async function storageUsed(): Promise<{ files: number; bytes: number }> {
   await connection();
+  const db = await readDb();
   const [row] = await db.select({ files: count(), bytes: sum(attachments.sizeBytes) }).from(attachments);
   return { files: row?.files ?? 0, bytes: Number(row?.bytes ?? 0) };
 }
@@ -35,6 +36,7 @@ export async function newestLocalBackup(): Promise<BackupStamp | null> {
  */
 export const getRules = cache(async (): Promise<HubRules> => {
   await connection();
+  const db = await readDb();
   const [row] = await db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, RULES_KEY));
   return mergeRules(row?.value ?? null);
 });

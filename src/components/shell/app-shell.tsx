@@ -4,9 +4,10 @@ import { Logo } from "@/components/brand/logo";
 import { CurrentNavLinks } from "@/components/shell/app-nav";
 import { phoneBarItems, railBottomItems, railItems } from "@/components/shell/nav";
 import { NavLinks } from "@/components/shell/nav-links";
+import { DemoBanner } from "@/components/shell/demo-banner";
 import { OfflineBanner } from "@/components/shell/offline-banner";
 import { navItemVisible } from "@/features/people/access";
-import { getAccess } from "@/lib/auth";
+import { getAccess, getAuthState, isDemoState } from "@/lib/auth";
 
 /**
  * The app frame (DESIGN.md, Navigation; boards HubRail and HubNav):
@@ -23,6 +24,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   const rail = railItems().filter(shows);
   const railBottom = railBottomItems().filter(shows);
   const bar = phoneBarItems().filter(shows);
+  const state = await getAuthState();
   return (
     <div className="flex min-h-svh flex-1 flex-col">
       <aside
@@ -50,6 +52,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           fixed ~860 px column, which looked oversized at 100% zoom and lost in space at 80%). */}
       <main className="flex w-full flex-1 flex-col px-4 pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pt-7 md:pr-9 md:pb-10 md:pl-[calc(72px+2.25rem)]">
         <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6">
+          {isDemoState(state) ? <DemoBanner waitingAs={state.status === "pending" ? state.email : null} /> : null}
           <OfflineBanner />
           {children}
         </div>

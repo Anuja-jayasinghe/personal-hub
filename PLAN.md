@@ -265,7 +265,7 @@ People and roles (designed in `HAdmin` and `HAdminPhone`) is built in Phase 5; t
 | S.6 | ✅ *(issue #120, C112)* **Vehicles**: bigger photo-first cards, the plate, one menu for photo / edit / archive / delete, addresses by plate number (id when there is none), new icons |
 | S.7 | ✅ *(issue #122, C113)* **Data and backup**: CSV downloads from Settings; the full backup stays a command until 4.4 |
 | S.8 | ✅ *(issue #124, C114)* **Admin and sharing**: people and access per section (Hidden / See / Add / Edit), Settings › People and roles, waiting for approval, every page and action checked. Needs hosting (4.2) before anyone else can use it |
-| S.9 | **Demo for people not approved yet** (C114): the whole site with sample data instead of "waiting", like the solaredge project. Owner, 2026-11-19: build it **after hosting (4.2)** |
+| S.9 | ✅ *(issue #133, C118)* **Demo for people not approved yet**: signed-out visitors and people waiting for approval see the whole site with sample data from an in-memory database (PGlite), a DEMO strip, and nothing that saves |
 
 Reminders is reviewed again once there are real items in it.
 

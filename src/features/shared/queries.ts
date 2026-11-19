@@ -1,7 +1,7 @@
 import "server-only";
 import { and, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { connection } from "next/server";
-import { db } from "@/db";
+import { readDb } from "@/db/read";
 import { attachments, notes, tasks, type Attachment } from "@/db/schema";
 import type { OwnerRef, OwnerType } from "@/lib/owners";
 
@@ -20,6 +20,7 @@ export type OwnerScope =
 
 export async function listTasks(scope: OwnerScope) {
   await connection();
+  const db = await readDb();
   const where =
     scope.kind === "standalone"
       ? isNull(tasks.ownerType)
@@ -41,6 +42,7 @@ export async function listTasks(scope: OwnerScope) {
 
 export async function listNotes(scope: OwnerScope) {
   await connection();
+  const db = await readDb();
   const where =
     scope.kind === "standalone"
       ? isNull(notes.ownerType)
@@ -57,6 +59,7 @@ export async function attachmentsByOwner(
   ownerIds: string[],
 ): Promise<Map<string, Attachment[]>> {
   await connection();
+  const db = await readDb();
   const grouped = new Map<string, Attachment[]>();
   if (ownerIds.length === 0) return grouped;
 
@@ -76,6 +79,7 @@ export async function attachmentsByOwner(
 
 export async function getAttachment(id: string) {
   await connection();
+  const db = await readDb();
   const [row] = await db.select().from(attachments).where(eq(attachments.id, id));
   return row ?? null;
 }

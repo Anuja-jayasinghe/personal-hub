@@ -1,13 +1,14 @@
 import "server-only";
 import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { connection } from "next/server";
-import { db } from "@/db";
+import { readDb } from "@/db/read";
 import { electricityBills, electricityLiveSwitches, electricityMeters, electricityReadings } from "@/db/schema";
 import { UUID_RE } from "@/features/shared/validation";
 
 /** Active meters, or archived ones, by name. */
 export async function listMeters(archived: boolean) {
   await connection();
+  const db = await readDb();
   return db
     .select()
     .from(electricityMeters)
@@ -17,6 +18,7 @@ export async function listMeters(archived: boolean) {
 
 export async function getMeter(id: string) {
   await connection();
+  const db = await readDb();
   if (!UUID_RE.test(id)) return null;
   const [row] = await db.select().from(electricityMeters).where(eq(electricityMeters.id, id));
   return row ?? null;
@@ -25,6 +27,7 @@ export async function getMeter(id: string) {
 /** All readings of a meter, newest first. */
 export async function listReadings(meterId: string) {
   await connection();
+  const db = await readDb();
   return db
     .select()
     .from(electricityReadings)
@@ -35,18 +38,21 @@ export async function listReadings(meterId: string) {
 /** Every reading of every meter (newest first), for pages that show several meters at once. */
 export async function listAllReadings() {
   await connection();
+  const db = await readDb();
   return db.select().from(electricityReadings).orderBy(desc(electricityReadings.readingDate), desc(electricityReadings.createdAt));
 }
 
 /** Every bill of every meter, newest first. */
 export async function listAllBills() {
   await connection();
+  const db = await readDb();
   return db.select().from(electricityBills).orderBy(desc(electricityBills.billDate), desc(electricityBills.createdAt));
 }
 
 /** Unpaid bills that have a due date, with their meter's name, for the reminders (archived meters included: an unpaid bill is still owed). */
 export async function listUnpaidBillsWithDueDate() {
   await connection();
+  const db = await readDb();
   return db
     .select({
       id: electricityBills.id,
@@ -65,5 +71,6 @@ export async function listUnpaidBillsWithDueDate() {
 /** Every switch of the house between meters, newest first (issue #69). Small: one row per switch. */
 export async function listLiveSwitches() {
   await connection();
+  const db = await readDb();
   return db.select().from(electricityLiveSwitches).orderBy(desc(electricityLiveSwitches.switchedOn), desc(electricityLiveSwitches.createdAt));
 }

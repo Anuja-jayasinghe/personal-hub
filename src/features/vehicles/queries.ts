@@ -1,7 +1,7 @@
 import "server-only";
 import { asc, count, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { connection } from "next/server";
-import { db } from "@/db";
+import { readDb } from "@/db/read";
 import { vehicleOdometerReadings, vehicleRenewals, vehicleServices, vehicles } from "@/db/schema";
 import { plateKey } from "./plate";
 import { UUID_RE } from "@/features/shared/validation";
@@ -9,6 +9,7 @@ import { UUID_RE } from "@/features/shared/validation";
 /** Active vehicles, or archived ones (sold; hidden, no reminders, history kept: DECISIONS C48). */
 export async function listVehicles(archived: boolean) {
   await connection();
+  const db = await readDb();
   return db
     .select()
     .from(vehicles)
@@ -18,6 +19,7 @@ export async function listVehicles(archived: boolean) {
 
 export async function countArchivedVehicles(): Promise<number> {
   await connection();
+  const db = await readDb();
   const [row] = await db.select({ n: count() }).from(vehicles).where(isNotNull(vehicles.archivedAt));
   return row?.n ?? 0;
 }
@@ -26,6 +28,7 @@ export async function countArchivedVehicles(): Promise<number> {
 /** A vehicle by its id or by its plate as written in its address ("cbd-9754", S.6). */
 export async function getVehicle(idOrPlate: string) {
   await connection();
+  const db = await readDb();
   if (UUID_RE.test(idOrPlate)) {
     const [row] = await db.select().from(vehicles).where(eq(vehicles.id, idOrPlate));
     return row ?? null;
@@ -43,6 +46,7 @@ export async function getVehicle(idOrPlate: string) {
 /** A vehicle's service records, newest first. */
 export async function listServices(vehicleId: string) {
   await connection();
+  const db = await readDb();
   return db
     .select()
     .from(vehicleServices)
@@ -53,6 +57,7 @@ export async function listServices(vehicleId: string) {
 /** Every service record of every ACTIVE (not archived) vehicle, with the vehicle's nickname. For reminders. */
 export async function listServicesOfActiveVehicles() {
   await connection();
+  const db = await readDb();
   return db
     .select({
       id: vehicleServices.id,
@@ -71,6 +76,7 @@ export async function listServicesOfActiveVehicles() {
 /** A vehicle's renewals, latest expiry first (current and past; split with renewal-logic). */
 export async function listRenewals(vehicleId: string) {
   await connection();
+  const db = await readDb();
   return db
     .select()
     .from(vehicleRenewals)
@@ -81,6 +87,7 @@ export async function listRenewals(vehicleId: string) {
 /** Every renewal of every ACTIVE (not archived) vehicle, with the vehicle's nickname. For reminders. */
 export async function listRenewalsOfActiveVehicles() {
   await connection();
+  const db = await readDb();
   return db
     .select({
       id: vehicleRenewals.id,
@@ -99,6 +106,7 @@ export async function listRenewalsOfActiveVehicles() {
 /** Raw figures for a vehicle's Overview tab; the page turns them into text with the pure helpers. */
 export async function getVehicleSummary(vehicleId: string) {
   await connection();
+  const db = await readDb();
   const [services, renewals] = await Promise.all([
     db
       .select()
@@ -117,6 +125,7 @@ export async function getVehicleSummary(vehicleId: string) {
 /** A vehicle's dated odometer readings, newest first. (Services with an odometer count too: see odometer.ts.) */
 export async function listOdometerReadings(vehicleId: string) {
   await connection();
+  const db = await readDb();
   return db
     .select()
     .from(vehicleOdometerReadings)

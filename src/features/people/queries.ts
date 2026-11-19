@@ -1,7 +1,7 @@
 import "server-only";
 import { asc } from "drizzle-orm";
 import { connection } from "next/server";
-import { db } from "@/db";
+import { readDb } from "@/db/read";
 import { accessGrants, people } from "@/db/schema";
 import { accessFromGrants, type Access } from "./access";
 
@@ -10,6 +10,7 @@ export type PersonWithAccess = { id: string; email: string; name: string | null;
 /** Everyone the hub is shared with, with their access (Settings › People and roles, S.8). */
 export async function listPeople(): Promise<PersonWithAccess[]> {
   await connection();
+  const db = await readDb();
   const [rows, grants] = await Promise.all([db.select().from(people).orderBy(asc(people.email)), db.select().from(accessGrants)]);
   return rows.map((p) => ({
     id: p.id,
