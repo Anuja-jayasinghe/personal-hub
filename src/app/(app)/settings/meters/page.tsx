@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { configFileNote, LiveNow, MeterList, RuleInWords, RuleRows } from "@/components/settings/settings-sections";
+import { SlabRulesForm } from "@/components/settings/rules-forms";
+import { LiveNow, MeterList, RuleInWords } from "@/components/settings/settings-sections";
 import { SettingsSection } from "@/components/settings/settings-ui";
 import { PageHeader } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { currentLive } from "@/features/electricity/live";
 import { listLiveSwitches, listMeters } from "@/features/electricity/queries";
+import { getRules } from "@/features/settings/queries";
 import { todayInAppTz } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Meters and rules" };
@@ -26,10 +28,24 @@ async function Meters() {
   );
 }
 
+async function Rules() {
+  const rules = await getRules();
+  return (
+    <>
+      <SettingsSection label="The slab rule" note="The pace, the warnings, the meter checks and the reminders all follow these numbers.">
+        <SlabRulesForm rules={rules} />
+      </SettingsSection>
+      <SettingsSection label="How it works">
+        <RuleInWords rules={rules} />
+      </SettingsSection>
+    </>
+  );
+}
+
 /**
  * Settings › Meters and rules (R.6, board HSettingsMore; S.2a, C106): the meters are added, edited,
- * archived and deleted here, and which meter is live is switched here only. The rule's numbers become
- * editable in S.2b.
+ * archived and deleted here, which meter is live is switched here only, and the rule's numbers are
+ * changed here (S.2b, C107).
  */
 export default function MetersAndRulesPage() {
   return (
@@ -42,13 +58,9 @@ export default function MetersAndRulesPage() {
         </Suspense>
       </SettingsSection>
 
-      <SettingsSection label="The slab rule" note={configFileNote("Read-only. The pace, the warnings and the reminders all follow these numbers, set in")}>
-        <RuleRows />
-      </SettingsSection>
-
-      <SettingsSection label="How it works">
-        <RuleInWords />
-      </SettingsSection>
+      <Suspense fallback={<Skeleton className="h-80 rounded-2xl" />}>
+        <Rules />
+      </Suspense>
     </>
   );
 }

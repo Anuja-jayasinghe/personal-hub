@@ -4,7 +4,6 @@ import { MeterBoard } from "@/components/electricity/meter-board";
 import { MeterBadge, toneFor } from "@/components/electricity/meter-tone";
 import { MonthlyChart } from "@/components/electricity/monthly-chart";
 import { SlabRule } from "@/components/electricity/slab-rule";
-import { appConfig } from "@/config/app.config";
 import type { ElectricityBill, ElectricityMeter } from "@/db/schema";
 import type { MeterData } from "@/features/electricity/meter-data";
 import { checkNudge, type LastChecked } from "@/features/electricity/last-checked";
@@ -44,6 +43,7 @@ export function ElectricityOverview({
   nameOf,
   checks,
   live,
+  cycleDays,
 }: {
   meters: ElectricityMeter[];
   allMeters: ElectricityMeter[];
@@ -56,6 +56,7 @@ export function ElectricityOverview({
   nameOf: (id: string) => string;
   checks: Map<string, LastChecked>;
   live: LiveMeter | null;
+  cycleDays: number;
 }) {
   const unpaid = unpaidTotal(bills.filter((b) => meters.some((m) => m.id === b.meterId)));
   const pace = paceLine(limits);
@@ -158,7 +159,7 @@ export function ElectricityOverview({
           <CycleChart
             low={low}
             high={high}
-            cycleDays={appConfig.electricity.billingCycleDays}
+            cycleDays={cycleDays}
             lines={meters.map((m) => {
               const d = data.get(m.id)!;
               return {

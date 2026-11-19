@@ -1,3 +1,4 @@
+import { getRules } from "@/features/settings/queries";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -16,7 +17,7 @@ type Search = { archived?: string; meter?: string };
 async function ElectricityContent({ searchParams }: { searchParams: Promise<Search> }) {
   const { archived, meter } = await searchParams;
   const showArchived = archived === "1";
-  const [active, archivedMeters, readings, bills, switches] = await Promise.all([listMeters(false), listMeters(true), listAllReadings(), listAllBills(), listLiveSwitches()]);
+  const [active, archivedMeters, readings, bills, switches, rules] = await Promise.all([listMeters(false), listMeters(true), listAllReadings(), listAllBills(), listLiveSwitches(), getRules()]);
   const today = todayInAppTz(); // after the queries, which opt this render into request time
 
   return (
@@ -27,6 +28,7 @@ async function ElectricityContent({ searchParams }: { searchParams: Promise<Sear
       readings={readings}
       bills={bills}
       live={currentLive(switches, active.map((m) => m.id))}
+      rules={rules}
       today={today}
       showArchived={showArchived}
       meterParam={meter}
