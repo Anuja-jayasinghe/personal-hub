@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CycleChart } from "@/components/electricity/cycle-chart";
+import { LiveControls } from "@/components/electricity/live-switch";
 import { MeterBoard } from "@/components/electricity/meter-board";
 import { MeterBadge, toneFor } from "@/components/electricity/meter-tone";
 import { MonthlyChart } from "@/components/electricity/monthly-chart";
@@ -9,6 +10,7 @@ import type { ElectricityBill, ElectricityMeter } from "@/db/schema";
 import type { MeterData } from "@/features/electricity/meter-data";
 import { checkNudge, type LastChecked } from "@/features/electricity/last-checked";
 import type { LimitsResult } from "@/features/electricity/limits";
+import type { LiveMeter } from "@/features/electricity/live";
 import { adviceLine, paceLine, usedOfLimit, type LimitUnits } from "@/features/electricity/limits-text";
 import { badgeLetter, unpaidTotal } from "@/features/electricity/overview";
 import { formatMoney } from "@/lib/format";
@@ -42,6 +44,8 @@ export function ElectricityOverview({
   units,
   nameOf,
   checks,
+  live,
+  today,
 }: {
   meters: ElectricityMeter[];
   allMeters: ElectricityMeter[];
@@ -53,10 +57,12 @@ export function ElectricityOverview({
   units: LimitUnits;
   nameOf: (id: string) => string;
   checks: Map<string, LastChecked>;
+  live: LiveMeter | null;
+  today: string;
 }) {
   const unpaid = unpaidTotal(bills.filter((b) => meters.some((m) => m.id === b.meterId)));
   const pace = paceLine(limits);
-  const advice = adviceLine(limits.advice, limits, nameOf, units);
+  const advice = adviceLine(limits.advice, limits, nameOf, units, live?.meterId ?? null);
   const nudge = checkNudge(meters.map((m) => ({ name: m.name, check: checks.get(m.id)! })));
   const room = Math.floor(limits.headroom / 100);
   const low = units.low * 100;
@@ -76,10 +82,13 @@ export function ElectricityOverview({
             limit: limitOf(m.id),
             check: checks.get(m.id)!,
             reading: d.readingRows[0]?.value ?? null,
-            flowing: d.usage.state === "ok" && (d.usage.dailyAverage ?? 0) > 0,
+            flowing: live ? live.meterId === m.id : d.usage.state === "ok" && (d.usage.dailyAverage ?? 0) > 0,
+            live: live ? live.meterId === m.id : null,
           };
         })}
       />
+
+      {meters.length > 1 ? <LiveControls meters={meters.map((m) => ({ id: m.id, name: m.name }))} live={live} today={today} /> : null}
 
       {advice ? (
         <Note tone={limits.advice?.kind === "over" ? "over" : "near"} role={limits.advice?.kind === "over" ? "alert" : "status"}>

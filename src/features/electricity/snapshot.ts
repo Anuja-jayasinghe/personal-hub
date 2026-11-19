@@ -3,6 +3,7 @@ import type { ElectricityBill, ElectricityMeter, ElectricityReading } from "@/db
 import { lastChecked, type LastChecked } from "./last-checked";
 import { computeLimits, type LimitsResult } from "./limits";
 import { limitInputFromUsage, limitRulesFromConfig } from "./limits-input";
+import { currentLive, type LiveMeter, type LiveSwitch } from "./live";
 import type { LimitUnits } from "./limits-text";
 import { describeMeter, type MeterData } from "./meter-data";
 
@@ -12,6 +13,8 @@ export type ElectricitySnapshot = {
   limits: LimitsResult;
   checks: Map<string, LastChecked>;
   units: LimitUnits;
+  /** The meter carrying the house (issue #69); null when not set. */
+  live: LiveMeter | null;
 };
 
 /**
@@ -23,9 +26,10 @@ export function electricitySnapshot(input: {
   meters: ElectricityMeter[];
   readings: ElectricityReading[];
   bills: ElectricityBill[];
+  switches?: readonly LiveSwitch[];
   today: string;
 }): ElectricitySnapshot {
-  const { meters, readings, bills, today } = input;
+  const { meters, readings, bills, today, switches = [] } = input;
   const data = new Map(
     meters.map((m) => [
       m.id,
@@ -43,5 +47,6 @@ export function electricitySnapshot(input: {
   );
   const checks = new Map(meters.map((m) => [m.id, lastChecked(data.get(m.id)!.readingRows[0]?.date ?? null, today, appConfig.electricity.checkEveryDays)]));
   const units = { low: appConfig.electricity.limits.lowUnits, high: appConfig.electricity.limits.highUnits };
-  return { meters, data, limits, checks, units };
+  const live = currentLive(switches, meters.map((m) => m.id));
+  return { meters, data, limits, checks, units, live };
 }

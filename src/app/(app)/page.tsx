@@ -9,7 +9,7 @@ import { NextDaysLine } from "@/components/home/next-days-line";
 import { SetupCard } from "@/components/home/setup-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { appConfig, isModuleEnabled } from "@/config/app.config";
-import { listAllBills, listAllReadings, listMeters } from "@/features/electricity/queries";
+import { listAllBills, listAllReadings, listLiveSwitches, listMeters } from "@/features/electricity/queries";
 import { electricitySnapshot } from "@/features/electricity/snapshot";
 import { dayStamp, dueByArea, greetingFor, meterCheckDue, nextDays, setupSteps } from "@/features/home/home";
 import { getReminders } from "@/features/reminders/load";
@@ -29,15 +29,16 @@ const NEXT_SHOWN = 4;
 async function HomeContent() {
   await connection();
   const electricityOn = isModuleEnabled("electricity");
-  const [meters, readings, bills, reminders, firstName] = await Promise.all([
+  const [meters, readings, bills, switches, reminders, firstName] = await Promise.all([
     electricityOn ? listMeters(false) : Promise.resolve([]),
     electricityOn ? listAllReadings() : Promise.resolve([]),
     electricityOn ? listAllBills() : Promise.resolve([]),
+    electricityOn ? listLiveSwitches() : Promise.resolve([]),
     getReminders(),
     getFirstName(),
   ]);
   const { today, results } = reminders;
-  const snap = electricitySnapshot({ meters, readings, bills, today });
+  const snap = electricitySnapshot({ meters, readings, bills, switches, today });
   const { checkEveryDays, billingCycleDays } = appConfig.electricity;
 
   // Day of the cycle, from the first meter with a bill.

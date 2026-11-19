@@ -57,6 +57,11 @@ describe("adviceLine", () => {
       "Meter A is 10 units from 120. Meter B has 70 left. Switch to Meter B, or let Meter A pass 120 and keep Meter B under 120.",
     );
   });
+  it("does not say switch when the house is already on the other meter (issue #69)", () => {
+    const r = computeLimits([m("a", 110), m("b", 50)], RULES);
+    expect(adviceLine(r.advice, r, name, U, "b")).toBe("Meter A is 10 units from 120. The house is already on Meter B, which has 70 left.");
+    expect(adviceLine(r.advice, r, name, U, "a")).toContain("Switch to Meter B");
+  });
   it("says only how close the 180 meter is, and what the other has left", () => {
     const r = computeLimits([m("a", 172), m("b", 40)], RULES);
     expect(adviceLine(r.advice, r, name, U)).toBe("Meter A is 8 units from 180. Meter B has 80 left.");

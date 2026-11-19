@@ -15,16 +15,19 @@ export type BoardMeter = {
   check: LastChecked;
   /** The newest reading, hundredths of a kWh; null when there is none. */
   reading: number | null;
-  /** True while the meter is counting up this cycle (it has a pace): current flows along its line. */
+  /** True while current flows along its line: the live meter, or, while no meter is marked live, any meter with a pace. */
   flowing: boolean;
+  /** True for the live meter, false for an idle one, null while no meter is marked live (issue #69). */
+  live: boolean | null;
 };
 
 /**
  * The meter board (DESIGN.md, The meter board; boards HElectricity, HElectricityDesktop): a GRID node
  * feeding a line to each meter, on a deep panel. Each meter shows its letter, its job with a state
  * lamp, the last reading as dial digits, the units left in Oxanium, and when it was last read; the
- * whole module links to that meter. Which meter is actually live is not known yet (issue #69), so
- * nothing says LIVE; current flows along the line to any meter that is being used.
+ * whole module links to that meter. Once a meter is marked live (issue #69, C102) it says LIVE with a
+ * blue lamp, the others IDLE, and current flows only to the live one; until then nothing says LIVE and
+ * current flows to any meter that is being used.
  */
 export function MeterBoard({ meters, units }: { meters: BoardMeter[]; units: LimitUnits }) {
   const n = meters.length;
@@ -96,13 +99,27 @@ function MeterModule({ meter, units }: { meter: BoardMeter; units: LimitUnits })
         </span>
       </span>
 
+      {meter.live !== null ? (
+        <span className={`flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-[0.16em] ${meter.live ? "text-primary" : "text-label"}`}>
+          <span
+            aria-hidden
+            className={`size-1.5 rounded-full ${meter.live ? "bg-primary shadow-[0_0_0_3px_color-mix(in_oklab,var(--primary)_25%,transparent)]" : "bg-quiet"}`}
+          />
+          {meter.live ? "LIVE" : "IDLE"}
+        </span>
+      ) : null}
+
       {digits ? (
         <span role="img" aria-label={`Last reading ${digits.join("")}`} className="flex gap-0.5">
           {digits.map((d, i) => (
             <span
               key={i}
               className={`flex h-7 w-5 items-center justify-center rounded-[5px] font-mono text-[15px] font-semibold md:h-10 md:w-7 md:text-[22px] ${
-                i === digits.length - 1 ? "bg-primary text-primary-foreground" : "bg-raised text-foreground"
+                i === digits.length - 1
+                  ? meter.live === false
+                    ? "bg-quiet text-foreground"
+                    : "bg-primary text-primary-foreground"
+                  : "bg-raised text-foreground"
               }`}
             >
               {d}
@@ -123,7 +140,10 @@ function MeterModule({ meter, units }: { meter: BoardMeter; units: LimitUnits })
           <span className="font-display text-[38px] leading-none font-semibold text-quiet md:text-5xl">–</span>
         )}
       </span>
-      <span className="sr-only">{meter.name}</span>
+      <span className="sr-only">
+        {meter.name}
+        {meter.live === true ? ", live" : meter.live === false ? ", idle" : ""}
+      </span>
       <LastCheckedLine check={meter.check} />
     </Link>
   );

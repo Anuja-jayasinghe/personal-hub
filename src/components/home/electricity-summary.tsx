@@ -6,13 +6,14 @@ import { adviceLine, leftHeadline, paceLine } from "@/features/electricity/limit
 
 /**
  * Home's electricity card (boards HHomePhone, HHome): the room left before a price jump, a small slab
- * rule per meter with its units left, and the warning or the pace. The whole card opens Electricity.
+ * rule per meter with its units left (the live one marked, issue #69), and the warning or the pace.
+ * The whole card opens Electricity.
  */
 export function ElectricitySummary({ snapshot }: { snapshot: ElectricitySnapshot }) {
-  const { meters, data, limits, units } = snapshot;
+  const { meters, data, limits, units, live } = snapshot;
   const room = Math.floor(limits.headroom / 100);
   const nameOf = (id: string) => meters.find((m) => m.id === id)?.name ?? "Meter";
-  const advice = adviceLine(limits.advice, limits, nameOf, units);
+  const advice = adviceLine(limits.advice, limits, nameOf, units, live?.meterId ?? null);
   const pace = paceLine(limits);
   const note = advice ?? pace?.text ?? null;
   const warn = advice !== null || pace?.tone === "warn";
@@ -39,7 +40,14 @@ export function ElectricitySummary({ snapshot }: { snapshot: ElectricitySnapshot
           const headline = limit.known ? leftHeadline(limit) : null;
           return (
             <span key={m.id} className="flex items-center gap-2.5">
-              <MeterBadge name={m.name} />
+              <span className={`flex shrink-0 flex-col items-start gap-0.5 ${live ? "w-11" : ""}`}>
+                <MeterBadge name={m.name} />
+                {live ? (
+                  <span className={`font-mono text-[8.5px] font-semibold tracking-[0.14em] ${live.meterId === m.id ? "text-primary" : "text-label"}`}>
+                    {live.meterId === m.id ? "LIVE" : "IDLE"}
+                  </span>
+                ) : null}
+              </span>
               <span className="min-w-0 flex-1">
                 <SlabRule
                   used={limit.used}

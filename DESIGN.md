@@ -359,7 +359,7 @@ Every page in the app and the board that shows it. "Exists" means the route is i
 | Something went wrong ("Lost the connection") | `(app)/error.tsx` | `HStates` | built (R.6) |
 | Offline | banner in the shell | `HSystem` | built (R.6) |
 
-Designed but needing a decision before building: the **Notifications** page shows phone notifications and a weekly email, but phone notifications were decided against (C63) and email is 4.3 (P35, P36); **All documents** is P39; **People and roles** and its presets answer part of P40; **Which meter is live** is issue #69.
+Designed but needing a decision before building: the **Notifications** page shows phone notifications and a weekly email, but phone notifications were decided against (C63) and email is 4.3 (P35, P36); **All documents** is P39; **People and roles** and its presets answer part of P40; **Which meter is live** is built (issue #69, C102).
 
 ## Motion
 

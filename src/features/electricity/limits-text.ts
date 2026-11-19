@@ -54,6 +54,8 @@ export function adviceLine(
   result: Pick<LimitsResult, "meters">,
   nameOf: (meterId: string) => string,
   u: LimitUnits,
+  /** The meter carrying the house (issue #69), when known: no point saying "switch to" the meter already live. */
+  liveId: string | null = null,
 ): string | null {
   if (!advice) return null;
   const meter = result.meters.find((m) => m.id === advice.meterId);
@@ -72,5 +74,6 @@ export function adviceLine(
   const other = nameOf(advice.otherId);
   const otherLeft = Math.floor(Math.max(0, advice.otherLeft) / 100);
   if (meter.role === "high") return `${base} ${other} has ${otherLeft} left.`;
+  if (liveId !== null && liveId === advice.otherId) return `${base} The house is already on ${other}, which has ${otherLeft} left.`;
   return `${base} ${other} has ${otherLeft} left. Switch to ${other}, or let ${name} pass ${u.low} and keep ${other} under ${u.low}.`;
 }
