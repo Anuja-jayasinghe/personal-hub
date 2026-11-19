@@ -3,46 +3,53 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { attachments, type Attachment } from "@/db/schema";
 import type { OwnerRef } from "@/lib/owners";
-import {
-  ALLOWED_ATTACHMENT_TYPES,
-  ATTACHMENT_BUCKET,
-  MAX_ATTACHMENT_BYTES,
-  resolveMimeType,
-  storageClient,
-} from "@/lib/storage";
+import { ALLOWED_ATTACHMENT_TYPES, ATTACHMENT_BUCKET, MAX_ATTACHMENT_BYTES, storageClient } from "@/lib/storage";
+import { newUploadPath, pathBelongsTo, uploadProblem } from "@/lib/upload-rules";
 import { ValidationError } from "./validation";
 
-function safeFileName(name: string): string {
-  const cleaned = name.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^\.+/, "").slice(-120);
-  return cleaned || "file";
+export type UploadInfo = { fileName: string; mimeType: string; size: number };
+
+/**
+ * Step 1 of an upload (C115): checks the file the browser wants to send and returns a one-time upload
+ * link for a new path inside the record's folder. The file then goes straight from the browser to the
+ * private bucket, because Vercel caps a request at 4.5 MB.
+ */
+export async function signUpload(
+  owner: OwnerRef,
+  file: UploadInfo,
+  allowedTypes: readonly string[] = ALLOWED_ATTACHMENT_TYPES,
+  typeMessage = "Only JPEG, PNG, WebP, HEIC images and PDF files are allowed.",
+): Promise<{ path: string; signedUrl: string }> {
+  const problem = uploadProblem(file, allowedTypes, MAX_ATTACHMENT_BYTES, typeMessage);
+  if (problem) throw new ValidationError(problem);
+  const path = newUploadPath(owner, file.fileName, crypto.randomUUID());
+  const { data, error } = await storageClient().storage.from(ATTACHMENT_BUCKET).createSignedUploadUrl(path);
+  if (error || !data) throw new Error(`Could not prepare the upload: ${error?.message ?? "no link"}`);
+  return { path: data.path, signedUrl: data.signedUrl };
 }
 
 /**
- * Validates `file`, uploads it to the private bucket and records it as an attachment of `owner`.
- * `allowedTypes` narrows what is accepted (the vehicle cover photo only takes web image types).
- * If recording it fails the uploaded file is removed again, so nothing is left behind.
+ * Step 2 (C115): records a file the browser has just put in storage as an attachment of `owner`. It only
+ * trusts what storage reports: the path must be inside the record's folder, and the stored size and type
+ * must pass the same checks; otherwise the file is removed and nothing is recorded.
  */
-export async function storeAttachment(
+export async function recordUpload(
   owner: OwnerRef,
-  file: File,
+  uploaded: { path: string; fileName: string },
   allowedTypes: readonly string[] = ALLOWED_ATTACHMENT_TYPES,
   typeMessage = "Only JPEG, PNG, WebP, HEIC images and PDF files are allowed.",
   title: string | null = null,
 ): Promise<Attachment> {
-  if (file.size === 0) throw new ValidationError("Choose a file to upload.");
-  if (file.size > MAX_ATTACHMENT_BYTES) {
-    throw new ValidationError(`File is too large. The limit is ${MAX_ATTACHMENT_BYTES / 1024 / 1024} MB.`);
-  }
-  const mimeType = resolveMimeType(file);
-  if (!allowedTypes.includes(mimeType)) throw new ValidationError(typeMessage);
-
-  const storagePath = `${owner.ownerType}/${owner.ownerId}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+  if (!pathBelongsTo(uploaded.path, owner)) throw new ValidationError("That upload does not belong here. Please try again.");
   const storage = storageClient().storage.from(ATTACHMENT_BUCKET);
-  const { error: uploadError } = await storage.upload(storagePath, Buffer.from(await file.arrayBuffer()), {
-    contentType: mimeType,
-  });
-  if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
-
+  const { data: info, error } = await storage.info(uploaded.path);
+  if (error || !info) throw new ValidationError("The file did not arrive. Please try again.");
+  const stored = { size: Number(info.size ?? 0), mimeType: String(info.contentType ?? "") };
+  const problem = uploadProblem(stored, allowedTypes, MAX_ATTACHMENT_BYTES, typeMessage);
+  if (problem) {
+    await storage.remove([uploaded.path]);
+    throw new ValidationError(problem);
+  }
   try {
     const [row] = await db
       .insert(attachments)
@@ -50,18 +57,26 @@ export async function storeAttachment(
         ownerType: owner.ownerType,
         ownerId: owner.ownerId,
         bucket: ATTACHMENT_BUCKET,
-        storagePath,
-        fileName: file.name.slice(0, 255),
+        storagePath: uploaded.path,
+        fileName: uploaded.fileName.slice(0, 255) || "file",
         title,
-        mimeType,
-        sizeBytes: file.size,
+        mimeType: stored.mimeType,
+        sizeBytes: stored.size,
       })
       .returning();
     return row;
   } catch (dbError) {
-    await storage.remove([storagePath]);
+    await storage.remove([uploaded.path]);
     throw dbError;
   }
+}
+
+/** The upload fields a form sends after the browser has put the file in storage. */
+export function uploadedFrom(fd: FormData): { path: string; fileName: string } {
+  const path = fd.get("uploadedPath");
+  const fileName = fd.get("fileName");
+  if (typeof path !== "string" || !path) throw new ValidationError("Choose a file to upload.");
+  return { path, fileName: typeof fileName === "string" ? fileName : "file" };
 }
 
 /** Deletes an attachment: the file in storage first, then its row. */

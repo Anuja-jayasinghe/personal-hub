@@ -12,6 +12,10 @@ export const ALLOWED_ATTACHMENT_TYPES = [
   "application/pdf",
 ] as const;
 
+/** The vehicle cover photo only takes web image types. */
+export const COVER_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+export const COVER_TYPE_MESSAGE = "The cover photo must be a JPEG, PNG or WebP image.";
+
 const globalForStorage = globalThis as unknown as { __storageClient?: SupabaseClient };
 
 /**

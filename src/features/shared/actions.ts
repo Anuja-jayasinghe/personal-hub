@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { attachments, notes, tasks, TASK_PRIORITIES, TASK_STATUSES } from "@/db/schema";
 import { deleteAttachmentsOf } from "./cleanup";
 import { toActionState as failure } from "./errors";
-import { removeAttachment, storeAttachment } from "./files";
+import { recordUpload, removeAttachment, uploadedFrom } from "./files";
 import type { ActionState } from "./types";
 import { areaOfOwner, type Level } from "@/features/people/access";
 import { isOwnerType } from "@/lib/owners";
@@ -174,9 +174,8 @@ export async function uploadAttachment(_prev: ActionState, fd: FormData): Promis
     await requireUser("signed-in");
     const owner = requiredOwner(fd);
     await requireOwnerSection(owner, "add");
-    const file = fd.get("file");
-    if (!(file instanceof File)) throw new ValidationError("Choose a file to upload.");
-    await storeAttachment(owner, file);
+    // The browser has already put the file in storage (C115); this records it after checking it.
+    await recordUpload(owner, uploadedFrom(fd));
     refresh();
     return { ok: true };
   } catch (err) {

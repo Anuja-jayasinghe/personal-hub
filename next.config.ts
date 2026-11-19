@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   // Attachment uploads go through Server Actions; the default 1 MB limit is too small for bill
   // photos. 10 MB file limit (DECISIONS C33) + headroom for the multipart form overhead.
   experimental: {
-    serverActions: { bodySizeLimit: "11mb" },
+    serverActions: { bodySizeLimit: "1mb" }, // files go straight to storage now (C115), not through actions
   },
   // Dev only (DECISIONS C11): let phones and other devices on the home Wi-Fi load the dev server.
   // Each `*` matches exactly one hostname label, so these cover 10.x.x.x, 192.168.x.x and *.local.
