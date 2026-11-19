@@ -1,66 +1,58 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { configFileNote, HubFacts, PartsList, SlabRuleTiles, SubPageList } from "@/components/settings/settings-sections";
+import { SettingsSection } from "@/components/settings/settings-ui";
 import { PageHeader } from "@/components/shell/page-header";
+import { SignOutRow } from "@/components/shell/sign-out-row";
 import { ThemeSwitcher } from "@/components/shell/theme-switcher";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { appConfig } from "@/config/app.config";
+import { listMeters } from "@/features/electricity/queries";
+import { newestLocalBackup } from "@/features/settings/queries";
+import { formatDate, todayInAppTz } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Settings" };
 
-export default function SettingsPage() {
-  const summary: [string, React.ReactNode][] = [
-    ["App name", appConfig.name],
-    ["Currency", `${appConfig.currency.code} (${appConfig.currency.locale})`],
-    ["Time zone", appConfig.timeZone],
-    [
-      "Reminder lead times",
-      appConfig.reminders.leadDays.map((d) => (d === 0 ? "on the day" : `${d} days`)).join(", "),
-    ],
-    [
-      "Modules",
-      <span key="m" className="flex flex-wrap gap-1.5">
-        {appConfig.modules.map((m) => (
-          <Badge key={m.key} variant={m.enabled ? "default" : "outline"}>
-            {m.label}
-            {m.enabled ? "" : " (off)"}
-          </Badge>
-        ))}
-      </span>,
-    ],
-  ];
+async function SubPageRows() {
+  const [meters, backup] = await Promise.all([listMeters(false), newestLocalBackup()]);
+  const today = todayInAppTz();
+  const backupMeta = !backup ? "None yet" : backup.date === today ? `Today ${backup.time}` : formatDate(backup.date);
+  return <SubPageList meters={`${meters.length} ${meters.length === 1 ? "meter" : "meters"}`} backup={backupMeta} />;
+}
 
+/**
+ * Settings (R.6, board HSettings): the look, the sub-pages (phone; desktop has the sub-menu), the slab
+ * rule at a glance, the parts of the hub and Sign out. Everything but the look is read-only here:
+ * it lives in app.config.ts.
+ */
+export default function SettingsPage() {
   return (
     <>
       <PageHeader title="Settings" />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Appearance</CardTitle>
-          <CardDescription>Choose light, dark, or follow this device.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ThemeSwitcher />
-        </CardContent>
-      </Card>
+      <SettingsSection label="Look">
+        <ThemeSwitcher />
+      </SettingsSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>App configuration</CardTitle>
-          <CardDescription>
-            Read-only. These values live in <code className="font-mono">src/config/app.config.ts</code>.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[10rem_1fr]">
-            {summary.map(([label, value]) => (
-              <div key={label} className="contents">
-                <dt className="text-muted-foreground">{label}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
-        </CardContent>
-      </Card>
+      <div className="md:hidden">
+        <SettingsSection label="More settings">
+          <Suspense fallback={<SubPageList />}>
+            <SubPageRows />
+          </Suspense>
+        </SettingsSection>
+      </div>
+
+      <SettingsSection label="The slab rule">
+        <SlabRuleTiles />
+      </SettingsSection>
+
+      <SettingsSection label="Parts of the hub" note={configFileNote("Parts are switched on and off in")}>
+        <PartsList />
+      </SettingsSection>
+
+      <SettingsSection label="This hub" note={configFileNote("Read-only. These values live in")}>
+        <HubFacts />
+      </SettingsSection>
+
+      <SignOutRow />
     </>
   );
 }

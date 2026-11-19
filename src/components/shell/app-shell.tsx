@@ -4,6 +4,7 @@ import { AccountMenu } from "@/components/shell/account-menu";
 import { CurrentNavLinks } from "@/components/shell/app-nav";
 import { phoneBarItems, railItems } from "@/components/shell/nav";
 import { NavLinks } from "@/components/shell/nav-links";
+import { OfflineBanner } from "@/components/shell/offline-banner";
 
 /**
  * The app frame (DESIGN.md, Navigation; boards HubRail and HubNav):
@@ -33,6 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pt-7 md:pb-10 md:pl-[calc(88px+2.25rem)] md:pr-9">
+        <OfflineBanner />
         {children}
       </main>
 

@@ -1,3 +1,7 @@
+/* Clerk's styles go in their own layer, below Tailwind's utilities, so the classes in
+   src/components/brand/clerk-appearance.ts win (R.6). This line must stay before the imports. */
+@layer theme, base, clerk, components, utilities;
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -87,6 +91,32 @@
 @keyframes hub-flow {
   to {
     stroke-dashoffset: -20;
+  }
+}
+
+/* The same, for lines dashed "2 28" (the sign-in picture, the 404 drawing). */
+@keyframes hub-flow-long {
+  to {
+    stroke-dashoffset: -30;
+  }
+}
+
+/* Loading: three nodes light up in turn, and placeholder blocks carry a slow shimmer (DESIGN.md, Motion). */
+@keyframes hub-node {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+@keyframes hub-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
   }
 }
 

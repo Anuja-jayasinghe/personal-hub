@@ -68,6 +68,11 @@
   --sidebar-accent-foreground: var(--accent-foreground);
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
+
+  /* Copies for Clerk's sign-in box, which sets its own --border and --primary inside its elements
+     (R.6, src/components/brand/clerk-appearance.ts). They resolve on <html>, so dark carries through. */
+  --hub-edge: var(--border);
+  --hub-blue: var(--primary);
 }
 
 /* ===== Dark, the default (applied by the "dark" class on <html>) ===== */

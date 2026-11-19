@@ -124,6 +124,12 @@ export const appConfig = {
     calendarMonthsAhead: 12,
   },
 
+  // ---- Files (Settings › Data and backup, R.6) ------------------------------------------------------
+  storage: {
+    /** The storage allowance the "files stored" line is drawn against: 1 GB on the free Supabase plan. */
+    allowanceBytes: 1024 * 1024 * 1024,
+  },
+
   // ---- Shared pages (DECISIONS C35) ------------------------------------------------------------
   sharedPages: [
     { key: "reminders", label: "Reminders", navLabel: "Reminders", href: "/reminders", icon: "bell" },
