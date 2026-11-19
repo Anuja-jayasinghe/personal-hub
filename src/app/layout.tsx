@@ -1,6 +1,7 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+import { clerkAppearance } from "@/components/brand/clerk-appearance";
 import { Providers } from "@/components/providers";
 import { appConfig } from "@/config/app.config";
 import { fontVariables } from "@/theme/fonts";
@@ -31,7 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {/* Clerk reads the current path and the session, which are request-time data: with cache
             components that has to sit inside Suspense (C61). */}
         <Suspense fallback={null}>
-          <ClerkProvider>
+          <ClerkProvider appearance={clerkAppearance}>
             <Providers>{children}</Providers>
           </ClerkProvider>
         </Suspense>

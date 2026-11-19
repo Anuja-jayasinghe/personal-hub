@@ -1,5 +1,6 @@
 import { SignUp } from "@clerk/nextjs";
 import type { Metadata } from "next";
+import { SignInFrame } from "@/components/brand/sign-in-frame";
 
 export const metadata: Metadata = { title: "Sign up" };
 
@@ -9,8 +10,10 @@ export const metadata: Metadata = { title: "Sign up" };
  */
 export default function SignUpPage() {
   return (
-    <main className="flex flex-1 items-center justify-center p-6">
-      <SignUp />
+    <main className="flex flex-1 flex-col">
+      <SignInFrame crumb="Accept your invite" title="Join the hub." lead="Use the email address your invitation was sent to.">
+        <SignUp />
+      </SignInFrame>
     </main>
   );
 }

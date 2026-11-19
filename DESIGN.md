@@ -334,8 +334,8 @@ Every page in the app and the board that shows it. "Exists" means the route is i
 
 | Page | Route | Boards | Status |
 |------|-------|--------|--------|
-| Sign in, code, signed out | `/sign-in` | `HSignIn`, `HSignInPhone` | exists (Clerk; style with its appearance options) |
-| Not on the list | (AccessGate) | `HStates` | exists, restyle |
+| Sign in, code, signed out | `/sign-in` | `HSignIn`, `HSignInPhone` | built (R.6: hub frame plus Clerk's appearance options) |
+| Not on the list | (AccessGate) | `HStates` | built (R.6) |
 | Home | `/` | `HHomePhone`, `HHome` | exists |
 | First day | `/` with no meters | `HStates` | new |
 | Electricity | `/electricity` | `HElectricity`, `HElectricityDesktop`, `HLight` | exists |
@@ -350,14 +350,14 @@ Every page in the app and the board that shows it. "Exists" means the route is i
 | Reminders, add a reminder | `/reminders` | `HReminders`, `HAddForms` | exists |
 | Tasks and notes | `/tasks` | `HTasksNotes` | exists |
 | More | `/more` | `HMore` | new (phone only) |
-| Settings | `/settings` | `HSettings` | exists |
-| Meters and rules, Notifications, Data and backup | `/settings/...` | `HSettingsMore` | new |
+| Settings | `/settings` | `HSettings` | built (R.6) |
+| Meters and rules, Notifications, Data and backup | `/settings/meters`, `/settings/backup` | `HSettingsMore` | Meters and rules and Data and backup built read-only (R.6); Notifications waits for P35/P36 |
 | People and roles, one person, invite, activity | `/settings/people` | `HAdmin`, `HAdminPhone` | new, Phase 5 (P40) |
 | Setup, step 1 add a meter | `/setup` | `HAddForms` | new |
-| 404 | `not-found.tsx` | `HSystem`, `H404Desktop` | new |
-| Loading | `loading.tsx` per route | `HSystem` | new |
-| Something went wrong ("Lost the connection") | `error.tsx` | `HStates` | new |
-| Offline | banner in the shell | `HSystem` | new |
+| 404 | `not-found.tsx` | `HSystem`, `H404Desktop` | built (R.6) |
+| Loading | `(app)/loading.tsx` | `HSystem` | built (R.6) |
+| Something went wrong ("Lost the connection") | `(app)/error.tsx` | `HStates` | built (R.6) |
+| Offline | banner in the shell | `HSystem` | built (R.6) |
 
 Designed but needing a decision before building: the **Notifications** page shows phone notifications and a weekly email, but phone notifications were decided against (C63) and email is 4.3 (P35, P36); **All documents** is P39; **People and roles** and its presets answer part of P40; **Which meter is live** is issue #69.
 

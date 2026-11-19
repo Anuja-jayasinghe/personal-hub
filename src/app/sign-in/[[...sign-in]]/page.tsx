@@ -1,13 +1,16 @@
 import { SignIn } from "@clerk/nextjs";
 import type { Metadata } from "next";
+import { SignInFrame } from "@/components/brand/sign-in-frame";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-/** Clerk's sign-in form, outside the app shell. Only the owner's invited address gets through (C61). */
+/** Sign in (boards HSignIn, HSignInPhone): Clerk's form inside the hub frame, styled by clerkAppearance. */
 export default function SignInPage() {
   return (
-    <main className="flex flex-1 items-center justify-center p-6">
-      <SignIn />
+    <main className="flex flex-1 flex-col">
+      <SignInFrame crumb="Sign in" title="Welcome back." lead="Only people you invite can open the hub.">
+        <SignIn />
+      </SignInFrame>
     </main>
   );
 }
