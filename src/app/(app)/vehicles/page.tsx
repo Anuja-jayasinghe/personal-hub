@@ -26,7 +26,7 @@ async function VehicleList({ showArchived }: { showArchived: boolean }) {
           hint={showArchived ? "Vehicles you archive (for example when sold) show up here." : "Add your first vehicle to start tracking services and renewals."}
         />
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {list.map((v) => (
             <VehicleCard key={v.id} vehicle={v} due={due.get(v.id)} />
           ))}

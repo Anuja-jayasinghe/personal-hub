@@ -69,61 +69,67 @@ export function ElectricityOverview({
   const high = units.high * 100;
   const limitOf = (id: string) => limits.meters.find((l) => l.id === id)!;
 
+  const board = (
+    <MeterBoard
+      units={units}
+      meters={meters.map((m) => {
+        const d = data.get(m.id)!;
+        return {
+          id: m.id,
+          name: m.name,
+          href: hrefFor(m.id),
+          limit: limitOf(m.id),
+          check: checks.get(m.id)!,
+          reading: d.readingRows[0]?.value ?? null,
+          flowing: live ? live.meterId === m.id : d.usage.state === "ok" && (d.usage.dailyAverage ?? 0) > 0,
+          live: live ? live.meterId === m.id : null,
+        };
+      })}
+    />
+  );
+
+  const slabRules = meters.map((m) => {
+    const d = data.get(m.id)!;
+    const limit = limitOf(m.id);
+    return (
+      <Link
+        key={m.id}
+        href={hrefFor(m.id)}
+        aria-label={`${m.name}: ${usedOfLimit(limit)}`}
+        className="flex flex-col gap-1 rounded-2xl border bg-card px-4 pt-3 pb-1.5 outline-none hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <span className="flex items-baseline gap-2">
+          <MeterBadge name={m.name} className="self-center" />
+          <span className="text-sm font-semibold">{m.name}</span>
+          <span className="text-xs text-muted-foreground">{limit.known ? `${Math.round(limit.used / 100)} used` : "not counting yet"}</span>
+          {d.usage.state === "ok" && d.usage.projected !== null ? (
+            <span className="ml-auto font-mono text-[10.5px] text-label">PACE ~{Math.round(d.usage.projected / 100)}</span>
+          ) : null}
+        </span>
+        <SlabRule used={limit.used} projected={d.usage.state === "ok" ? d.usage.projected : null} low={low} high={high} state={limit.state} size="sm" />
+      </Link>
+    );
+  });
+
+  // Phone and narrow windows: one column in reading order. Wide windows (lg, board HElectricityDesktop):
+  // the board across two columns with the warnings, the room left and what is to pay beside it, then the
+  // slab rules next to the cycle chart, then the monthly chart (issue #105).
   return (
     <div className="flex flex-col gap-3 md:gap-5">
-      <MeterBoard
-        units={units}
-        meters={meters.map((m) => {
-          const d = data.get(m.id)!;
-          return {
-            id: m.id,
-            name: m.name,
-            href: hrefFor(m.id),
-            limit: limitOf(m.id),
-            check: checks.get(m.id)!,
-            reading: d.readingRows[0]?.value ?? null,
-            flowing: live ? live.meterId === m.id : d.usage.state === "ok" && (d.usage.dailyAverage ?? 0) > 0,
-            live: live ? live.meterId === m.id : null,
-          };
-        })}
-      />
-
-      {meters.length > 1 ? <LiveControls meters={meters.map((m) => ({ id: m.id, name: m.name }))} live={live} today={today} /> : null}
-
-      {advice ? (
-        <Note tone={limits.advice?.kind === "over" ? "over" : "near"} role={limits.advice?.kind === "over" ? "alert" : "status"}>
-          {advice}
-        </Note>
-      ) : null}
-      {nudge ? <Note tone="near">{nudge}</Note> : null}
-
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] md:gap-5">
-        <div className="flex flex-col gap-3">
-          {meters.map((m) => {
-            const d = data.get(m.id)!;
-            const limit = limitOf(m.id);
-            return (
-              <Link
-                key={m.id}
-                href={hrefFor(m.id)}
-                aria-label={`${m.name}: ${usedOfLimit(limit)}`}
-                className="flex flex-col gap-1 rounded-2xl border bg-card px-4 pt-3 pb-1.5 outline-none hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <span className="flex items-baseline gap-2">
-                  <MeterBadge name={m.name} className="self-center" />
-                  <span className="text-sm font-semibold">{m.name}</span>
-                  <span className="text-xs text-muted-foreground">{limit.known ? `${Math.round(limit.used / 100)} used` : "not counting yet"}</span>
-                  {d.usage.state === "ok" && d.usage.projected !== null ? (
-                    <span className="ml-auto font-mono text-[10.5px] text-label">PACE ~{Math.round(d.usage.projected / 100)}</span>
-                  ) : null}
-                </span>
-                <SlabRule used={limit.used} projected={d.usage.state === "ok" ? d.usage.projected : null} low={low} high={high} state={limit.state} size="sm" />
-              </Link>
-            );
-          })}
+      <div className="grid gap-3 md:gap-5 lg:grid-cols-3">
+        <div className="flex min-w-0 flex-col gap-3 lg:col-span-2">
+          {board}
+          {meters.length > 1 ? <LiveControls meters={meters.map((m) => ({ id: m.id, name: m.name }))} live={live} today={today} /> : null}
         </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="flex min-w-0 flex-col gap-3">
+          {advice ? (
+            <Note tone={limits.advice?.kind === "over" ? "over" : "near"} role={limits.advice?.kind === "over" ? "alert" : "status"}>
+              {advice}
+            </Note>
+          ) : null}
+          {nudge ? <Note tone="near">{nudge}</Note> : null}
+
           <section aria-label="Room before a price jump" className="flex flex-col gap-2 rounded-2xl border bg-card p-4">
             <span className="font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">Both meters</span>
             <p className="flex items-baseline gap-2.5">
@@ -150,23 +156,26 @@ export function ElectricityOverview({
         </div>
       </div>
 
-      <div className="hidden md:block">
-        <CycleChart
-          low={low}
-          high={high}
-          cycleDays={appConfig.electricity.billingCycleDays}
-          lines={meters.map((m) => {
-            const d = data.get(m.id)!;
-            return {
-              id: m.id,
-              name: m.name,
-              letter: badgeLetter(m.name),
-              stroke: toneFor(toneIndexOf(m.id)).stroke,
-              points: d.cycle,
-              projected: d.usage.state === "ok" ? d.usage.projected : null,
-            };
-          })}
-        />
+      <div className="grid gap-3 md:gap-5 lg:grid-cols-2">
+        <div className="flex min-w-0 flex-col gap-3">{slabRules}</div>
+        <div className="hidden min-w-0 md:block">
+          <CycleChart
+            low={low}
+            high={high}
+            cycleDays={appConfig.electricity.billingCycleDays}
+            lines={meters.map((m) => {
+              const d = data.get(m.id)!;
+              return {
+                id: m.id,
+                name: m.name,
+                letter: badgeLetter(m.name),
+                stroke: toneFor(toneIndexOf(m.id)).stroke,
+                points: d.cycle,
+                projected: d.usage.state === "ok" ? d.usage.projected : null,
+              };
+            })}
+          />
+        </div>
       </div>
 
       <MonthlyChart meters={allMeters} bills={bills} />
