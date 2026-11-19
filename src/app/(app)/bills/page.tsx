@@ -17,7 +17,7 @@ import { listBillItems, listPayments } from "@/features/bills/queries";
 import { commitments, lastDayOf, occurrencesOf, toBillLike, upcoming } from "@/features/bills/upcoming";
 import { listAllBills, listMeters, listUnpaidBillsWithDueDate } from "@/features/electricity/queries";
 import { attachmentsByOwner } from "@/features/shared/queries";
-import { occurrenceDays, toPay } from "@/features/bills/line";
+import { occurrenceDays, toPay, toPayNow } from "@/features/bills/line";
 import { addMonths, monthOf } from "@/lib/dates";
 import { formatMoney, todayInAppTz } from "@/lib/format";
 
@@ -50,20 +50,22 @@ async function BillsContent({ searchParams }: { searchParams: Promise<{ archived
   const electricity = electricityOccurrences(unpaidElectricity, today);
   const inMonth = [...bills.flatMap((b) => occurrencesOf(b, today, lastDayOf(month))), ...electricity].filter((o) => monthOf(o.date) === month);
   const soon = upcoming(bills, electricity, today, horizon);
-  const due = toPay(soon);
+  // To pay now (S.5): this period's bill of each item plus anything late, not every date in the window.
+  const payNow = toPayNow(soon, today);
+  const due = toPay(payNow);
 
   return (
     <>
       {!showArchived ? (
         <>
-          <section aria-label={`To pay in the next ${horizon} days`} className="flex flex-col gap-1 rounded-3xl border border-raised bg-deepest p-4 md:p-5">
+          <section aria-label="To pay now" className="flex flex-col gap-1 rounded-3xl border border-raised bg-deepest p-4 md:p-5">
             <div className="flex items-baseline font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">
-              <span>To pay</span>
-              <span className="ml-auto">Next {horizon} days</span>
+              <span>To pay now</span>
+              <span className="ml-auto">This period and anything late</span>
             </div>
             <p className="font-display text-4xl leading-none font-semibold tracking-tight md:text-5xl">{formatMoney(due.cents / 100)}</p>
             <p className="text-sm text-muted-foreground">
-              {soon.length === 0 ? "Nothing due." : `${soon.length} payment${soon.length === 1 ? "" : "s"}`}
+              {payNow.length === 0 ? "Nothing to pay right now." : `${payNow.length} payment${payNow.length === 1 ? "" : "s"}`}
               {due.withoutAmount > 0 ? `, ${due.withoutAmount} without an amount` : ""}
             </p>
           </section>

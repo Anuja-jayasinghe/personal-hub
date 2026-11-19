@@ -77,3 +77,20 @@ describe("looksLikeCardNumber", () => {
     expect(looksLikeCardNumber("Visa ending 1234")).toBe(false);
   });
 });
+
+describe("parseBillItem with a bill day (S.5)", () => {
+  it("turns the day the bill arrives into the next due date, and keeps the day", () => {
+    const r = parseBillItem({ name: "Water", frequency: "monthly", billDay: "5" }, "2026-11-19");
+    expect(r).toMatchObject({ ok: true, value: { nextDueDate: "2026-12-05", anchorDay: 5 } });
+  });
+  it("refuses a day outside 1 to 31, and ignores a bill day on a yearly item", () => {
+    expect(parseBillItem({ name: "Water", frequency: "monthly", billDay: "32" }, "2026-11-19")).toMatchObject({ ok: false });
+    expect(parseBillItem({ name: "Car tax", frequency: "yearly", billDay: "5", nextDueDate: "2027-03-01" }, "2026-11-19")).toMatchObject({
+      ok: true,
+      value: { nextDueDate: "2027-03-01" },
+    });
+  });
+  it("asks for the due date of a one-time bill", () => {
+    expect(parseBillItem({ name: "Plumber", frequency: "one_off" }, "2026-11-19")).toMatchObject({ ok: false, error: "The due date is required." });
+  });
+});

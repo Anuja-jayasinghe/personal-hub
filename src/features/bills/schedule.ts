@@ -46,6 +46,17 @@ export function addMonthsKeepingDay(ymd: string, months: number, anchorDay: numb
   return `${pad(year, 4)}-${pad(month)}-${pad(Math.min(anchorDay, daysInMonth(year, month)))}`;
 }
 
+/**
+ * The first date after `today` that falls on `billDay` (or on the last day of a shorter month): when a
+ * monthly bill that arrives on that day must be paid by, since it is paid before the next one arrives
+ * (S.5, owner's item 31). On 19 Nov a bill that arrives on the 5th is due by 5 Dec; one that arrives on
+ * the 25th by 25 Nov.
+ */
+export function nextBillDayAfter(today: string, billDay: number): string {
+  const thisMonth = addMonthsKeepingDay(today, 0, billDay);
+  return thisMonth > today ? thisMonth : addMonthsKeepingDay(today, 1, billDay);
+}
+
 function addDaysTo(ymd: string, days: number): string {
   const { y, m, d } = parts(ymd);
   const date = new Date(Date.UTC(y, m - 1, d + days));
