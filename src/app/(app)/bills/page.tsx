@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { BillItemCard } from "@/components/bills/bill-item-card";
-import { BillsCalendar } from "@/components/bills/bills-calendar";
+import { BillsCalendar, type PaidMark } from "@/components/bills/bills-calendar";
 import { CommitmentsCard } from "@/components/bills/commitments-card";
 import { ElectricityBills } from "@/components/bills/electricity-bills";
 import { UpcomingList } from "@/components/bills/upcoming-list";
@@ -19,6 +19,8 @@ import { listAllBills, listMeters, listUnpaidBillsWithDueDate } from "@/features
 import { attachmentsByOwner } from "@/features/shared/queries";
 import { occurrenceDays, toPay, toPayNow } from "@/features/bills/line";
 import { addMonths, monthOf } from "@/lib/dates";
+import { toCents } from "@/lib/decimal";
+import { electricityBillHref, meterBillLabel } from "@/features/electricity/links";
 import { formatMoney, todayInAppTz } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Bills & subscriptions" };
@@ -50,6 +52,26 @@ async function BillsContent({ searchParams }: { searchParams: Promise<{ archived
   const electricity = electricityOccurrences(unpaidElectricity, today);
   const inMonth = [...bills.flatMap((b) => occurrencesOf(b, today, lastDayOf(month))), ...electricity].filter((o) => monthOf(o.date) === month);
   const soon = upcoming(bills, electricity, today, horizon);
+  // What was already paid in the month shown, as green nodes on the calendar (S.5b).
+  const nameOfItem = new Map(items.map((i) => [i.id, i.name]));
+  const meterById = new Map(electricityMeters.map((m) => [m.id, m]));
+  const paidMarks: PaidMark[] = [
+    ...payments
+      .filter((p) => monthOf(p.paidDate) === month)
+      .map((p) => ({ key: `paid:${p.id}`, date: p.paidDate, title: nameOfItem.get(p.itemId) ?? "Payment", amount: p.amount === null ? null : toCents(p.amount), href: `/bills#item-${p.itemId}` })),
+    ...electricityBills
+      .filter((b) => b.paidDate && monthOf(b.paidDate) === month)
+      .map((b) => {
+        const m = meterById.get(b.meterId);
+        return {
+          key: `paid-e:${b.id}`,
+          date: b.paidDate!,
+          title: `Electricity · ${m ? meterBillLabel(m) : "meter"}`,
+          amount: b.amount === null ? null : toCents(b.amount),
+          href: electricityBillHref(b.id),
+        };
+      }),
+  ];
   // To pay now (S.5): this period's bill of each item plus anything late, not every date in the window.
   const payNow = toPayNow(soon, today);
   const due = toPay(payNow);
@@ -78,6 +100,7 @@ async function BillsContent({ searchParams }: { searchParams: Promise<{ archived
             month={month}
             today={today}
             occurrences={inMonth}
+            paid={paidMarks}
             prevMonth={month > thisMonth ? addMonths(month, -1) : null}
             nextMonth={month < lastMonth ? addMonths(month, 1) : null}
           />

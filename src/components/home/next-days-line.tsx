@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { ledFill, todayRing } from "@/components/shared/circuit";
 import { placeLabels, whenLabel, type TimelineDay } from "@/features/home/home";
 
-const node = { overdue: "bg-status-overdue-soft ring-status-overdue", due: "bg-status-soon-soft ring-status-soon-mark", check: "bg-card ring-label" } as const;
+// The circuit look shared with the Bills calendar and the Reminders strip (S.5b, C111).
+const node = { overdue: `size-3.5 ${ledFill.late}`, due: `size-3.5 ${ledFill.due}`, check: `size-2.5 ${ledFill.check}` } as const;
 const text = { overdue: "text-status-overdue", due: "text-status-soon", check: "text-muted-foreground" } as const;
 
 /** The narrowest the line gets (a phone); labels are placed for this width so they never overlap. */
@@ -49,7 +51,11 @@ export function NextDaysLine({
         <>
           <div aria-hidden className="relative mx-2 h-16">
             <span className="absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-border" />
-            {days[0].day !== 0 ? <span className="absolute top-1/2 left-0 size-3 -translate-1/2 rounded-full bg-primary ring-2 ring-card" /> : null}
+            {/* A mark at each week, so the line reads as time. */}
+            {[7, 14, 21, 28].filter((w) => w < windowDays).map((w) => (
+              <span key={w} className="absolute top-1/2 h-2.5 w-px -translate-y-1/2 bg-quiet" style={{ left: at(w) }} />
+            ))}
+            {days[0].day !== 0 ? <span className={`absolute top-1/2 left-0 size-3.5 -translate-1/2 rounded-full ${todayRing}`} /> : null}
             {days.map((d, i) => {
               const tone = toneOf(d);
               const label = labels[i];
@@ -64,7 +70,7 @@ export function NextDaysLine({
                     />
                   ) : null}
                   <span
-                    className={`absolute top-1/2 size-3 -translate-1/2 rounded-full ring-2 ${d.day === 0 && tone === "check" ? "bg-primary ring-primary" : node[tone]}`}
+                    className={`absolute top-1/2 -translate-1/2 rounded-full ${d.day === 0 && tone === "check" ? `size-3.5 ${todayRing}` : node[tone]} ${d.day === 0 && tone !== "check" ? "ring-2 ring-primary ring-offset-2 ring-offset-card" : ""}`}
                     style={{ left: at(d.day) }}
                   />
                   {label.text ? (
