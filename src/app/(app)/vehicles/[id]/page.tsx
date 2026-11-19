@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PageTopBar } from "@/components/shell/page-header";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { SubmitButton } from "@/components/shared/submit-button";
@@ -57,6 +58,7 @@ async function VehicleContent({
 
   return (
     <>
+      <PageTopBar parent={{ href: "/vehicles", label: "Vehicles" }} />
       <section aria-label={vehicle.nickname} className="overflow-hidden rounded-3xl border border-raised bg-deepest">
         <div className="flex items-start gap-3 px-4 pt-4 md:px-6 md:pt-5">
           {vehicle.registrationNumber ? (

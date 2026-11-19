@@ -1,20 +1,19 @@
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { Logo } from "@/components/brand/logo";
 import { AddBothReadingsButton } from "@/components/electricity/popover-button";
 import { AreaTiles } from "@/components/home/area-tiles";
 import { ElectricitySummary } from "@/components/home/electricity-summary";
 import { NeedsYouNext, type NextItem } from "@/components/home/needs-you-next";
 import { NextDaysLine } from "@/components/home/next-days-line";
 import { SetupCard } from "@/components/home/setup-card";
+import { HeaderAccount, PhoneMark } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { appConfig, isModuleEnabled } from "@/config/app.config";
 import { listAllBills, listAllReadings, listLiveSwitches, listMeters } from "@/features/electricity/queries";
 import { electricitySnapshot } from "@/features/electricity/snapshot";
-import { dayStamp, dueByArea, greetingFor, meterCheckDue, nextDays, setupSteps } from "@/features/home/home";
+import { dayOfYear, dayStamp, dueByArea, greetingFor, meterCheckDue, nextDays, setupSteps } from "@/features/home/home";
 import { getReminders } from "@/features/reminders/load";
 import { getFirstName } from "@/lib/auth";
-import { daysBetween } from "@/lib/dates";
 import { hourInAppTz } from "@/lib/format";
 
 /** How far ahead Home looks (the line and the tiles). */
@@ -39,11 +38,8 @@ async function HomeContent() {
   ]);
   const { today, results } = reminders;
   const snap = electricitySnapshot({ meters, readings, bills, switches, today });
-  const { checkEveryDays, billingCycleDays } = appConfig.electricity;
-
-  // Day of the cycle, from the first meter with a bill.
-  const sinceDate = meters.map((m) => snap.data.get(m.id)!.last?.readingDate).find(Boolean);
-  const cycleDay = sinceDate ? daysBetween(sinceDate, today) : null;
+  const { checkEveryDays } = appConfig.electricity;
+  const year = dayOfYear(today);
 
   // First day: until every meter has a bill and a reading after it, Home shows the setup steps.
   const steps = setupSteps({
@@ -69,33 +65,25 @@ async function HomeContent() {
   return (
     <>
       <header className="flex items-start gap-3">
-        <span className="pt-1 md:hidden">
-          <Logo size={30} decorative />
-        </span>
+        <PhoneMark />
         <div className="min-w-0 flex-1">
           <p className="font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">
-            {dayStamp(today)}
-            {cycleDay !== null ? ` · day ${cycleDay} of ${billingCycleDays}` : ""}
+            {dayStamp(today)} · day {year.day} of {year.of}
           </p>
           <h1 className="mt-1 text-[26px] leading-tight font-normal tracking-tight md:text-[40px] md:font-light">
             {greetingFor(hourInAppTz())}
             {firstName ? `, ${firstName}` : ""}.
           </h1>
         </div>
-        {meters.length > 0 && !settingUp ? (
-          <span className="hidden md:block">
-            <AddBothReadingsButton meters={entries} defaultDate={today} />
-          </span>
-        ) : null}
+        <HeaderAccount />
       </header>
 
       <div className="grid gap-3 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] md:gap-5">
         <div className="flex flex-col gap-3 md:gap-5">
-          {settingUp ? <SetupCard steps={steps} /> : meters.length > 0 ? <ElectricitySummary snapshot={snap} /> : null}
-          {meters.length > 0 && !settingUp ? (
-            <div className="md:hidden [&_button]:w-full">
-              <AddBothReadingsButton meters={entries} defaultDate={today} />
-            </div>
+          {settingUp ? (
+            <SetupCard steps={steps} />
+          ) : meters.length > 0 ? (
+            <ElectricitySummary snapshot={snap} action={<AddBothReadingsButton meters={entries} defaultDate={today} compact />} />
           ) : null}
           <NextDaysLine days={days} windowDays={WINDOW_DAYS} />
         </div>

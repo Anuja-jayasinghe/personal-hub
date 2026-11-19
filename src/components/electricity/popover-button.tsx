@@ -85,16 +85,16 @@ export function AddBillButton({
 }
 
 /** "Read the meters": every meter's reading in one bottom sheet (2b.1, R.3b), closing itself after saving. The primary action of the page. */
-export function AddBothReadingsButton({ meters, defaultDate }: { meters: MeterForEntry[]; defaultDate: string }) {
+export function AddBothReadingsButton({ meters, defaultDate, compact = false }: { meters: MeterForEntry[]; defaultDate: string; compact?: boolean }) {
   return (
     <SheetButton
       label="Read the meters"
       title="Read the meters"
       crumb="/ Electricity / New reading"
       description="Type what each dial shows. Leave one blank if you only read one."
-      variant="default"
-      size="lg"
-      plus={false}
+      variant={compact ? "outline" : "default"}
+      size={compact ? "sm" : "lg"}
+      plus={compact}
     >
       {(close) => <BothReadingsForm meters={meters} defaultDate={defaultDate} onDone={close} />}
     </SheetButton>

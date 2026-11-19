@@ -20,9 +20,14 @@ function sharedItems(): NavItem[] {
   return appConfig.sharedPages.map((p) => ({ key: p.key, label: p.navLabel, href: p.href, icon: p.icon }));
 }
 
-/** Desktop rail: everything, in DESIGN.md order (Home, Electricity, Vehicles, Bills, Reminders, Tasks, Settings). */
+/** Desktop rail, top group: Home, Electricity, Vehicles, Bills, Reminders, Tasks (DESIGN.md order). */
 export function railItems(): NavItem[] {
-  return [home, ...moduleItems(), ...sharedItems(), settings];
+  return [home, ...moduleItems(), ...sharedItems()];
+}
+
+/** Desktop rail, pinned to the bottom: Settings (S.1, owner's list item 8). */
+export function railBottomItems(): NavItem[] {
+  return [settings];
 }
 
 /** Phone bar: Home, Vehicles, Electricity, Bills, More (DESIGN.md). The rest lives on the More page. */
