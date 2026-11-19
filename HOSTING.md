@@ -9,6 +9,7 @@ owner before it is done. Secrets are never printed, committed or pasted into cha
 - Code ready for Vercel: uploads go straight from the browser to private storage through one-time links
   (Vercel caps a request at 4.5 MB); one database connection per server copy, prepared statements off.
 - The app runs in Vercel's **Singapore** region (`vercel.json`), next to the database.
+- `vercel.json` also sets the framework to **Next.js**: the project was created with the preset "Other", which made the first deploy answer 404 everywhere (issue #130).
 - Vercel project **personal-hub** (team anuja-jayasinghes-projects), linked from this folder (`.vercel/`, git-ignored).
 - Production settings on Vercel: `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (sensitive), `ALLOWED_EMAILS` (sensitive),
   `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL`, `DATABASE_URL` (sensitive; Supabase's
