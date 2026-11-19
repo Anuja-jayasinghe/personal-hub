@@ -36,7 +36,7 @@ function meterFields(fd: FormData) {
 
 export async function createMeter(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser("owner");
     await db.insert(electricityMeters).values(meterFields(fd));
     refresh();
     return { ok: true };
@@ -47,7 +47,7 @@ export async function createMeter(_prev: ActionState, fd: FormData): Promise<Act
 
 export async function updateMeter(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser("owner");
     await db.update(electricityMeters).set(meterFields(fd)).where(eq(electricityMeters.id, idFrom(fd)));
     refresh();
     return { ok: true };
@@ -57,20 +57,20 @@ export async function updateMeter(_prev: ActionState, fd: FormData): Promise<Act
 }
 
 export async function archiveMeter(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser("owner");
   await db.update(electricityMeters).set({ archivedAt: new Date() }).where(eq(electricityMeters.id, idFrom(fd)));
   refresh();
 }
 
 export async function unarchiveMeter(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser("owner");
   await db.update(electricityMeters).set({ archivedAt: null }).where(eq(electricityMeters.id, idFrom(fd)));
   refresh();
 }
 
 /** Permanent: the meter and (by cascade) all its readings and bills. */
 export async function deleteMeter(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser("owner");
   const id = idFrom(fd);
   await db.delete(electricityMeters).where(eq(electricityMeters.id, id));
   refresh();
@@ -97,7 +97,7 @@ async function readingToSave(fd: FormData, meterId: string, editingId?: string) 
 
 export async function addReading(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser({ area: "electricity_readings", level: "add" });
     const meterId = idFrom(fd, "meterId");
     const [meter] = await db.select({ id: electricityMeters.id }).from(electricityMeters).where(eq(electricityMeters.id, meterId));
     if (!meter) throw new ValidationError("That meter could not be found.");
@@ -117,7 +117,7 @@ export async function addReading(_prev: ActionState, fd: FormData): Promise<Acti
  */
 export async function addReadings(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser({ area: "electricity_readings", level: "add" });
     const meters = await db
       .select({ id: electricityMeters.id, name: electricityMeters.name })
       .from(electricityMeters)
@@ -161,7 +161,7 @@ export async function addReadings(_prev: ActionState, fd: FormData): Promise<Act
 
 export async function updateReading(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser({ area: "electricity_readings", level: "edit" });
     const id = idFrom(fd);
     const [existing] = await db.select().from(electricityReadings).where(eq(electricityReadings.id, id));
     if (!existing) throw new ValidationError("That reading could not be found.");
@@ -175,7 +175,7 @@ export async function updateReading(_prev: ActionState, fd: FormData): Promise<A
 }
 
 export async function deleteReading(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser({ area: "electricity_readings", level: "edit" });
   await db.delete(electricityReadings).where(eq(electricityReadings.id, idFrom(fd)));
   refresh();
 }
@@ -192,7 +192,7 @@ function billFields(fd: FormData) {
 
 export async function createBill(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser({ area: "electricity_bills", level: "add" });
     const meterId = idFrom(fd, "meterId");
     const [meter] = await db.select({ id: electricityMeters.id }).from(electricityMeters).where(eq(electricityMeters.id, meterId));
     if (!meter) throw new ValidationError("That meter could not be found.");
@@ -206,7 +206,7 @@ export async function createBill(_prev: ActionState, fd: FormData): Promise<Acti
 
 export async function updateBill(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser({ area: "electricity_bills", level: "edit" });
     await db.update(electricityBills).set(billFields(fd)).where(eq(electricityBills.id, idFrom(fd)));
     refresh();
     return { ok: true };
@@ -217,7 +217,7 @@ export async function updateBill(_prev: ActionState, fd: FormData): Promise<Acti
 
 /** Permanent: the bill. */
 export async function deleteBill(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser({ area: "electricity_bills", level: "edit" });
   const id = idFrom(fd);
   await db.delete(electricityBills).where(eq(electricityBills.id, id));
   refresh();
@@ -225,7 +225,7 @@ export async function deleteBill(fd: FormData): Promise<void> {
 
 /** Marks a bill paid on the given date (today in the app time zone when left empty). An invalid date is ignored. */
 export async function markBillPaid(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser({ area: "electricity_bills", level: "edit" });
   const given = fd.get("paidDate");
   const paidDate = typeof given === "string" && given.trim() ? given.trim() : todayInAppTz();
   if (!isValidDate(paidDate)) return;
@@ -234,7 +234,7 @@ export async function markBillPaid(fd: FormData): Promise<void> {
 }
 
 export async function markBillUnpaid(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser({ area: "electricity_bills", level: "edit" });
   await db.update(electricityBills).set({ paidDate: null }).where(eq(electricityBills.id, idFrom(fd)));
   refresh();
 }
@@ -245,7 +245,7 @@ export async function markBillUnpaid(fd: FormData): Promise<void> {
  */
 export async function switchLiveMeter(fd: FormData): Promise<ActionState & { switchId?: string }> {
   try {
-    await requireUser();
+    await requireUser("owner");
     const meterId = idFrom(fd, "meterId");
     const given = fd.get("switchedOn");
     const today = todayInAppTz();
@@ -267,7 +267,7 @@ export async function switchLiveMeter(fd: FormData): Promise<ActionState & { swi
 
 /** Takes a switch back (the Undo message after switching). Only removes that one row. */
 export async function undoLiveSwitch(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser("owner");
   await db.delete(electricityLiveSwitches).where(eq(electricityLiveSwitches.id, idFrom(fd)));
   refresh();
 }

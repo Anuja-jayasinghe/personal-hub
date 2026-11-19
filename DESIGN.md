@@ -356,7 +356,7 @@ Every page in the app and the board that shows it. "Exists" means the route is i
 | More | `/more` | `HMore` | new (phone only) |
 | Settings | `/settings` | `HSettings` | built (R.6) |
 | Meters and rules, Notifications, Data and backup | `/settings/meters`, `/settings/backup` | `HSettingsMore` | Meters and rules and Data and backup built read-only (R.6); Notifications waits for P35/P36 |
-| People and roles, one person, invite, activity | `/settings/people` | `HAdmin`, `HAdminPhone` | new, Phase 5 (P40) |
+| People and roles, one person, invite, activity | `/settings/people` | `HAdmin`, `HAdminPhone` | People and roles built (S.8, C114): add, approve, access per section, block; invites by email and activity later |
 | Setup, step 1 add a meter | `/setup` | `HAddForms` | new |
 | 404 | `not-found.tsx` | `HSystem`, `H404Desktop` | built (R.6) |
 | Loading | `(app)/loading.tsx` | `HSystem` | built (R.6) |

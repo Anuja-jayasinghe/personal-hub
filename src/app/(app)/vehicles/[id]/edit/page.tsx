@@ -1,3 +1,4 @@
+import { requirePage } from "@/lib/auth";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -11,6 +12,7 @@ import { getVehicle } from "@/features/vehicles/queries";
 export const metadata: Metadata = { title: "Edit vehicle" };
 
 async function EditContent({ params }: { params: Promise<{ id: string }> }) {
+  await requirePage({ area: "vehicles", level: "edit" });
   const { id } = await params;
   const vehicle = await getVehicle(id);
   if (!vehicle) notFound();

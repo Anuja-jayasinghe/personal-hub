@@ -1,3 +1,5 @@
+import { allows } from "@/features/people/access";
+import { requirePage } from "@/lib/auth";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -46,8 +48,24 @@ async function VehicleList({ showArchived }: { showArchived: boolean }) {
 }
 
 async function VehiclesContent({ searchParams }: { searchParams: Promise<{ archived?: string }> }) {
+  const access = await requirePage({ area: "vehicles", level: "see" });
   const { archived } = await searchParams;
-  return <VehicleList showArchived={archived === "1"} />;
+  return (
+    <>
+      <PageHeader
+        title="Vehicles"
+        description="Services, licence and insurance renewals, and notes."
+        actions={
+          allows(access, "vehicles", "add") ? (
+            <Link href="/vehicles/new" className={buttonVariants()}>
+              Add vehicle
+            </Link>
+          ) : undefined
+        }
+      />
+      <VehicleList showArchived={archived === "1"} />
+    </>
+  );
 }
 
 export default function VehiclesPage(props: PageProps<"/vehicles">) {
@@ -55,15 +73,6 @@ export default function VehiclesPage(props: PageProps<"/vehicles">) {
 
   return (
     <>
-      <PageHeader
-        title="Vehicles"
-        description="Services, licence and insurance renewals, and notes."
-        actions={
-          <Link href="/vehicles/new" className={buttonVariants()}>
-            Add vehicle
-          </Link>
-        }
-      />
       <Suspense fallback={<Skeleton className="h-28 w-full rounded-xl" aria-label="Loading vehicles" />}>
         <VehiclesContent searchParams={props.searchParams as Promise<{ archived?: string }>} />
       </Suspense>

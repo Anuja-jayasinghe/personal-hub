@@ -1,3 +1,4 @@
+import { requirePage } from "@/lib/auth";
 import { getRules } from "@/features/settings/queries";
 import type { Metadata } from "next";
 import { Suspense } from "react";
@@ -22,6 +23,7 @@ const groupTitles: Record<ReminderLevel, string> = {
 const groupOrder: ReminderLevel[] = ["overdue", "today", "soon", "upcoming"];
 
 async function Reminders() {
+  await requirePage({ area: "reminders", level: "see" });
   const { today, results, failedSources } = await getReminders();
   const groups = groupByLevel(results);
   const { leadDays } = await getRules();

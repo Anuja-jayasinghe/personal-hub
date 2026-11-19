@@ -27,7 +27,7 @@ function fieldsFrom(fd: FormData) {
 
 export async function createService(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser({ area: "vehicles", level: "add" });
     const vehicleId = idFrom(fd, "vehicleId");
     const [vehicle] = await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, vehicleId));
     if (!vehicle) throw new ValidationError("That vehicle could not be found.");
@@ -46,7 +46,7 @@ export async function createService(_prev: ActionState, fd: FormData): Promise<A
 
 export async function updateService(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
-    await requireUser();
+    await requireUser({ area: "vehicles", level: "edit" });
     const id = idFrom(fd);
     const [existing] = await db.select().from(vehicleServices).where(eq(vehicleServices.id, id));
     if (!existing) throw new ValidationError("That service record could not be found.");
@@ -64,7 +64,7 @@ export async function updateService(_prev: ActionState, fd: FormData): Promise<A
 }
 
 export async function deleteService(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser({ area: "vehicles", level: "edit" });
   await db.delete(vehicleServices).where(eq(vehicleServices.id, idFrom(fd)));
   refresh();
 }

@@ -42,6 +42,25 @@ export function NotAllowedScreen({ email }: { email: string | null }) {
   );
 }
 
+/** Signed in by themselves, waiting for the owner to approve them (S.8, C114). A demo of the hub comes later. */
+export function WaitingScreen({ email }: { email: string }) {
+  return (
+    <Refusal tag="Waiting for approval" tone="soon" title="You are on the list to join">
+      <p className="text-[15px] leading-relaxed text-muted-foreground">
+        You are signed in as <span className="font-medium text-foreground">{email}</span>. The person who runs this hub decides what you can see; once they
+        approve you, the parts they share appear here.
+      </p>
+      <div className="mt-2 w-full">
+        <SignOutButton redirectUrl="/sign-in">
+          <button type="button" className={primary}>
+            Use another account
+          </button>
+        </SignOutButton>
+      </div>
+    </Refusal>
+  );
+}
+
 /**
  * Wraps the whole app shell: only a signed-in person on the allowed list sees anything. The
  * children are only rendered when access is granted, so no page code or database query runs for
@@ -64,6 +83,7 @@ export async function AccessGate({ children }: { children: React.ReactNode }) {
   }
 
   if (state.status === "not-allowed") return <NotAllowedScreen email={state.email} />;
+  if (state.status === "pending") return <WaitingScreen email={state.email} />;
 
   return (
     <Refusal tag="Signed out" tone="soon" title="Please sign in">

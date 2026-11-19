@@ -1,3 +1,5 @@
+import { allows } from "@/features/people/access";
+import { fileArea } from "@/features/people/file-area";
 import { getAttachment } from "@/features/shared/queries";
 import { getAuthState } from "@/lib/auth";
 import { UUID_RE } from "@/features/shared/validation";
@@ -9,14 +11,17 @@ import { storageClient } from "@/lib/storage";
  * the link itself needs a signed-in, allowed user.
  */
 export async function GET(_request: Request, ctx: RouteContext<"/files/[id]">) {
-  // Documents are private: only a signed-in, allowed person may open them (C61).
-  if ((await getAuthState()).status !== "ok") return new Response("Not allowed", { status: 403, headers: { "Cache-Control": "no-store" } });
+  // Documents are private: only a signed-in, allowed person may open them (C61), and only when they
+  // may see the section the file belongs to (S.8, C114).
+  const state = await getAuthState();
+  if (state.status !== "ok") return new Response("Not allowed", { status: 403, headers: { "Cache-Control": "no-store" } });
 
   const { id } = await ctx.params;
   if (!UUID_RE.test(id)) return new Response("Not found", { status: 404 });
 
   const attachment = await getAttachment(id);
   if (!attachment) return new Response("Not found", { status: 404 });
+  if (!allows(state.access, await fileArea(attachment), "see")) return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
 
   const { data, error } = await storageClient()
     .storage.from(attachment.bucket)

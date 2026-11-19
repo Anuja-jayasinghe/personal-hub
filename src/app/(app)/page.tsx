@@ -1,3 +1,4 @@
+import { allows, navItemVisible } from "@/features/people/access";
 import { getRules } from "@/features/settings/queries";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -14,7 +15,7 @@ import { listAllBills, listAllReadings, listLiveSwitches, listMeters } from "@/f
 import { electricitySnapshot } from "@/features/electricity/snapshot";
 import { dayOfYear, dayStamp, dueByArea, greetingFor, meterCheckDue, nextDays, setupSteps } from "@/features/home/home";
 import { getReminders } from "@/features/reminders/load";
-import { getFirstName } from "@/lib/auth";
+import { getAccess, getFirstName } from "@/lib/auth";
 import { hourInAppTz } from "@/lib/format";
 
 /** How far ahead Home looks (the line and the tiles). */
@@ -28,7 +29,10 @@ const NEXT_SHOWN = 4;
  */
 async function HomeContent() {
   await connection();
-  const electricityOn = isModuleEnabled("electricity");
+  // Home shows only what this person may see (S.8, C114).
+  const access = (await getAccess()) ?? { owner: false as const, grants: {} };
+  const electricityOn = isModuleEnabled("electricity") && allows(access, "electricity_readings", "see");
+  const canRead = allows(access, "electricity_readings", "add");
   const [meters, readings, bills, switches, reminders, firstName, rules] = await Promise.all([
     electricityOn ? listMeters(false) : Promise.resolve([]),
     electricityOn ? listAllReadings() : Promise.resolve([]),
@@ -49,7 +53,8 @@ async function HomeContent() {
     bills: meters.filter((m) => snap.data.get(m.id)!.last).length === meters.length && meters.length > 0 ? 1 : 0,
     readingsSinceBill: meters.length > 0 && meters.every((m) => snap.data.get(m.id)!.usage.state === "ok") ? 1 : 0,
   });
-  const settingUp = electricityOn && steps.some((s) => !s.done);
+  // The first-day steps open Settings, which is the owner's only (S.8).
+  const settingUp = electricityOn && access.owner && steps.some((s) => !s.done);
 
   const checks = meters.map((m) => ({ meterName: m.name, dueDate: meterCheckDue(snap.data.get(m.id)!.readingRows[0]?.date ?? null, checkEveryDays, today) }));
   const days = nextDays({ reminders: results, checks, today, days: WINDOW_DAYS });
@@ -85,14 +90,14 @@ async function HomeContent() {
           {settingUp ? (
             <SetupCard steps={steps} />
           ) : meters.length > 0 ? (
-            <ElectricitySummary snapshot={snap} action={<AddBothReadingsButton meters={entries} defaultDate={today} compact />} />
+            <ElectricitySummary snapshot={snap} action={canRead ? <AddBothReadingsButton meters={entries} defaultDate={today} compact /> : undefined} />
           ) : null}
           <NextDaysLine days={days} windowDays={WINDOW_DAYS} />
         </div>
         <NeedsYouNext items={next} />
       </div>
 
-      <AreaTiles counts={dueByArea(results, WINDOW_DAYS)} windowDays={WINDOW_DAYS} />
+      <AreaTiles counts={dueByArea(results, WINDOW_DAYS)} windowDays={WINDOW_DAYS} visible={(area) => navItemVisible(access, area)} />
 
       {reminders.failedSources.length > 0 ? (
         <p role="alert" className="text-sm text-destructive">

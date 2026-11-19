@@ -1,3 +1,5 @@
+import { allows } from "@/features/people/access";
+import { requirePage } from "@/lib/auth";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -26,12 +28,18 @@ import { formatMoney, todayInAppTz } from "@/lib/format";
 export const metadata: Metadata = { title: "Bills & subscriptions" };
 
 async function BillsContent({ searchParams }: { searchParams: Promise<{ archived?: string; month?: string }> }) {
+  // Bills holds two sections (S.8, C114): bills & subscriptions, and electricity bills. A person sees
+  // the page when they may see either, and only the parts they may see.
+  const access = await requirePage("signed-in");
+  const seeItems = allows(access, "bills", "see");
+  const seeElectricity = allows(access, "electricity_bills", "see");
+  if (!seeItems && !seeElectricity) notFound();
   const params = await searchParams;
   const showArchived = params.archived === "1";
-  const electricityOn = !showArchived && isModuleEnabled("electricity");
+  const electricityOn = !showArchived && isModuleEnabled("electricity") && seeElectricity;
   const [items, archivedItems, unpaidElectricity, electricityMeters, electricityBills] = await Promise.all([
-    listBillItems(showArchived),
-    listBillItems(true),
+    seeItems ? listBillItems(showArchived) : Promise.resolve([]),
+    seeItems ? listBillItems(true) : Promise.resolve([]),
     electricityOn ? listUnpaidBillsWithDueDate() : Promise.resolve([]),
     electricityOn ? listMeters(false) : Promise.resolve([]),
     electricityOn ? listAllBills() : Promise.resolve([]),
@@ -104,18 +112,25 @@ async function BillsContent({ searchParams }: { searchParams: Promise<{ archived
             prevMonth={month > thisMonth ? addMonths(month, -1) : null}
             nextMonth={month < lastMonth ? addMonths(month, 1) : null}
           />
-          <ElectricityBills meters={electricityMeters} bills={electricityBills} today={today} />
-          <h2 className="mt-2 font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase">All bills and subscriptions</h2>
+          {seeElectricity ? (
+            <ElectricityBills
+              meters={electricityMeters}
+              bills={electricityBills}
+              today={today}
+              can={{ add: allows(access, "electricity_bills", "add"), edit: allows(access, "electricity_bills", "edit") }}
+            />
+          ) : null}
+          {seeItems ? <h2 className="mt-2 font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase">All bills and subscriptions</h2> : null}
         </>
       ) : null}
 
-      {!showArchived ? (
+      {!showArchived && allows(access, "bills", "add") ? (
         <div>
           <AddBillItemSheet defaultDate={today} />
         </div>
       ) : null}
 
-      {items.length === 0 ? (
+      {!seeItems ? null : items.length === 0 ? (
         <EmptyState
           title={showArchived ? "Nothing archived" : "Nothing here yet"}
           hint={showArchived ? "Items you archive show up here." : "Add the bills and subscriptions you pay again and again, with their next due date."}

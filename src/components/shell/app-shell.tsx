@@ -5,6 +5,8 @@ import { CurrentNavLinks } from "@/components/shell/app-nav";
 import { phoneBarItems, railBottomItems, railItems } from "@/components/shell/nav";
 import { NavLinks } from "@/components/shell/nav-links";
 import { OfflineBanner } from "@/components/shell/offline-banner";
+import { navItemVisible } from "@/features/people/access";
+import { getAccess } from "@/lib/auth";
 
 /**
  * The app frame (DESIGN.md, Navigation; boards HubRail and HubNav):
@@ -14,10 +16,13 @@ import { OfflineBanner } from "@/components/shell/offline-banner";
  * It replaces the collapsible sidebar and the slide-out panel (C30, C77; see C95).
  * The content area uses the width of the window (issue #105), so it fits at 80% to 110% browser zoom.
  */
-export function AppShell({ children }: { children: React.ReactNode }) {
-  const rail = railItems();
-  const railBottom = railBottomItems();
-  const bar = phoneBarItems();
+export async function AppShell({ children }: { children: React.ReactNode }) {
+  // Only the parts this person may see (S.8, C114); owners see everything.
+  const access = (await getAccess()) ?? { owner: false as const, grants: {} };
+  const shows = (i: { key: string }) => navItemVisible(access, i.key);
+  const rail = railItems().filter(shows);
+  const railBottom = railBottomItems().filter(shows);
+  const bar = phoneBarItems().filter(shows);
   return (
     <div className="flex min-h-svh flex-1 flex-col">
       <aside

@@ -27,6 +27,7 @@ export function ElectricityBody({
   bills,
   live = null,
   rules,
+  can = { addReadings: true, editReadings: true, seeBills: true },
   today,
   showArchived,
   meterParam,
@@ -39,6 +40,8 @@ export function ElectricityBody({
   bills: ElectricityBill[];
   /** The meter carrying the house (issue #69), among the active meters; null when not set. */
   live?: LiveMeter | null;
+  /** What this person may do here (S.8, C114); owners can do all of it. */
+  can?: { addReadings: boolean; editReadings: boolean; seeBills: boolean };
   /** The rules in force (Settings, C107). */
   rules: HubRules;
   today: string;
@@ -94,7 +97,7 @@ export function ElectricityBody({
                 archived={showArchived}
                 basePath={basePath}
               />
-              {!showArchived && meters.length > 1 ? (
+              {!showArchived && meters.length > 1 && can.addReadings ? (
                 <AddBothReadingsButton
                   defaultDate={today}
                   meters={meters.map((m) => {
@@ -108,6 +111,7 @@ export function ElectricityBody({
 
           {selected ? (
             <MeterView
+              can={can}
               meter={selected}
               allMeters={allMeters}
               data={data.get(selected.id)!}
@@ -119,7 +123,7 @@ export function ElectricityBody({
               live={live && !showArchived ? live.meterId === selected.id : null}
             />
           ) : (
-            <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} limits={limits} units={units} nameOf={nameOf} checks={checks} live={live} cycleDays={rules.billingCycleDays} />
+            <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} limits={limits} units={units} nameOf={nameOf} checks={checks} live={live} cycleDays={rules.billingCycleDays} seeBills={can.seeBills} />
           )}
         </>
       )}

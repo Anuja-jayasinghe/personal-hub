@@ -1,3 +1,5 @@
+import { sharedVisible } from "@/features/people/access";
+import { getAccess } from "@/lib/auth";
 import { Check, CircleDot, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { AttachmentsPanel } from "@/components/shared/attachments-panel";
@@ -27,7 +29,12 @@ export async function TasksPanel({
   itemName?: string;
   itemNamePlural?: string;
 }) {
-  const list = await listTasks(scope);
+  // Only what this person may see (S.8, C114): Tasks & notes, and the section of an attached record.
+  const access = (await getAccess()) ?? { owner: false as const, grants: {} };
+  const owner0 = scope.kind === "owner" ? scope.owner : null;
+  if (!sharedVisible(access, owner0?.ownerType ?? null)) return null;
+  const canAdd = sharedVisible(access, owner0?.ownerType ?? null, "add");
+  const list = (await listTasks(scope)).filter((x) => sharedVisible(access, x.ownerType));
   const files = await attachmentsByOwner("task", list.map((t) => t.id));
   const labels = scope.kind === "all" ? await ownerLabels(list) : new Map<string, OwnerLabel>();
   const today = todayInAppTz(); // after the queries, which opt this render into request time
@@ -40,7 +47,7 @@ export async function TasksPanel({
           {title} · {list.filter((t) => t.status !== "done").length} open
         </h2>
         <span className="ml-auto">
-          <AddTaskSheet owner={owner} itemName={itemName} />
+          {canAdd ? <AddTaskSheet owner={owner} itemName={itemName} /> : null}
         </span>
       </div>
 
