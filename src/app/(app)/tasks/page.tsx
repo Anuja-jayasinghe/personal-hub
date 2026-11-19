@@ -26,8 +26,13 @@ const VIEWS = [
 async function TasksContent({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
   const { view } = await searchParams;
   const current = view === "notes" ? "notes" : "tasks";
+  // The title says where you are (S.1, owner's list item 36); the switcher below changes it.
   return (
     <>
+      <PageHeader
+        title={current === "notes" ? "Notes" : "Tasks"}
+        description={current === "notes" ? "Things to remember. Files can be attached to any note." : "Things to do. Files can be attached to any task."}
+      />
       <nav aria-label="Tasks or notes" className="grid grid-cols-2 gap-1 rounded-xl bg-deepest p-1 ring-1 ring-border sm:w-80">
         {VIEWS.map((v) => (
           <Link
@@ -54,7 +59,6 @@ async function TasksContent({ searchParams }: { searchParams: Promise<{ view?: s
 export default function TasksPage(props: PageProps<"/tasks">) {
   return (
     <>
-      <PageHeader title="Tasks & notes" description="Everything you need to do or remember. Files can be attached to any task or note." />
       <Suspense fallback={<PanelSkeleton />}>
         <TasksContent searchParams={props.searchParams as Promise<{ view?: string }>} />
       </Suspense>

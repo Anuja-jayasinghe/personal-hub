@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ReminderResult } from "@/features/reminders/engine";
-import { dayLabel, dayStamp, dueByArea, placeLabels, greetingFor, meterCheckDue, nextDays, setupSteps, whenLabel } from "./home";
+import { dayLabel, dayOfYear, dayStamp, dueByArea, placeLabels, greetingFor, meterCheckDue, nextDays, setupSteps, whenLabel } from "./home";
 
 const rem = (id: string, href: string, daysUntil: number): ReminderResult => ({
   item: { id, title: id, dueDate: "2026-12-01", href, kind: "x" },
@@ -104,5 +104,15 @@ describe("placeLabels", () => {
     const placed = placeLabels([day(0, item("t", "overdue")), day(2, item("Read Meter A", "check")), day(3, item("Read Meter B", "check")), day(16, item("b", "due"))], 30, 320);
     expect(placed.map((p) => p.lane)).toEqual(["up", "down", null, "up"]);
     expect(placed[2].text).toBeNull();
+  });
+});
+
+describe("dayOfYear", () => {
+  it("counts the day of the year, with leap years", () => {
+    expect(dayOfYear("2026-01-01")).toEqual({ day: 1, of: 365 });
+    expect(dayOfYear("2026-11-19")).toEqual({ day: 323, of: 365 });
+    expect(dayOfYear("2026-12-31")).toEqual({ day: 365, of: 365 });
+    expect(dayOfYear("2028-12-31")).toEqual({ day: 366, of: 366 });
+    expect(dayOfYear("2028-03-01")).toEqual({ day: 61, of: 366 });
   });
 });

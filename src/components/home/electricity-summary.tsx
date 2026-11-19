@@ -7,9 +7,10 @@ import { adviceLine, leftHeadline, paceLine } from "@/features/electricity/limit
 /**
  * Home's electricity card (boards HHomePhone, HHome): the room left before a price jump, a small slab
  * rule per meter with its units left (the live one marked, issue #69), and the warning or the pace.
- * The whole card opens Electricity.
+ * The whole card opens Electricity (one link stretched over it), and `action` (Read the meters) sits in
+ * its top corner above that link (S.1, owner's list item 5).
  */
-export function ElectricitySummary({ snapshot }: { snapshot: ElectricitySnapshot }) {
+export function ElectricitySummary({ snapshot, action }: { snapshot: ElectricitySnapshot; action?: React.ReactNode }) {
   const { meters, data, limits, units, live } = snapshot;
   const room = Math.floor(limits.headroom / 100);
   const nameOf = (id: string) => meters.find((m) => m.id === id)?.name ?? "Meter";
@@ -19,12 +20,20 @@ export function ElectricitySummary({ snapshot }: { snapshot: ElectricitySnapshot
   const warn = advice !== null || pace?.tone === "warn";
 
   return (
-    <Link
-      href="/electricity"
-      aria-label={`Electricity: ${room} units before a price jump`}
-      className="flex flex-col gap-3.5 rounded-3xl border border-raised bg-[radial-gradient(120%_90%_at_85%_0%,color-mix(in_oklab,var(--primary)_14%,var(--deepest))_0%,var(--deepest)_60%)] p-4 outline-none hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring md:p-6"
+    <section
+      aria-label="Electricity"
+      className="relative flex flex-col gap-3.5 rounded-3xl border border-raised bg-[radial-gradient(120%_90%_at_85%_0%,color-mix(in_oklab,var(--primary)_14%,var(--deepest))_0%,var(--deepest)_60%)] p-4 has-[>div>a:hover]:border-primary/50 has-[>div>a:focus-visible]:ring-2 has-[>div>a:focus-visible]:ring-ring md:p-6"
     >
-      <span className="font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">/ Electricity</span>
+      <div className="flex min-h-8 items-center gap-3">
+        <Link
+          href="/electricity"
+          aria-label={`Electricity: ${room} units before a price jump`}
+          className="font-mono text-[10.5px] tracking-[0.14em] text-label uppercase outline-none after:absolute after:inset-0 after:rounded-3xl"
+        >
+          / Electricity
+        </Link>
+        {action ? <div className="relative z-10 ml-auto">{action}</div> : null}
+      </div>
       <span className="flex items-end gap-3">
         <span className="font-display text-[64px] leading-[0.85] font-semibold tracking-tight md:text-8xl">{room}</span>
         <span className="pb-1 text-sm leading-snug text-muted-foreground">
@@ -79,6 +88,6 @@ export function ElectricitySummary({ snapshot }: { snapshot: ElectricitySnapshot
           {note}
         </span>
       ) : null}
-    </Link>
+    </section>
   );
 }

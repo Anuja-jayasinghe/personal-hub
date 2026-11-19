@@ -43,6 +43,8 @@ export const clerkAppearance = {
     dividerLine: "bg-border",
     formFieldInput: "min-h-12 shadow-[inset_0_0_0_1px_var(--hub-edge)] focus:shadow-[inset_0_0_0_1.5px_var(--hub-blue)]",
     dividerText: "font-mono text-[10.5px] tracking-[0.14em] uppercase text-label",
+    // The profile circle at the top right of each page (S.1): 36px, like the other header buttons.
+    userButtonAvatarBox: "size-9",
     formFieldLabel: "text-[13px] font-medium text-muted-foreground",
   },
 } as const;

@@ -105,6 +105,14 @@ export function dayStamp(date: string): string {
   return `${WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]} ${d} ${MONTHS[m - 1]}`;
 }
 
+/** Which day of the year a date is, and how many days that year has: { day: 323, of: 365 } (S.1). */
+export function dayOfYear(date: string): { day: number; of: number } {
+  const [y, m, d] = date.split("-").map(Number);
+  const day = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(y, 0, 1)) / 86_400_000) + 1;
+  const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  return { day, of: leap ? 366 : 365 };
+}
+
 /** A few characters for a day on the line: "2 LATE", "READ A·B", "2 DUE", or "READ A +1". */
 export function dayLabel(items: readonly TimelineItem[]): string {
   const late = items.filter((i) => i.tone === "overdue").length;
