@@ -108,9 +108,15 @@ export function BillForm({ action, meterId, bill, defaultDate, defaultPrevious, 
         </p>
       ) : null}
 
-      <div>
-        <SubmitButton pendingLabel="Saving…">{bill ? "Save changes" : "Add bill"}</SubmitButton>
-      </div>
+      {bill ? (
+        <div>
+          <SubmitButton pendingLabel="Saving…">Save changes</SubmitButton>
+        </div>
+      ) : (
+        <SubmitButton pendingLabel="Saving…" size="lg" className="w-full">
+          Save the bill
+        </SubmitButton>
+      )}
     </form>
   );
 }

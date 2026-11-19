@@ -79,9 +79,15 @@ export function ReadingForm({ action, meterId, reading, defaultDate, onDone }: P
         </p>
       ) : null}
 
-      <div>
-        <SubmitButton pendingLabel="Saving…">{reading ? "Save changes" : "Add reading"}</SubmitButton>
-      </div>
+      {reading ? (
+        <div>
+          <SubmitButton pendingLabel="Saving…">Save changes</SubmitButton>
+        </div>
+      ) : (
+        <SubmitButton pendingLabel="Saving…" size="lg" className="w-full">
+          Save reading
+        </SubmitButton>
+      )}
     </form>
   );
 }

@@ -3,6 +3,7 @@
 import { ChevronDown, MoreHorizontal, Plus } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { createBill, addReading } from "@/features/electricity/actions";
+import { SheetButton } from "@/components/shared/sheet-button";
 import { BillForm } from "@/components/electricity/bill-form";
 import { BothReadingsForm, type MeterForEntry } from "@/components/electricity/both-readings-form";
 import { ReadingForm } from "@/components/electricity/reading-form";
@@ -46,51 +47,56 @@ export function PopoverButton({
   );
 }
 
-/** "+ Add reading": a card with the reading form that closes itself after saving. */
-export function AddReadingButton({ meterId, defaultDate }: { meterId: string; defaultDate: string }) {
+/** "+ Add reading": one meter's reading in a bottom sheet that closes itself after saving (R.3b). */
+export function AddReadingButton({ meterId, meterName, defaultDate }: { meterId: string; meterName: string; defaultDate: string }) {
   return (
-    <PopoverButton label="Add reading" icon="plus">
-      {(close) => (
-        <div className="p-1">
-          <ReadingForm action={addReading} meterId={meterId} defaultDate={defaultDate} onDone={close} />
-        </div>
-      )}
-    </PopoverButton>
+    <SheetButton label="Add reading" title={`Read ${meterName}`} crumb={`/ ${meterName} / New reading`}>
+      {(close) => <ReadingForm action={addReading} meterId={meterId} defaultDate={defaultDate} onDone={close} />}
+    </SheetButton>
   );
 }
 
-/** "+ Add bill": the bill form in a card; the previous reading comes from the last bill (C73). */
+/** "+ Add bill": the bill form in a bottom sheet; the previous reading comes from the last bill (C73). */
 export function AddBillButton({
   meterId,
+  meterName,
   defaultDate,
   defaultPrevious,
   previousDate,
 }: {
   meterId: string;
+  meterName: string;
   defaultDate: string;
   defaultPrevious?: string;
   previousDate?: string;
 }) {
   return (
-    <PopoverButton label="Add bill" icon="plus">
+    <SheetButton
+      label="Add bill"
+      title="Add this month's bill"
+      crumb={`/ ${meterName} / New bill`}
+      description={defaultPrevious !== undefined ? "Copy the figures off the paper bill. The previous reading comes from the last bill." : undefined}
+    >
       {(close) => (
-        <div className="p-1">
-          <BillForm action={createBill} meterId={meterId} defaultDate={defaultDate} defaultPrevious={defaultPrevious} previousDate={previousDate} onDone={close} />
-        </div>
+        <BillForm action={createBill} meterId={meterId} defaultDate={defaultDate} defaultPrevious={defaultPrevious} previousDate={previousDate} onDone={close} />
       )}
-    </PopoverButton>
+    </SheetButton>
   );
 }
 
-/** "Add readings": both meters' readings in one card (2b.1), closing itself after saving. The primary action of the page. */
+/** "Read the meters": every meter's reading in one bottom sheet (2b.1, R.3b), closing itself after saving. The primary action of the page. */
 export function AddBothReadingsButton({ meters, defaultDate }: { meters: MeterForEntry[]; defaultDate: string }) {
   return (
-    <PopoverButton label="Add readings" icon="plus" variant="default" align="end">
-      {(close) => (
-        <div className="p-1">
-          <BothReadingsForm meters={meters} defaultDate={defaultDate} onDone={close} />
-        </div>
-      )}
-    </PopoverButton>
+    <SheetButton
+      label="Read the meters"
+      title="Read the meters"
+      crumb="/ Electricity / New reading"
+      description="Type what each dial shows. Leave one blank if you only read one."
+      variant="default"
+      size="lg"
+      plus={false}
+    >
+      {(close) => <BothReadingsForm meters={meters} defaultDate={defaultDate} onDone={close} />}
+    </SheetButton>
   );
 }

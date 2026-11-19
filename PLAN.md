@@ -244,7 +244,7 @@ Goal: the app looks and works like the Hub vision boards. The spec is `DESIGN.md
 |-------|------|
 | R.1 | ✅ *(issue #88, C94)* **Tokens, fonts and the mark**: brand colours (dark default, light variant) in `src/theme/theme.css`; Oxanium, Sora and JetBrains Mono in `src/theme/fonts.ts` via `next/font/google`; the J mark as a component; favicon and app icons from `design/brand/icons`; app name "hub" in `app.config.ts` |
 | R.2 | ✅ *(issue #90, C95)* **Shell**: the phone bar (Home, Vehicles, Electricity, Bills, More), the desktop rail, the node-ended icon set, the More page, focus rings, reduced motion |
-| R.3 | 🔶 *(R.3a done: issue #92, C96; R.3b next)* **Electricity**: the meter board, the slab rule component, Read the meters as a sheet, one meter, Add a bill, Mark paid with the PAID stamp and Undo, the desktop cycle chart |
+| R.3 | ✅ *(R.3a: issue #92, C96; R.3b: issue #94, C97)* **Electricity**: the meter board, the slab rule component, Read the meters as a sheet, one meter, Add a bill, Mark paid with the PAID stamp and Undo, the desktop cycle chart |
 | R.4 | **Home**: electricity summary, the next 30 days line, needs you next, the tiles; the first-day setup |
 | R.5 | **Bills, Vehicles, Reminders, Tasks and notes**: the 30-day line and paid-so-far, the car render and countdown rings, renewal and document sheets, the reminders strip |
 | R.6 | **Settings and states**: Settings with Meters and rules and Data and backup, sign in styled through Clerk's appearance options, not allowed, 404, loading, error and offline |
