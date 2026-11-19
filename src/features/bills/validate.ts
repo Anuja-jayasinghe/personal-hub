@@ -1,5 +1,5 @@
 import { isValidDate } from "@/lib/dates";
-import { isFrequency, type Frequency } from "./schedule";
+import { isFrequency, nextBillDayAfter, type Frequency } from "./schedule";
 
 /** Validation for bills and subscriptions. Pure (plain strings in, plain values out), so it is testable. */
 
@@ -14,6 +14,8 @@ export type BillItemFields = {
   autopay: boolean;
   paymentMethod: string | null;
   notes: string | null;
+  /** For a monthly item entered by its bill day: the day of the month the bill arrives (S.5). */
+  anchorDay?: number;
 };
 export type BillItemResult = { ok: true; value: BillItemFields } | { ok: false; error: string };
 
@@ -25,7 +27,11 @@ export function looksLikeCardNumber(text: string): boolean {
   return CARD_NUMBER_RE.test(text);
 }
 
-export function parseBillItem(raw: Record<string, string | undefined>): BillItemResult {
+/**
+ * `today` is needed when a monthly item is entered by the day its bill arrives (`billDay`, S.5): its
+ * due date is then the next bill day, because each month's bill is paid before the next one arrives.
+ */
+export function parseBillItem(raw: Record<string, string | undefined>, today = ""): BillItemResult {
   const kind = (raw.kind ?? "bill").trim();
   if (kind !== "bill" && kind !== "subscription") return { ok: false, error: "Type must be a bill or a subscription." };
 
@@ -36,9 +42,19 @@ export function parseBillItem(raw: Record<string, string | undefined>): BillItem
   const frequency = (raw.frequency ?? "").trim();
   if (!isFrequency(frequency)) return { ok: false, error: "Pick how often it is paid." };
 
-  const nextDueDate = (raw.nextDueDate ?? "").trim();
-  if (!nextDueDate) return { ok: false, error: "Next due date is required." };
-  if (!isValidDate(nextDueDate)) return { ok: false, error: "Next due date must be a valid date." };
+  const billDayRaw = (raw.billDay ?? "").trim();
+  let anchorDay: number | undefined;
+  let nextDueDate = (raw.nextDueDate ?? "").trim();
+  if (billDayRaw && frequency === "monthly") {
+    const day = Number(billDayRaw);
+    if (!Number.isInteger(day) || day < 1 || day > 31) return { ok: false, error: "Pick the day of the month the bill arrives (1 to 31)." };
+    if (!isValidDate(today)) return { ok: false, error: "Something went wrong with today's date. Please try again." };
+    anchorDay = day;
+    nextDueDate = nextBillDayAfter(today, day);
+  } else {
+    if (!nextDueDate) return { ok: false, error: frequency === "one_off" ? "The due date is required." : "Next due date is required." };
+    if (!isValidDate(nextDueDate)) return { ok: false, error: "Next due date must be a valid date." };
+  }
 
   const amountRaw = (raw.amount ?? "").replace(/,/g, "").trim();
   let amount: string | null = null;
@@ -70,6 +86,7 @@ export function parseBillItem(raw: Record<string, string | undefined>): BillItem
       autopay: raw.autopay === "on",
       paymentMethod: paymentMethod || null,
       notes: notes || null,
+      ...(anchorDay !== undefined ? { anchorDay } : {}),
     },
   };
 }

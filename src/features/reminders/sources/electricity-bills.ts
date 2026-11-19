@@ -1,5 +1,5 @@
-import { electricityBillHref } from "@/features/electricity/links";
 import "server-only";
+import { electricityBillHref, meterBillLabel } from "@/features/electricity/links";
 import { listUnpaidBillsWithDueDate } from "@/features/electricity/queries";
 import { formatMoney } from "@/lib/format";
 import type { ReminderSource } from "../engine";
@@ -18,7 +18,7 @@ export const electricityBillsSource: ReminderSource = {
         ? [
             {
               id: `electricity-bill:${b.id}`,
-              title: `Electricity bill · ${b.meterName}${b.amount !== null ? ` · ${formatMoney(Number(b.amount))}` : ""}`,
+              title: `Electricity bill · ${meterBillLabel({ name: b.meterName, accountNumber: b.accountNumber })}${b.amount !== null ? ` · ${formatMoney(Number(b.amount))}` : ""}`,
               dueDate: b.dueDate,
               href: electricityBillHref(b.id),
               kind: "bill",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addMonthsKeepingDay, anchorDayOf, daysInMonth, isFrequency, nextDueAfter, rollForward } from "./schedule";
+import { addMonthsKeepingDay, anchorDayOf, daysInMonth, isFrequency, nextDueAfter, rollForward, nextBillDayAfter } from "./schedule";
 
 describe("daysInMonth / anchorDayOf", () => {
   it("knows month lengths and leap years", () => {
@@ -86,5 +86,15 @@ describe("rollForward", () => {
     expect(rollForward({ frequency: "one_off", nextDueDate: "2026-10-01", anchorDay: 1 }, "2026-11-13")).toBeNull();
     expect(rollForward({ frequency: "one_off", nextDueDate: "2026-12-01", anchorDay: 1 }, "2026-11-13")).toBe("2026-12-01");
     expect(rollForward({ frequency: "monthly", nextDueDate: null, anchorDay: null }, "2026-11-13")).toBeNull();
+  });
+});
+
+describe("nextBillDayAfter", () => {
+  it("is the next bill day after today: the date the bill that arrived must be paid by", () => {
+    expect(nextBillDayAfter("2026-11-19", 5)).toBe("2026-12-05");
+    expect(nextBillDayAfter("2026-11-19", 25)).toBe("2026-11-25");
+    expect(nextBillDayAfter("2026-11-19", 19)).toBe("2026-12-19");
+    expect(nextBillDayAfter("2026-01-31", 31)).toBe("2026-02-28");
+    expect(nextBillDayAfter("2026-12-20", 3)).toBe("2027-01-03");
   });
 });

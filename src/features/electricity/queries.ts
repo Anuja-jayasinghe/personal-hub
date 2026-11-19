@@ -52,6 +52,7 @@ export async function listUnpaidBillsWithDueDate() {
       id: electricityBills.id,
       meterId: electricityBills.meterId,
       meterName: electricityMeters.name,
+      accountNumber: electricityMeters.accountNumber,
       billDate: electricityBills.billDate,
       dueDate: electricityBills.dueDate,
       amount: electricityBills.amount,

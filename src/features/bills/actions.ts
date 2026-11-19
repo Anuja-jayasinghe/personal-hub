@@ -12,10 +12,11 @@ import { applyPayment, dueAfterUndo } from "./payments";
 import { anchorDayOf } from "./schedule";
 import { parseBillItem, parsePayment } from "./validate";
 import { requireUser } from "@/lib/auth";
+import { todayInAppTz } from "@/lib/format";
 
 // Server Actions are public HTTP endpoints, so every input is validated here.
 
-const KEYS = ["kind", "name", "frequency", "nextDueDate", "amount", "autopay", "paymentMethod", "notes"];
+const KEYS = ["kind", "name", "frequency", "nextDueDate", "billDay", "amount", "autopay", "paymentMethod", "notes"];
 
 function fieldsFrom(fd: FormData) {
   const raw: Record<string, string | undefined> = {};
@@ -23,7 +24,7 @@ function fieldsFrom(fd: FormData) {
     const v = fd.get(k);
     raw[k] = typeof v === "string" ? v : undefined;
   }
-  const r = parseBillItem(raw);
+  const r = parseBillItem(raw, todayInAppTz());
   if (!r.ok) throw new ValidationError(r.error);
   return r.value;
 }
@@ -32,7 +33,7 @@ export async function createBillItem(_prev: ActionState, fd: FormData): Promise<
   try {
     await requireUser();
     const f = fieldsFrom(fd);
-    await db.insert(billItems).values({ ...f, anchorDay: anchorDayOf(f.nextDueDate) });
+    await db.insert(billItems).values({ ...f, anchorDay: f.anchorDay ?? anchorDayOf(f.nextDueDate) });
     refresh();
     return { ok: true };
   } catch (err) {
@@ -49,8 +50,18 @@ export async function updateBillItem(_prev: ActionState, fd: FormData): Promise<
     if (!existing) throw new ValidationError("That item could not be found.");
     // Saving other details must not move the anchor: a bill due on the 31st that is showing Feb 28
     // keeps coming back to the 31st. Only an edited due date sets a new anchor day.
-    const anchorDay = existing.nextDueDate === f.nextDueDate && existing.anchorDay ? existing.anchorDay : anchorDayOf(f.nextDueDate);
-    await db.update(billItems).set({ ...f, anchorDay }).where(eq(billItems.id, id));
+    if (f.anchorDay !== undefined) {
+      // Entered by its bill day (S.5): an unchanged day keeps the current due date (it may already be
+      // a later month after a payment); a new day sets a new due date.
+      const same = existing.frequency === "monthly" && existing.anchorDay === f.anchorDay && existing.nextDueDate;
+      await db
+        .update(billItems)
+        .set({ ...f, nextDueDate: same ? existing.nextDueDate! : f.nextDueDate, anchorDay: f.anchorDay })
+        .where(eq(billItems.id, id));
+    } else {
+      const anchorDay = existing.nextDueDate === f.nextDueDate && existing.anchorDay ? existing.anchorDay : anchorDayOf(f.nextDueDate);
+      await db.update(billItems).set({ ...f, anchorDay }).where(eq(billItems.id, id));
+    }
     refresh();
     return { ok: true };
   } catch (err) {

@@ -8,17 +8,13 @@ import { SubmitButton } from "@/components/shared/submit-button";
 import type { ElectricityBill, ElectricityMeter } from "@/db/schema";
 import { deleteBill, markBillUnpaid, updateBill } from "@/features/electricity/actions";
 import { billStatus } from "@/features/electricity/bill-logic";
+import { meterBillLabel } from "@/features/electricity/links";
 import { formatKwh } from "@/features/electricity/usage";
 import { toCents } from "@/lib/decimal";
 import { monthOf } from "@/lib/dates";
 import { formatDate, formatMoney, formatMonth } from "@/lib/format";
 
 const SHOWN = 6;
-
-/** The label that matches the paper bill: the account number when there is one, then the meter's name (C106). */
-export function meterBillLabel(meter: Pick<ElectricityMeter, "name" | "accountNumber">): string {
-  return meter.accountNumber ? `Account ${meter.accountNumber}` : meter.name;
-}
 
 /** One electricity bill with everything you can do to it: mark paid or unpaid, edit, delete. */
 function BillRow({ bill, today, meterName }: { bill: ElectricityBill; today: string; meterName: string }) {

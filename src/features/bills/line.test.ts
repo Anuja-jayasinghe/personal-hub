@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { occurrenceDays, toPay } from "./line";
+import { occurrenceDays, toPay, toPayNow } from "./line";
 import type { Occurrence } from "./upcoming";
 
-const occ = (key: string, date: string, amount: number | null, overdue = false): Occurrence => ({
+const occ = (key: string, date: string, amount: number | null, overdue = false, itemId: string | null = null): Occurrence => ({
   key,
   date,
   title: key,
@@ -10,7 +10,7 @@ const occ = (key: string, date: string, amount: number | null, overdue = false):
   amount,
   autopay: false,
   overdue,
-  itemId: null,
+  itemId,
   href: "/bills",
 });
 
@@ -32,5 +32,21 @@ describe("occurrenceDays", () => {
       [16, ["due", "due"]],
     ]);
     expect(days[0].date).toBe("2026-11-18");
+  });
+});
+
+describe("toPayNow", () => {
+  it("counts late dates and only each item's next date within a month", () => {
+    const now = toPayNow(
+      [
+        occ("water-oct", "2026-11-05", 100, true, "water"),
+        occ("water-dec", "2026-12-05", 100, false, "water"),
+        occ("water-jan", "2027-01-05", 100, false, "water"),
+        occ("insurance", "2027-03-01", 900, false, "ins"),
+        occ("elec", "2026-11-30", 400),
+      ],
+      "2026-11-19",
+    );
+    expect(now.map((o) => o.key)).toEqual(["water-oct", "elec", "water-dec"]);
   });
 });
