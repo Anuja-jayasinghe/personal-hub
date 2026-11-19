@@ -2,14 +2,13 @@ import { Trash2 } from "lucide-react";
 import Link from "next/link";
 import { electricityBillHref } from "@/features/electricity/links";
 import { BillChip } from "@/components/electricity/bill-chip";
-import { LastCheckedLine } from "@/components/electricity/last-checked-line";
 import { LimitChips } from "@/components/electricity/limit-chips";
 import { PaidStamp } from "@/components/electricity/mark-paid";
 import { MeterBadge } from "@/components/electricity/meter-tone";
 import { MonthlyChart } from "@/components/electricity/monthly-chart";
 import { PopoverButton } from "@/components/electricity/popover-button";
 import { ReadingForm } from "@/components/electricity/reading-form";
-import { SlabRule } from "@/components/electricity/slab-rule";
+import { MeterInstrument } from "@/components/electricity/meter-instrument";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
@@ -17,11 +16,10 @@ import type { ElectricityBill, ElectricityMeter, ElectricityReading } from "@/db
 import { deleteReading, updateReading } from "@/features/electricity/actions";
 import { billStatus } from "@/features/electricity/bill-logic";
 import type { MeterData } from "@/features/electricity/meter-data";
-import { readingDigits } from "@/features/electricity/cycle";
 import { kwhParts } from "@/features/electricity/overview";
 import type { LastChecked } from "@/features/electricity/last-checked";
 import type { MeterLimit } from "@/features/electricity/limits";
-import { leftHeadline, type LimitUnits } from "@/features/electricity/limits-text";
+import { roomText, type LimitUnits } from "@/features/electricity/limits-text";
 import { formatKwh } from "@/features/electricity/usage";
 import { toCents } from "@/lib/decimal";
 import { formatDate, formatMoney, formatMonth } from "@/lib/format";
@@ -81,6 +79,7 @@ export function MeterView({
   limit,
   units,
   check,
+  live = null,
 }: {
   meter: ElectricityMeter;
   /** Every meter, active first: gives the chart each meter's colour. */
@@ -92,12 +91,12 @@ export function MeterView({
   limit: MeterLimit;
   units: LimitUnits;
   check: LastChecked;
+  /** True when this meter carries the house, false when idle, null when not set (#69). */
+  live?: boolean | null;
 }) {
   const { usage, last, lastStatus, bills, readingRows } = data;
-  const headline = limit.known ? leftHeadline(limit) : null;
   const readingById = new Map(readings.map((r) => [r.id, r]));
   const newest = readingRows[0];
-  const digits = newest ? readingDigits(newest.value) : null;
 
   return (
     <div className="flex flex-col gap-3 md:gap-5">
@@ -108,66 +107,43 @@ export function MeterView({
         {meter.archivedAt ? <Badge variant="secondary">Archived</Badge> : null}
       </header>
 
-      <section
-        aria-label="Units left to the limit"
-        className="flex flex-col gap-4 rounded-3xl border border-raised bg-deepest bg-[radial-gradient(var(--card)_1px,transparent_1px)] bg-size-[14px_14px] p-5"
-      >
-        <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
-          {headline ? (
-            <>
-              <span className="font-display text-7xl leading-[0.82] font-semibold tracking-tight md:text-8xl">{headline.value}</span>
-              <span className="pb-1">
-                <span className="block text-[15px] font-semibold">{headline.label === "left" ? `units to ${Math.round(limit.limit / 100)}` : `units over ${Math.round(limit.limit / 100)}`}</span>
-                <span className="mt-1 block">
+      <div className="grid gap-3 md:gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <MeterInstrument
+          size="lg"
+          showName={false}
+          low={units.low}
+          high={units.high}
+          meter={{
+            id: meter.id,
+            name: meter.name,
+            used: limit.known ? limit.used : null,
+            projected: usage.state === "ok" ? usage.projected : null,
+            state: limit.state,
+            live,
+            reading: newest?.value ?? null,
+            check,
+            role: roomText(limit, units),
+          }}
+        />
+        <div className="flex flex-col gap-3 md:gap-5">
+          <section aria-label="This cycle" className="flex flex-col gap-2 rounded-2xl border bg-card p-4">
+            {usage.state === "ok" ? (
+              <>
+                <p className="flex items-baseline gap-2">
+                  <span className="font-display text-4xl leading-none font-semibold tracking-tight">{Math.round(usage.units / 100)}</span>
+                  <span className="text-sm text-muted-foreground">units used since the bill</span>
+                </p>
+                <CycleFacts days={usage.days} perDay={usage.dailyAverage} from={last ? toCents(last.currentReading) : null} />
+                <span className="mt-1">
                   <LimitChips limit={limit} units={units} />
                 </span>
-              </span>
-            </>
-          ) : (
-            <span className="font-display text-7xl leading-[0.82] font-semibold text-quiet">–</span>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          {digits ? (
-            <span role="img" aria-label={`Last reading ${digits.join("")}`} className="flex gap-0.5">
-              {digits.map((d, i) => (
-                <span
-                  key={i}
-                  className={`flex h-8 w-6 items-center justify-center rounded-[5px] font-mono text-base font-semibold ${
-                    i === digits.length - 1 ? "bg-primary text-primary-foreground" : "bg-raised text-foreground"
-                  }`}
-                >
-                  {d}
-                </span>
-              ))}
-            </span>
-          ) : null}
-          <span className="ml-auto">
-            <LastCheckedLine check={check} />
-          </span>
-        </div>
-      </section>
-
-      <section aria-label="Against the slabs" className="flex flex-col gap-2 rounded-2xl border bg-card p-4">
-        {usage.state === "ok" ? (
-          <>
-            <div className="flex flex-wrap items-baseline gap-2">
-              <span className="text-[15px] font-semibold">{Math.round(usage.units / 100)} used since the bill</span>
-              <span className="ml-auto">
-                <CycleFacts days={usage.days} perDay={usage.dailyAverage} from={last ? toCents(last.currentReading) : null} />
-              </span>
-            </div>
-            <SlabRule used={limit.used} projected={usage.projected} low={units.low * 100} high={units.high * 100} state={limit.state} />
-          </>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            {usage.state === "no-reading"
-              ? `Add a reading to count from the ${formatDate(usage.sinceDate)} bill.`
-              : "Add a bill to start counting."}
-          </p>
-        )}
-      </section>
-
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {usage.state === "no-reading" ? `Read the meters to count from the ${formatDate(usage.sinceDate)} bill.` : "Add the last bill in Bills to start counting."}
+              </p>
+            )}
+          </section>
       {last && lastStatus ? (
         <section aria-label="Last bill" className="flex flex-wrap items-center gap-3 rounded-2xl border bg-card p-4">
           <div className="min-w-48 flex-1 text-sm">
@@ -195,6 +171,8 @@ export function MeterView({
           </Link>
         </section>
       ) : null}
+        </div>
+      </div>
 
 
       {bills.length > 0 ? <MonthlyChart meters={allMeters} bills={bills} /> : null}

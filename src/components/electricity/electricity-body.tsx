@@ -116,6 +116,7 @@ export function ElectricityBody({
               limit={limitFor(selected.id)}
               units={units}
               check={checks.get(selected.id)!}
+              live={live && !showArchived ? live.meterId === selected.id : null}
             />
           ) : (
             <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} limits={limits} units={units} nameOf={nameOf} checks={checks} live={live} cycleDays={rules.billingCycleDays} />

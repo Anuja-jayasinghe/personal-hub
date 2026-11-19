@@ -1,4 +1,6 @@
 import type { CyclePoint } from "@/features/electricity/cycle";
+import type { ReadingRow } from "@/features/electricity/overview";
+import { formatDate } from "@/lib/format";
 
 export type CycleLine = {
   id: string;
@@ -7,19 +9,23 @@ export type CycleLine = {
   /** CSS colour for this meter's line (from its tone). */
   stroke: string;
   points: CyclePoint[];
+  /** The meter's readings, to show what the dial said at each point (S.4). */
+  readings?: ReadingRow[];
   /** What the whole cycle reaches at this pace, hundredths; null when there is no pace. */
   projected: number | null;
 };
 
-const W = 640;
-const H = 170;
-const PAD = { left: 6, right: 30, top: 14, bottom: 24 };
+const W = 1200;
+const H = 230;
+const PAD = { left: 6, right: 30, top: 22, bottom: 24 };
 
 /**
  * The cycle chart (DESIGN.md, Other number pictures; board HElectricityDesktop): units used so far
  * this cycle per meter as node-and-line series against dashed 120 and 180 guide lines, with the pace
- * as a dashed line to the end of the cycle. x is days since each meter's last bill. All figures are
- * hundredths of a kWh.
+ * as a dashed line to the end of the cycle. x is days since each meter's last bill. Every reading is a
+ * node with its units since the bill written next to it (the first meter's above the line, the next
+ * below) and a tip with the date and the dial reading; the newest says "now" (S.4, owner's item 15).
+ * All figures are hundredths of a kWh.
  */
 export function CycleChart({ lines, low, high, cycleDays }: { lines: CycleLine[]; low: number; high: number; cycleDays: number }) {
   const drawn = lines.filter((l) => l.points.length > 1);
@@ -29,6 +35,8 @@ export function CycleChart({ lines, low, high, cycleDays }: { lines: CycleLine[]
   const x = (day: number) => PAD.left + (Math.min(day, cycleDays) / cycleDays) * (W - PAD.left - PAD.right);
   const y = (used: number) => H - PAD.bottom - (Math.min(used, top) / top) * (H - PAD.top - PAD.bottom);
   const r = (n: number) => Math.round(n * 10) / 10;
+  // The line that is higher at its newest reading gets its labels above, the others below, so they do not collide.
+  const highestId = [...drawn].sort((a, b) => b.points.at(-1)!.used - a.points.at(-1)!.used)[0]?.id;
   const label = drawn
     .map((l) => {
       const last = l.points.at(-1)!;
@@ -79,13 +87,32 @@ export function CycleChart({ lines, low, high, cycleDays }: { lines: CycleLine[]
                   className="motion-safe:animate-[hub-flow_1.2s_linear_infinite]"
                 />
               ) : null}
-              {l.points.slice(0, -1).map((p) => (
-                <circle key={p.date} cx={r(x(p.day))} cy={r(y(p.used))} r={3.5} fill={l.stroke} />
-              ))}
-              <circle cx={r(x(last.day))} cy={r(y(last.used))} r={5.5} fill={l.stroke} stroke="var(--card)" strokeWidth={2.5} />
-              <text x={r(x(last.day) + 8)} y={r(y(last.used) - 6)} fontSize={9} fontWeight={600} className="fill-foreground font-mono">
-                {l.letter}
-              </text>
+              {l.points.map((p, i) => {
+                const isLast = i === l.points.length - 1;
+                const reading = l.readings?.find((rr) => rr.date === p.date);
+                const tip = `${l.name} · ${formatDate(p.date)}: ${Math.round(p.used / 100)} units since the bill${reading ? ` · the dial read ${Math.round(reading.value / 100).toLocaleString("en-LK")}` : ""}`;
+                const above = l.id === highestId;
+                return (
+                  <g key={p.date}>
+                    <circle cx={r(x(p.day))} cy={r(y(p.used))} r={isLast ? 5.5 : 3.5} fill={l.stroke} stroke={isLast ? "var(--card)" : "none"} strokeWidth={isLast ? 2.5 : 0} />
+                    {i > 0 ? (
+                      <text
+                        x={r(x(p.day))}
+                        y={r(y(p.used) + (above ? -9 : 15))}
+                        textAnchor="middle"
+                        fontSize={isLast ? 10 : 8.5}
+                        fontWeight={isLast ? 700 : 500}
+                        className={`font-mono ${isLast ? "fill-foreground" : "fill-label"}`}
+                      >
+                        {isLast ? `${l.letter} ${Math.round(p.used / 100)} now` : Math.round(p.used / 100)}
+                      </text>
+                    ) : null}
+                    <circle cx={r(x(p.day))} cy={r(y(p.used))} r={9} fill="transparent">
+                      <title>{tip}</title>
+                    </circle>
+                  </g>
+                );
+              })}
             </g>
           );
         })}

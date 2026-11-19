@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Home usage rings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;family=Oxanium:wght@500;600;700&amp;family=Sora:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 800px; height: 480px; box-sizing: border-box; padding: 28px; background: #11151D; color: #F2F5FA; font-family: 'Sora', Arial, sans-serif">
+<section aria-label="Electricity: 199 units used this cycle" style="height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; padding: 22px 24px; border-radius: 28px; box-shadow: inset 0 0 0 1px #222D3D; background: radial-gradient(120% 90% at 85% 0%, #142037 0%, #0D1118 60%)">
+<div style="display: flex; align-items: center; gap: 12px">
+<a href="#" style="flex-grow: 1; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: .14em; color: #929EAF; text-decoration: none">/ ELECTRICITY · SAMPLE</a>
+<a href="#" style="display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border-radius: 10px; box-shadow: inset 0 0 0 1px #303B4B; color: #F2F5FA; font-size: 13.5px; font-weight: 600; text-decoration: none">+ Read the meters</a>
+</div>
+<div style="display: flex; align-items: center; gap: 28px; flex-grow: 1">
+<svg width="300" height="300" viewBox="0 0 300 300" role="img" aria-label="Two rings: Meter A has used 87 units, Meter B 112 units, out of a 200 unit scale with marks at 120 and 180">
+<sc-for list="{{rings}}" as="r" hint-placeholder-count="2">
+<circle cx="150" cy="150" r="{{r.radius}}" fill="none" stroke="#1A2230" stroke-width="{{r.width}}"></circle>
+<circle cx="150" cy="150" r="{{r.radius}}" fill="none" stroke="{{r.color}}" stroke-width="{{r.width}}" stroke-linecap="round" stroke-dasharray="{{r.dash}}" transform="rotate(-90 150 150)"></circle>
+<circle cx="{{r.m120x}}" cy="{{r.m120y}}" r="3.2" fill="#0D1118" stroke="#F5B94A" stroke-width="2"></circle>
+<circle cx="{{r.m180x}}" cy="{{r.m180y}}" r="3.2" fill="#0D1118" stroke="#FF6B61" stroke-width="2"></circle>
+<circle cx="{{r.endx}}" cy="{{r.endy}}" r="{{r.nodeR}}" fill="{{r.color}}" stroke="#0D1118" stroke-width="3"></circle>
+</sc-for>
+<text x="150" y="152" text-anchor="middle" font-family="Oxanium, sans-serif" font-weight="600" font-size="64" fill="#F2F5FA">199</text>
+<text x="150" y="180" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10.5" letter-spacing="1.4" fill="#929EAF">UNITS USED</text>
+</svg>
+<div style="display: flex; flex-direction: column; gap: 16px; flex-grow: 1">
+<sc-for list="{{legend}}" as="l" hint-placeholder-count="2">
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="width: 12px; height: 12px; border-radius: 50%; background: {{l.color}}"></span>
+<span style="display: flex; flex-direction: column; flex-grow: 1">
+<span style="font-size: 15px; font-weight: 600">{{l.name}} <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .14em; color: {{l.liveColor}}">{{l.live}}</span></span>
+<span style="font-size: 12.5px; color: #A3ADBD">{{l.sub}}</span>
+</span>
+<span style="font-family: 'Oxanium', Arial, sans-serif; font-size: 28px; font-weight: 600">{{l.used}}</span>
+</div>
+</sc-for>
+<p style="margin: 6px 0 0; display: flex; gap: 8px; font-size: 13px; line-height: 1.5; color: #F5B94A"><span style="width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: #F5B94A; flex-shrink: 0"></span>B is 8 units from 120 and carrying the house.</p>
+</div>
+</div>
+<p style="margin: 0; font-size: 12px; color: #929EAF">Each ring is one meter on a 0 to 200 scale (once round = 200); the small rings are the 120 and 180 marks. Different from the instrument on the Electricity page on purpose, so Home does not repeat it.</p>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":800,"height":480}}'>
+class Component extends DCLogic {
+renderVals() {
+const at = (r, v) => { const a = (v / 200) * 2 * Math.PI - Math.PI / 2; return [150 + r * Math.cos(a), 150 + r * Math.sin(a)]; };
+const f = (n) => n.toFixed(1);
+const ring = (radius, width, used, color, live) => {
+const c = 2 * Math.PI * radius;
+const [ex, ey] = at(radius, used); const [ax, ay] = at(radius, 120); const [bx, by] = at(radius, 180);
+return { radius, width, color, dash: f(c * used / 200) + ' ' + f(c), endx: f(ex), endy: f(ey), m120x: f(ax), m120y: f(ay), m180x: f(bx), m180y: f(by), nodeR: live ? 9 : 7 };
+};
+return {
+rings: [ring(128, 16, 112, '#F5B94A', true), ring(100, 16, 87, '#4388F5', false)],
+legend: [
+{ name: 'Meter B', live: 'LIVE', liveColor: '#4388F5', sub: 'outer ring · near 120', used: '112', color: '#F5B94A' },
+{ name: 'Meter A', live: 'IDLE', liveColor: '#929EAF', sub: 'inner ring', used: '87', color: '#4388F5' },
+],
+};
+}
+}
+</script>
+</body>
+</html>

@@ -32,37 +32,6 @@ export function cycleSeries(bills: readonly BillMark[], readings: readonly Readi
   return points;
 }
 
-export type SlabScale = {
-  /** The top of the line, in hundredths: the high slab is drawn at 90% of it. */
-  max: number;
-  /** Positions along the line, 0 to 100. */
-  usedPct: number;
-  lowPct: number;
-  highPct: number;
-  /** Where the cycle ends at this pace, capped at the end of the line; null when there is no pace. */
-  projectedPct: number | null;
-  /** True when the pace runs past the end of the line (the label then reads "…→"). */
-  projectedBeyond: boolean;
-};
-
-/**
- * Where everything sits on a slab rule. The line runs from 0 to a little past the high slab, so 120
- * and 180 always land in the same places (60% and 90% with the usual numbers), whatever a meter has used.
- */
-export function slabScale(input: { used: number; projected: number | null; low: number; high: number }): SlabScale {
-  const max = input.high / 0.9;
-  const pct = (v: number) => Math.min(100, Math.max(0, (v / max) * 100));
-  const projected = input.projected !== null && input.projected > input.used ? input.projected : null;
-  return {
-    max,
-    usedPct: pct(input.used),
-    lowPct: pct(input.low),
-    highPct: pct(input.high),
-    projectedPct: projected === null ? null : pct(projected),
-    projectedBeyond: projected !== null && projected > max,
-  };
-}
-
 /** A reading as the digits a meter's dial shows: whole kWh, at least five digits ("17489", "00420"). */
 export function readingDigits(hundredths: number): string[] {
   const whole = Math.max(0, Math.floor(hundredths / 100));
