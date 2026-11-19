@@ -16,16 +16,20 @@ type Props = {
   /** Edit: the record to change. Renew: the record being renewed (its type is kept). */
   renewal?: VehicleRenewal;
   mode: "create" | "edit" | "renew";
+  /** Called after a successful save, e.g. to close the sheet the form sits in. */
+  onDone?: () => void;
 };
 
 /** One form for adding, editing and renewing a renewal (createRenewal / updateRenewal / renewRenewal). */
-export function RenewalForm({ action, types, vehicleId, renewal, mode }: Props) {
+export function RenewalForm({ action, types, vehicleId, renewal, mode, onDone }: Props) {
   const [state, formAction] = useActionState(action, initialActionState);
   const { formRef, onSubmit } = useKeepValuesOnError(state);
 
   useEffect(() => {
-    if (state.ok && mode === "create") formRef.current?.reset();
-  }, [formRef, state, mode]);
+    if (!state.ok) return;
+    if (mode === "create") formRef.current?.reset();
+    onDone?.();
+  }, [formRef, state, mode, onDone]);
 
   const renewing = mode === "renew";
   // When renewing, the new cover normally starts where the old one ends.
@@ -104,9 +108,15 @@ export function RenewalForm({ action, types, vehicleId, renewal, mode }: Props) 
         </p>
       ) : null}
 
-      <div>
-        <SubmitButton pendingLabel="Saving…">{renewing ? "Renewed" : mode === "edit" ? "Save changes" : "Add renewal"}</SubmitButton>
-      </div>
+      {mode === "create" ? (
+        <SubmitButton pendingLabel="Saving…" size="lg" className="w-full">
+          Save renewal
+        </SubmitButton>
+      ) : (
+        <div>
+          <SubmitButton pendingLabel="Saving…">{renewing ? "Renewed" : "Save changes"}</SubmitButton>
+        </div>
+      )}
     </form>
   );
 }

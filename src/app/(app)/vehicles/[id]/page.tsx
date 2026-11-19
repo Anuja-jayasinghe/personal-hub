@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { SubmitButton } from "@/components/shared/submit-button";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CoverPhotoForm } from "@/components/vehicles/cover-photo-form";
@@ -58,30 +57,41 @@ async function VehicleContent({
 
   return (
     <>
-      <header className="flex flex-wrap items-center gap-4">
-        <VehicleCover coverAttachmentId={vehicle.coverAttachmentId} vehicleType={vehicle.vehicleType} alt={`${vehicle.nickname} photo`} className="size-20 shrink-0 rounded-xl" />
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-2xl font-semibold tracking-tight">{vehicle.nickname}</h1>
-          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-            {subtitle ? <span>{subtitle}</span> : null}
-            {type ? <Badge variant="secondary">{type.label}</Badge> : null}
-            {vehicle.registrationNumber ? <Badge variant="outline">{vehicle.registrationNumber}</Badge> : null}
-            {vehicle.archivedAt ? <Badge variant="secondary">Archived</Badge> : null}
+      <section aria-label={vehicle.nickname} className="overflow-hidden rounded-3xl border border-raised bg-deepest">
+        <div className="flex items-start gap-3 px-4 pt-4 md:px-6 md:pt-5">
+          {vehicle.registrationNumber ? (
+            <span className="shrink-0 rounded-lg bg-foreground px-2.5 py-1 font-mono text-[15px] font-semibold tracking-wide whitespace-nowrap text-background">{vehicle.registrationNumber}</span>
+          ) : null}
+          <div className="ml-auto min-w-0 text-right">
+            <h1 className="truncate font-display text-2xl leading-tight font-semibold tracking-tight md:text-3xl">{vehicle.nickname}</h1>
+            <p className="font-mono text-[10.5px] tracking-wide text-label uppercase">
+              {[subtitle, type?.label, vehicle.fuelType].filter(Boolean).join(" · ")}
+              {vehicle.archivedAt ? " · archived" : ""}
+            </p>
           </div>
         </div>
-        <Link href={`/vehicles/${vehicle.id}/edit`} className={buttonVariants({ variant: "outline" })}>
-          Edit
-        </Link>
-      </header>
+        <VehicleCover
+          vehicleId={vehicle.id}
+          coverAttachmentId={vehicle.coverAttachmentId}
+          vehicleType={vehicle.vehicleType}
+          alt={`${vehicle.nickname} photo`}
+          className="mx-auto h-44 w-full max-w-xl md:h-56"
+        />
+        <div className="flex justify-end px-4 pb-3 md:px-6">
+          <Link href={`/vehicles/${vehicle.id}/edit`} className={buttonVariants({ variant: "outline", size: "sm" })}>
+            Edit
+          </Link>
+        </div>
+      </section>
 
-      <nav aria-label="Vehicle sections" className="-mb-2 flex flex-wrap gap-1 border-b">
+      <nav aria-label="Vehicle sections" className="flex w-fit max-w-full flex-wrap gap-1 rounded-xl bg-deepest p-1 ring-1 ring-border">
         {TABS.map((t) => (
           <Link
             key={t.key}
             href={t.key === "overview" ? `/vehicles/${vehicle.id}` : `/vehicles/${vehicle.id}?tab=${t.key}`}
             aria-current={t.key === current.key ? "page" : undefined}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm ${
-              t.key === current.key ? "border-primary font-medium" : "border-transparent text-muted-foreground hover:text-foreground"
+            className={`flex min-h-9 items-center rounded-[10px] px-3.5 text-sm transition-colors ${
+              t.key === current.key ? "bg-accent font-semibold text-foreground ring-1 ring-primary/45" : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {t.label}
@@ -103,7 +113,7 @@ async function VehicleContent({
 
           <NotesPanel scope={{ kind: "owner", owner: { ownerType: "vehicle", ownerId: vehicle.id } }} title="Notes" quietWhenEmpty />
 
-          <OdometerSection vehicleId={vehicle.id} />
+          <OdometerSection vehicleId={vehicle.id} vehicleName={vehicle.nickname} />
 
           <section aria-labelledby="cover" className="flex flex-col gap-3">
             <h2 id="cover" className="text-lg font-medium">
@@ -156,11 +166,11 @@ async function VehicleContent({
           </section>
         </div>
       ) : current.key === "services" ? (
-        <ServicesTab vehicleId={vehicle.id} />
+        <ServicesTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} />
       ) : current.key === "renewals" ? (
-        <RenewalsTab vehicleId={vehicle.id} />
+        <RenewalsTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} />
       ) : (
-        <DocumentsTab vehicleId={vehicle.id} coverAttachmentId={vehicle.coverAttachmentId} query={q ?? ""} sort={sort} />
+        <DocumentsTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} coverAttachmentId={vehicle.coverAttachmentId} query={q ?? ""} sort={sort} />
       )}
     </>
   );

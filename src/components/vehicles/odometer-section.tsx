@@ -1,9 +1,10 @@
 import { Trash2 } from "lucide-react";
 import Link from "next/link";
 import { OdometerForm } from "@/components/vehicles/odometer-form";
+import { AddOdometerSheet } from "@/components/vehicles/vehicle-sheets";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Badge } from "@/components/ui/badge";
-import { deleteOdometerReading, addOdometerReading, updateOdometerReading } from "@/features/vehicles/odometer-actions";
+import { deleteOdometerReading, updateOdometerReading } from "@/features/vehicles/odometer-actions";
 import { latestPoint, toPoints, withDistances } from "@/features/vehicles/odometer";
 import { listOdometerReadings, listServices } from "@/features/vehicles/queries";
 import { formatDate, todayInAppTz } from "@/lib/format";
@@ -15,7 +16,7 @@ const km = (n: number) => `${n.toLocaleString("en-LK")} km`;
  * a reading, and the history with the distance between values. A service with an odometer counts as
  * a reading (edit it on the Services tab).
  */
-export async function OdometerSection({ vehicleId }: { vehicleId: string }) {
+export async function OdometerSection({ vehicleId, vehicleName }: { vehicleId: string; vehicleName: string }) {
   const [readings, services] = await Promise.all([listOdometerReadings(vehicleId), listServices(vehicleId)]);
   const today = todayInAppTz(); // after the queries, which opt this render into request time
   const points = toPoints(readings, services);
@@ -24,25 +25,32 @@ export async function OdometerSection({ vehicleId }: { vehicleId: string }) {
   const rowOf = new Map(readings.map((r) => [r.id, r]));
 
   return (
-    <section aria-labelledby="odometer" className="flex flex-col gap-3">
-      <h2 id="odometer" className="text-lg font-medium">
-        Odometer
-      </h2>
+    <section aria-labelledby="odometer" className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
+      <div className="flex items-center gap-3">
+        <h2 id="odometer" className="font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase">
+          Odometer
+        </h2>
+        <span className="ml-auto">
+          <AddOdometerSheet vehicleId={vehicleId} vehicleName={vehicleName} defaultDate={today} />
+        </span>
+      </div>
       {latest ? (
-        <p className="text-sm">
-          <span className="text-2xl font-semibold">{km(latest.km)}</span>{" "}
-          <span className="text-muted-foreground">as of {formatDate(latest.date)}</span>
+        <p className="flex flex-wrap items-center gap-3">
+          <span role="img" aria-label={`${km(latest.km)}`} className="flex gap-0.5">
+            {String(latest.km)
+              .padStart(6, "0")
+              .split("")
+              .map((d, i) => (
+                <span key={i} className="flex h-8 w-6 items-center justify-center rounded-[5px] bg-raised font-mono text-base font-semibold">
+                  {d}
+                </span>
+              ))}
+          </span>
+          <span className="font-mono text-[11px] text-label uppercase">km · as of {formatDate(latest.date)}</span>
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">No readings yet. Add one with the date you read it, so an old value is never mistaken for today&apos;s.</p>
       )}
-
-      <details className="rounded-lg border border-primary/40">
-        <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">Add a reading</summary>
-        <div className="border-t p-4">
-          <OdometerForm action={addOdometerReading} vehicleId={vehicleId} defaultDate={today} />
-        </div>
-      </details>
 
       {history.length > 0 ? (
         <details className="rounded-lg border" open={history.length <= 6}>

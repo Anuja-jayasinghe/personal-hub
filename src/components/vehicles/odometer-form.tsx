@@ -19,13 +19,15 @@ type Props = {
 };
 
 /** Add / edit form for a dated odometer reading (addOdometerReading / updateOdometerReading). */
-export function OdometerForm({ action, vehicleId, reading, defaultDate }: Props) {
+export function OdometerForm({ action, vehicleId, reading, defaultDate, onDone }: Props & { onDone?: () => void }) {
   const [state, formAction] = useActionState(action, initialActionState);
   const { formRef, onSubmit } = useKeepValuesOnError(state);
 
   useEffect(() => {
-    if (state.ok && !reading) formRef.current?.reset();
-  }, [formRef, state, reading]);
+    if (!state.ok) return;
+    if (!reading) formRef.current?.reset();
+    onDone?.();
+  }, [formRef, state, reading, onDone]);
 
   return (
     <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
@@ -49,9 +51,15 @@ export function OdometerForm({ action, vehicleId, reading, defaultDate }: Props)
           {state.error}
         </p>
       ) : null}
-      <div>
-        <SubmitButton pendingLabel="Saving…">{reading ? "Save changes" : "Add reading"}</SubmitButton>
-      </div>
+      {reading ? (
+        <div>
+          <SubmitButton pendingLabel="Saving…">Save changes</SubmitButton>
+        </div>
+      ) : (
+        <SubmitButton pendingLabel="Saving…" size="lg" className="w-full">
+          Save reading
+        </SubmitButton>
+      )}
     </form>
   );
 }

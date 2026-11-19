@@ -2,7 +2,8 @@ import { FileText, Image as ImageIcon, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { buttonVariants } from "@/components/ui/button";
-import { DocumentRenameForm, DocumentUploadForm } from "@/components/vehicles/document-forms";
+import { DocumentRenameForm } from "@/components/vehicles/document-forms";
+import { AddDocumentSheet } from "@/components/vehicles/vehicle-sheets";
 import { deleteAttachment } from "@/features/shared/actions";
 import { attachmentsByOwner } from "@/features/shared/queries";
 import { docLabel, DOC_SORTS, parseDocSort, searchAndSortDocs } from "@/features/vehicles/documents";
@@ -17,11 +18,13 @@ import { Input } from "@/components/ui/input";
  */
 export async function DocumentsTab({
   vehicleId,
+  vehicleName,
   coverAttachmentId,
   query,
   sort,
 }: {
   vehicleId: string;
+  vehicleName: string;
   coverAttachmentId: string | null;
   query: string;
   sort: string | undefined;
@@ -35,12 +38,14 @@ export async function DocumentsTab({
 
   return (
     <section aria-label="Documents" className="flex flex-col gap-4">
-      <details className="rounded-lg border" open={all.length === 0}>
-        <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">Add a document</summary>
-        <div className="border-t p-4">
-          <DocumentUploadForm vehicleId={vehicleId} />
-        </div>
-      </details>
+      <div>
+        <AddDocumentSheet vehicleId={vehicleId} vehicleName={vehicleName} />
+      </div>
+      {all.length === 0 ? (
+        <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+          No documents yet. Add the vehicle book, the licence and the insurance, each with a title you can search for.
+        </p>
+      ) : null}
 
       {all.length > 2 ? (
         <form method="get" className="flex flex-wrap items-center gap-2">

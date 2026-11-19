@@ -10,13 +10,15 @@ import { DOC_TITLE_MAX } from "@/features/vehicles/documents";
 import { initialActionState } from "@/features/shared/types";
 
 /** Add a document: a required short title plus an image or PDF (up to 10 MB). */
-export function DocumentUploadForm({ vehicleId }: { vehicleId: string }) {
+export function DocumentUploadForm({ vehicleId, onDone }: { vehicleId: string; onDone?: () => void }) {
   const [state, formAction] = useActionState(uploadVehicleDocument, initialActionState);
   const { formRef, onSubmit } = useKeepValuesOnError(state);
 
   useEffect(() => {
-    if (state.ok) formRef.current?.reset();
-  }, [formRef, state]);
+    if (!state.ok) return;
+    formRef.current?.reset();
+    onDone?.();
+  }, [formRef, state, onDone]);
 
   return (
     <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
@@ -41,9 +43,9 @@ export function DocumentUploadForm({ vehicleId }: { vehicleId: string }) {
           {state.error}
         </p>
       ) : null}
-      <div>
-        <SubmitButton pendingLabel="Uploading…">Add document</SubmitButton>
-      </div>
+      <SubmitButton pendingLabel="Uploading…" size="lg" className="w-full">
+        Save document
+      </SubmitButton>
     </form>
   );
 }

@@ -20,14 +20,16 @@ type Props = {
 };
 
 /** Create / edit form for a service record. Works with createService and updateService. */
-export function ServiceForm({ action, serviceTypes, vehicleId, service, defaultDate }: Props) {
+export function ServiceForm({ action, serviceTypes, vehicleId, service, defaultDate, onDone }: Props & { onDone?: () => void }) {
   const [state, formAction] = useActionState(action, initialActionState);
   const { formRef, onSubmit } = useKeepValuesOnError(state);
   const listId = `service-types-${service?.id ?? "new"}`;
 
   useEffect(() => {
-    if (state.ok && !service) formRef.current?.reset();
-  }, [formRef, state, service]);
+    if (!state.ok) return;
+    if (!service) formRef.current?.reset();
+    onDone?.();
+  }, [formRef, state, service, onDone]);
 
   return (
     <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
@@ -80,9 +82,15 @@ export function ServiceForm({ action, serviceTypes, vehicleId, service, defaultD
         </p>
       ) : null}
 
-      <div>
-        <SubmitButton pendingLabel="Saving…">{service ? "Save changes" : "Add service"}</SubmitButton>
-      </div>
+      {service ? (
+        <div>
+          <SubmitButton pendingLabel="Saving…">Save changes</SubmitButton>
+        </div>
+      ) : (
+        <SubmitButton pendingLabel="Saving…" size="lg" className="w-full">
+          Save service
+        </SubmitButton>
+      )}
     </form>
   );
 }
