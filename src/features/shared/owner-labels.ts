@@ -3,6 +3,7 @@ import { inArray } from "drizzle-orm";
 import { connection } from "next/server";
 import { db } from "@/db";
 import { vehicles } from "@/db/schema";
+import { vehiclePath } from "@/features/vehicles/plate";
 
 export type OwnerLabel = { label: string; href: string };
 
@@ -19,8 +20,11 @@ export async function ownerLabels(
 
   const vehicleIds = [...new Set(rows.flatMap((r) => (r.ownerType === "vehicle" && r.ownerId ? [r.ownerId] : [])))];
   if (vehicleIds.length > 0) {
-    const found = await db.select({ id: vehicles.id, nickname: vehicles.nickname }).from(vehicles).where(inArray(vehicles.id, vehicleIds));
-    for (const v of found) labels.set(`vehicle:${v.id}`, { label: v.nickname, href: `/vehicles/${v.id}` });
+    const found = await db
+      .select({ id: vehicles.id, nickname: vehicles.nickname, registrationNumber: vehicles.registrationNumber })
+      .from(vehicles)
+      .where(inArray(vehicles.id, vehicleIds));
+    for (const v of found) labels.set(`vehicle:${v.id}`, { label: v.nickname, href: vehiclePath(v) });
   }
   return labels;
 }

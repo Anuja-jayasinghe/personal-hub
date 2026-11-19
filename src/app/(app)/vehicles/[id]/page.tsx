@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageTopBar } from "@/components/shell/page-header";
-import { notFound } from "next/navigation";
+import { SriLankaPlate } from "@/components/vehicles/sl-plate";
+import { VehicleManageMenu } from "@/components/vehicles/vehicle-manage-menu";
+import { vehiclePath } from "@/features/vehicles/plate";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { SubmitButton } from "@/components/shared/submit-button";
-import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CoverPhotoForm } from "@/components/vehicles/cover-photo-form";
 import { OdometerSection } from "@/components/vehicles/odometer-section";
 import { RenewalsTab } from "@/components/vehicles/renewals-tab";
 import { NotesPanel } from "@/components/shared/notes-panel";
@@ -15,12 +15,6 @@ import { DocumentsTab } from "@/components/vehicles/documents-tab";
 import { VehicleSummary } from "@/components/vehicles/vehicle-summary";
 import { VehicleCover } from "@/components/vehicles/vehicle-cover";
 import { appConfig, isModuleEnabled } from "@/config/app.config";
-import {
-  archiveVehicle,
-  deleteVehicle,
-  removeVehicleCover,
-  unarchiveVehicle,
-} from "@/features/vehicles/actions";
 import { getVehicle } from "@/features/vehicles/queries";
 import { findVehicleType } from "@/features/vehicles/vehicle-type";
 
@@ -52,6 +46,12 @@ async function VehicleContent({
   const [{ id }, { tab, q, sort }] = await Promise.all([params, searchParams]);
   const vehicle = await getVehicle(id);
   if (!vehicle) notFound();
+  // Old links by id move to the plate address, keeping the tab (S.6).
+  const canonical = vehiclePath(vehicle);
+  if (decodeURIComponent(id) !== canonical.slice("/vehicles/".length)) {
+    const query = new URLSearchParams(Object.entries({ tab, q, sort }).filter((e): e is [string, string] => typeof e[1] === "string")).toString();
+    redirect(query ? `${canonical}?${query}` : canonical);
+  }
   const current = TABS.find((t) => t.key === tab) ?? TABS[0];
   const subtitle = [vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(" ");
   const type = findVehicleType(appConfig.vehicles.types, vehicle.vehicleType);
@@ -61,9 +61,7 @@ async function VehicleContent({
       <PageTopBar parent={{ href: "/vehicles", label: "Vehicles" }} />
       <section aria-label={vehicle.nickname} className="overflow-hidden rounded-3xl border border-raised bg-deepest">
         <div className="flex items-start gap-3 px-4 pt-4 md:px-6 md:pt-5">
-          {vehicle.registrationNumber ? (
-            <span className="shrink-0 rounded-lg bg-foreground px-2.5 py-1 font-mono text-[15px] font-semibold tracking-wide whitespace-nowrap text-background">{vehicle.registrationNumber}</span>
-          ) : null}
+          {vehicle.registrationNumber ? <SriLankaPlate registration={vehicle.registrationNumber} size="lg" /> : null}
           <div className="ml-auto min-w-0 text-right">
             <h1 className="truncate font-display text-2xl leading-tight font-semibold tracking-tight md:text-3xl">{vehicle.nickname}</h1>
             <p className="font-mono text-[10.5px] tracking-wide text-label uppercase">
@@ -80,9 +78,7 @@ async function VehicleContent({
           className="mx-auto h-44 w-full max-w-xl md:h-56"
         />
         <div className="flex justify-end px-4 pb-3 md:px-6">
-          <Link href={`/vehicles/${vehicle.id}/edit`} className={buttonVariants({ variant: "outline", size: "sm" })}>
-            Edit
-          </Link>
+          <VehicleManageMenu vehicle={vehicle} />
         </div>
       </section>
 
@@ -90,7 +86,7 @@ async function VehicleContent({
         {TABS.map((t) => (
           <Link
             key={t.key}
-            href={t.key === "overview" ? `/vehicles/${vehicle.id}` : `/vehicles/${vehicle.id}?tab=${t.key}`}
+            href={t.key === "overview" ? vehiclePath(vehicle) : vehiclePath(vehicle, `?tab=${t.key}`)}
             aria-current={t.key === current.key ? "page" : undefined}
             className={`flex min-h-9 items-center rounded-[10px] px-3.5 text-sm transition-colors ${
               t.key === current.key ? "bg-accent font-semibold text-foreground ring-1 ring-primary/45" : "text-muted-foreground hover:text-foreground"
@@ -116,56 +112,6 @@ async function VehicleContent({
           <NotesPanel scope={{ kind: "owner", owner: { ownerType: "vehicle", ownerId: vehicle.id } }} title="Notes" quietWhenEmpty />
 
           <OdometerSection vehicleId={vehicle.id} vehicleName={vehicle.nickname} />
-
-          <section aria-labelledby="cover" className="flex flex-col gap-3">
-            <h2 id="cover" className="text-lg font-medium">
-              Cover photo
-            </h2>
-            <CoverPhotoForm vehicleId={vehicle.id} hasCover={vehicle.coverAttachmentId !== null} />
-            {vehicle.coverAttachmentId ? (
-              <form action={removeVehicleCover}>
-                <input type="hidden" name="id" value={vehicle.id} />
-                <SubmitButton variant="ghost" size="sm" confirm="Remove the cover photo?">
-                  Remove photo
-                </SubmitButton>
-              </form>
-            ) : null}
-          </section>
-
-          <section aria-labelledby="danger" className="flex flex-col gap-3 rounded-xl border p-4">
-            <h2 id="danger" className="text-lg font-medium">
-              {vehicle.archivedAt ? "Archived" : "Sold or no longer yours?"}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {vehicle.archivedAt
-                ? "This vehicle is hidden from the list and sends no reminders, but its history is kept."
-                : "Archive it to hide it and stop its reminders while keeping its history."}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {vehicle.archivedAt ? (
-                <form action={unarchiveVehicle}>
-                  <input type="hidden" name="id" value={vehicle.id} />
-                  <SubmitButton variant="outline">Unarchive</SubmitButton>
-                </form>
-              ) : (
-                <form action={archiveVehicle}>
-                  <input type="hidden" name="id" value={vehicle.id} />
-                  <SubmitButton variant="outline" confirm={`Archive "${vehicle.nickname}"? You can unarchive it later.`}>
-                    Archive
-                  </SubmitButton>
-                </form>
-              )}
-              <form action={deleteVehicle}>
-                <input type="hidden" name="id" value={vehicle.id} />
-                <SubmitButton
-                  variant="destructive"
-                  confirm={`Permanently delete "${vehicle.nickname}" with all its notes and files? This cannot be undone.`}
-                >
-                  Delete permanently
-                </SubmitButton>
-              </form>
-            </div>
-          </section>
         </div>
       ) : current.key === "services" ? (
         <ServicesTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} />

@@ -1,6 +1,6 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { appConfig } from "@/config/app.config";
@@ -12,6 +12,7 @@ import { removeAttachment, storeAttachment } from "@/features/shared/files";
 import type { ActionState } from "@/features/shared/types";
 import { idFrom, ValidationError } from "@/features/shared/validation";
 import { todayInAppTz } from "@/lib/format";
+import { plateKey, vehiclePath } from "./plate";
 import { parseVehicle } from "./validate";
 import { requireUser } from "@/lib/auth";
 
@@ -34,6 +35,20 @@ function fieldsFrom(fd: FormData) {
   return result.value;
 }
 
+/** Each plate belongs to one vehicle, since the plate is the vehicle's address (S.6). */
+async function refuseDuplicatePlate(registration: string | null, exceptId?: string) {
+  if (!registration) return;
+  const key = plateKey(registration);
+  if (!key) return;
+  const sameKey = sql`upper(regexp_replace(coalesce(${vehicles.registrationNumber}, ''), '[^a-zA-Z0-9]', '', 'g')) = ${key}`;
+  const [clash] = await db
+    .select({ nickname: vehicles.nickname })
+    .from(vehicles)
+    .where(exceptId ? and(sameKey, ne(vehicles.id, exceptId)) : sameKey)
+    .limit(1);
+  if (clash) throw new ValidationError(`${clash.nickname} already has that plate number.`);
+}
+
 /** The vehicle's own columns, and the odometer typed on the form (which is a dated reading, not a column). */
 function vehicleAndOdometer(fd: FormData) {
   const { odometerKm, ...fields } = fieldsFrom(fd);
@@ -41,34 +56,39 @@ function vehicleAndOdometer(fd: FormData) {
 }
 
 export async function createVehicle(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  let id: string;
+  let path: string;
   try {
     await requireUser();
     // The odometer typed on the form becomes the first dated reading (today); the old undated
     // column is no longer written.
     const { fields, odometerKm } = vehicleAndOdometer(fd);
-    id = await db.transaction(async (tx) => {
+    await refuseDuplicatePlate(fields.registrationNumber ?? null);
+    const id = await db.transaction(async (tx) => {
       const [row] = await tx.insert(vehicles).values(fields).returning({ id: vehicles.id });
       if (odometerKm !== null) await tx.insert(vehicleOdometerReadings).values({ vehicleId: row.id, readingDate: todayInAppTz(), km: odometerKm });
       return row.id;
     });
+    path = vehiclePath({ id, registrationNumber: fields.registrationNumber ?? null });
   } catch (err) {
     return toActionState(err);
   }
-  redirect(`/vehicles/${id}`); // outside the try: redirect works by throwing
+  redirect(path); // outside the try: redirect works by throwing
 }
 
 export async function updateVehicle(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  let id: string;
+  let path: string;
   try {
     await requireUser();
-    id = idFrom(fd);
+    const id = idFrom(fd);
     // Mileage is edited as dated readings on the vehicle's Overview, not here.
-    await db.update(vehicles).set(vehicleAndOdometer(fd).fields).where(eq(vehicles.id, id));
+    const { fields } = vehicleAndOdometer(fd);
+    await refuseDuplicatePlate(fields.registrationNumber ?? null, id);
+    await db.update(vehicles).set(fields).where(eq(vehicles.id, id));
+    path = vehiclePath({ id, registrationNumber: fields.registrationNumber ?? null });
   } catch (err) {
     return toActionState(err);
   }
-  redirect(`/vehicles/${id}`);
+  redirect(path);
 }
 
 export async function archiveVehicle(fd: FormData): Promise<void> {
@@ -80,8 +100,8 @@ export async function archiveVehicle(fd: FormData): Promise<void> {
 export async function unarchiveVehicle(fd: FormData): Promise<void> {
   await requireUser();
   const id = idFrom(fd);
-  await db.update(vehicles).set({ archivedAt: null }).where(eq(vehicles.id, id));
-  redirect(`/vehicles/${id}`);
+  const [row] = await db.update(vehicles).set({ archivedAt: null }).where(eq(vehicles.id, id)).returning({ registrationNumber: vehicles.registrationNumber });
+  redirect(vehiclePath({ id, registrationNumber: row?.registrationNumber ?? null }));
 }
 
 /** Permanent. Removes the vehicle and everything it owns: tasks, notes, files and the cover photo. */
