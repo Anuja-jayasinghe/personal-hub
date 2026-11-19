@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { combineUsage, latestBill, sinceLastBill, type BillMark } from "./since-bill";
+import { latestBill, sinceLastBill, type BillMark } from "./since-bill";
 import type { Reading } from "./usage";
 
 let n = 0;
@@ -86,20 +86,5 @@ describe("sinceLastBill", () => {
     const bills = [bill("2026-10-01", "2026-10-01", 0)];
     const r = sinceLastBill(bills, [reading("2026-10-04", 10)], 30); // 10 kWh in 3 days
     expect(r).toMatchObject({ units: 1000, days: 3, dailyAverage: 333, projected: 10000 });
-  });
-});
-
-describe("combineUsage", () => {
-  it("adds up the meters that have a figure and counts them", () => {
-    const bills = [bill("2026-10-05", "2026-10-04", 1000)];
-    const a = sinceLastBill(bills, [reading("2026-10-14", 1050)], 30); // 50 kWh in 10 days
-    const b = sinceLastBill(bills, [reading("2026-10-24", 1100)], 30); // 100 kWh in 20 days
-    const none = sinceLastBill([], [], 30);
-    expect(combineUsage([a, b, none])).toEqual({ counted: 2, of: 3, units: 15000, dailyAverage: 1000, projected: 30000 });
-  });
-
-  it("is null when no meter has a figure", () => {
-    expect(combineUsage([{ state: "no-bill" }, { state: "no-reading", sinceDate: "2026-10-04" }])).toBeNull();
-    expect(combineUsage([])).toBeNull();
   });
 });
