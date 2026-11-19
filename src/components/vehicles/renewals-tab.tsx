@@ -2,19 +2,21 @@ import { Trash2 } from "lucide-react";
 import { AttachmentsPanel } from "@/components/shared/attachments-panel";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { RenewalForm } from "@/components/vehicles/renewal-form";
+import { AddRenewalSheet } from "@/components/vehicles/vehicle-sheets";
+import { DaysRing } from "@/components/shared/days-ring";
 import { Badge } from "@/components/ui/badge";
 import { appConfig } from "@/config/app.config";
 import type { Attachment, VehicleRenewal } from "@/db/schema";
 import { describeDays } from "@/features/reminders/engine";
 import { attachmentsByOwner } from "@/features/shared/queries";
 import { listRenewals } from "@/features/vehicles/queries";
-import { createRenewal, deleteRenewal, renewRenewal, updateRenewal } from "@/features/vehicles/renewal-actions";
+import { deleteRenewal, renewRenewal, updateRenewal } from "@/features/vehicles/renewal-actions";
 import { splitCurrentAndPast } from "@/features/vehicles/renewal-logic";
 import { daysBetween } from "@/lib/dates";
 import { formatDate, formatMoney, todayInAppTz } from "@/lib/format";
 
 /** The Renewals tab: current renewals with days left, a renewed action, documents, and history. */
-export async function RenewalsTab({ vehicleId }: { vehicleId: string }) {
+export async function RenewalsTab({ vehicleId, vehicleName }: { vehicleId: string; vehicleName: string }) {
   const list = await listRenewals(vehicleId);
   const files = await attachmentsByOwner("vehicle_renewal", list.map((r) => r.id));
   const today = todayInAppTz(); // after the queries, which opt this render into request time
@@ -23,12 +25,9 @@ export async function RenewalsTab({ vehicleId }: { vehicleId: string }) {
 
   return (
     <section aria-label="Renewals" className="flex flex-col gap-4">
-      <details className="rounded-lg border">
-        <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">Add a renewal</summary>
-        <div className="border-t p-4">
-          <RenewalForm mode="create" action={createRenewal} types={types} vehicleId={vehicleId} />
-        </div>
-      </details>
+      <div>
+        <AddRenewalSheet vehicleId={vehicleId} vehicleName={vehicleName} types={types} />
+      </div>
 
       {current.length === 0 ? (
         <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
@@ -73,11 +72,19 @@ function RenewalItem({
   const tone = days < 0 ? "font-medium text-status-overdue" : days <= 7 ? "text-status-soon" : "text-muted-foreground";
 
   return (
-    <li className="rounded-lg border bg-card p-3 text-card-foreground">
+    <li className="rounded-2xl border bg-card p-3.5 text-card-foreground">
       <div className="flex items-start gap-3">
+        {isCurrent ? (
+          <DaysRing
+            days={days}
+            ofDays={r.startDate ? Math.max(1, daysBetween(r.startDate, r.expiryDate)) : 365}
+            size={64}
+            label={`${r.type}: ${days < 0 ? `${-days} days late` : `${days} days left`}`}
+          />
+        ) : null}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="font-medium">{r.type}</p>
+            <p className="font-semibold">{r.type}</p>
             {r.renewedAt ? <Badge variant="secondary">Renewed {formatDate(r.renewedAt)}</Badge> : null}
             {!r.renewedAt && !isCurrent ? <Badge variant="secondary">Replaced by a later one</Badge> : null}
           </div>

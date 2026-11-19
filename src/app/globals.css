@@ -122,6 +122,17 @@
   }
 }
 
+/* A light sweeping across the car render's body every few seconds (R.5a). */
+@keyframes hub-sweep {
+  0% {
+    transform: skewX(-18deg) translateX(0);
+  }
+  55%,
+  100% {
+    transform: skewX(-18deg) translateX(520px);
+  }
+}
+
 /* Reduced motion: stop every animation and transition (DESIGN.md, Motion). */
 @media (prefers-reduced-motion: reduce) {
   *,

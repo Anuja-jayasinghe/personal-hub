@@ -1,18 +1,19 @@
 import { Trash2 } from "lucide-react";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { ServiceForm } from "@/components/vehicles/service-form";
+import { AddServiceSheet } from "@/components/vehicles/vehicle-sheets";
 import { Badge } from "@/components/ui/badge";
 import { appConfig } from "@/config/app.config";
 import type { VehicleService } from "@/db/schema";
 import { describeDays } from "@/features/reminders/engine";
 import { latestPerType } from "@/features/vehicles/service-logic";
-import { createService, deleteService, updateService } from "@/features/vehicles/service-actions";
+import { deleteService, updateService } from "@/features/vehicles/service-actions";
 import { listServices } from "@/features/vehicles/queries";
 import { daysBetween } from "@/lib/dates";
 import { formatDate, formatMoney, todayInAppTz } from "@/lib/format";
 
 /** The Services tab of a vehicle: add a record, yearly totals, and the history newest first. */
-export async function ServicesTab({ vehicleId }: { vehicleId: string }) {
+export async function ServicesTab({ vehicleId, vehicleName }: { vehicleId: string; vehicleName: string }) {
   const list = await listServices(vehicleId);
   const today = todayInAppTz(); // after the query, which opts this render into request time
   // The newest record of each type is the one whose next due date drives Reminders.
@@ -21,12 +22,9 @@ export async function ServicesTab({ vehicleId }: { vehicleId: string }) {
 
   return (
     <section aria-label="Services" className="flex flex-col gap-4">
-      <details className="rounded-lg border">
-        <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">Add a service</summary>
-        <div className="border-t p-4">
-          <ServiceForm action={createService} serviceTypes={serviceTypes} vehicleId={vehicleId} defaultDate={today} />
-        </div>
-      </details>
+      <div>
+        <AddServiceSheet vehicleId={vehicleId} vehicleName={vehicleName} serviceTypes={serviceTypes} defaultDate={today} />
+      </div>
 
       {list.length === 0 ? (
         <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
