@@ -4,11 +4,11 @@ import { BillForm } from "@/components/electricity/bill-form";
 import { MeterForm } from "@/components/electricity/meter-form";
 import { LastCheckedLine } from "@/components/electricity/last-checked-line";
 import { LimitChips } from "@/components/electricity/limit-chips";
-import { MeterBadge, toneFor } from "@/components/electricity/meter-tone";
+import { MeterBadge } from "@/components/electricity/meter-tone";
 import { MonthlyChart } from "@/components/electricity/monthly-chart";
 import { AddBillButton, AddReadingButton, PopoverButton } from "@/components/electricity/popover-button";
 import { ReadingForm } from "@/components/electricity/reading-form";
-import { CycleFacts, UsageGauge } from "@/components/electricity/usage-gauge";
+import { SlabRule } from "@/components/electricity/slab-rule";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -27,10 +27,11 @@ import {
 } from "@/features/electricity/actions";
 import { billStatus } from "@/features/electricity/bill-logic";
 import type { MeterData } from "@/features/electricity/meter-data";
-import { barShare, kwhParts } from "@/features/electricity/overview";
+import { readingDigits } from "@/features/electricity/cycle";
+import { kwhParts } from "@/features/electricity/overview";
 import type { LastChecked } from "@/features/electricity/last-checked";
 import type { MeterLimit } from "@/features/electricity/limits";
-import { leftHeadline, usedOfLimit, type LimitUnits } from "@/features/electricity/limits-text";
+import { leftHeadline, type LimitUnits } from "@/features/electricity/limits-text";
 import { formatKwh } from "@/features/electricity/usage";
 import { toCents } from "@/lib/decimal";
 import { formatDate, formatMoney, formatMonth } from "@/lib/format";
@@ -39,18 +40,29 @@ import { monthOf } from "@/lib/dates";
 const SHOWN = 4; // rows shown before "Show all"
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h3 className="mb-1 text-sm font-medium text-muted-foreground">{children}</h3>;
+  return <h3 className="py-2.5 text-sm font-semibold">{children}</h3>;
+}
+
+/** Three short facts in the mono label style: days since the bill, kWh a day, the bill reading it started from. */
+function CycleFacts({ days, perDay, from }: { days: number | null; perDay: number | null; from: number | null }) {
+  return (
+    <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11px] tracking-wide text-label tabular-nums uppercase">
+      {days !== null ? <li>Day {days}</li> : null}
+      {perDay !== null ? <li>{kwhParts(perDay).value} a day</li> : null}
+      {from !== null ? <li>From {kwhParts(from).value}</li> : null}
+    </ul>
+  );
 }
 
 function BillRow({ bill, today }: { bill: ElectricityBill; today: string }) {
   const status = billStatus(bill, today);
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t py-2.5 text-sm">
+    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-raised py-2.5 text-sm">
       <span className="min-w-40 flex-1 whitespace-nowrap">
-        <span className="font-medium">{formatMonth(monthOf(bill.readingDate))}</span>
+        <span className="font-mono text-xs font-semibold uppercase">{formatMonth(monthOf(bill.readingDate))}</span>
         <span className="text-muted-foreground"> · {formatKwh(toCents(bill.units))}</span>
       </span>
-      {bill.amount !== null ? <span className="whitespace-nowrap text-muted-foreground tabular-nums">{formatMoney(Number(bill.amount))}</span> : null}
+      {bill.amount !== null ? <span className="font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums">{formatMoney(Number(bill.amount))}</span> : null}
       <BillChip status={status} />
       <span className="ml-auto">
       <PopoverButton variant="ghost" icon="more" ariaLabel={`Actions for the ${formatDate(bill.billDate)} bill`} align="end">
@@ -94,7 +106,6 @@ function BillRow({ bill, today }: { bill: ElectricityBill; today: string }) {
  */
 export function MeterView({
   meter,
-  toneIndex,
   allMeters,
   data,
   readings,
@@ -104,7 +115,6 @@ export function MeterView({
   check,
 }: {
   meter: ElectricityMeter;
-  toneIndex: number;
   /** Every meter, active first: gives the chart each meter's colour. */
   allMeters: ElectricityMeter[];
   data: MeterData;
@@ -119,15 +129,15 @@ export function MeterView({
   const active = !meter.archivedAt;
   const headline = limit.known ? leftHeadline(limit) : null;
   const readingById = new Map(readings.map((r) => [r.id, r]));
-  const barClass = toneFor(toneIndex).bar.split(" ")[0];
-  const maxDelta = Math.max(0, ...readingRows.map((r) => r.delta ?? 0));
+  const newest = readingRows[0];
+  const digits = newest ? readingDigits(newest.value) : null;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-3 md:gap-5">
       <header className="flex flex-wrap items-center gap-3">
-        <MeterBadge name={meter.name} index={toneIndex} className="size-7 text-sm" />
-        <h2 className="text-xl font-medium">{meter.name}</h2>
-        {meter.accountNumber ? <span className="text-sm text-muted-foreground">account {meter.accountNumber}</span> : null}
+        <MeterBadge name={meter.name} className="h-6 min-w-7 text-xs" />
+        <h2 className="font-display text-2xl leading-none font-semibold tracking-tight">{meter.name}</h2>
+        {meter.accountNumber ? <span className="font-mono text-[11px] text-label">ACCOUNT {meter.accountNumber}</span> : null}
         {meter.archivedAt ? <Badge variant="secondary">Archived</Badge> : null}
         <span className="ml-auto">
           <PopoverButton variant="ghost" label="More" icon="chevron" align="end">
@@ -155,25 +165,56 @@ export function MeterView({
         </span>
       </header>
 
-      <section aria-label="Units left to the limit" className="flex flex-col gap-3">
-        <p className="text-5xl leading-none font-medium tabular-nums">
+      <section
+        aria-label="Units left to the limit"
+        className="flex flex-col gap-4 rounded-3xl border border-raised bg-deepest bg-[radial-gradient(var(--card)_1px,transparent_1px)] bg-size-[14px_14px] p-5"
+      >
+        <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
           {headline ? (
             <>
-              {headline.value} <span className="text-xl font-normal text-muted-foreground">{headline.label === "left" ? "units left" : "units over"}</span>
+              <span className="font-display text-7xl leading-[0.82] font-semibold tracking-tight md:text-8xl">{headline.value}</span>
+              <span className="pb-1">
+                <span className="block text-[15px] font-semibold">{headline.label === "left" ? `units to ${Math.round(limit.limit / 100)}` : `units over ${Math.round(limit.limit / 100)}`}</span>
+                <span className="mt-1 block">
+                  <LimitChips limit={limit} units={units} />
+                </span>
+              </span>
             </>
           ) : (
-            <span className="text-muted-foreground">–</span>
+            <span className="font-display text-7xl leading-[0.82] font-semibold text-quiet">–</span>
           )}
-        </p>
-        <LimitChips limit={limit} units={units} />
-        <LastCheckedLine check={check} />
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          {digits ? (
+            <span role="img" aria-label={`Last reading ${digits.join("")}`} className="flex gap-0.5">
+              {digits.map((d, i) => (
+                <span
+                  key={i}
+                  className={`flex h-8 w-6 items-center justify-center rounded-[5px] font-mono text-base font-semibold ${
+                    i === digits.length - 1 ? "bg-primary text-primary-foreground" : "bg-raised text-foreground"
+                  }`}
+                >
+                  {d}
+                </span>
+              ))}
+            </span>
+          ) : null}
+          <span className="ml-auto">
+            <LastCheckedLine check={check} />
+          </span>
+        </div>
+      </section>
+
+      <section aria-label="Against the slabs" className="flex flex-col gap-2 rounded-2xl border bg-card p-4">
         {usage.state === "ok" ? (
           <>
-            <p className="text-sm text-muted-foreground tabular-nums">{usedOfLimit(limit)}</p>
-            <div className="max-w-lg">
-              <UsageGauge used={usage.units} reference={limit.limit} projected={usage.projected} toneIndex={toneIndex} referenceLabel="limit" />
+            <div className="flex flex-wrap items-baseline gap-2">
+              <span className="text-[15px] font-semibold">{Math.round(usage.units / 100)} used since the bill</span>
+              <span className="ml-auto">
+                <CycleFacts days={usage.days} perDay={usage.dailyAverage} from={last ? toCents(last.currentReading) : null} />
+              </span>
             </div>
-            <CycleFacts days={usage.days} perDay={usage.dailyAverage} from={last ? toCents(last.currentReading) : null} />
+            <SlabRule used={limit.used} projected={usage.projected} low={units.low * 100} high={units.high * 100} state={limit.state} />
           </>
         ) : (
           <p className="text-sm text-muted-foreground">
@@ -185,14 +226,16 @@ export function MeterView({
       </section>
 
       {last && lastStatus ? (
-        <section aria-label="Last bill" className="flex flex-wrap items-center gap-3 rounded-xl bg-muted/60 px-4 py-3">
+        <section aria-label="Last bill" className="flex flex-wrap items-center gap-3 rounded-2xl border bg-card p-4">
           <div className="min-w-48 flex-1 text-sm">
             <p>
-              <span className="font-medium">Last bill, {formatMonth(monthOf(last.readingDate))}</span>
-              <span className="text-muted-foreground">
-                {" "}
-                · {formatKwh(toCents(last.units))}
-                {last.amount !== null ? ` · ${formatMoney(Number(last.amount))}` : ""}
+              <span className="text-[15px] font-semibold">Last bill</span>
+              <span className="ml-2 font-mono text-[11px] text-label uppercase">{formatMonth(monthOf(last.readingDate))}</span>
+            </p>
+            <p className="mt-1.5">
+              {last.amount !== null ? <span className="font-display text-2xl font-semibold tracking-tight">{formatMoney(Number(last.amount))}</span> : null}
+              <span className="block text-xs text-muted-foreground">
+                {formatKwh(toCents(last.units))} · the cycle started at {kwhParts(toCents(last.currentReading)).value} on {formatDate(last.readingDate)}
               </span>
             </p>
             <p className="mt-1.5 flex flex-wrap items-center gap-2">
@@ -216,8 +259,7 @@ export function MeterView({
               <form action={markBillPaid}>
                 <input type="hidden" name="id" value={last.id} />
                 <SubmitButton
-                  variant="outline"
-                  size="sm"
+                  size="lg"
                   confirm={`Mark the ${formatMonth(monthOf(last.readingDate))} bill${last.amount !== null ? ` (${formatMoney(Number(last.amount))})` : ""} as paid today? You can undo it.`}
                 >
                   Mark paid
@@ -237,8 +279,8 @@ export function MeterView({
 
       {bills.length > 0 ? <MonthlyChart meters={allMeters} bills={bills} /> : null}
 
-      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-        <section aria-label="Bills">
+      <div className="grid grid-cols-1 gap-3 md:gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <section aria-label="Bills" className="rounded-2xl border bg-card px-4 pb-1">
           <SectionTitle>Bills</SectionTitle>
           {bills.length === 0 ? (
             <p className="border-t py-3 text-sm text-muted-foreground">No bills yet.</p>
@@ -265,7 +307,7 @@ export function MeterView({
           )}
         </section>
 
-        <section aria-label="Readings">
+        <section aria-label="Readings" className="rounded-2xl border bg-card px-4 pb-1">
           <SectionTitle>Readings</SectionTitle>
           {readingRows.length === 0 ? (
             <p className="border-t py-3 text-sm text-muted-foreground">No readings yet.</p>
@@ -273,7 +315,7 @@ export function MeterView({
             <>
               <ul>
                 {readingRows.slice(0, SHOWN).map((r) => (
-                  <ReadingRowItem key={r.id} row={r} reading={readingById.get(r.id)} share={barShare(r.delta ?? 0, maxDelta)} barClass={barClass} />
+                  <ReadingRowItem key={r.id} row={r} reading={readingById.get(r.id)} />
                 ))}
               </ul>
               {readingRows.length > SHOWN ? (
@@ -283,7 +325,7 @@ export function MeterView({
                   </summary>
                   <ul>
                     {readingRows.slice(SHOWN).map((r) => (
-                      <ReadingRowItem key={r.id} row={r} reading={readingById.get(r.id)} share={barShare(r.delta ?? 0, maxDelta)} barClass={barClass} />
+                      <ReadingRowItem key={r.id} row={r} reading={readingById.get(r.id)} />
                     ))}
                   </ul>
                 </details>
@@ -296,19 +338,17 @@ export function MeterView({
   );
 }
 
-function ReadingRowItem({ row, reading, share, barClass }: { row: MeterData["readingRows"][number]; reading: ElectricityReading | undefined; share: number; barClass: string }) {
+function ReadingRowItem({ row, reading }: { row: MeterData["readingRows"][number]; reading: ElectricityReading | undefined }) {
   const kwh = kwhParts(row.value);
   return (
-    <li className="flex items-center gap-3 border-t py-2.5 text-sm">
-      <span className="min-w-0 flex-1">
+    <li className="flex items-center gap-3 border-t border-raised py-2.5 text-sm">
+      <span aria-hidden className="size-2 shrink-0 rounded-full bg-label" />
+      <span className="min-w-0 flex-1 font-mono text-[11px] text-label uppercase">
         {formatDate(row.date)}
-        {row.replaced ? <span className="ml-2 text-xs text-muted-foreground">meter replaced</span> : null}
-        <span aria-hidden className="mt-1.5 block h-1.5 rounded-full bg-muted">
-          <span className={`block h-full rounded-full ${barClass}`} style={{ width: `${share}%` }} />
-        </span>
+        {row.replaced ? <span className="ml-2 normal-case">meter replaced</span> : null}
       </span>
-      <span className="tabular-nums">{kwh.value}</span>
-      <span className="w-16 text-right text-muted-foreground tabular-nums">{row.delta === null ? "" : `+${kwhParts(row.delta).value}`}</span>
+      <span className="font-mono text-sm font-semibold tabular-nums">{kwh.value}</span>
+      <span className="w-16 text-right font-mono text-xs text-muted-foreground tabular-nums">{row.delta === null ? "" : `+${kwhParts(row.delta).value}`}</span>
       {reading ? (
         <PopoverButton variant="ghost" icon="more" ariaLabel={`Actions for the reading on ${formatDate(row.date)}`} align="end">
           <div className="flex flex-col gap-2 p-1">

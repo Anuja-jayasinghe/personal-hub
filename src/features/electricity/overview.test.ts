@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { badgeLetter, barShare, gaugeScale, kwhParts, readingRows, unpaidTotal } from "./overview";
+import { badgeLetter, kwhParts, readingRows, unpaidTotal } from "./overview";
 import type { Reading } from "./usage";
 
 const r = (id: string, date: string, value: number, replacedFinal: number | null = null): Reading => ({
@@ -58,31 +58,5 @@ describe("unpaidTotal", () => {
         { amount: null, paidDate: null },
       ]),
     ).toEqual({ cents: 791384, withoutAmount: 1 });
-  });
-});
-
-describe("gaugeScale", () => {
-  it("scales used, last bill and pace to one track with a little headroom", () => {
-    const g = gaugeScale({ used: 8700, reference: 14300, projected: 21750 });
-    expect(g.referencePct).toBeGreaterThan(g.usedPct);
-    expect(g.projectedPct).toBeGreaterThan(g.referencePct!);
-    expect(g.projectedPct).toBeLessThan(100);
-  });
-  it("never lets the pace fall below what is already used", () => {
-    expect(gaugeScale({ used: 5000, reference: null, projected: 100 }).projectedPct).toBe(gaugeScale({ used: 5000, reference: null, projected: 5000 }).projectedPct);
-  });
-  it("is all zero when nothing was used and there is nothing to compare", () => {
-    expect(gaugeScale({ used: 0, reference: null, projected: null })).toEqual({ usedPct: 0, projectedPct: 0, referencePct: null });
-    expect(gaugeScale({ used: 0, reference: 0, projected: 0 }).referencePct).toBe(0);
-  });
-});
-
-describe("barShare", () => {
-  it("is the share of the largest figure, never invisibly small", () => {
-    expect(barShare(50, 100)).toBe(50);
-    expect(barShare(100, 100)).toBe(100);
-    expect(barShare(1, 1000)).toBe(2);
-    expect(barShare(0, 100)).toBe(0);
-    expect(barShare(5, 0)).toBe(0);
   });
 });

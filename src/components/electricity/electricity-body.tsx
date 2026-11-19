@@ -84,7 +84,6 @@ export function ElectricityBody({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <ElectricityTabs
                 meters={meters}
-                toneIndexOf={toneIndexOf}
                 selectedId={selected?.id ?? null}
                 showBoth={!showArchived && meters.length > 1}
                 archived={showArchived}
@@ -105,7 +104,6 @@ export function ElectricityBody({
           {selected ? (
             <MeterView
               meter={selected}
-              toneIndex={toneIndexOf(selected.id)}
               allMeters={allMeters}
               data={data.get(selected.id)!}
               readings={readings.filter((r) => r.meterId === selected.id)}
@@ -125,7 +123,7 @@ export function ElectricityBody({
           ← Back to active meters
         </Link>
       ) : (
-        <details className="@container rounded-lg border text-sm" open={meters.length === 0}>
+        <details className="@container rounded-2xl border bg-card text-sm" open={meters.length === 0}>
           <summary className="cursor-pointer px-4 py-2.5 text-muted-foreground">Manage meters</summary>
           <div className="flex flex-col gap-4 border-t p-4">
             <div>
