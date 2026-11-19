@@ -8,7 +8,8 @@ import { attachments, vehicleOdometerReadings, vehicleRenewals, vehicles } from 
 import { db } from "@/db";
 import { deleteAttachmentsOf, deleteSharedDataOf } from "@/features/shared/cleanup";
 import { toActionState } from "@/features/shared/errors";
-import { removeAttachment, storeAttachment } from "@/features/shared/files";
+import { recordUpload, removeAttachment, uploadedFrom } from "@/features/shared/files";
+import { COVER_TYPE_MESSAGE, COVER_TYPES } from "@/lib/storage";
 import type { ActionState } from "@/features/shared/types";
 import { idFrom, ValidationError } from "@/features/shared/validation";
 import { todayInAppTz } from "@/lib/format";
@@ -18,7 +19,6 @@ import { requireUser } from "@/lib/auth";
 
 // Server Actions are public HTTP endpoints, so every input is validated here (see shared/actions.ts).
 
-const COVER_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
 function fieldsFrom(fd: FormData) {
   const raw: Record<string, string | undefined> = {};
@@ -121,18 +121,12 @@ export async function setVehicleCover(_prev: ActionState, fd: FormData): Promise
   try {
     await requireUser({ area: "vehicles", level: "edit" });
     const id = idFrom(fd, "vehicleId");
-    const file = fd.get("file");
-    if (!(file instanceof File)) throw new ValidationError("Choose a photo to upload.");
 
     const [vehicle] = await db.select().from(vehicles).where(eq(vehicles.id, id));
     if (!vehicle) throw new ValidationError("That vehicle could not be found.");
 
-    const photo = await storeAttachment(
-      { ownerType: "vehicle", ownerId: id },
-      file,
-      COVER_TYPES,
-      "The cover photo must be a JPEG, PNG or WebP image.",
-    );
+    // The browser has already put the photo in storage (C115); this records it after checking it.
+    const photo = await recordUpload({ ownerType: "vehicle", ownerId: id }, uploadedFrom(fd), COVER_TYPES, COVER_TYPE_MESSAGE);
     const oldCoverId = vehicle.coverAttachmentId;
     try {
       await db.update(vehicles).set({ coverAttachmentId: photo.id }).where(eq(vehicles.id, id));

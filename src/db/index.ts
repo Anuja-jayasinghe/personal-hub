@@ -5,7 +5,8 @@ import * as schema from "./schema";
 
 /**
  * Server-only database client (DECISIONS C19: no Supabase key or connection string ever reaches
- * the browser). Connects through the Supabase session pooler (C26) using DATABASE_URL.
+ * the browser). Connects through the Supabase pooler using DATABASE_URL: the session pooler locally (C26),
+ * the transaction pooler on Vercel (C115).
  *
  * The connection is created on first use, not when this file is imported. That way
  * `pnpm build` and the tests work on a brand-new computer before `.env.local` exists (found by
@@ -22,7 +23,10 @@ function createDb() {
   const client =
     globalForDb.__pgClient ??
     postgres(connectionString, {
-      max: 5,
+      // On Vercel each server copy keeps one connection and uses Supabase's transaction pooler
+      // (port 6543), which needs prepared statements off (hosting prep, C115). Locally: up to 5.
+      max: process.env.VERCEL ? 1 : 5,
+      prepare: false,
       idle_timeout: 20,
       connect_timeout: 15,
     });

@@ -5,7 +5,7 @@ import { refresh } from "next/cache";
 import { db } from "@/db";
 import { attachments, vehicles } from "@/db/schema";
 import { toActionState } from "@/features/shared/errors";
-import { storeAttachment } from "@/features/shared/files";
+import { recordUpload, uploadedFrom } from "@/features/shared/files";
 import type { ActionState } from "@/features/shared/types";
 import { idFrom, ValidationError } from "@/features/shared/validation";
 import { requireUser } from "@/lib/auth";
@@ -26,17 +26,10 @@ export async function uploadVehicleDocument(_prev: ActionState, fd: FormData): P
     await requireUser({ area: "vehicle_documents", level: "add" });
     const vehicleId = idFrom(fd, "vehicleId");
     const title = titleFrom(fd);
-    const file = fd.get("file");
-    if (!(file instanceof File)) throw new ValidationError("Choose a file to upload.");
     const [vehicle] = await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, vehicleId));
     if (!vehicle) throw new ValidationError("That vehicle could not be found.");
-    await storeAttachment(
-      { ownerType: "vehicle", ownerId: vehicleId },
-      file,
-      undefined,
-      undefined,
-      title,
-    );
+    // The browser has already put the file in storage (C115); this records it after checking it.
+    await recordUpload({ ownerType: "vehicle", ownerId: vehicleId }, uploadedFrom(fd), undefined, undefined, title);
     refresh();
     return { ok: true };
   } catch (err) {
