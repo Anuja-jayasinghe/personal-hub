@@ -279,6 +279,8 @@ Line icons on a 24 px grid, stroke 1.7, where key ends carry a 1.9 px node (home
 
 ### The slab rule
 
+*Replaced on screen by the meter instrument (C109, `design/phase-s/Main.dc.html`): one dial per meter, 0 to just above the high slab, arc = units used, dashed needle = pace, amber and red marks for the slabs. The description below is kept for the rules it encodes.*
+
 The core component. A horizontal line for one meter over a fixed 0 to 200 scale:
 
 - Track: 2 px #303B4B. Used: 4 px blue from 0 to the used units, ending in a 6 px blue node with a 2.5 px surface ring.
@@ -288,6 +290,8 @@ The core component. A horizontal line for one meter over a fixed 0 to 200 scale:
 - Text next to it says the same thing in words ("At this pace B passes 120 around 23 Nov and 180 around 1 Dec. Switch the house to Meter A before then.").
 
 ### The meter board
+
+*Replaced by the meter instruments side by side (C109); the GRID connector is gone.*
 
 A Deepest panel with a dot grid. A "GRID" node at the top feeds a line to each meter module; the line to the live meter is blue with white dashes flowing along it, the idle one is grey. Each module (Surface, 16 px radius) shows: the letter in a mono badge, LIVE or IDLE with an LED, the reading as five digit cells with the last one blue (live) or grey (idle), the meter disc with a blue mark turning on the live meter, units left in Oxanium ("33 to 120"), and when it was last read. The whole module links to that meter.
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeLimits, type MeterInput } from "./limits";
-import { adviceLine, leftHeadline, paceLine, roleChip, unitsLeft, usedOfLimit } from "./limits-text";
+import { adviceLine, leftHeadline, paceLine, roleChip, unitsLeft, usedOfLimit, roomText } from "./limits-text";
 
 const RULES = { low: 12000, high: 18000, near: 1000 };
 const U = { low: 120, high: 180 };
@@ -43,6 +43,14 @@ describe("paceLine", () => {
     expect(line.tone).toBe("warn");
     expect(line.text).toContain("more than the 300 you have");
     expect(line.text).toMatch(/runs out in about \d+ days?\./);
+  });
+});
+
+describe("roomText", () => {
+  it("says the room left, or how far over, or the job while not counting", () => {
+    expect(roomText({ known: true, left: 3300, limit: 12000, role: "low" }, U)).toBe("33 to 120");
+    expect(roomText({ known: true, left: -550, limit: 12000, role: "low" }, U)).toBe("6 over 120");
+    expect(roomText({ known: false, left: 12000, limit: 12000, role: "open" }, U)).toBe("Under 120");
   });
 });
 

@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Circuit calendar family</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;family=Oxanium:wght@500;600;700&amp;family=Sora:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1280px; height: 940px; box-sizing: border-box; padding: 32px 36px; background: #11151D; color: #F2F5FA; font-family: 'Sora', Arial, sans-serif; display: flex; flex-direction: column; gap: 22px">
+
+<section aria-label="Bills calendar, November 2026, sample" style="display: flex; flex-direction: column; gap: 12px; padding: 20px 22px; border-radius: 24px; background: #0D1118; box-shadow: inset 0 0 0 1px #222D3D; background-image: radial-gradient(#1A2230 1px, transparent 1px); background-size: 14px 14px">
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: .14em; color: #929EAF; flex-grow: 1">BILLS · NOVEMBER 2026 · SAMPLE</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #A3ADBD"><span style="width: 9px; height: 9px; border-radius: 50%; background: #3DD68C"></span>paid</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #A3ADBD"><span style="width: 9px; height: 9px; border-radius: 50%; background: #F5B94A"></span>due</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #A3ADBD"><span style="width: 9px; height: 9px; border-radius: 50%; background: #FF6B61"></span>late</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #A3ADBD"><span style="width: 9px; height: 9px; border-radius: 50%; box-shadow: inset 0 0 0 2px #4388F5"></span>today</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 0">
+<sc-for list="{{weekdays}}" as="w" hint-placeholder-count="7">
+<span style="padding: 0 0 6px 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .14em; color: #4A5668">{{w}}</span>
+</sc-for>
+</div>
+<sc-for list="{{weeks}}" as="week" hint-placeholder-count="5">
+<div style="position: relative; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); height: 84px">
+<div style="position: absolute; left: 22px; right: 22px; top: 28px; height: 2px; background: #1A2230"></div>
+<sc-for list="{{week.days}}" as="d" hint-placeholder-count="7">
+<div style="position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 6px 10px; opacity: {{d.opacity}}">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{d.numColor}}">{{d.n}}</span>
+<span style="position: absolute; left: {{d.nodeLeft}}; top: {{d.nodeTop}}; width: {{d.size}}; height: {{d.size}}; border-radius: 50%; background: {{d.fill}}; box-shadow: {{d.ring}}"></span>
+<span style="margin-top: 26px; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11px; line-height: 1.3; color: {{d.labelColor}}">{{d.label}}</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #929EAF">{{d.amount}}</span>
+</div>
+</sc-for>
+</div>
+</sc-for>
+</section>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px">
+<section aria-label="Reminders: the next three weeks, sample" style="display: flex; flex-direction: column; gap: 12px; padding: 20px 22px; border-radius: 24px; background: #0D1118; box-shadow: inset 0 0 0 1px #222D3D">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: .14em; color: #929EAF">REMINDERS · NEXT 3 WEEKS · SAMPLE</span>
+<div style="position: relative; display: grid; grid-template-columns: repeat(21, minmax(0, 1fr)); height: 92px">
+<div style="position: absolute; left: 8px; right: 8px; top: 46px; height: 2px; background: #222D3D"></div>
+<sc-for list="{{strip}}" as="s" hint-placeholder-count="21">
+<div style="position: relative; display: flex; flex-direction: column; align-items: center">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: {{s.letterColor}}">{{s.letter}}</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #4A5668">{{s.n}}</span>
+<span style="position: absolute; top: {{s.top}}; width: {{s.size}}; height: {{s.size}}; border-radius: 50%; background: {{s.fill}}; box-shadow: {{s.ring}}"></span>
+<span style="position: absolute; top: 66px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: {{s.countColor}}">{{s.count}}</span>
+</div>
+</sc-for>
+</div>
+<p style="margin: 0; font-size: 12.5px; color: #929EAF">Same nodes as the Bills calendar: a bigger, brighter node means more is due that day.</p>
+</section>
+
+<section aria-label="Home: the next 30 days, sample" style="display: flex; flex-direction: column; gap: 12px; padding: 20px 22px; border-radius: 24px; background: #1A2230; box-shadow: inset 0 0 0 1px #303B4B">
+<div style="display: flex"><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: .14em; color: #929EAF; flex-grow: 1">NEXT 30 DAYS · SAMPLE</span><a href="#" style="color: #4388F5; font-size: 13px; font-weight: 600; text-decoration: none">Reminders</a></div>
+<div style="position: relative; height: 112px">
+<div style="position: absolute; left: 0; right: 0; top: 54px; height: 2px; background: #303B4B"></div>
+<sc-for list="{{weekTicks}}" as="t" hint-placeholder-count="5">
+<span style="position: absolute; left: {{t.left}}; top: 48px; width: 1px; height: 14px; background: #4A5668"></span>
+<span style="position: absolute; left: {{t.left}}; top: 92px; transform: translateX(-50%); font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #4A5668">{{t.label}}</span>
+</sc-for>
+<sc-for list="{{line}}" as="i" hint-placeholder-count="5">
+<span style="position: absolute; left: {{i.left}}; top: {{i.top}}; transform: translate(-50%, -50%); width: {{i.size}}; height: {{i.size}}; border-radius: 50%; background: {{i.fill}}; box-shadow: {{i.ring}}"></span>
+<span style="position: absolute; left: {{i.left}}; top: {{i.labelTop}}; transform: translateX(-50%); white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: .06em; color: {{i.labelColor}}">{{i.label}}</span>
+</sc-for>
+</div>
+<p style="margin: 0; font-size: 12.5px; color: #929EAF">Week marks on the trace; labels alternate above and below so they never overlap.</p>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":940}}'>
+class Component extends DCLogic {
+renderVals() {
+const events = { 4: ['paid', 'Internet', '3,204'], 10: ['paid', 'Streaming', '1,890'], 15: ['late', 'Insurance', '12,400'], 22: ['due', 'Water', '1,150'], 30: ['due', 'Electricity …1166', '4,709'], 26: ['due', 'Phone', '2,499'] };
+const colors = { paid: '#3DD68C', due: '#F5B94A', late: '#FF6B61' };
+const today = 19;
+const cells = [];
+for (let i = 0; i < 6; i++) cells.push(null);
+for (let d = 1; d <= 30; d++) cells.push(d);
+while (cells.length % 7) cells.push(null);
+const weeks = [];
+for (let i = 0; i < cells.length; i += 7) {
+weeks.push({ days: cells.slice(i, i + 7).map((d) => {
+if (d === null) return { n: '', label: '', amount: '', size: '0px', fill: 'transparent', ring: 'none', nodeLeft: '0', nodeTop: '0', opacity: '1', numColor: '#4A5668', labelColor: '#A3ADBD' };
+const e = events[d];
+const isToday = d === today;
+const size = e ? 14 : isToday ? 12 : 6;
+return {
+n: String(d), label: e ? e[1] : isToday ? 'Today' : '', amount: e ? e[2] : '',
+size: size + 'px', fill: e ? colors[e[0]] : isToday ? '#11151D' : '#303B4B',
+ring: e ? '0 0 0 4px ' + (e[0] === 'paid' ? 'rgba(61,214,140,.15)' : e[0] === 'late' ? 'rgba(255,107,97,.18)' : 'rgba(245,185,74,.16)') : isToday ? 'inset 0 0 0 2.5px #4388F5' : 'none',
+nodeLeft: (22 - size / 2) + 'px', nodeTop: (29 - size / 2) + 'px', opacity: d < today && !e ? '.55' : '1',
+numColor: isToday ? '#4388F5' : '#929EAF', labelColor: isToday ? '#4388F5' : '#A3ADBD',
+};
+}) });
+}
+const letters = ['T', 'F', 'S', 'S', 'M', 'T', 'W'];
+const counts = { 0: 2, 1: 0, 3: 1, 7: 3, 11: 1, 15: 0, 18: 2 };
+const strip = Array.from({ length: 21 }, (_, i) => {
+const c = counts[i] || 0; const size = i === 0 ? 14 : c === 0 ? 6 : 8 + c * 3;
+return { letter: letters[i % 7], n: String(19 + i > 30 ? 19 + i - 30 : 19 + i), size: size + 'px', top: (47 - size / 2) + 'px',
+fill: i === 0 ? '#11151D' : c === 0 ? '#303B4B' : c >= 3 ? '#F5B94A' : '#4388F5', ring: i === 0 ? 'inset 0 0 0 2.5px #4388F5' : c > 0 ? '0 0 0 4px rgba(67,136,245,.14)' : 'none',
+count: c ? String(c) : '', countColor: c >= 3 ? '#F5B94A' : '#A3ADBD', letterColor: i === 0 ? '#4388F5' : '#929EAF' };
+});
+const items = [[0, 'TODAY', 'today'], [2, 'READ A·B', 'check'], [11, 'WATER', 'due'], [7, 'PHONE', 'due'], [18, 'ELEC …1166', 'due'], [26, 'LICENCE', 'soon']];
+const fillOf = { today: '#11151D', check: '#929EAF', due: '#F5B94A', soon: '#3DD68C' };
+const line = items.map(([day, label, kind], idx) => ({
+left: (day / 30 * 100).toFixed(2) + '%', top: '55px', size: kind === 'today' ? '16px' : kind === 'check' ? '10px' : '14px', fill: fillOf[kind],
+ring: kind === 'today' ? 'inset 0 0 0 3px #4388F5, 0 0 0 5px rgba(67,136,245,.18)' : kind === 'check' ? 'none' : '0 0 0 4px rgba(245,185,74,.14)',
+label, labelTop: idx % 2 === 0 ? '22px' : '70px', labelColor: kind === 'today' ? '#4388F5' : '#A3ADBD',
+}));
+const weekTicks = [7, 14, 21, 28].map((d) => ({ left: (d / 30 * 100).toFixed(2) + '%', label: '+' + d }));
+return { weekdays: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'], weeks, strip, line, weekTicks };
+}
+}
+</script>
+</body>
+</html>

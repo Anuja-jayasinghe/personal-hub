@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cycleSeries, readingDigits, slabScale } from "./cycle";
+import { cycleSeries, readingDigits } from "./cycle";
 import type { BillMark } from "./since-bill";
 import type { Reading } from "./usage";
 
@@ -38,32 +38,6 @@ describe("cycleSeries", () => {
       [reading("2026-11-08", 37352), reading("2026-11-12", 5, 37360)],
     );
     expect(pts.map((p) => p.used)).toEqual([0, 1000, 1800]);
-  });
-});
-
-describe("slabScale", () => {
-  const rules = { low: 12000, high: 18000 };
-
-  it("puts 120 at 60% and 180 at 90%", () => {
-    const s = slabScale({ used: 8700, projected: 21700, ...rules });
-    expect(s.lowPct).toBeCloseTo(60);
-    expect(s.highPct).toBeCloseTo(90);
-    expect(s.usedPct).toBeCloseTo(43.5);
-  });
-
-  it("caps a pace past the end of the line and says so", () => {
-    const s = slabScale({ used: 8700, projected: 25000, ...rules });
-    expect(s.projectedPct).toBe(100);
-    expect(s.projectedBeyond).toBe(true);
-  });
-
-  it("has no pace when there is none or it is not ahead of what is used", () => {
-    expect(slabScale({ used: 2400, projected: null, ...rules }).projectedPct).toBeNull();
-    expect(slabScale({ used: 2400, projected: 2400, ...rules }).projectedPct).toBeNull();
-  });
-
-  it("never goes past the end, even when well over", () => {
-    expect(slabScale({ used: 30000, projected: null, ...rules }).usedPct).toBe(100);
   });
 });
 

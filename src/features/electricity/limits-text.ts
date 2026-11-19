@@ -77,3 +77,10 @@ export function adviceLine(
   if (liveId !== null && liveId === advice.otherId) return `${base} The house is already on ${other}, which has ${otherLeft} left.`;
   return `${base} ${other} has ${otherLeft} left. Switch to ${other}, or let ${name} pass ${u.low} and keep ${other} under ${u.low}.`;
 }
+
+/** The caption under a meter instrument (S.4): "33 to 120", "5 over 120", or its job while it is not counting yet. */
+export function roomText(m: Pick<MeterLimit, "known" | "left" | "limit" | "role">, u: LimitUnits): string {
+  if (!m.known) return roleChip(m.role, u);
+  const left = Math.floor(m.left / 100);
+  return m.left >= 0 ? `${left} to ${whole(m.limit)}` : `${Math.ceil(-m.left / 100)} over ${whole(m.limit)}`;
+}
