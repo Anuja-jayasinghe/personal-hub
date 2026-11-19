@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { CycleChart } from "@/components/electricity/cycle-chart";
-import { LiveControls } from "@/components/electricity/live-switch";
 import { MeterBoard } from "@/components/electricity/meter-board";
 import { MeterBadge, toneFor } from "@/components/electricity/meter-tone";
 import { MonthlyChart } from "@/components/electricity/monthly-chart";
@@ -45,7 +44,6 @@ export function ElectricityOverview({
   nameOf,
   checks,
   live,
-  today,
 }: {
   meters: ElectricityMeter[];
   allMeters: ElectricityMeter[];
@@ -58,7 +56,6 @@ export function ElectricityOverview({
   nameOf: (id: string) => string;
   checks: Map<string, LastChecked>;
   live: LiveMeter | null;
-  today: string;
 }) {
   const unpaid = unpaidTotal(bills.filter((b) => meters.some((m) => m.id === b.meterId)));
   const pace = paceLine(limits);
@@ -119,7 +116,6 @@ export function ElectricityOverview({
       <div className="grid gap-3 md:gap-5 lg:grid-cols-3">
         <div className="flex min-w-0 flex-col gap-3 lg:col-span-2">
           {board}
-          {meters.length > 1 ? <LiveControls meters={meters.map((m) => ({ id: m.id, name: m.name }))} live={live} today={today} /> : null}
         </div>
 
         <div className="flex min-w-0 flex-col gap-3">

@@ -1,9 +1,14 @@
 import Link from "next/link";
+import { Trash2 } from "lucide-react";
 import { LiveControls } from "@/components/electricity/live-switch";
+import { MeterForm } from "@/components/electricity/meter-form";
 import { MeterBadge } from "@/components/electricity/meter-tone";
 import { RowCard, Row, RowMeta, RuleValue } from "@/components/settings/settings-ui";
+import { SubmitButton } from "@/components/shared/submit-button";
 import { getIcon } from "@/components/shell/icons";
 import { appConfig } from "@/config/app.config";
+import type { ElectricityMeter } from "@/db/schema";
+import { archiveMeter, createMeter, deleteMeter, unarchiveMeter, updateMeter } from "@/features/electricity/actions";
 import { liveForText, type LiveMeter } from "@/features/electricity/live";
 import { formatDate } from "@/lib/format";
 
@@ -97,34 +102,79 @@ export function accountTail(account: string | null): string {
   return clean.length > 4 ? `Account …${clean.slice(-4)}` : `Account ${clean}`;
 }
 
-/** The meters on Meters and rules, each linking to its page on Electricity. */
-export function MeterList({ meters, archivedCount }: { meters: { id: string; name: string; accountNumber: string | null }[]; archivedCount: number }) {
-  if (meters.length === 0) {
-    return (
-      <RowCard>
-        <Row label="No meters yet" hint="Add your meters on the Electricity page." href="/electricity" />
-      </RowCard>
-    );
-  }
+type ManagedMeter = Pick<ElectricityMeter, "id" | "name" | "accountNumber" | "notes" | "archivedAt" | "createdAt" | "updatedAt">;
+
+/** One meter as a row that opens its actions (edit, archive, delete), tucked away because they are rare (S.2a). */
+function MeterRow({ meter }: { meter: ManagedMeter }) {
+  const active = !meter.archivedAt;
   return (
-    <>
-      <RowCard>
-        {meters.map((m) => (
-          <Row
-            key={m.id}
-            label={m.name}
-            hint={<span className="font-mono text-[11px] tracking-[0.1em] uppercase">{accountTail(m.accountNumber)}</span>}
-            icon={<MeterBadge name={m.name} className="h-7 min-w-8 text-[13px]" />}
-            href={`/electricity?meter=${m.id}`}
-          />
-        ))}
-      </RowCard>
-      {archivedCount > 0 ? (
-        <p className="text-xs text-muted-foreground">
-          {archivedCount} archived {archivedCount === 1 ? "meter is kept with its" : "meters are kept with their"} readings.
-        </p>
+    <details className="group/m">
+      <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+        <MeterBadge name={meter.name} className="h-7 min-w-8 text-[13px]" />
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5 py-3">
+          <span className="text-[15px] font-semibold">{meter.name}</span>
+          <span className="font-mono text-[11px] tracking-[0.1em] text-muted-foreground uppercase">{accountTail(meter.accountNumber)}</span>
+        </span>
+        <span className="text-sm font-medium text-primary group-open/m:hidden">Manage</span>
+        <span className="hidden text-sm font-medium text-muted-foreground group-open/m:inline">Close</span>
+      </summary>
+      <div className="flex flex-col gap-3 pb-4">
+        {active ? <MeterForm action={updateMeter} meter={meter as ElectricityMeter} /> : null}
+        <div className="flex flex-wrap gap-2">
+          <form action={active ? archiveMeter : unarchiveMeter}>
+            <input type="hidden" name="id" value={meter.id} />
+            <SubmitButton variant="outline" size="sm" confirm={active ? `Archive "${meter.name}"? Its readings and bills are kept.` : undefined}>
+              {active ? "Archive meter" : "Bring back"}
+            </SubmitButton>
+          </form>
+          <form action={deleteMeter}>
+            <input type="hidden" name="id" value={meter.id} />
+            <SubmitButton variant="ghost" size="sm" confirm={`Permanently delete "${meter.name}" and all its readings and bills? This cannot be undone.`}>
+              <Trash2 aria-hidden /> Delete meter
+            </SubmitButton>
+          </form>
+        </div>
+      </div>
+    </details>
+  );
+}
+
+/**
+ * The meters on Meters and rules (S.2a, C106): everything about a meter is set up here, with no trip to
+ * Electricity. Each meter row opens its actions (edit, archive, delete); "Add a meter" and the archived meters
+ * are tucked below, since they are rare.
+ */
+export function MeterList({ meters, archived }: { meters: ManagedMeter[]; archived: ManagedMeter[] }) {
+  return (
+    <div className="flex flex-col gap-3">
+      {meters.length > 0 ? (
+        <RowCard>
+          {meters.map((m) => (
+            <MeterRow key={m.id} meter={m} />
+          ))}
+        </RowCard>
+      ) : (
+        <p className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">No meters yet. Add the first one below.</p>
+      )}
+
+      <details className="rounded-2xl border bg-card" open={meters.length === 0}>
+        <summary className="cursor-pointer px-4 py-3 text-sm font-medium">Add a meter</summary>
+        <div className="border-t p-4">
+          <MeterForm action={createMeter} />
+        </div>
+      </details>
+
+      {archived.length > 0 ? (
+        <details className="rounded-2xl border bg-card">
+          <summary className="cursor-pointer px-4 py-3 text-sm text-muted-foreground">Archived meters ({archived.length})</summary>
+          <div className="flex flex-col divide-y divide-raised border-t px-4">
+            {archived.map((m) => (
+              <MeterRow key={m.id} meter={m} />
+            ))}
+          </div>
+        </details>
       ) : null}
-    </>
+    </div>
   );
 }
 

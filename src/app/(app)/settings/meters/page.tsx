@@ -15,7 +15,7 @@ async function Meters() {
   const live = currentLive(switches, active.map((m) => m.id));
   return (
     <>
-      <MeterList meters={active} archivedCount={archived.length} />
+      <MeterList meters={active} archived={archived} />
       {active.length > 1 ? (
         <div className="mt-3.5 flex flex-col gap-2.5">
           <h2 className="font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">Which meter is live now</h2>
@@ -27,16 +27,16 @@ async function Meters() {
 }
 
 /**
- * Settings › Meters and rules (R.6, board HSettingsMore). Mostly read-only: the meters are added and edited on
- * the Electricity page, and the rule's numbers live in app.config.ts. Which meter is live can be switched
- * here and on Electricity (issue #69).
+ * Settings › Meters and rules (R.6, board HSettingsMore; S.2a, C106): the meters are added, edited,
+ * archived and deleted here, and which meter is live is switched here only. The rule's numbers become
+ * editable in S.2b.
  */
 export default function MetersAndRulesPage() {
   return (
     <>
       <PageHeader title="Meters and rules" parent={{ href: "/settings", label: "Settings" }} />
 
-      <SettingsSection label="Meters" note="Add, rename or archive a meter on the Electricity page.">
+      <SettingsSection label="Meters">
         <Suspense fallback={<Skeleton className="h-28 rounded-2xl" />}>
           <Meters />
         </Suspense>

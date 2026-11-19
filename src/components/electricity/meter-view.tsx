@@ -1,29 +1,20 @@
 import { Trash2 } from "lucide-react";
+import Link from "next/link";
+import { electricityBillHref } from "@/features/electricity/links";
 import { BillChip } from "@/components/electricity/bill-chip";
-import { BillForm } from "@/components/electricity/bill-form";
-import { MeterForm } from "@/components/electricity/meter-form";
 import { LastCheckedLine } from "@/components/electricity/last-checked-line";
 import { LimitChips } from "@/components/electricity/limit-chips";
-import { MarkPaidButton, PaidStamp } from "@/components/electricity/mark-paid";
+import { PaidStamp } from "@/components/electricity/mark-paid";
 import { MeterBadge } from "@/components/electricity/meter-tone";
 import { MonthlyChart } from "@/components/electricity/monthly-chart";
-import { AddBillButton, AddReadingButton, PopoverButton } from "@/components/electricity/popover-button";
+import { PopoverButton } from "@/components/electricity/popover-button";
 import { ReadingForm } from "@/components/electricity/reading-form";
 import { SlabRule } from "@/components/electricity/slab-rule";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import type { ElectricityBill, ElectricityMeter, ElectricityReading } from "@/db/schema";
-import {
-  archiveMeter,
-  deleteBill,
-  deleteMeter,
-  deleteReading,
-  markBillUnpaid,
-  unarchiveMeter,
-  updateBill,
-  updateMeter,
-  updateReading,
-} from "@/features/electricity/actions";
+import { deleteReading, updateReading } from "@/features/electricity/actions";
 import { billStatus } from "@/features/electricity/bill-logic";
 import type { MeterData } from "@/features/electricity/meter-data";
 import { readingDigits } from "@/features/electricity/cycle";
@@ -53,56 +44,33 @@ function CycleFacts({ days, perDay, from }: { days: number | null; perDay: numbe
   );
 }
 
-function BillRow({ bill, today, meterName }: { bill: ElectricityBill; today: string; meterName: string }) {
+/** One bill, read-only (S.2a): opens it on the Bills page, where bills are paid and edited. */
+function BillLine({ bill, today }: { bill: ElectricityBill; today: string }) {
   const status = billStatus(bill, today);
-  const month = formatMonth(monthOf(bill.readingDate));
   return (
-    <li className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-raised py-2.5 text-sm">
-      <span className="min-w-40 flex-1 whitespace-nowrap">
-        <span className="font-mono text-xs font-semibold uppercase">{formatMonth(monthOf(bill.readingDate))}</span>
-        <span className="text-muted-foreground"> · {formatKwh(toCents(bill.units))}</span>
-      </span>
-      {bill.amount !== null ? <span className="font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums">{formatMoney(Number(bill.amount))}</span> : null}
-      {status.state === "paid" ? <PaidStamp billId={bill.id} /> : <BillChip status={status} />}
-      <span className="ml-auto">
-      <PopoverButton variant="ghost" icon="more" ariaLabel={`Actions for the ${formatDate(bill.billDate)} bill`} align="end">
-        <div className="flex flex-col gap-2 p-1">
-          {status.state === "paid" ? (
-            <form action={markBillUnpaid}>
-              <input type="hidden" name="id" value={bill.id} />
-              <SubmitButton variant="outline" size="sm">Mark unpaid</SubmitButton>
-            </form>
-          ) : (
-            <MarkPaidButton
-              billId={bill.id}
-              what={`${meterName}'s ${month} bill`}
-              amount={bill.amount !== null ? formatMoney(Number(bill.amount)) : null}
-              today={today}
-              size="sm"
-            />
-          )}
-          <details className="rounded-md border">
-            <summary className="cursor-pointer px-3 py-1.5 text-sm">Edit this bill</summary>
-            <div className="border-t p-3">
-              <BillForm action={updateBill} bill={bill} />
-            </div>
-          </details>
-          <form action={deleteBill}>
-            <input type="hidden" name="id" value={bill.id} />
-            <SubmitButton variant="ghost" size="sm" confirm="Delete this bill? This cannot be undone.">
-              <Trash2 aria-hidden /> Delete bill
-            </SubmitButton>
-          </form>
-        </div>
-      </PopoverButton>
-      </span>
+    <li className="border-t border-raised">
+      <Link
+        href={electricityBillHref(bill.id)}
+        className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 text-sm outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <span className="min-w-40 flex-1 whitespace-nowrap">
+          <span className="font-mono text-xs font-semibold uppercase">{formatMonth(monthOf(bill.readingDate))}</span>
+          <span className="text-muted-foreground"> · {formatKwh(toCents(bill.units))}</span>
+        </span>
+        {bill.amount !== null ? <span className="font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums">{formatMoney(Number(bill.amount))}</span> : null}
+        {status.state === "paid" ? <PaidStamp billId={bill.id} /> : <BillChip status={status} />}
+        <span aria-hidden className="text-quiet">
+          ›
+        </span>
+      </Link>
     </li>
   );
 }
 
 /**
- * One meter on its own (C78): the big number first, then the last bill, two clear buttons, and
- * short lists of bills and readings. Editing, archiving and deleting sit behind "More".
+ * One meter on its own (C78): the big number first, then the last bill and short lists of bills and
+ * readings. Display only for the meter and its bills (S.2a, C106): readings come in through "Read the
+ * meters", bills are paid and edited in Bills, and the meter itself is edited in Settings.
  */
 export function MeterView({
   meter,
@@ -126,7 +94,6 @@ export function MeterView({
   check: LastChecked;
 }) {
   const { usage, last, lastStatus, bills, readingRows } = data;
-  const active = !meter.archivedAt;
   const headline = limit.known ? leftHeadline(limit) : null;
   const readingById = new Map(readings.map((r) => [r.id, r]));
   const newest = readingRows[0];
@@ -139,30 +106,6 @@ export function MeterView({
         <h2 className="font-display text-2xl leading-none font-semibold tracking-tight">{meter.name}</h2>
         {meter.accountNumber ? <span className="font-mono text-[11px] text-label">ACCOUNT {meter.accountNumber}</span> : null}
         {meter.archivedAt ? <Badge variant="secondary">Archived</Badge> : null}
-        <span className="ml-auto">
-          <PopoverButton variant="ghost" label="More" icon="chevron" align="end">
-            <div className="flex flex-col gap-2 p-1">
-              <details className="rounded-md border">
-                <summary className="cursor-pointer px-3 py-1.5 text-sm">Edit meter</summary>
-                <div className="border-t p-3">
-                  <MeterForm action={updateMeter} meter={meter} />
-                </div>
-              </details>
-              <form action={active ? archiveMeter : unarchiveMeter}>
-                <input type="hidden" name="id" value={meter.id} />
-                <SubmitButton variant="outline" size="sm" confirm={active ? `Archive "${meter.name}"? Its readings and bills are kept.` : undefined}>
-                  {active ? "Archive meter" : "Unarchive meter"}
-                </SubmitButton>
-              </form>
-              <form action={deleteMeter}>
-                <input type="hidden" name="id" value={meter.id} />
-                <SubmitButton variant="ghost" size="sm" confirm={`Permanently delete "${meter.name}" and all its readings and bills? This cannot be undone.`}>
-                  <Trash2 aria-hidden /> Delete meter
-                </SubmitButton>
-              </form>
-            </div>
-          </PopoverButton>
-        </span>
       </header>
 
       <section
@@ -247,33 +190,12 @@ export function MeterView({
               ) : null}
             </p>
           </div>
-          {active ? (
-            lastStatus.state === "paid" ? (
-              <form action={markBillUnpaid}>
-                <input type="hidden" name="id" value={last.id} />
-                <SubmitButton variant="ghost" size="sm" aria-label={`Undo: mark the ${formatMonth(monthOf(last.readingDate))} bill unpaid again`}>
-                  Undo
-                </SubmitButton>
-              </form>
-            ) : (
-              <MarkPaidButton
-                billId={last.id}
-                what={`${meter.name}'s ${formatMonth(monthOf(last.readingDate))} bill`}
-                amount={last.amount !== null ? formatMoney(Number(last.amount)) : null}
-                today={today}
-                size="lg"
-              />
-            )
-          ) : null}
+          <Link href={electricityBillHref(last.id)} className={buttonVariants({ variant: lastStatus.state === "paid" ? "ghost" : "outline", size: "sm" })}>
+            {lastStatus.state === "paid" ? "See in Bills" : "Pay in Bills"}
+          </Link>
         </section>
       ) : null}
 
-      {active ? (
-        <div className="flex flex-wrap gap-2">
-          <AddReadingButton meterId={meter.id} meterName={meter.name} defaultDate={today} />
-          <AddBillButton meterId={meter.id} meterName={meter.name} defaultDate={today} defaultPrevious={last?.currentReading} previousDate={last?.readingDate} />
-        </div>
-      ) : null}
 
       {bills.length > 0 ? <MonthlyChart meters={allMeters} bills={bills} /> : null}
 
@@ -286,7 +208,7 @@ export function MeterView({
             <>
               <ul>
                 {bills.slice(0, SHOWN).map((b) => (
-                  <BillRow key={b.id} bill={b} today={today} meterName={meter.name} />
+                  <BillLine key={b.id} bill={b} today={today} />
                 ))}
               </ul>
               {bills.length > SHOWN ? (
@@ -296,7 +218,7 @@ export function MeterView({
                   </summary>
                   <ul>
                     {bills.slice(SHOWN).map((b) => (
-                      <BillRow key={b.id} bill={b} today={today} meterName={meter.name} />
+                      <BillLine key={b.id} bill={b} today={today} />
                     ))}
                   </ul>
                 </details>
