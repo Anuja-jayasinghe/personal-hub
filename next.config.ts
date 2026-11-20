@@ -3,6 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
+  // The demo database (S.9, C118) runs PGlite, which loads its WebAssembly files from its own folder
+  // at run time; keep it out of the bundle and ship those files, and the migrations it is built from.
+  serverExternalPackages: ["@electric-sql/pglite"],
+  outputFileTracingIncludes: {
+    "/**": ["./drizzle/*.sql", "./drizzle/meta/_journal.json", "./node_modules/@electric-sql/pglite/dist/*.{wasm,data}"],
+  },
   partialPrefetching: true,
   // Attachment uploads go through Server Actions; the default 1 MB limit is too small for bill
   // photos. 10 MB file limit (DECISIONS C33) + headroom for the multipart form overhead.

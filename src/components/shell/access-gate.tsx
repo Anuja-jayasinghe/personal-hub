@@ -1,7 +1,6 @@
 import { SignOutButton } from "@clerk/nextjs";
-import Link from "next/link";
 import { HubMark } from "@/components/brand/hub-mark";
-import { getAuthState } from "@/lib/auth";
+import { getAuthState, isDemoState } from "@/lib/auth";
 
 const primary =
   "flex min-h-13 w-full items-center justify-center rounded-xl bg-primary px-6 text-[15px] font-semibold text-primary-foreground outline-none hover:bg-primary/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
@@ -42,34 +41,17 @@ export function NotAllowedScreen({ email }: { email: string | null }) {
   );
 }
 
-/** Signed in by themselves, waiting for the owner to approve them (S.8, C114). A demo of the hub comes later. */
-export function WaitingScreen({ email }: { email: string }) {
-  return (
-    <Refusal tag="Waiting for approval" tone="soon" title="You are on the list to join">
-      <p className="text-[15px] leading-relaxed text-muted-foreground">
-        You are signed in as <span className="font-medium text-foreground">{email}</span>. The person who runs this hub decides what you can see; once they
-        approve you, the parts they share appear here.
-      </p>
-      <div className="mt-2 w-full">
-        <SignOutButton redirectUrl="/sign-in">
-          <button type="button" className={primary}>
-            Use another account
-          </button>
-        </SignOutButton>
-      </div>
-    </Refusal>
-  );
-}
-
 /**
- * Wraps the whole app shell: only a signed-in person on the allowed list sees anything. The
- * children are only rendered when access is granted, so no page code or database query runs for
- * anyone else (Phase 4.1, DECISIONS C61). Use inside <Suspense>: it reads the session.
+ * Wraps the whole app shell: a signed-in person on the allowed list sees the hub, and signed-out
+ * visitors and people waiting for approval see the demo with sample data (S.9, C118). Anyone else
+ * (blocked, not set up) gets a refusal and no page code runs (Phase 4.1, C61). Use inside <Suspense>.
  * Restyled in R.6 (board HStates).
  */
 export async function AccessGate({ children }: { children: React.ReactNode }) {
   const state = await getAuthState();
-  if (state.status === "ok") return <>{children}</>;
+  // Allowed people see the hub; visitors and people waiting for approval see the demo, which reads
+  // only the in-memory sample database (S.9, C118: `readDb` in src/db/read.ts).
+  if (state.status === "ok" || isDemoState(state)) return <>{children}</>;
 
   if (state.status === "not-configured") {
     return (
@@ -82,15 +64,5 @@ export async function AccessGate({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (state.status === "not-allowed") return <NotAllowedScreen email={state.email} />;
-  if (state.status === "pending") return <WaitingScreen email={state.email} />;
-
-  return (
-    <Refusal tag="Signed out" tone="soon" title="Please sign in">
-      <p className="text-[15px] leading-relaxed text-muted-foreground">Only people on the list can open the hub.</p>
-      <Link href="/sign-in" className={`${primary} mt-2`}>
-        Go to sign in
-      </Link>
-    </Refusal>
-  );
+  return <NotAllowedScreen email={state.email} />;
 }

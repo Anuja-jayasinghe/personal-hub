@@ -1,7 +1,7 @@
 import "server-only";
 import { inArray } from "drizzle-orm";
 import { connection } from "next/server";
-import { db } from "@/db";
+import { readDb } from "@/db/read";
 import { vehicles } from "@/db/schema";
 import { vehiclePath } from "@/features/vehicles/plate";
 
@@ -16,6 +16,7 @@ export async function ownerLabels(
   rows: readonly { ownerType: string | null; ownerId: string | null }[],
 ): Promise<Map<string, OwnerLabel>> {
   await connection();
+  const db = await readDb();
   const labels = new Map<string, OwnerLabel>();
 
   const vehicleIds = [...new Set(rows.flatMap((r) => (r.ownerType === "vehicle" && r.ownerId ? [r.ownerId] : [])))];

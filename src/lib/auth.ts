@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
 import { accessGrants, people } from "@/db/schema";
-import { accessFromGrants, allows, type Access, type Area, type Level } from "@/features/people/access";
+import { accessFromGrants, allows, AREAS, type Access, type Area, type Level } from "@/features/people/access";
 import { ValidationError } from "@/features/shared/validation";
 import { isAllowedEmail, parseAllowedEmails } from "./allowed-emails";
 
@@ -89,10 +89,28 @@ export async function requireUser(need: Requirement): Promise<{ userId: string; 
   return { userId: state.userId, email: state.email, access: state.access };
 }
 
-/** The signed-in person's access, or null. For pages and components deciding what to show. */
+/**
+ * The demo (S.9, C118): signed-out visitors and people waiting for approval see the whole hub with
+ * sample data from an in-memory database (`src/db/demo`), never the real one. They may look at
+ * every section and change nothing: `requireUser` still refuses them, so every Server Action does.
+ */
+export function isDemoState(state: AuthState): state is Extract<AuthState, { status: "signed-out" | "pending" }> {
+  return state.status === "signed-out" || state.status === "pending";
+}
+
+/** What the demo may do: see every section, add or change nothing, no owner-only parts. */
+export const DEMO_ACCESS: Access = { owner: false, grants: Object.fromEntries(AREAS.map((a) => [a.key, "see"])) };
+
+/** True when this request is looking at the demo. */
+export async function isDemo(): Promise<boolean> {
+  return isDemoState(await getAuthState());
+}
+
+/** The person's access (the demo's for visitors), or null. For pages and components deciding what to show. */
 export async function getAccess(): Promise<Access | null> {
   const state = await getAuthState();
-  return state.status === "ok" ? state.access : null;
+  if (state.status === "ok") return state.access;
+  return isDemoState(state) ? DEMO_ACCESS : null;
 }
 
 /** True when the signed-in person meets `need`. */

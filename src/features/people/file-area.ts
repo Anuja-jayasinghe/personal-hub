@@ -1,6 +1,6 @@
 import "server-only";
 import { eq } from "drizzle-orm";
-import { db } from "@/db";
+import { readDb } from "@/db/read";
 import { vehicles } from "@/db/schema";
 import { isOwnerType } from "@/lib/owners";
 import { areaOfOwner, type Area } from "./access";
@@ -10,6 +10,7 @@ import { areaOfOwner, type Area } from "./access";
  * other files and a renewal's papers are Vehicle documents; anything else follows what it is attached to.
  */
 export async function fileArea(file: { id: string; ownerType: string; ownerId: string }): Promise<Area> {
+  const db = await readDb();
   if (file.ownerType === "vehicle_renewal") return "vehicle_documents";
   if (file.ownerType === "vehicle") {
     const [v] = await db.select({ cover: vehicles.coverAttachmentId }).from(vehicles).where(eq(vehicles.id, file.ownerId));

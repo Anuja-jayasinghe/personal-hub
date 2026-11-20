@@ -1,6 +1,6 @@
 import "server-only";
 import { and, isNotNull, isNull, ne } from "drizzle-orm";
-import { db } from "@/db";
+import { readDb } from "@/db/read";
 import { tasks } from "@/db/schema";
 import type { ReminderSource } from "../engine";
 
@@ -12,6 +12,7 @@ export const tasksSource: ReminderSource = {
   key: "tasks",
   label: "Tasks",
   async load() {
+    const db = await readDb();
     const rows = await db
       .select({ id: tasks.id, title: tasks.title, dueDate: tasks.dueDate })
       .from(tasks)
