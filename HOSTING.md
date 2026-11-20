@@ -13,7 +13,8 @@ owner before it is done. Secrets are never printed, committed or pasted into cha
 - Vercel project **personal-hub** (team anuja-jayasinghes-projects), linked from this folder (`.vercel/`, git-ignored).
 - Production settings on Vercel: `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (sensitive), `ALLOWED_EMAILS` (sensitive),
   `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL`, `DATABASE_URL` (sensitive; Supabase's
-  **transaction pooler**, port 6543, tested).
+  **session pooler**, port 5432, the same address as `.env.local`). Not the transaction pooler (port 6543): it hung
+  every signed-in page, because it cannot take more than two queries at once on one connection (issue #135, C119).
 
 ## Still to do, in order
 
