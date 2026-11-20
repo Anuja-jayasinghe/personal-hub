@@ -3,8 +3,10 @@
 # file and always deletes them. Secrets live in the repo's Actions secrets and are never printed.
 name: Live e2e
 
+# Vercel reports each deployment as a commit status named "Vercel" (not as a GitHub deployment); a successful
+# one on a commit of main is the production deployment.
 on:
-  deployment_status:
+  status:
   workflow_dispatch:
 
 permissions:
@@ -19,7 +21,7 @@ jobs:
     name: Sharing and upload on the live site
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+      (github.event.context == 'Vercel' && github.event.state == 'success' && contains(github.event.branches.*.name, 'main'))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -31,7 +33,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.deployment.sha || github.sha }}
+          ref: ${{ github.event.sha || github.sha }}
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
