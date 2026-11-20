@@ -22,6 +22,7 @@ renewals, and one list of everything that is due. Built for one household in Sri
 ![Supabase](https://img.shields.io/badge/Supabase-Postgres-3FCF8E?style=flat-square&logo=supabase&logoColor=white)
 ![Clerk](https://img.shields.io/badge/Clerk-login-6C47FF?style=flat-square&logo=clerk&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-Singapore-000000?style=flat-square&logo=vercel&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-4388F5?style=flat-square)
 
 [![CI](https://github.com/Anuja-jayasinghe/personal-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/Anuja-jayasinghe/personal-hub/actions/workflows/ci.yml)
 [![Live e2e](https://github.com/Anuja-jayasinghe/personal-hub/actions/workflows/e2e-live.yml/badge.svg)](https://github.com/Anuja-jayasinghe/personal-hub/actions/workflows/e2e-live.yml)
@@ -178,6 +179,10 @@ service is added and no data is touched without an explicit yes, and every answe
 **0.6.1** is live at [hub.anujajay.com](https://hub.anujajay.com). <!-- x-release-please-version -->
 The redesign, sharing, the demo, hosting and CI/CD are done. Next on the [plan](PLAN.md): a daily email of
 what is due, scheduled backups, and a few phone touches.
+
+## License
+
+Released under the [MIT License](LICENSE). The Virgil font inside the diagrams is under the SIL Open Font License.
 
 ---
 

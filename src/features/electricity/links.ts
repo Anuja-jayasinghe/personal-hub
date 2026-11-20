@@ -8,7 +8,7 @@ export function electricityBillHref(billId: string): string {
   return `/bills#electricity-bill-${billId}`;
 }
 
-/** The label that matches the paper bill: "Account 0000111166", or the meter's name when it has no account number (C106). */
+/** The label that matches the paper bill: "Account 0000123456", or the meter's name when it has no account number (C106). */
 export function meterBillLabel(meter: { name: string; accountNumber: string | null }): string {
   return meter.accountNumber ? `Account ${meter.accountNumber}` : meter.name;
 }

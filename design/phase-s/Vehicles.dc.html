@@ -50,15 +50,15 @@ body{margin:0}
 <section aria-label="Sri Lankan number plates" style="display: flex; flex-direction: column; gap: 14px; padding: 18px 20px; border-radius: 20px; background: #0D1118; box-shadow: inset 0 0 0 1px #222D3D">
 <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: .14em; color: #929EAF">THE PLATE · FRONT (WHITE) AND REAR (YELLOW)</span>
 <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center">
-<span style="display: inline-flex; align-items: stretch; height: 52px; border-radius: 7px; background: #F7F7F2; box-shadow: inset 0 0 0 3px #0D1118"><span style="display: flex; align-items: center; padding: 0 8px 0 12px; font-family: 'Oxanium', Arial, sans-serif; font-size: 14px; font-weight: 800; color: #0D1118">WP</span><span style="display: flex; align-items: center; padding: 0 16px 0 2px; font-family: 'Oxanium', Arial, sans-serif; font-size: 32px; font-weight: 800; letter-spacing: .04em; color: #0D1118">CBD-9754</span></span>
-<span style="display: inline-flex; align-items: center; height: 52px; padding: 0 16px; border-radius: 7px; background: #F5C518; box-shadow: inset 0 0 0 3px #0D1118; font-family: 'Oxanium', Arial, sans-serif; font-size: 32px; font-weight: 800; letter-spacing: .04em; color: #0D1118">BBY-3979</span>
+<span style="display: inline-flex; align-items: stretch; height: 52px; border-radius: 7px; background: #F7F7F2; box-shadow: inset 0 0 0 3px #0D1118"><span style="display: flex; align-items: center; padding: 0 8px 0 12px; font-family: 'Oxanium', Arial, sans-serif; font-size: 14px; font-weight: 800; color: #0D1118">WP</span><span style="display: flex; align-items: center; padding: 0 16px 0 2px; font-family: 'Oxanium', Arial, sans-serif; font-size: 32px; font-weight: 800; letter-spacing: .04em; color: #0D1118">CAB-1234</span></span>
+<span style="display: inline-flex; align-items: center; height: 52px; padding: 0 16px; border-radius: 7px; background: #F5C518; box-shadow: inset 0 0 0 3px #0D1118; font-family: 'Oxanium', Arial, sans-serif; font-size: 32px; font-weight: 800; letter-spacing: .04em; color: #0D1118">BAA-5678</span>
 </div>
 <p style="margin: 0; font-size: 12.5px; line-height: 1.55; color: #929EAF">Black on white like the front plate. The small province code shows only when the registration has one (new registrations dropped it). Cards use the front style; the yellow rear is shown for reference only.</p>
 </section>
 <section aria-label="One menu for a vehicle's rare actions" style="display: flex; gap: 18px; padding: 18px 20px; border-radius: 20px; background: #0D1118; box-shadow: inset 0 0 0 1px #222D3D">
 <div style="display: flex; flex-direction: column; gap: 8px; flex-grow: 1">
 <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: .14em; color: #929EAF">ONE MENU ON THE VEHICLE PAGE</span>
-<p style="margin: 0; font-size: 13px; line-height: 1.55; color: #A3ADBD">Change photo, edit details, archive and delete sit together behind one button on the vehicle page, instead of being spread around. Delete asks first. The address uses the plate: /vehicles/cbd-9754.</p>
+<p style="margin: 0; font-size: 13px; line-height: 1.55; color: #A3ADBD">Change photo, edit details, archive and delete sit together behind one button on the vehicle page, instead of being spread around. Delete asks first. The address uses the plate: /vehicles/cab-1234.</p>
 </div>
 <div style="display: flex; flex-direction: column; width: 200px; padding: 6px; border-radius: 14px; background: #222D3D; box-shadow: inset 0 0 0 1px #303B4B">
 <button type="button" style="min-height: 40px; padding: 0 12px; border: 0; border-radius: 9px; background: transparent; color: #F2F5FA; font-family: inherit; font-size: 14px; text-align: left">Change photo</button>
@@ -75,8 +75,8 @@ class Component extends DCLogic {
 renderVals() {
 return {
 cards: [
-{ name: 'Toyota Premio', sub: 'TOYOTA PREMIO 2018 · CAR', photoLabel: '[ YOUR PHOTO ]', photoBg: 'repeating-linear-gradient(135deg, #222D3D 0 14px, #1E2838 14px 28px)', plate: 'CBD-9754', province: 'WP', platePad: '2px', plateBg: '#F7F7F2', nextDays: '42', nextLabel: 'days to licence', nextColor: '#F2F5FA' },
-{ name: 'Bajaj Discover', sub: 'BAJAJ DISCOVER 125M 2015 · MOTORBIKE', photoLabel: '[ YOUR PHOTO ]', photoBg: 'repeating-linear-gradient(135deg, #222D3D 0 14px, #1E2838 14px 28px)', plate: 'BBY-3979', province: '', platePad: '10px', plateBg: '#F7F7F2', nextDays: '9', nextLabel: 'days to insurance', nextColor: '#F5B94A' },
+{ name: 'Toyota Premio', sub: 'TOYOTA PREMIO 2018 · CAR', photoLabel: '[ YOUR PHOTO ]', photoBg: 'repeating-linear-gradient(135deg, #222D3D 0 14px, #1E2838 14px 28px)', plate: 'CAB-1234', province: 'WP', platePad: '2px', plateBg: '#F7F7F2', nextDays: '42', nextLabel: 'days to licence', nextColor: '#F2F5FA' },
+{ name: 'Bajaj Discover', sub: 'BAJAJ DISCOVER 125M 2015 · MOTORBIKE', photoLabel: '[ YOUR PHOTO ]', photoBg: 'repeating-linear-gradient(135deg, #222D3D 0 14px, #1E2838 14px 28px)', plate: 'BAA-5678', province: '', platePad: '10px', plateBg: '#F7F7F2', nextDays: '9', nextLabel: 'days to insurance', nextColor: '#F5B94A' },
 { name: 'No photo yet', sub: 'FALLBACK: THE STAGE AND ITS ICON', photoLabel: '+ ADD A PHOTO', photoBg: 'radial-gradient(60% 80% at 50% 100%, #16233A 0%, #0D1118 70%)', plate: 'CAA-1234', province: '', platePad: '10px', plateBg: '#F7F7F2', nextDays: '–', nextLabel: 'nothing due', nextColor: '#4A5668' },
 ],
 };

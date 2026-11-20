@@ -25,7 +25,7 @@ export async function countArchivedVehicles(): Promise<number> {
 }
 
 /** One vehicle by id, or null when the id is not a uuid or nothing matches. */
-/** A vehicle by its id or by its plate as written in its address ("cbd-9754", S.6). */
+/** A vehicle by its id or by its plate as written in its address ("cab-1234", S.6). */
 export async function getVehicle(idOrPlate: string) {
   await connection();
   const db = await readDb();
