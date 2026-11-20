@@ -23,7 +23,7 @@ export function AddPersonForm() {
         </label>
         <SubmitButton pendingLabel="Adding…">Add person</SubmitButton>
       </div>
-      <p className="text-xs text-muted-foreground">They sign in with this address (Google or an email code). They see nothing until you give them a section below.</p>
+      <p className="text-xs text-muted-foreground">They sign in with this address (Google or an email code). They see nothing until you give them a section.</p>
       {state.error ? (
         <p role="alert" className="text-sm text-status-overdue">
           {state.error}

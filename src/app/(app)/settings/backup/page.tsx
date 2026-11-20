@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { BackupStatus, StorageLine } from "@/components/settings/backup-panels";
-import { SettingsSection } from "@/components/settings/settings-ui";
+import { SettingsColumn, SettingsColumns, SettingsSection } from "@/components/settings/settings-ui";
 import { PageHeader } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { appConfig } from "@/config/app.config";
@@ -39,11 +39,23 @@ export default function DataAndBackupPage() {
     <>
       <PageHeader title="Data and backup" parent={{ href: "/settings", label: "Settings" }} />
 
-      <SettingsSection label="Backups">
-        <Suspense fallback={<Skeleton className="h-32 rounded-2xl" />}>
-          <BackupPanel />
-        </Suspense>
-      </SettingsSection>
+      <SettingsColumns>
+        <SettingsColumn>
+          <SettingsSection label="Backups">
+            <Suspense fallback={<Skeleton className="h-32 rounded-2xl" />}>
+              <BackupPanel />
+            </Suspense>
+          </SettingsSection>
+        </SettingsColumn>
+
+        <SettingsColumn>
+          <SettingsSection label="Files stored">
+            <Suspense fallback={<Skeleton className="h-28 rounded-2xl" />}>
+              <StoragePanel />
+            </Suspense>
+          </SettingsSection>
+        </SettingsColumn>
+      </SettingsColumns>
 
       <SettingsSection label="Download a copy" note="Spreadsheet files (CSV) of what is in the hub right now, archived records included. Photos and documents are only in the full backup.">
         <div className="grid gap-3 sm:grid-cols-3">
@@ -64,12 +76,6 @@ export default function DataAndBackupPage() {
             </div>
           ))}
         </div>
-      </SettingsSection>
-
-      <SettingsSection label="Files stored">
-        <Suspense fallback={<Skeleton className="h-28 rounded-2xl" />}>
-          <StoragePanel />
-        </Suspense>
       </SettingsSection>
     </>
   );
