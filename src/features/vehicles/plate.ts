@@ -1,9 +1,9 @@
 /**
  * Sri Lankan number plates (S.6, C112; design board "Vehicles"). Pure.
  *
- * A registration is written like "CBD-9754", older ones with the province first ("WP CBD-9754"); new
+ * A registration is written like "CAB-1234", older ones with the province first ("WP CAB-1234"); new
  * registrations dropped the province. The plate is drawn from these parts, and the vehicle's address
- * uses the plate ("/vehicles/cbd-9754") instead of its id when it has one (owner's item 26).
+ * uses the plate ("/vehicles/cab-1234") instead of its id when it has one (owner's item 26).
  */
 
 const PROVINCES = new Set(["CP", "EP", "NC", "NP", "NW", "SG", "SP", "UP", "WP"]);
@@ -21,7 +21,7 @@ export function plateKey(registration: string): string {
   return registration.toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
 
-/** The address form of a plate: lower case, spaces as dashes, nothing else ("wp-cbd-9754"). */
+/** The address form of a plate: lower case, spaces as dashes, nothing else ("wp-cab-1234"). */
 export function plateSlug(registration: string): string {
   return registration
     .trim()

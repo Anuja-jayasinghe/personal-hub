@@ -3,19 +3,19 @@ import { plateKey, plateParts, plateSlug, vehiclePath } from "./plate";
 
 describe("plateParts", () => {
   it("splits off a province code, and keeps new plates whole", () => {
-    expect(plateParts("wp cbd-9754")).toEqual({ province: "WP", main: "CBD-9754" });
-    expect(plateParts("BBY-3979")).toEqual({ province: null, main: "BBY-3979" });
+    expect(plateParts("wp cab-1234")).toEqual({ province: "WP", main: "CAB-1234" });
+    expect(plateParts("BAA-5678")).toEqual({ province: null, main: "BAA-5678" });
     expect(plateParts("AB 1234")).toEqual({ province: null, main: "AB 1234" });
   });
 });
 
 describe("plate keys and addresses", () => {
   it("treats spacing, dashes and case as the same plate", () => {
-    expect(plateKey("WP CBD-9754")).toBe(plateKey("wp cbd 9754"));
+    expect(plateKey("WP CAB-1234")).toBe(plateKey("wp cab 1234"));
   });
   it("makes an address from the plate, or falls back to the id", () => {
-    expect(plateSlug(" WP  CBD-9754 ")).toBe("wp-cbd-9754");
-    expect(vehiclePath({ id: "abc", registrationNumber: "CBD-9754" }, "?tab=renewals")).toBe("/vehicles/cbd-9754?tab=renewals");
+    expect(plateSlug(" WP  CAB-1234 ")).toBe("wp-cab-1234");
+    expect(vehiclePath({ id: "abc", registrationNumber: "CAB-1234" }, "?tab=renewals")).toBe("/vehicles/cab-1234?tab=renewals");
     expect(vehiclePath({ id: "abc", registrationNumber: null })).toBe("/vehicles/abc");
     expect(vehiclePath({ id: "abc", registrationNumber: "###" })).toBe("/vehicles/abc");
   });

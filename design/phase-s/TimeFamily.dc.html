@@ -82,7 +82,7 @@ body{margin:0}
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":940}}'>
 class Component extends DCLogic {
 renderVals() {
-const events = { 4: ['paid', 'Internet', '3,204'], 10: ['paid', 'Streaming', '1,890'], 15: ['late', 'Insurance', '12,400'], 22: ['due', 'Water', '1,150'], 30: ['due', 'Electricity …1166', '4,709'], 26: ['due', 'Phone', '2,499'] };
+const events = { 4: ['paid', 'Internet', '3,204'], 10: ['paid', 'Streaming', '1,890'], 15: ['late', 'Insurance', '12,400'], 22: ['due', 'Water', '1,150'], 30: ['due', 'Electricity …3456', '4,709'], 26: ['due', 'Phone', '2,499'] };
 const colors = { paid: '#3DD68C', due: '#F5B94A', late: '#FF6B61' };
 const today = 19;
 const cells = [];
@@ -113,7 +113,7 @@ return { letter: letters[i % 7], n: String(19 + i > 30 ? 19 + i - 30 : 19 + i), 
 fill: i === 0 ? '#11151D' : c === 0 ? '#303B4B' : c >= 3 ? '#F5B94A' : '#4388F5', ring: i === 0 ? 'inset 0 0 0 2.5px #4388F5' : c > 0 ? '0 0 0 4px rgba(67,136,245,.14)' : 'none',
 count: c ? String(c) : '', countColor: c >= 3 ? '#F5B94A' : '#A3ADBD', letterColor: i === 0 ? '#4388F5' : '#929EAF' };
 });
-const items = [[0, 'TODAY', 'today'], [2, 'READ A·B', 'check'], [11, 'WATER', 'due'], [7, 'PHONE', 'due'], [18, 'ELEC …1166', 'due'], [26, 'LICENCE', 'soon']];
+const items = [[0, 'TODAY', 'today'], [2, 'READ A·B', 'check'], [11, 'WATER', 'due'], [7, 'PHONE', 'due'], [18, 'ELEC …3456', 'due'], [26, 'LICENCE', 'soon']];
 const fillOf = { today: '#11151D', check: '#929EAF', due: '#F5B94A', soon: '#3DD68C' };
 const line = items.map(([day, label, kind], idx) => ({
 left: (day / 30 * 100).toFixed(2) + '%', top: '55px', size: kind === 'today' ? '16px' : kind === 'check' ? '10px' : '14px', fill: fillOf[kind],
