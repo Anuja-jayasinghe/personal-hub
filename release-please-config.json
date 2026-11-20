@@ -55,13 +55,7 @@
   ],
   "packages": {
     ".": {
-      "package-name": "personal-hub",
-      "extra-files": [
-        {
-          "type": "generic",
-          "path": "README.md"
-        }
-      ]
+      "package-name": "personal-hub"
     }
   }
 }
