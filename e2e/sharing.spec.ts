@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import { expect, test, type Page } from "@playwright/test";
 import postgres from "postgres";
 
@@ -5,12 +6,17 @@ import postgres from "postgres";
  * Sharing, end to end (hosting 4.2's test person check; issue #139, C121):
  *   1. a TEST account signs in by itself: it is added as waiting and sees the demo, not real data;
  *   2. it is approved with Vehicles at See (the same rows Settings › People writes);
- *   3. after a reload it sees the hub with real data, Vehicles only, and nothing to change.
- * The TEST account and its rows are always deleted at the end, even when a step fails.
+ *   3. after a reload it sees the hub with real data, Vehicles only, and nothing to change;
+ *   4. given Vehicle documents at Add, it uploads a small TEST file to a vehicle (straight to storage, C115)
+ *      and the file opens.
+ * The TEST account, its rows and the TEST file are always deleted at the end, even when a step fails.
  */
 
 const EMAIL = "hub-test-person@anujajay.com";
 const SAMPLE_PLATE = "DEM-1234"; // only ever in the demo's sample data
+const TEST_FILE = "TEST upload.pdf";
+/** The smallest file a PDF reader accepts, made here so the test needs no file on disk. */
+const TEST_PDF = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n");
 
 const secret = process.env.E2E_CLERK_SECRET_KEY;
 const databaseUrl = process.env.DATABASE_URL;
@@ -23,6 +29,18 @@ async function clerk<T>(method: string, path: string, body?: unknown): Promise<T
   });
   if (!res.ok) throw new Error(`Clerk ${method} ${path} answered ${res.status}`);
   return (await res.json()) as T;
+}
+
+/** Removes every TEST upload: the stored file first, then its row. */
+async function deleteTestFiles(sql: postgres.Sql) {
+  const rows = await sql<{ id: string; bucket: string; storage_path: string }[]>`select id, bucket, storage_path from attachments where file_name = ${TEST_FILE}`;
+  if (rows.length === 0) return;
+  const storage = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!, { auth: { persistSession: false } }).storage;
+  for (const r of rows) {
+    const { error } = await storage.from(r.bucket).remove([r.storage_path]);
+    if (error) throw new Error(`Could not delete the TEST file from storage: ${error.message}`);
+    await sql`delete from attachments where id = ${r.id}`;
+  }
 }
 
 async function deleteTestAccount(sql: postgres.Sql) {
@@ -39,20 +57,22 @@ async function signIn(page: Page, userId: string) {
 }
 
 test.describe("sharing with a person who signs in by themselves", () => {
-  test.skip(!secret || !databaseUrl, "needs E2E_CLERK_SECRET_KEY and DATABASE_URL in .env.local");
+  test.skip(!secret || !databaseUrl || !process.env.SUPABASE_SECRET_KEY, "needs E2E_CLERK_SECRET_KEY, DATABASE_URL and SUPABASE_SECRET_KEY in .env.local");
 
   let sql: postgres.Sql;
   let userId: string;
 
   test.beforeAll(async () => {
     sql = postgres(databaseUrl!, { max: 1, prepare: false });
-    await deleteTestAccount(sql); // a run that was cut short may have left it behind
+    await deleteTestFiles(sql); // a run that was cut short may have left these behind
+    await deleteTestAccount(sql);
     const user = await clerk<{ id: string }>("POST", "/users", { email_address: [EMAIL], first_name: "TEST", last_name: "Person", skip_password_requirement: true });
     userId = user.id;
   });
 
   test.afterAll(async () => {
     if (sql) {
+      await deleteTestFiles(sql);
       await deleteTestAccount(sql);
       await sql.end();
     }
@@ -89,5 +109,24 @@ test.describe("sharing with a person who signs in by themselves", () => {
     await expect(page.getByText("This page isn’t connected to anything.")).toBeVisible();
     await page.goto("/settings");
     await expect(page.getByText("This page isn’t connected to anything.")).toBeVisible();
+
+    // 4. An upload: allowed to add documents, it puts a TEST file on a vehicle and the file opens.
+    await sql`insert into access_grants (person_id, area, level) values (${waiting.id}, 'vehicle_documents', 'add')`;
+    const [vehicle] = await sql<{ id: string }[]>`select id from vehicles where archived_at is null order by created_at limit 1`;
+    test.skip(!vehicle, "the hub has no vehicle to attach the TEST file to");
+    await page.goto(`/vehicles/${vehicle.id}?tab=documents`);
+    await page.getByRole("button", { name: "Add document" }).click();
+    await page.getByLabel("Title").fill("TEST upload");
+    await page.locator('input[type="file"][name="file"]').setInputFiles({ name: TEST_FILE, mimeType: "application/pdf", buffer: TEST_PDF });
+    await page.getByRole("button", { name: "Save document" }).click();
+    const link = page.getByRole("link", { name: "TEST upload" });
+    await expect(link).toBeVisible({ timeout: 45_000 });
+
+    const [stored] = await sql<{ id: string; size_bytes: number; mime_type: string }[]>`select id, size_bytes, mime_type from attachments where file_name = ${TEST_FILE}`;
+    expect(stored?.mime_type).toBe("application/pdf");
+    expect(Number(stored?.size_bytes)).toBe(TEST_PDF.length);
+    const opened = await page.request.get(`/files/${stored.id}`);
+    expect(opened.status()).toBe(200);
+    expect((await opened.body()).subarray(0, 8).toString()).toBe("%PDF-1.4");
   });
 });

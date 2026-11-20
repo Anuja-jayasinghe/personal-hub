@@ -2,6 +2,10 @@
 
 Every release is versioned by hand for now (DECISIONS C120): **major** for changes that break how the hub is used or stored, **minor** for new features, **patch** for fixes. Each release bumps `package.json`, gets a git tag `vX.Y.Z` and a GitHub release, marked pre-release while the version is below 1.0. Automatic versioning comes later with CI/CD.
 
+## Unreleased
+
+- **Tests**: the live end-to-end test also uploads a TEST file and opens it (C122). No change to the site.
+
 ## 0.6.1 — 2026-11-20 (pre-release)
 
 - **Fixed**: signed-in pages on the live site stayed on the loading skeleton; the hub now reaches the database through Supabase's session pooler (C119).

@@ -24,14 +24,15 @@ owner before it is done. Secrets are never printed, committed or pasted into cha
 2. **DNS at Cloudflare**, all DNS only: `hub` to Vercel and Clerk's five records under `hub`.
 3. **Clerk keys on Vercel**, the GitHub repo connected (every merge to `main` deploys), the domain added.
 4. **Checks**: the owner signed in with Google and sees the real hub (after C119's pooler fix); signed-out
-   visitors see the demo; the live end-to-end test below passed. Not checked on the live site yet: a file upload.
+   visitors see the demo; the live end-to-end test below passed, including a file upload (issue #141).
 
 ## End-to-end test (`pnpm e2e`, C121)
 
 `e2e/sharing.spec.ts` runs against the live site with Playwright: a TEST account (`hub-test-person@anujajay.com`,
 no email is sent) signs in with a one-time sign-in token, sees the demo while waiting, is approved with Vehicles at
-See, then sees only Vehicles with real data; the account and its rows are deleted at the end, even when a step
-fails. It needs in `.env.local`: `E2E_CLERK_SECRET_KEY`, a separate production secret key named **e2e-local** in
+See, then sees only Vehicles with real data; given Vehicle documents at Add it uploads a small `TEST upload.pdf` to the
+first vehicle and checks that it opens. The account, its rows and the TEST file are deleted at the end, even when a
+step fails. It also needs `SUPABASE_SECRET_KEY` (to delete the TEST file from storage). It needs in `.env.local`: `E2E_CLERK_SECRET_KEY`, a separate production secret key named **e2e-local** in
 the Clerk dashboard (delete it there to switch the tests off), and `DATABASE_URL`. `E2E_BASE_URL` points it at
 another address.
 
