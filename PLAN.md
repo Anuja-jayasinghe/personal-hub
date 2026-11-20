@@ -292,10 +292,10 @@ Goal: every change is checked automatically, releases get a version without hand
 
 | Piece | Issue | What |
 |-------|-------|------|
-| 6.1 | #143 | **CI on every pull request**: lint, types, unit tests, production build (GitHub Actions, no secrets), and a check that the title follows Conventional Commits |
-| 6.2 | #143 | **Versions with release-please**: a release pull request with the next version and CHANGELOG; merging it tags `vX.Y.Z` and publishes the GitHub release (pre-release below 1.0), starting after 0.6.1 |
-| 6.3 | #143 | **Live e2e after each production deploy**: `pnpm e2e` against hub.anujajay.com when Vercel reports a successful production deployment (secrets in GitHub Actions) |
-| 6.4 | #143 | **Merging needs green checks**: branch rules on main, if the GitHub plan allows them for a private repo |
+| 6.1 | #143 | ✅ **CI on every pull request**: lint, types, unit tests, production build (GitHub Actions, no secrets), and a check that the title follows Conventional Commits |
+| 6.2 | #143 | ✅ **Versions with release-please**: a release pull request with the next version and CHANGELOG; merging it tags `vX.Y.Z` and publishes the GitHub release (pre-release below 1.0), starting after 0.6.1 |
+| 6.3 | #143 | ✅ **Live e2e after each production deploy**: `pnpm e2e` against hub.anujajay.com when Vercel reports a successful production deployment (secrets in GitHub Actions) |
+| 6.4 | #143 | ✅ **Merging needs green checks**: ruleset *main needs green checks* (pull request, squash only, CI and title checks), with an admin bypass for release-please's pull requests (C124) |
 
 ## Later (each needs its own decision)
 
