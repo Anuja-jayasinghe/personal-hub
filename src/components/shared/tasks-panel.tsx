@@ -41,7 +41,8 @@ export async function TasksPanel({
   const owner = scope.kind === "owner" ? scope.owner : null;
 
   return (
-    <section aria-labelledby="tasks-heading" className="flex max-w-4xl flex-col gap-4">
+    // A container: the task columns follow the space the panel has (a page or a vehicle tab), not the window (#159).
+    <section aria-labelledby="tasks-heading" className="@container flex flex-col gap-4">
       <div className="flex items-center gap-3">
         <h2 id="tasks-heading" className="font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase">
           {title} · {list.filter((t) => t.status !== "done").length} open
@@ -56,7 +57,7 @@ export async function TasksPanel({
           No {itemNamePlural} yet.
         </p>
       ) : (
-        <ul className="flex flex-col gap-2.5">
+        <ul className="grid items-start gap-2.5 @4xl:grid-cols-2 @[110rem]:grid-cols-3">
           {list.map((task) => (
             <TaskItem key={task.id} task={task} files={files.get(task.id) ?? []} today={today} ownerLabel={task.ownerType && task.ownerId ? labels.get(`${task.ownerType}:${task.ownerId}`) : undefined} showOwner={scope.kind === "all"} />
           ))}

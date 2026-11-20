@@ -33,46 +33,48 @@ async function Reminders() {
     <>
       <ReminderStrip strip={strip} />
 
-      {/* The lists stay a readable width on wide windows; the strip above uses the full width (issue #105). */}
-      <div className="flex max-w-4xl flex-col gap-6">
-        {failedSources.length > 0 ? (
-          <p role="alert" className="text-sm text-destructive">
-            Couldn&apos;t load reminders from: {failedSources.join(", ")}. The
-            rest are shown below.
-          </p>
-        ) : null}
-
-        {results.length === 0 ? (
-          <EmptyState
-            title="Nothing due"
-            hint={`Nothing is overdue or due within ${Math.max(...leadDays)} days. Tasks with a due date appear here as the date gets close.`}
-          />
-        ) : (
-          groupOrder
-            .filter((level) => groups[level].length > 0)
-            .map((level) => (
-              <section
-                key={level}
-                aria-labelledby={`g-${level}`}
-                className="flex flex-col gap-2"
-              >
-                <h2
-                  id={`g-${level}`}
-                  className={`font-mono text-[10.5px] font-normal tracking-[0.14em] uppercase ${level === "overdue" ? "text-status-overdue" : "text-label"}`}
-                >
-                  {groupTitles[level]} · {groups[level].length}
-                </h2>
-                <ReminderList results={groups[level]} />
-              </section>
-            ))
-        )}
-
-        <p className="text-xs text-muted-foreground">
-          Today is {formatDate(today)} ({appConfig.timeZone}). Items are flagged{" "}
-          {leadDays.filter((d) => d > 0).join(", ")} days before the due date
-          and on the day; overdue items stay until done.
+      {failedSources.length > 0 ? (
+        <p role="alert" className="text-sm text-destructive">
+          Couldn&apos;t load reminders from: {failedSources.join(", ")}. The
+          rest are shown below.
         </p>
-      </div>
+      ) : null}
+
+      {results.length === 0 ? (
+        <EmptyState
+          title="Nothing due"
+          hint={`Nothing is overdue or due within ${Math.max(...leadDays)} days. Tasks with a due date appear here as the date gets close.`}
+        />
+      ) : (
+        // The groups sit side by side when there is room, so the page uses its width (issue #159).
+        <div className="@container">
+          <div className="grid items-start gap-6 @4xl:grid-cols-2 @[110rem]:grid-cols-3">
+            {groupOrder
+              .filter((level) => groups[level].length > 0)
+              .map((level) => (
+                <section
+                  key={level}
+                  aria-labelledby={`g-${level}`}
+                  className="flex min-w-0 flex-col gap-2"
+                >
+                  <h2
+                    id={`g-${level}`}
+                    className={`font-mono text-[10.5px] font-normal tracking-[0.14em] uppercase ${level === "overdue" ? "text-status-overdue" : "text-label"}`}
+                  >
+                    {groupTitles[level]} · {groups[level].length}
+                  </h2>
+                  <ReminderList results={groups[level]} />
+                </section>
+              ))}
+          </div>
+        </div>
+      )}
+
+      <p className="text-xs text-muted-foreground">
+        Today is {formatDate(today)} ({appConfig.timeZone}). Items are flagged{" "}
+        {leadDays.filter((d) => d > 0).join(", ")} days before the due date and
+        on the day; overdue items stay until done.
+      </p>
     </>
   );
 }

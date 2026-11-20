@@ -48,10 +48,10 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Desktop: the content starts right after the rail, padded 28 × 36 px as on the boards, and uses the
-          width up to 1600 px, centred in what is left on very wide windows (issue #105: it used to be a
-          fixed ~860 px column, which looked oversized at 100% zoom and lost in space at 80%). */}
+          whole width (issue #159: a 1600 px cap left the pages in the middle at 80% zoom, about 2400 px). Lists
+          and cards add columns as the room grows, mostly through container queries (@container). */}
       <main className="flex w-full flex-1 flex-col px-4 pt-5 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pt-7 md:pr-9 md:pb-10 md:pl-[calc(72px+2.25rem)]">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-6">
+        <div className="flex w-full flex-1 flex-col gap-6">
           {isDemoState(state) ? <DemoBanner waitingAs={state.status === "pending" ? state.email : null} /> : null}
           <OfflineBanner />
           {children}
