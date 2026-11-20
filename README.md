@@ -14,19 +14,20 @@ renewals, and one list of everything that is due. Built for one household in Sri
 
 <br>
 
-![Version](https://img.shields.io/badge/version-0.6.1-4388F5?style=flat-square) <!-- x-release-please-version -->
-![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs&logoColor=white)
-![React](https://img.shields.io/badge/React-19-149ECA?style=flat-square&logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Tailwind](https://img.shields.io/badge/Tailwind-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+[![Latest release](https://img.shields.io/github/v/release/Anuja-jayasinghe/personal-hub?include_prereleases&sort=semver&style=flat-square&label=release&color=4388F5)](https://github.com/Anuja-jayasinghe/personal-hub/releases)
+[![Released](https://img.shields.io/github/release-date-pre/Anuja-jayasinghe/personal-hub?style=flat-square&label=released&color=4388F5)](https://github.com/Anuja-jayasinghe/personal-hub/releases)
+[![Last commit](https://img.shields.io/github/last-commit/Anuja-jayasinghe/personal-hub?style=flat-square&color=4388F5)](https://github.com/Anuja-jayasinghe/personal-hub/commits/main)
+[![CI](https://github.com/Anuja-jayasinghe/personal-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/Anuja-jayasinghe/personal-hub/actions/workflows/ci.yml)
+[![Live e2e](https://github.com/Anuja-jayasinghe/personal-hub/actions/workflows/e2e-live.yml/badge.svg)](https://github.com/Anuja-jayasinghe/personal-hub/actions/workflows/e2e-live.yml)
+[![License](https://img.shields.io/github/license/Anuja-jayasinghe/personal-hub?style=flat-square&color=4388F5)](LICENSE)
+
+![Next.js](https://img.shields.io/github/package-json/dependency-version/Anuja-jayasinghe/personal-hub/next?style=flat-square&label=Next.js&logo=nextdotjs&logoColor=white&color=000000)
+![React](https://img.shields.io/github/package-json/dependency-version/Anuja-jayasinghe/personal-hub/react?style=flat-square&label=React&logo=react&logoColor=white&color=149ECA)
+![TypeScript](https://img.shields.io/github/package-json/dependency-version/Anuja-jayasinghe/personal-hub/dev/typescript?style=flat-square&label=TypeScript&logo=typescript&logoColor=white&color=3178C6)
+![Tailwind CSS](https://img.shields.io/github/package-json/dependency-version/Anuja-jayasinghe/personal-hub/dev/tailwindcss?style=flat-square&label=Tailwind&logo=tailwindcss&logoColor=white&color=06B6D4)
 ![Supabase](https://img.shields.io/badge/Supabase-Postgres-3FCF8E?style=flat-square&logo=supabase&logoColor=white)
 ![Clerk](https://img.shields.io/badge/Clerk-login-6C47FF?style=flat-square&logo=clerk&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-Singapore-000000?style=flat-square&logo=vercel&logoColor=white)
-![License](https://img.shields.io/badge/license-MIT-4388F5?style=flat-square)
-
-[![CI](https://github.com/Anuja-jayasinghe/personal-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/Anuja-jayasinghe/personal-hub/actions/workflows/ci.yml)
-[![Live e2e](https://github.com/Anuja-jayasinghe/personal-hub/actions/workflows/e2e-live.yml/badge.svg)](https://github.com/Anuja-jayasinghe/personal-hub/actions/workflows/e2e-live.yml)
-![Unit tests](https://img.shields.io/badge/unit_tests-355_passing-2F9E44?style=flat-square)
 
 </div>
 
@@ -152,7 +153,7 @@ turns the merged titles into the next version and its notes.
 
 | | |
 | --- | --- |
-| **App** | Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui on Base UI |
+| **App** | Next.js (App Router), React, TypeScript, Tailwind CSS, shadcn/ui on Base UI |
 | **Data** | Supabase Postgres through Drizzle ORM, a private Supabase Storage bucket, PGlite for the demo |
 | **Login** | Clerk (email code and Google), with the app's own approval and per-section access |
 | **Hosting** | Vercel (Singapore), Cloudflare DNS |
@@ -176,22 +177,18 @@ service is added and no data is touched without an explicit yes, and every answe
 
 ## Status
 
-**0.6.1** is live at [hub.anujajay.com](https://hub.anujajay.com). <!-- x-release-please-version -->
-The redesign, sharing, the demo, hosting and CI/CD are done. Next on the [plan](PLAN.md): a daily email of
-what is due, scheduled backups, and a few phone touches.
+The [latest release](https://github.com/Anuja-jayasinghe/personal-hub/releases) is what runs at [hub.anujajay.com](https://hub.anujajay.com):
+every merge to `main` deploys, and the live test above runs right after. What each release changed is in the
+[changelog](CHANGELOG.md); what comes next is in the [plan](PLAN.md).
 
 ## License
 
-Released under the [MIT License](LICENSE). The Virgil font inside the diagrams is under the SIL Open Font License.
+Released under the [MIT License](LICENSE). The hand-drawn font inside the diagrams is Excalidraw's Virgil, under the SIL Open Font License.
 
 ---
 
 <div align="center">
 
 **Built by [Anuja Jayasinghe](https://anujajay.com)**
-
-[**GitHub**](https://github.com/Anuja-jayasinghe) · [**Live demo**](https://hub.anujajay.com)
-
-<sub>Diagrams drawn in the style of <a href="https://excalidraw.com">Excalidraw</a>, using its Virgil font (SIL Open Font License).</sub>
 
 </div>
