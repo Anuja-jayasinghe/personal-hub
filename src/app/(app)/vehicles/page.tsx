@@ -10,13 +10,20 @@ import { VehicleCard } from "@/components/vehicles/vehicle-card";
 import { isModuleEnabled } from "@/config/app.config";
 import { countByOwner } from "@/features/reminders/by-owner";
 import { getReminders } from "@/features/reminders/load";
-import { countArchivedVehicles, listVehicles } from "@/features/vehicles/queries";
+import {
+  countArchivedVehicles,
+  listVehicles,
+} from "@/features/vehicles/queries";
 import { notFound } from "next/navigation";
 
 export const metadata: Metadata = { title: "Vehicles" };
 
 async function VehicleList({ showArchived }: { showArchived: boolean }) {
-  const [list, archivedCount, reminders] = await Promise.all([listVehicles(showArchived), countArchivedVehicles(), getReminders()]);
+  const [list, archivedCount, reminders] = await Promise.all([
+    listVehicles(showArchived),
+    countArchivedVehicles(),
+    getReminders(),
+  ]);
   // How many reminders each vehicle has (archived vehicles have none: their sources are skipped).
   const due = countByOwner(reminders.results);
 
@@ -25,21 +32,33 @@ async function VehicleList({ showArchived }: { showArchived: boolean }) {
       {list.length === 0 ? (
         <EmptyState
           title={showArchived ? "No archived vehicles" : "No vehicles yet"}
-          hint={showArchived ? "Vehicles you archive (for example when sold) show up here." : "Add your first vehicle to start tracking services and renewals."}
+          hint={
+            showArchived
+              ? "Vehicles you archive (for example when sold) show up here."
+              : "Add your first vehicle to start tracking services and renewals."
+          }
         />
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {list.map((v) => (
-            <VehicleCard key={v.id} vehicle={v} due={due.get(v.id)} />
-          ))}
-        </ul>
+        <div className="@container">
+          <ul className="grid gap-3 @xl:grid-cols-2 @5xl:grid-cols-3 @[110rem]:grid-cols-4">
+            {list.map((v) => (
+              <VehicleCard key={v.id} vehicle={v} due={due.get(v.id)} />
+            ))}
+          </ul>
+        </div>
       )}
       {showArchived ? (
-        <Link href="/vehicles" className="text-sm underline-offset-2 hover:underline">
+        <Link
+          href="/vehicles"
+          className="text-sm underline-offset-2 hover:underline"
+        >
           ← Back to active vehicles
         </Link>
       ) : archivedCount > 0 ? (
-        <Link href="/vehicles?archived=1" className="text-sm text-muted-foreground underline-offset-2 hover:underline">
+        <Link
+          href="/vehicles?archived=1"
+          className="text-sm text-muted-foreground underline-offset-2 hover:underline"
+        >
           Show archived ({archivedCount})
         </Link>
       ) : null}
@@ -47,7 +66,11 @@ async function VehicleList({ showArchived }: { showArchived: boolean }) {
   );
 }
 
-async function VehiclesContent({ searchParams }: { searchParams: Promise<{ archived?: string }> }) {
+async function VehiclesContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ archived?: string }>;
+}) {
   const access = await requirePage({ area: "vehicles", level: "see" });
   const { archived } = await searchParams;
   return (
@@ -73,8 +96,17 @@ export default function VehiclesPage(props: PageProps<"/vehicles">) {
 
   return (
     <>
-      <Suspense fallback={<Skeleton className="h-28 w-full rounded-xl" aria-label="Loading vehicles" />}>
-        <VehiclesContent searchParams={props.searchParams as Promise<{ archived?: string }>} />
+      <Suspense
+        fallback={
+          <Skeleton
+            className="h-28 w-full rounded-xl"
+            aria-label="Loading vehicles"
+          />
+        }
+      >
+        <VehiclesContent
+          searchParams={props.searchParams as Promise<{ archived?: string }>}
+        />
       </Suspense>
     </>
   );
