@@ -11,7 +11,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:check": "node scripts/db-check.mjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "storage:setup": "node scripts/storage-setup.mjs",
     "storage:check": "node scripts/storage-check.mjs",
     "test": "vitest run",

@@ -1,0 +1,25 @@
+# Versions (C123): after each merge to main, release-please updates one "chore(main): release X.Y.Z" pull
+# request with the version bump in package.json and the new CHANGELOG section. Merging that pull request
+# tags vX.Y.Z and publishes the GitHub release (marked pre-release while below 1.0). Nothing is released
+# until that pull request is merged. Settings: release-please-config.json and .release-please-manifest.json.
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v5
