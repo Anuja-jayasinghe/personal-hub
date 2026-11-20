@@ -1,0 +1,49 @@
+# The live end-to-end test (C121, C122, C123): after Vercel reports a successful production deployment, run
+# `pnpm e2e` against hub.anujajay.com with the code that was deployed. It creates a TEST account and a TEST
+# file and always deletes them. Secrets live in the repo's Actions secrets and are never printed.
+name: Live e2e
+
+on:
+  deployment_status:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-live
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    name: Sharing and upload on the live site
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      E2E_BASE_URL: https://hub.anujajay.com
+      E2E_CLERK_SECRET_KEY: ${{ secrets.E2E_CLERK_SECRET_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.deployment.sha || github.sha }}
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm e2e
+      - name: Keep the trace when it fails
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-trace
+          path: test-results/e2e
+          retention-days: 7

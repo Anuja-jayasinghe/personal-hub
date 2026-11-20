@@ -286,6 +286,17 @@ Risks to keep in mind: the free Vercel plan limits scheduled jobs to once a day 
 
 Goal: your father and one other person can add readings and see usage, and you control exactly what each person can see and do. Needs the Hub hosted (4.2) and a roles and permissions model on top of the login; the questions to settle first are in P40. Not planned in detail yet.
 
+## Phase 6 — CI/CD and versions (C120, C123)
+
+Goal: every change is checked automatically, releases get a version without hand work, and the live site is tested after each deploy.
+
+| Piece | Issue | What |
+|-------|-------|------|
+| 6.1 | #143 | **CI on every pull request**: lint, types, unit tests, production build (GitHub Actions, no secrets), and a check that the title follows Conventional Commits |
+| 6.2 | #143 | **Versions with release-please**: a release pull request with the next version and CHANGELOG; merging it tags `vX.Y.Z` and publishes the GitHub release (pre-release below 1.0), starting after 0.6.1 |
+| 6.3 | #143 | **Live e2e after each production deploy**: `pnpm e2e` against hub.anujajay.com when Vercel reports a successful production deployment (secrets in GitHub Actions) |
+| 6.4 | #143 | **Merging needs green checks**: branch rules on main, if the GitHub plan allows them for a private repo |
+
 ## Later (each needs its own decision)
 
 - **Vehicle photo treatment** (C104): make an uploaded photo look its best in-house (no outside AI service), for example cut-out, lighting and the stage around it. For now the photo is shown as it is.
