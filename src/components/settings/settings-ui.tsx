@@ -22,6 +22,16 @@ export function SettingsSection({ label, note, children }: { label: string; note
   );
 }
 
+/** Settings pages use the window width (issue #156): two columns from 1280px, one column below. */
+export function SettingsColumns({ children }: { children: React.ReactNode }) {
+  return <div className="grid min-w-0 gap-6 xl:grid-cols-2 xl:items-start xl:gap-x-9">{children}</div>;
+}
+
+/** One column of SettingsColumns. */
+export function SettingsColumn({ children }: { children: React.ReactNode }) {
+  return <div className="flex min-w-0 flex-col gap-6">{children}</div>;
+}
+
 /** A card holding rows, each separated by a thin line. */
 export function RowCard({ children }: { children: React.ReactNode }) {
   return <div className="flex flex-col divide-y divide-raised rounded-2xl border bg-card px-4">{children}</div>;

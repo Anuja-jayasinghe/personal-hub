@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ReminderDaysForm } from "@/components/settings/rules-forms";
 import { HubFacts, SlabRuleTiles, SubPageList } from "@/components/settings/settings-sections";
-import { SettingsSection } from "@/components/settings/settings-ui";
+import { SettingsColumn, SettingsColumns, SettingsSection } from "@/components/settings/settings-ui";
 import { PageHeader } from "@/components/shell/page-header";
 import { SignOutRow } from "@/components/shell/sign-out-row";
 import { ThemeSwitcher } from "@/components/shell/theme-switcher";
@@ -20,17 +20,19 @@ async function SubPageRows() {
   return <SubPageList meters={`${meters.length} ${meters.length === 1 ? "meter" : "meters"}`} backup={backupMeta} />;
 }
 
-async function RulesSections() {
-  const rules = await getRules();
+async function SlabSection() {
   return (
-    <>
-      <SettingsSection label="The slab rule">
-        <SlabRuleTiles rules={rules} />
-      </SettingsSection>
-      <SettingsSection label="Reminders">
-        <ReminderDaysForm rules={rules} />
-      </SettingsSection>
-    </>
+    <SettingsSection label="The slab rule">
+      <SlabRuleTiles rules={await getRules()} />
+    </SettingsSection>
+  );
+}
+
+async function ReminderSection() {
+  return (
+    <SettingsSection label="Reminders">
+      <ReminderDaysForm rules={await getRules()} />
+    </SettingsSection>
   );
 }
 
@@ -44,27 +46,37 @@ export default function SettingsPage() {
     <>
       <PageHeader title="Settings" />
 
-      <SettingsSection label="Look">
-        <ThemeSwitcher />
-      </SettingsSection>
+      <SettingsColumns>
+        <SettingsColumn>
+          <SettingsSection label="Look">
+            <ThemeSwitcher />
+          </SettingsSection>
 
-      <div className="md:hidden">
-        <SettingsSection label="More settings">
-          <Suspense fallback={<SubPageList />}>
-            <SubPageRows />
+          <div className="md:hidden">
+            <SettingsSection label="More settings">
+              <Suspense fallback={<SubPageList />}>
+                <SubPageRows />
+              </Suspense>
+            </SettingsSection>
+          </div>
+
+          <Suspense fallback={<Skeleton className="h-28 rounded-2xl" />}>
+            <SlabSection />
           </Suspense>
-        </SettingsSection>
-      </div>
+        </SettingsColumn>
 
-      <Suspense fallback={<Skeleton className="h-56 rounded-2xl" />}>
-        <RulesSections />
-      </Suspense>
+        <SettingsColumn>
+          <Suspense fallback={<Skeleton className="h-44 rounded-2xl" />}>
+            <ReminderSection />
+          </Suspense>
 
-      <SettingsSection label="This hub">
-        <HubFacts />
-      </SettingsSection>
+          <SettingsSection label="This hub">
+            <HubFacts />
+          </SettingsSection>
 
-      <SignOutRow />
+          <SignOutRow />
+        </SettingsColumn>
+      </SettingsColumns>
     </>
   );
 }

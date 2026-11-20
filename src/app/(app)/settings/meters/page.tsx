@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { SlabRulesForm } from "@/components/settings/rules-forms";
 import { LiveNow, MeterList, RuleInWords } from "@/components/settings/settings-sections";
-import { SettingsSection } from "@/components/settings/settings-ui";
+import { SettingsColumn, SettingsColumns, SettingsSection } from "@/components/settings/settings-ui";
 import { PageHeader } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { currentLive } from "@/features/electricity/live";
@@ -52,15 +52,21 @@ export default function MetersAndRulesPage() {
     <>
       <PageHeader title="Meters and rules" parent={{ href: "/settings", label: "Settings" }} />
 
-      <SettingsSection label="Meters">
-        <Suspense fallback={<Skeleton className="h-28 rounded-2xl" />}>
-          <Meters />
-        </Suspense>
-      </SettingsSection>
+      <SettingsColumns>
+        <SettingsColumn>
+          <SettingsSection label="Meters">
+            <Suspense fallback={<Skeleton className="h-28 rounded-2xl" />}>
+              <Meters />
+            </Suspense>
+          </SettingsSection>
+        </SettingsColumn>
 
-      <Suspense fallback={<Skeleton className="h-80 rounded-2xl" />}>
-        <Rules />
-      </Suspense>
+        <SettingsColumn>
+          <Suspense fallback={<Skeleton className="h-80 rounded-2xl" />}>
+            <Rules />
+          </Suspense>
+        </SettingsColumn>
+      </SettingsColumns>
     </>
   );
 }
