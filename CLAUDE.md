@@ -25,6 +25,7 @@ Read first: [PLAN.md](PLAN.md) (phases and steps), [DECISIONS.md](DECISIONS.md) 
 |---|---|
 | `pnpm dev --port 3100` | Dev server (also reachable on the home Wi-Fi) |
 | `pnpm build`, `pnpm lint`, `pnpm typecheck`, `pnpm test` | Checks |
+| `pnpm e2e` | Playwright end-to-end test against the live site (C121; needs `E2E_CLERK_SECRET_KEY`, see HOSTING.md). Creates and always deletes a TEST account |
 | `pnpm db:generate` / `pnpm db:migrate` | Create / apply a Drizzle migration (migrate writes to Supabase) |
 | `pnpm setup:check` | New-computer check: Node version, `.env.local`, database, migrations, storage (never prints secrets) |
 | `pnpm db:check` | Database sanity check (connection, row-level security, round trip) |

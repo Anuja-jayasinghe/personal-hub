@@ -46,3 +46,7 @@ yarn-debug.log*
 # --- Testing / misc ---
 coverage/
 .vercel/
+
+# Playwright end-to-end runs (C121)
+/test-results/
+/playwright-report/

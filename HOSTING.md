@@ -16,31 +16,24 @@ owner before it is done. Secrets are never printed, committed or pasted into cha
   **session pooler**, port 5432, the same address as `.env.local`). Not the transaction pooler (port 6543): it hung
   every signed-in page, because it cannot take more than two queries at once on one connection (issue #135, C119).
 
-## Still to do, in order
+## Set up (2026-11-19 and 20)
 
-1. **Clerk production instance** for `hub.anujajay.com` (one-way). Created through the Clerk connection once the
-   owner has reconnected it (`/mcp`, then **clerk**), or by the owner in the Clerk dashboard. Settings: sign-up
-   **open** (the hub gates: people not approved wait, later see the demo), password off, email code on, Google on.
-2. **DNS at Cloudflare** for `anujajay.com`, all **DNS only** (grey cloud, not proxied):
-   - the records Clerk lists for production (usually CNAMEs for `clerk.hub`, `accounts.hub`, `clkmail.hub` and two
-     `_domainkey` records); copy them exactly from the Clerk dashboard;
-   - `hub` CNAME to `cname.vercel-dns.com`, after the domain is added to the Vercel project.
-3. **Google sign-in** (the owner, in the Google Cloud console):
-   1. Create a project (or use one), then *APIs & Services › OAuth consent screen*: External, app name **hub**,
-      your email as support and developer contact; add `anujajay.com` as an authorised domain; publish it.
-   2. *Credentials › Create credentials › OAuth client ID*, type **Web application**.
-      - Authorised JavaScript origin: `https://hub.anujajay.com`
-      - Authorised redirect URI: the one Clerk shows under *Configure › SSO connections › Google › Use custom
-        credentials* (it looks like `https://clerk.hub.anujajay.com/v1/oauth_callback`).
-   3. Paste the client ID and client secret into that same Clerk screen yourself; they never need to pass through
-      chat or this repo.
-4. **Clerk keys on Vercel**: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` (sensitive) from the
-   production instance, added without printing.
-5. **Connect the GitHub repo** to the Vercel project and **deploy** `main` to production. Add the domain
-   `hub.anujajay.com` to the project.
-6. **Checks** on the live site: the owner signs in (email code and Google); Home, Electricity, Bills, Vehicles,
-   Settings load; a file upload works; a TEST person signs in and sees "waiting for approval", is approved with
-   one section, sees only that, and is then removed. A signed-out visit to any page goes to sign-in.
+1. **Clerk production instance** for `hub.anujajay.com` (C117): sign-up open (the hub gates), password off, email
+   code and Google on (your own Google OAuth client, origin `https://hub.anujajay.com`, redirect
+   `https://clerk.hub.anujajay.com/v1/oauth_callback`).
+2. **DNS at Cloudflare**, all DNS only: `hub` to Vercel and Clerk's five records under `hub`.
+3. **Clerk keys on Vercel**, the GitHub repo connected (every merge to `main` deploys), the domain added.
+4. **Checks**: the owner signed in with Google and sees the real hub (after C119's pooler fix); signed-out
+   visitors see the demo; the live end-to-end test below passed. Not checked on the live site yet: a file upload.
+
+## End-to-end test (`pnpm e2e`, C121)
+
+`e2e/sharing.spec.ts` runs against the live site with Playwright: a TEST account (`hub-test-person@anujajay.com`,
+no email is sent) signs in with a one-time sign-in token, sees the demo while waiting, is approved with Vehicles at
+See, then sees only Vehicles with real data; the account and its rows are deleted at the end, even when a step
+fails. It needs in `.env.local`: `E2E_CLERK_SECRET_KEY`, a separate production secret key named **e2e-local** in
+the Clerk dashboard (delete it there to switch the tests off), and `DATABASE_URL`. `E2E_BASE_URL` points it at
+another address.
 
 ## Notes
 
