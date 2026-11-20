@@ -2,6 +2,11 @@
 
 Every release is versioned by hand for now (DECISIONS C120): **major** for changes that break how the hub is used or stored, **minor** for new features, **patch** for fixes. Each release bumps `package.json`, gets a git tag `vX.Y.Z` and a GitHub release, marked pre-release while the version is below 1.0. Automatic versioning comes later with CI/CD.
 
+## 0.6.1 — 2026-11-20 (pre-release)
+
+- **Fixed**: signed-in pages on the live site stayed on the loading skeleton; the hub now reaches the database through Supabase's session pooler (C119).
+- **Added**: `pnpm e2e`, a Playwright end-to-end test of sharing against the live site (C121). It completes the hosting checks.
+
 ## 0.6.0 — 2026-11-20 (pre-release)
 
 The first versioned release: what is live at https://hub.anujajay.com.
