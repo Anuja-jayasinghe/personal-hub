@@ -2,6 +2,13 @@
 
 Versions follow semver: **major** for changes that break how the hub is used or stored, **minor** for new features, **patch** for fixes (while below 1.0, breaking changes bump the minor). Since 0.6.1 they are automatic (DECISIONS C123): pull request titles follow Conventional Commits (`feat: …`, `fix: …`), release-please keeps a release pull request with the next version and its notes, and merging it tags `vX.Y.Z` and publishes the GitHub release (pre-release below 1.0). 0.6.0 and 0.6.1 were versioned by hand (C120).
 
+## [0.6.2](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.6.1...v0.6.2) (2026-11-20)
+
+
+### Fixes
+
+* keep Supabase awake with a read-only query every 3 days ([#153](https://github.com/Anuja-jayasinghe/personal-hub/issues/153)) ([#154](https://github.com/Anuja-jayasinghe/personal-hub/issues/154)) ([1ae7684](https://github.com/Anuja-jayasinghe/personal-hub/commit/1ae768429ac15f196111997cfb8a801a9b35ff16))
+
 ## 0.6.1 — 2026-11-20 (pre-release)
 
 - **Fixed**: signed-in pages on the live site stayed on the loading skeleton; the hub now reaches the database through Supabase's session pooler (C119).
