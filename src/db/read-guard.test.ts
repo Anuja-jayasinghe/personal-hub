@@ -6,7 +6,8 @@ import { describe, expect, it } from "vitest";
  * The demo (S.9, C118) must never show real data: pages read through `readDb()` (src/db/read.ts),
  * which hands demo visitors the in-memory sample database. Only code that first checks the person
  * itself may import the real client from "@/db": Server Actions (they start with `requireUser`),
- * the auth check, owner-only downloads and file housekeeping used by actions.
+ * the auth check, owner-only downloads, file housekeeping used by actions, and the keep-awake route
+ * (it checks the cron secret first).
  */
 const ALLOWED = [
   /actions\.ts$/,
@@ -14,6 +15,7 @@ const ALLOWED = [
   /^src\/db\//,
   /^src\/features\/settings\/exports\.ts$/,
   /^src\/features\/shared\/(cleanup|files)\.ts$/,
+  /^src\/app\/api\/keep-awake\/route\.ts$/, // checks CRON_SECRET first (C127)
 ];
 
 function files(dir: string): string[] {

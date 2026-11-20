@@ -26,6 +26,12 @@ owner before it is done. Secrets are never printed, committed or pasted into cha
 4. **Checks**: the owner signed in with Google and sees the real hub (after C119's pooler fix); signed-out
    visitors see the demo; the live end-to-end test below passed, including a file upload (issue #141).
 
+## Keeping Supabase awake (C127)
+
+A free Supabase project pauses after 7 days without database activity. Vercel Cron calls `/api/keep-awake` every
+3 days (`vercel.json`), which runs one read-only query and writes nothing. It needs `CRON_SECRET` (sensitive, on
+Vercel); without it the route refuses every call. Vercel's dashboard lists the job under *Settings › Cron Jobs*.
+
 ## End-to-end test (`pnpm e2e`, C121)
 
 `e2e/sharing.spec.ts` runs against the live site with Playwright: a TEST account (`hub-test-person@anujajay.com`,
