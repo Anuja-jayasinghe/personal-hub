@@ -15,10 +15,13 @@ import { splitCurrentAndPast } from "@/features/vehicles/renewal-logic";
 import { daysBetween } from "@/lib/dates";
 import { formatDate, formatMoney, todayInAppTz } from "@/lib/format";
 
-/** The Renewals tab: current renewals with days left, a renewed action, documents, and history. */
-export async function RenewalsTab({ vehicleId, vehicleName }: { vehicleId: string; vehicleName: string }) {
+/**
+ * The Renewals tab: current renewals with days left, a renewed action, documents, and history. A renewal's
+ * papers are Vehicle documents (C114), so they only show to people who may see that section.
+ */
+export async function RenewalsTab({ vehicleId, vehicleName, showDocuments }: { vehicleId: string; vehicleName: string; showDocuments: boolean }) {
   const list = await listRenewals(vehicleId);
-  const files = await attachmentsByOwner("vehicle_renewal", list.map((r) => r.id));
+  const files = showDocuments ? await attachmentsByOwner("vehicle_renewal", list.map((r) => r.id)) : null;
   const today = todayInAppTz(); // after the queries, which opt this render into request time
   const { current, past } = splitCurrentAndPast(list);
   const types = appConfig.vehicles.renewalTypes.map((t) => t.label);
@@ -36,7 +39,7 @@ export async function RenewalsTab({ vehicleId, vehicleName }: { vehicleId: strin
       ) : (
         <ul className="flex flex-col gap-2">
           {current.map((r) => (
-            <RenewalItem key={r.id} renewal={r} files={files.get(r.id) ?? []} today={today} isCurrent types={types} />
+            <RenewalItem key={r.id} renewal={r} files={files ? (files.get(r.id) ?? []) : null} today={today} isCurrent types={types} />
           ))}
         </ul>
       )}
@@ -46,7 +49,7 @@ export async function RenewalsTab({ vehicleId, vehicleName }: { vehicleId: strin
           <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">History ({past.length})</summary>
           <ul className="flex flex-col gap-2 border-t p-3">
             {past.map((r) => (
-              <RenewalItem key={r.id} renewal={r} files={files.get(r.id) ?? []} today={today} isCurrent={false} types={types} />
+              <RenewalItem key={r.id} renewal={r} files={files ? (files.get(r.id) ?? []) : null} today={today} isCurrent={false} types={types} />
             ))}
           </ul>
         </details>
@@ -63,7 +66,7 @@ function RenewalItem({
   types,
 }: {
   renewal: VehicleRenewal;
-  files: Attachment[];
+  files: Attachment[] | null;
   today: string;
   isCurrent: boolean;
   types: readonly string[];
@@ -120,12 +123,14 @@ function RenewalItem({
             <RenewalForm mode="edit" action={updateRenewal} types={types} renewal={r} />
           </div>
         </details>
-        <details className="rounded-md border">
-          <summary className="cursor-pointer px-3 py-1.5 text-sm text-muted-foreground">Documents ({files.length})</summary>
-          <div className="border-t p-3">
-            <AttachmentsPanel owner={{ ownerType: "vehicle_renewal", ownerId: r.id }} items={files} />
-          </div>
-        </details>
+        {files ? (
+          <details className="rounded-md border">
+            <summary className="cursor-pointer px-3 py-1.5 text-sm text-muted-foreground">Documents ({files.length})</summary>
+            <div className="border-t p-3">
+              <AttachmentsPanel owner={{ ownerType: "vehicle_renewal", ownerId: r.id }} items={files} />
+            </div>
+          </details>
+        ) : null}
       </div>
     </li>
   );

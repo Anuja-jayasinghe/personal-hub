@@ -121,7 +121,7 @@ async function VehicleContent({
       ) : current.key === "services" ? (
         <ServicesTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} />
       ) : current.key === "renewals" ? (
-        <RenewalsTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} />
+        <RenewalsTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} showDocuments={allows(access, "vehicle_documents", "see")} />
       ) : (
         <DocumentsTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} coverAttachmentId={vehicle.coverAttachmentId} query={q ?? ""} sort={sort} />
       )}

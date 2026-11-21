@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accessFromGrants, allows, areaOfOwner, navItemVisible, sharedVisible, visibleAreas, type Access } from "./access";
+import { accessFromGrants, allows, areaOfFile, areaOfOwner, navItemVisible, sharedVisible, visibleAreas, type Access } from "./access";
 
 const reader: Access = accessFromGrants([
   { area: "electricity_readings", level: "add" },
@@ -32,6 +32,30 @@ describe("areaOfOwner", () => {
     expect(areaOfOwner("meter")).toBe("electricity_readings");
     expect(areaOfOwner(null)).toBe("tasks_notes");
     expect(areaOfOwner("note")).toBe("tasks_notes");
+  });
+});
+
+describe("areaOfFile", () => {
+  it("puts a vehicle's files and a renewal's papers in Vehicle documents, and only the cover photo in Vehicles", () => {
+    expect(areaOfFile("vehicle")).toBe("vehicle_documents");
+    expect(areaOfFile("vehicle_renewal")).toBe("vehicle_documents");
+    expect(areaOfFile("vehicle", true)).toBe("vehicles");
+  });
+
+  it("follows the record for every other file", () => {
+    expect(areaOfFile("bill_payment")).toBe("bills");
+    expect(areaOfFile("meter")).toBe("electricity_readings");
+    expect(areaOfFile("task")).toBe("tasks_notes");
+    expect(areaOfFile(null)).toBe("tasks_notes");
+  });
+
+  it("does not let Vehicles alone add or delete vehicle papers", () => {
+    const vehiclesOnly = accessFromGrants([{ area: "vehicles", level: "edit" }]);
+    for (const ownerType of ["vehicle", "vehicle_renewal"] as const) {
+      expect(allows(vehiclesOnly, areaOfFile(ownerType), "add")).toBe(false);
+      expect(allows(vehiclesOnly, areaOfFile(ownerType), "edit")).toBe(false);
+    }
+    expect(allows(vehiclesOnly, areaOfFile("vehicle", true), "edit")).toBe(true);
   });
 });
 

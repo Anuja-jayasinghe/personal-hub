@@ -8,7 +8,8 @@ import { deleteAttachmentsOf } from "./cleanup";
 import { toActionState as failure } from "./errors";
 import { recordUpload, removeAttachment, uploadedFrom } from "./files";
 import type { ActionState } from "./types";
-import { areaOfOwner, type Level } from "@/features/people/access";
+import { areaOfFile, areaOfOwner, type Level } from "@/features/people/access";
+import { fileArea } from "@/features/people/file-area";
 import { isOwnerType } from "@/lib/owners";
 import { requireUser } from "@/lib/auth";
 import {
@@ -173,7 +174,9 @@ export async function uploadAttachment(_prev: ActionState, fd: FormData): Promis
   try {
     await requireUser("signed-in");
     const owner = requiredOwner(fd);
-    await requireOwnerSection(owner, "add");
+    // The section the file will belong to, not just its record's: a file on a vehicle or a renewal is a
+    // Vehicle document (C114), so it needs Add there.
+    await requireUser({ area: areaOfFile(owner.ownerType), level: "add" });
     // The browser has already put the file in storage (C115); this records it after checking it.
     await recordUpload(owner, uploadedFrom(fd));
     refresh();
@@ -188,7 +191,8 @@ export async function deleteAttachment(fd: FormData): Promise<void> {
   const id = idFrom(fd);
   const [row] = await db.select().from(attachments).where(eq(attachments.id, id));
   if (!row) return;
-  await requireOwnerSection(row, "edit");
+  // Edit in the section the file belongs to: Vehicle documents for a vehicle's papers, Vehicles for its cover.
+  await requireUser({ area: await fileArea(row), level: "edit" });
   await removeAttachment(row);
   refresh();
 }

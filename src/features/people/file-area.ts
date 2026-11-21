@@ -3,18 +3,13 @@ import { eq } from "drizzle-orm";
 import { readDb } from "@/db/read";
 import { vehicles } from "@/db/schema";
 import { isOwnerType } from "@/lib/owners";
-import { areaOfOwner, type Area } from "./access";
+import { areaOfFile, type Area } from "./access";
 
-/**
- * Which section a stored file belongs to (S.8, C114): a vehicle's cover photo is part of Vehicles; its
- * other files and a renewal's papers are Vehicle documents; anything else follows what it is attached to.
- */
+/** Which section a stored file belongs to: `areaOfFile`, after looking up whether it is a vehicle's cover photo. */
 export async function fileArea(file: { id: string; ownerType: string; ownerId: string }): Promise<Area> {
+  if (!isOwnerType(file.ownerType)) return areaOfFile(null);
+  if (file.ownerType !== "vehicle") return areaOfFile(file.ownerType);
   const db = await readDb();
-  if (file.ownerType === "vehicle_renewal") return "vehicle_documents";
-  if (file.ownerType === "vehicle") {
-    const [v] = await db.select({ cover: vehicles.coverAttachmentId }).from(vehicles).where(eq(vehicles.id, file.ownerId));
-    return v?.cover === file.id ? "vehicles" : "vehicle_documents";
-  }
-  return areaOfOwner(isOwnerType(file.ownerType) ? file.ownerType : null);
+  const [v] = await db.select({ cover: vehicles.coverAttachmentId }).from(vehicles).where(eq(vehicles.id, file.ownerId));
+  return areaOfFile("vehicle", v?.cover === file.id);
 }

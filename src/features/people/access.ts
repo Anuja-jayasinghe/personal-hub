@@ -64,6 +64,17 @@ export function areaOfOwner(ownerType: OwnerType | null): Area {
   }
 }
 
+/**
+ * Which section a stored file belongs to (S.8, C114): a vehicle's cover photo is part of Vehicles; its
+ * other files and a renewal's papers are Vehicle documents; anything else follows what it is attached to.
+ * Seeing, adding and deleting a file all use this, so the three can never disagree.
+ */
+export function areaOfFile(ownerType: OwnerType | null, isCover = false): Area {
+  if (ownerType === "vehicle_renewal") return "vehicle_documents";
+  if (ownerType === "vehicle") return isCover ? "vehicles" : "vehicle_documents";
+  return areaOfOwner(ownerType);
+}
+
 /** Grants as a person's access, ignoring anything not a known section or level. */
 export function accessFromGrants(rows: readonly { area: string; level: string }[]): Access {
   const grants: Partial<Record<Area, Level>> = {};
