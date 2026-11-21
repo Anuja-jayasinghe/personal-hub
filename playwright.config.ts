@@ -21,8 +21,10 @@ export default defineConfig({
   reporter: [["list"]],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "https://hub.anujajay.com",
-    trace: "retain-on-failure",
-    screenshot: "only-on-failure",
+    // A failing run's trace and screenshots show the live site's real pages. Keep them on this machine
+    // only (test-results/ is git-ignored): in GitHub Actions the repo is public, so CI keeps neither.
+    trace: process.env.CI ? "off" : "retain-on-failure",
+    screenshot: process.env.CI ? "off" : "only-on-failure",
   },
   outputDir: "test-results/e2e",
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
