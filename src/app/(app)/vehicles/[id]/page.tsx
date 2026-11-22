@@ -76,9 +76,7 @@ async function VehicleContent({
           </div>
         </div>
         <VehicleCover
-          vehicleId={vehicle.id}
-          coverAttachmentId={vehicle.coverAttachmentId}
-          vehicleType={vehicle.vehicleType}
+          vehicle={vehicle}
           alt={`${vehicle.nickname} photo`}
           className="mx-auto h-44 w-full max-w-xl md:h-56"
         />

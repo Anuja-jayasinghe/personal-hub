@@ -9,7 +9,7 @@ import { findVehicleType } from "@/features/vehicles/vehicle-type";
 /**
  * One vehicle in the list (S.6, C112; design board "Vehicles"): photo first, since most vehicles will
  * have a real photo; the government-style Sri Lankan plate (C130) sits on the photo; then the name, make / model / year and what
- * is due. Without a photo, the stage with the car render or the type's icon.
+ * is due. Without a photo, a drawing that looks like the vehicle (VehicleCover) or the type's icon.
  */
 export function VehicleCard({ vehicle, due }: { vehicle: Vehicle; due?: { total: number; overdue: number } }) {
   const subtitle = [vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(" ");
@@ -22,9 +22,7 @@ export function VehicleCard({ vehicle, due }: { vehicle: Vehicle; due?: { total:
       >
         <span className="relative block">
           <VehicleCover
-            vehicleId={vehicle.id}
-            coverAttachmentId={vehicle.coverAttachmentId}
-            vehicleType={vehicle.vehicleType}
+            vehicle={vehicle}
             alt=""
             className="aspect-[16/10] w-full"
           />

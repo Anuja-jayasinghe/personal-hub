@@ -1,8 +1,12 @@
+import { StageDefs, StageFloor } from "@/components/vehicles/render-stage";
+
 /**
- * The car render (DESIGN.md, The car; component HubCar): a shaded side view of a sedan on a receding
- * floor grid with a soft blue glow, contact shadows, silver five-spoke wheels with blue hub nodes, a
- * thin blue line along the roof and a light sweep across the body. Decorative: the vehicle's name sits
- * next to it. `idPrefix` keeps gradient ids unique when more than one is on a page.
+ * The car render (DESIGN.md, The car; component HubCar): a shaded side view of a sedan on the shared
+ * stage (render-stage.tsx), silver five-spoke wheels with blue hub nodes, a thin blue line along the
+ * roof and a light sweep across the body. Drawn after the Toyota Premio (issue #172; 4,595 long, 1,475
+ * high, 2,700 wheelbase): an upright three-box body with a defined boot, a small quarter window behind
+ * the rear door and a chrome line under the windows. Decorative: the vehicle's name sits next to it.
+ * `idPrefix` keeps gradient ids unique when more than one is on a page.
  */
 
 const PAINTS = {
@@ -14,10 +18,8 @@ const PAINTS = {
 export type CarPaint = keyof typeof PAINTS;
 
 const BODY =
-  "M26 112 L22 98 C22 88 26 82 34 80 L44 77 L94 72 C108 58 128 46 150 44 L224 44 C238 46 252 58 270 72 L322 80 C334 82 340 88 342 98 L340 112 L300 112 A28 28 0 0 0 244 112 L118 112 A28 28 0 0 0 62 112 Z";
+  "M26 112 L22 98 C22 90 24 84 30 80 L42 74 L96 71 C110 58 124 46 142 42 L226 41 C242 44 256 58 270 72 L322 79 C334 81 340 88 342 98 L340 112 L300 112 A28 28 0 0 0 244 112 L118 112 A28 28 0 0 0 62 112 Z";
 const WHEELS = [90, 272];
-const RAYS = Array.from({ length: 13 }, (_, i) => -300 + i * 80);
-const ROWS = [141, 147, 155, 166];
 
 function spokes(cx: number) {
   return [0, 72, 144, 216, 288].map((a) => {
@@ -54,51 +56,30 @@ export function CarRender({ idPrefix, paint = "graphite", className }: { idPrefi
           <stop offset=".92" stopColor="#1F2733" />
           <stop offset="1" stopColor="#0B0E13" />
         </radialGradient>
-        <radialGradient id={id("glow")} cx=".5" cy=".5" r=".5">
-          <stop offset="0" stopColor="#4388F5" stopOpacity=".38" />
-          <stop offset="1" stopColor="#4388F5" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id={id("lamp")} cx=".5" cy=".5" r=".5">
-          <stop offset="0" stopColor="#DCE8FD" stopOpacity=".9" />
-          <stop offset="1" stopColor="#4388F5" stopOpacity="0" />
-        </radialGradient>
+        <StageDefs id={id} />
         <linearGradient id={id("sweep")} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="#FFFFFF" stopOpacity="0" />
           <stop offset=".5" stopColor="#FFFFFF" stopOpacity=".22" />
           <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
         </linearGradient>
-        <filter id={id("blur")} x="-20%" y="-200%" width="140%" height="500%">
-          <feGaussianBlur stdDeviation="4" />
-        </filter>
-        <clipPath id={id("floor")}>
-          <rect x="0" y="137" width="360" height="33" />
-        </clipPath>
         <clipPath id={id("clip")}>
           <path d={BODY} />
         </clipPath>
       </defs>
 
-      <ellipse cx="182" cy="120" rx="190" ry="60" fill={url("glow")} />
-      <g clipPath={url("floor")} stroke="var(--raised)" strokeWidth={1}>
-        {RAYS.map((x) => (
-          <line key={x} x1="180" y1="30" x2={x} y2="170" />
-        ))}
-        {ROWS.map((y) => (
-          <line key={y} x1="0" y1={y} x2="360" y2={y} />
-        ))}
-      </g>
-      <ellipse cx="182" cy="138" rx="160" ry="6" fill="#000" opacity=".85" filter={url("blur")} />
-      <path d="M40 137 L330 137" stroke="#4388F5" strokeOpacity=".35" strokeWidth={1} />
+      <StageFloor id={id} />
 
       <path d="M62 112 A28 28 0 0 1 118 112 Z" fill="#07090D" />
       <path d="M244 112 A28 28 0 0 1 300 112 Z" fill="#07090D" />
 
       <path d={BODY} fill={url("body")} />
-      <path d="M104 72 C116 60 132 52 152 50 L186 50 L186 72 Z" fill={url("glass")} stroke="#0B0F16" strokeWidth={1} />
-      <path d="M194 50 L222 50 C236 52 248 60 260 71 L194 72 Z" fill={url("glass")} stroke="#0B0F16" strokeWidth={1} />
-      <path d="M120 70 L140 52 L150 52 L130 70 Z" fill="#fff" opacity=".1" />
-      <path d="M202 70 L216 51 L223 51 L209 70 Z" fill="#fff" opacity=".1" />
-      <path d="M108 60 C124 49 138 45 150 44 L224 44 C236 45 246 50 258 60" fill="none" stroke="#4388F5" strokeWidth={1.3} opacity=".75" />
+      <path d="M106 71 C113 62 121 54 131 49 L139 49 L137 71 Z" fill={url("glass")} stroke="#0B0F16" strokeWidth={1} />
+      <path d="M143 71 L145 48 L186 47 L186 71 Z" fill={url("glass")} stroke="#0B0F16" strokeWidth={1} />
+      <path d="M194 47 L224 47 C238 50 250 60 262 71 L194 71 Z" fill={url("glass")} stroke="#0B0F16" strokeWidth={1} />
+      <path d="M150 70 L166 49 L174 49 L158 70 Z" fill="#fff" opacity=".1" />
+      <path d="M202 70 L216 48 L223 48 L209 70 Z" fill="#fff" opacity=".1" />
+      <path d="M104 62 C118 49 130 44 142 42 L226 41 C240 44 250 52 262 63" fill="none" stroke="#4388F5" strokeWidth={1.3} opacity=".75" />
+      <path d="M100 73 L266 73" fill="none" stroke="#C9D2DE" strokeOpacity=".4" strokeWidth={1} />
       <path d="M40 86 C120 83 240 83 334 88" fill="none" stroke="#fff" strokeOpacity={p.crease} strokeWidth={1.2} />
       <path d="M120 106 L242 106" fill="none" stroke="#000" strokeOpacity=".35" strokeWidth={2} />
       <path d="M118 74 C116 90 116 100 118 110M190 72 L190 110M258 74 C262 86 262 96 258 104" fill="none" stroke="#05070A" strokeOpacity=".55" strokeWidth={1} />
@@ -130,5 +111,3 @@ export function CarRender({ idPrefix, paint = "graphite", className }: { idPrefi
   );
 }
 
-/** Vehicle types drawn as the car render; the others (bikes, buses...) keep their icon. */
-export const CAR_LIKE_TYPES = new Set(["car", "suv", "van", "pickup", "other"]);
