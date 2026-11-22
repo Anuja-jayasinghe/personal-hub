@@ -2,6 +2,14 @@
 
 Versions follow semver: **major** for changes that break how the hub is used or stored, **minor** for new features, **patch** for fixes (while below 1.0, breaking changes bump the minor). Since 0.6.1 they are automatic (DECISIONS C123): pull request titles follow Conventional Commits (`feat: …`, `fix: …`), release-please keeps a release pull request with the next version and its notes, and merging it tags `vX.Y.Z` and publishes the GitHub release (pre-release below 1.0). 0.6.0 and 0.6.1 were versioned by hand (C120).
 
+## [0.7.0](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.6.3...v0.7.0) (2026-11-22)
+
+
+### Features
+
+* **electricity:** switch the live meter from its IDLE tag ([#171](https://github.com/Anuja-jayasinghe/personal-hub/issues/171)) ([9a5ca11](https://github.com/Anuja-jayasinghe/personal-hub/commit/9a5ca1171daff0d435ae3dd3f4859e7e1af681d7)), closes [#170](https://github.com/Anuja-jayasinghe/personal-hub/issues/170)
+* **vehicles:** the government number plate on the vehicle card ([#166](https://github.com/Anuja-jayasinghe/personal-hub/issues/166)) ([5aa1cbe](https://github.com/Anuja-jayasinghe/personal-hub/commit/5aa1cbeddf5c0fb1a3a903dff03473899dda4801)), closes [#165](https://github.com/Anuja-jayasinghe/personal-hub/issues/165)
+
 ## [0.6.3](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.6.2...v0.6.3) (2026-11-22)
 
 
