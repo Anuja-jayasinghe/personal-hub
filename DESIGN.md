@@ -312,7 +312,11 @@ A Deepest panel with a dot grid. A "GRID" node at the top feeds a line to each m
 
 ### The car (`HubCar`)
 
-A shaded side view of a sedan (graphite, pearl or blue paint) on a receding floor grid with a soft blue glow, contact shadows, silver five-spoke wheels with blue hub nodes, a thin blue line along the roof, a light sweep across the body every 6 seconds. Used on the vehicle page hero and as the live preview in Add a vehicle. Motorbikes need their own drawing later.
+A shaded side view of a sedan (graphite, pearl or blue paint) on a receding floor grid with a soft blue glow, contact shadows, silver five-spoke wheels with blue hub nodes, a thin blue line along the roof, a light sweep across the body every 6 seconds. Drawn after the Toyota Premio. Used on the vehicle card and the vehicle page hero when there is no cover photo.
+
+### The two-wheelers (`BikeRender`)
+
+The same stage and language for bikes (C132): a superbike (BMW S 1000 RR, Yamaha YZF-R1M), a supermoto (Aprilia Dorsoduro 1200), a commuter (Bajaj Discover 125M; the default motorbike) and a scooter (Honda Dio 110), each drawn to its model's real proportions. The type, make and model pick the drawing (`vehicleLook`); colour only where the model is known by it (BMW Motorsport, R1M carbon), otherwise the hub graphite.
 
 ## Do's and Don'ts
 
