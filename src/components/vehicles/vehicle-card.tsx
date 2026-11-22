@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SriLankaPlate } from "@/components/vehicles/sl-plate";
+import { GovPlate } from "@/components/vehicles/gov-plate";
 import { VehicleCover } from "@/components/vehicles/vehicle-cover";
 import { appConfig } from "@/config/app.config";
 import type { Vehicle } from "@/db/schema";
@@ -8,7 +8,7 @@ import { findVehicleType } from "@/features/vehicles/vehicle-type";
 
 /**
  * One vehicle in the list (S.6, C112; design board "Vehicles"): photo first, since most vehicles will
- * have a real photo; the Sri Lankan plate sits on the photo; then the name, make / model / year and what
+ * have a real photo; the government-style Sri Lankan plate (C130) sits on the photo; then the name, make / model / year and what
  * is due. Without a photo, the stage with the car render or the type's icon.
  */
 export function VehicleCard({ vehicle, due }: { vehicle: Vehicle; due?: { total: number; overdue: number } }) {
@@ -28,7 +28,7 @@ export function VehicleCard({ vehicle, due }: { vehicle: Vehicle; due?: { total:
             alt=""
             className="aspect-[16/10] w-full"
           />
-          {vehicle.registrationNumber ? <SriLankaPlate registration={vehicle.registrationNumber} className="absolute bottom-3 left-3" /> : null}
+          {vehicle.registrationNumber ? <GovPlate registration={vehicle.registrationNumber} className="absolute bottom-3 left-3" /> : null}
         </span>
         <span className="flex items-center gap-3 px-4 pt-3.5 pb-4">
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
