@@ -16,6 +16,14 @@ owner before it is done. Secrets are never printed, committed or pasted into cha
   **session pooler**, port 5432, the same address as `.env.local`). Not the transaction pooler (port 6543): it hung
   every signed-in page, because it cannot take more than two queries at once on one connection (issue #135, C119).
 
+- **Preview settings** (C133, issue #174): previews use **real data**. Preview has the same `DATABASE_URL`,
+  `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ALLOWED_EMAILS` and sign-in/up paths as Production, but **Clerk's development
+  keys** (`pk_test` / `sk_test`, as in `.env.local`), because the production Clerk instance only works on
+  `hub.anujajay.com`. `CRON_SECRET` is Production only. **Add every new setting to both Production and Preview**
+  (`vercel env add NAME --environment production,preview`), or previews answer 500 again. Preview code reads and
+  writes the live database and files: test with labelled TEST rows. Previews stay behind Vercel's login;
+  `vercel curl <path> --deployment <url>` reaches one from the terminal.
+
 ## Set up (2026-11-19 and 20)
 
 1. **Clerk production instance** for `hub.anujajay.com` (C117): sign-up open (the hub gates), password off, email
