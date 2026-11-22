@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { LastCheckedLine } from "@/components/electricity/last-checked-line";
 import { stateLamp } from "@/components/electricity/limit-chips";
 import { MeterBadge } from "@/components/electricity/meter-tone";
@@ -24,6 +25,11 @@ export type InstrumentMeter = {
   check: LastChecked;
   /** The meter's job in words ("33 to 120", "Allowed to 180"). */
   role: string;
+  /**
+   * Replaces the LIVE / IDLE tag with a control (C131): the owner's quiet switch on an idle meter. It
+   * sits over the tag's place, outside the instrument's link, since a button cannot go inside a link.
+   */
+  liveControl?: ReactNode;
 };
 
 const STROKE = { ok: "var(--primary)", near: "var(--status-soon-mark)", over: "var(--status-overdue)" } as const;
@@ -76,7 +82,9 @@ export function MeterInstrument({
         ) : (
           <span className="flex-1" />
         )}
-        {meter.live !== null ? (
+        {meter.liveControl ? (
+          <span aria-hidden className="invisible h-6 w-24" />
+        ) : meter.live !== null ? (
           <span className={`flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-[0.16em] ${meter.live ? "text-primary" : "text-label"}`}>
             <span aria-hidden className={`size-1.5 rounded-full ${meter.live ? "bg-primary" : "bg-quiet"}`} />
             {meter.live ? "LIVE" : "IDLE"}
@@ -147,7 +155,7 @@ export function MeterInstrument({
   const frame = `flex flex-col gap-2 rounded-3xl border bg-deepest bg-[radial-gradient(var(--card)_1px,transparent_1px)] bg-size-[14px_14px] p-3 md:gap-2.5 md:p-5 ${
     meter.live ? "border-primary/45" : "border-raised"
   }`;
-  return meter.href ? (
+  const instrument = meter.href ? (
     <Link href={meter.href} aria-label={words} className={`${frame} outline-none hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-ring`}>
       {body}
     </Link>
@@ -155,5 +163,12 @@ export function MeterInstrument({
     <section aria-label={words} className={frame}>
       {body}
     </section>
+  );
+  if (!meter.liveControl) return instrument;
+  return (
+    <div className="relative grid">
+      {instrument}
+      <span className="absolute top-3 right-3 flex h-6 items-center md:top-5 md:right-5">{meter.liveControl}</span>
+    </div>
   );
 }

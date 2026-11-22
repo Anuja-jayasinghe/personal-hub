@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ElectricityOverview } from "@/components/electricity/electricity-overview";
 import { ElectricityTabs } from "@/components/electricity/electricity-tabs";
+import { SwitchLiveButton } from "@/components/electricity/live-switch";
 import { AddBothReadingsButton } from "@/components/electricity/popover-button";
 import { MeterView } from "@/components/electricity/meter-view";
 import { EmptyState } from "@/components/shell/page-header";
@@ -40,8 +41,8 @@ export function ElectricityBody({
   bills: ElectricityBill[];
   /** The meter carrying the house (issue #69), among the active meters; null when not set. */
   live?: LiveMeter | null;
-  /** What this person may do here (S.8, C114); owners can do all of it. */
-  can?: { addReadings: boolean; editReadings: boolean; seeBills: boolean };
+  /** What this person may do here (S.8, C114); owners can do all of it. `switchLive`: owners only (C131). */
+  can?: { addReadings: boolean; editReadings: boolean; seeBills: boolean; switchLive?: boolean };
   /** The rules in force (Settings, C107). */
   rules: HubRules;
   today: string;
@@ -71,6 +72,22 @@ export function ElectricityBody({
   const limitFor = (id: string) =>
     showArchived ? computeLimits(inputs.filter((i) => i.id === id), limitRules).meters[0] : limits.meters.find((l) => l.id === id)!;
   const nameOf = (id: string) => meters.find((m) => m.id === id)?.name ?? "Meter";
+
+  // The owner's quiet switch on each idle meter's instrument (C131): the same dialog as Settings › Meters.
+  const liveMeter = live ? meters.find((m) => m.id === live.meterId) : undefined;
+  const liveControlFor = (id: string) => {
+    const target = meters.find((m) => m.id === id);
+    if (!can.switchLive || showArchived || meters.length < 2 || !target || live?.meterId === id) return undefined;
+    return (
+      <SwitchLiveButton
+        quiet
+        target={{ id: target.id, name: target.name }}
+        current={liveMeter ? { id: liveMeter.id, name: liveMeter.name } : null}
+        since={live?.since ?? null}
+        today={today}
+      />
+    );
+  };
 
   // When each meter was last read by a person (2b.4).
   const checks = new Map(meters.map((m) => [m.id, lastChecked(data.get(m.id)!.readingRows[0]?.date ?? null, today, rules.checkEveryDays)]));
@@ -121,9 +138,10 @@ export function ElectricityBody({
               units={units}
               check={checks.get(selected.id)!}
               live={live && !showArchived ? live.meterId === selected.id : null}
+              liveControl={liveControlFor(selected.id)}
             />
           ) : (
-            <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} limits={limits} units={units} nameOf={nameOf} checks={checks} live={live} cycleDays={rules.billingCycleDays} seeBills={can.seeBills} />
+            <ElectricityOverview meters={meters} allMeters={allMeters} bills={bills} data={data} toneIndexOf={toneIndexOf} hrefFor={meterHref} limits={limits} units={units} nameOf={nameOf} checks={checks} live={live} liveControlFor={liveControlFor} cycleDays={rules.billingCycleDays} seeBills={can.seeBills} />
           )}
         </>
       )}

@@ -32,7 +32,7 @@ async function ElectricityContent({ searchParams }: { searchParams: Promise<Sear
       bills={bills}
       live={currentLive(switches, active.map((m) => m.id))}
       rules={rules}
-      can={{ addReadings: allows(access, "electricity_readings", "add"), editReadings: allows(access, "electricity_readings", "edit"), seeBills: allows(access, "electricity_bills", "see") }}
+      can={{ addReadings: allows(access, "electricity_readings", "add"), editReadings: allows(access, "electricity_readings", "edit"), seeBills: allows(access, "electricity_bills", "see"), switchLive: access.owner }}
       today={today}
       showArchived={showArchived}
       meterParam={meter}

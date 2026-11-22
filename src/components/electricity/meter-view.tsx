@@ -1,5 +1,6 @@
 import { Trash2 } from "lucide-react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { electricityBillHref } from "@/features/electricity/links";
 import { BillChip } from "@/components/electricity/bill-chip";
 import { LimitChips } from "@/components/electricity/limit-chips";
@@ -80,6 +81,7 @@ export function MeterView({
   units,
   check,
   live = null,
+  liveControl,
   can = { addReadings: true, editReadings: true, seeBills: true },
 }: {
   meter: ElectricityMeter;
@@ -94,6 +96,8 @@ export function MeterView({
   check: LastChecked;
   /** True when this meter carries the house, false when idle, null when not set (#69). */
   live?: boolean | null;
+  /** The owner's quiet live switch on the instrument (C131). */
+  liveControl?: ReactNode;
   /** What this person may do here (S.8, C114). */
   can?: { addReadings: boolean; editReadings: boolean; seeBills: boolean };
 }) {
@@ -123,6 +127,7 @@ export function MeterView({
             projected: usage.state === "ok" ? usage.projected : null,
             state: limit.state,
             live,
+            liveControl,
             reading: newest?.value ?? null,
             check,
             role: roomText(limit, units),

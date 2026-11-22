@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { CycleChart } from "@/components/electricity/cycle-chart";
 import { MeterBoard } from "@/components/electricity/meter-board";
 import { toneFor } from "@/components/electricity/meter-tone";
@@ -42,6 +43,7 @@ export function ElectricityOverview({
   nameOf,
   checks,
   live,
+  liveControlFor,
   cycleDays,
   seeBills = true,
 }: {
@@ -56,6 +58,8 @@ export function ElectricityOverview({
   nameOf: (id: string) => string;
   checks: Map<string, LastChecked>;
   live: LiveMeter | null;
+  /** The owner's quiet live switch for a meter's instrument (C131); none for everyone else. */
+  liveControlFor?: (id: string) => ReactNode;
   cycleDays: number;
   /** Without Electricity bills access (S.8) the amount to pay is not shown. */
   seeBills?: boolean;
@@ -87,6 +91,7 @@ export function ElectricityOverview({
                 projected: d.usage.state === "ok" ? d.usage.projected : null,
                 state: limit.state,
                 live: live ? live.meterId === m.id : null,
+                liveControl: liveControlFor?.(m.id),
                 reading: d.readingRows[0]?.value ?? null,
                 check: checks.get(m.id)!,
                 role: roomText(limit, units),
