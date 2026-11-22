@@ -24,6 +24,7 @@ export function SwitchLiveButton({
   label,
   variant = "outline",
   size = "default",
+  quiet = false,
 }: {
   target: Meter;
   /** The meter the house is on now; null when nothing is set yet. */
@@ -34,6 +35,11 @@ export function SwitchLiveButton({
   label?: string;
   variant?: "default" | "outline";
   size?: "default" | "sm" | "lg";
+  /**
+   * The quiet trigger on a meter instrument (C131): the small IDLE tag itself, which only shows
+   * "MAKE LIVE" on hover or focus, instead of a labelled button.
+   */
+  quiet?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [day, setDay] = useState(today);
@@ -84,7 +90,28 @@ export function SwitchLiveButton({
         }
       }}
     >
-      <AlertDialog.Trigger render={<Button type="button" variant={variant} size={size} />}>{label ?? `Switch to ${target.name}`}</AlertDialog.Trigger>
+      {quiet ? (
+        <AlertDialog.Trigger
+          render={
+            <button
+              type="button"
+              aria-label={current ? `Switch the house to ${target.name}` : `Mark ${target.name} as live`}
+              title={current ? `Switch the house to ${target.name}` : `Mark ${target.name} as live`}
+              className="group -mx-2 flex min-h-8 items-center gap-1.5 rounded-full px-2 font-mono text-[10px] font-semibold tracking-[0.16em] text-label outline-none hover:text-primary focus-visible:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          }
+        >
+          <span aria-hidden className="size-1.5 rounded-full bg-quiet group-hover:bg-primary group-focus-visible:bg-primary" />
+          <span aria-hidden className="group-hover:hidden group-focus-visible:hidden">
+            {current ? "IDLE" : "LIVE?"}
+          </span>
+          <span aria-hidden className="hidden group-hover:inline group-focus-visible:inline">
+            MAKE LIVE
+          </span>
+        </AlertDialog.Trigger>
+      ) : (
+        <AlertDialog.Trigger render={<Button type="button" variant={variant} size={size} />}>{label ?? `Switch to ${target.name}`}</AlertDialog.Trigger>
+      )}
       <AlertDialog.Portal>
         <AlertDialog.Backdrop className="fixed inset-0 z-50 bg-black/60 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0" />
         <AlertDialog.Popup className="fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-sm -translate-1/2 flex-col gap-3.5 rounded-3xl border bg-card p-5 shadow-[0_30px_60px_-30px_rgb(0_0_0/0.8)] transition duration-150 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
