@@ -16,6 +16,17 @@ export function plateParts(registration: string): { province: string | null; mai
   return { province: null, main: text };
 }
 
+/**
+ * The pieces the government plate draws (C130): the province code, the series (two or three letters, or
+ * an old numeric series) and the four digits, split at the dash. A registration that does not look like
+ * that keeps its whole text as the series and no digits, so it is still drawn as typed.
+ */
+export function plateLayout(registration: string): { province: string | null; series: string; digits: string | null } {
+  const { province, main } = plateParts(registration);
+  const m = main.match(/^([A-Z]{1,3}|\d{1,3})\s*-?\s*(\d{1,4})$/);
+  return m ? { province, series: m[1], digits: m[2] } : { province, series: main, digits: null };
+}
+
 /** Letters and digits only, upper-cased: two registrations are the same plate when these match. */
 export function plateKey(registration: string): string {
   return registration.toUpperCase().replace(/[^A-Z0-9]/g, "");

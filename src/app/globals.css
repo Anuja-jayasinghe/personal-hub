@@ -20,6 +20,8 @@
   /* Oxanium: page titles and the big numbers only (DESIGN.md). Use the font-display class. */
   --font-display: var(--font-brand-display), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-sans);
+  /* Saira Semi Condensed: the number plate on the vehicle card only (C130). Use the font-plate class. */
+  --font-plate: var(--font-brand-plate), ui-sans-serif, system-ui, sans-serif;
   /* Brand extras and the state colours' text and fill shades (src/theme/theme.css). */
   --color-deepest: var(--deepest);
   --color-raised: var(--raised);
