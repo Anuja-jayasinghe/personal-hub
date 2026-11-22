@@ -14,6 +14,8 @@ import postgres from "postgres";
 
 const EMAIL = "hub-test-person@anujajay.com";
 const SAMPLE_PLATE = "DEM-1234"; // only ever in the demo's sample data
+// The plate is drawn in pieces (series, a dash bar, digits; C130), so find it by its accessible name.
+const samplePlate = (page: Page) => page.getByRole("img", { name: `Plate ${SAMPLE_PLATE}` });
 const TEST_FILE = "TEST upload.pdf";
 /** The smallest file a PDF reader accepts, made here so the test needs no file on disk. */
 const TEST_PDF = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n");
@@ -87,7 +89,7 @@ test.describe("sharing with a person who signs in by themselves", () => {
     const [waiting] = await sql<{ id: string; status: string }[]>`select id, status from people where email = ${EMAIL}`;
     expect(waiting?.status).toBe("pending");
     await page.goto("/vehicles");
-    await expect(page.getByText(SAMPLE_PLATE).first()).toBeVisible();
+    await expect(samplePlate(page).first()).toBeVisible();
 
     // 2. Approve with Vehicles at See.
     await sql`update people set status = 'active' where id = ${waiting.id}`;
@@ -97,7 +99,7 @@ test.describe("sharing with a person who signs in by themselves", () => {
     await page.reload();
     await expect(page.getByRole("heading", { name: "Vehicles", level: 1 })).toBeVisible();
     await expect(page.getByRole("status").filter({ hasText: /sample data/i })).toHaveCount(0);
-    await expect(page.getByText(SAMPLE_PLATE)).toHaveCount(0);
+    await expect(samplePlate(page)).toHaveCount(0);
     await expect(page.getByRole("link", { name: /add vehicle/i })).toHaveCount(0);
 
     const sections = page.getByRole("navigation", { name: "Sections" });
