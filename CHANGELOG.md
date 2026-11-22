@@ -2,6 +2,15 @@
 
 Versions follow semver: **major** for changes that break how the hub is used or stored, **minor** for new features, **patch** for fixes (while below 1.0, breaking changes bump the minor). Since 0.6.1 they are automatic (DECISIONS C123): pull request titles follow Conventional Commits (`feat: …`, `fix: …`), release-please keeps a release pull request with the next version and its notes, and merging it tags `vX.Y.Z` and publishes the GitHub release (pre-release below 1.0). 0.6.0 and 0.6.1 were versioned by hand (C120).
 
+## [0.6.3](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.6.2...v0.6.3) (2026-11-22)
+
+
+### Fixes
+
+* **access:** one section rule for vehicle files ([#162](https://github.com/Anuja-jayasinghe/personal-hub/issues/162)) ([eb1af4d](https://github.com/Anuja-jayasinghe/personal-hub/commit/eb1af4dec952dfe8713c6e80bc64f21ff026b358)), closes [#161](https://github.com/Anuja-jayasinghe/personal-hub/issues/161)
+* **layout:** use the whole width at 80% zoom ([#159](https://github.com/Anuja-jayasinghe/personal-hub/issues/159)) ([#160](https://github.com/Anuja-jayasinghe/personal-hub/issues/160)) ([5394d08](https://github.com/Anuja-jayasinghe/personal-hub/commit/5394d08fed03b628a4fc441fa70d086b8ab754e8))
+* **settings:** use the full width on desktop ([#156](https://github.com/Anuja-jayasinghe/personal-hub/issues/156)) ([#157](https://github.com/Anuja-jayasinghe/personal-hub/issues/157)) ([86e3e1b](https://github.com/Anuja-jayasinghe/personal-hub/commit/86e3e1bf2e31747586ac5316c4654627f8006d5f))
+
 ## [0.6.2](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.6.1...v0.6.2) (2026-11-20)
 
 
