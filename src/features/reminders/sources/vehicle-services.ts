@@ -11,8 +11,8 @@ import type { ReminderSource } from "../engine";
 export const vehicleServicesSource: ReminderSource = {
   key: "vehicle-services",
   label: "Vehicle services",
-  async load() {
-    const rows = await listServicesOfActiveVehicles();
+  async load(from) {
+    const rows = await listServicesOfActiveVehicles(from?.db);
     const nicknames = new Map(rows.map((r) => [r.vehicleId, r.nickname]));
     return dueServices(rows).map((r) => ({
       id: `service:${r.id}`,
@@ -21,6 +21,7 @@ export const vehicleServicesSource: ReminderSource = {
       href: `/vehicles/${r.vehicleId}?tab=services`,
       kind: "service",
       ownerId: r.vehicleId,
+      notice: { what: r.serviceType, who: nicknames.get(r.vehicleId) ?? "Vehicle" },
     }));
   },
 };

@@ -1,7 +1,7 @@
 import "server-only";
 import { asc, count, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { connection } from "next/server";
-import { readDb } from "@/db/read";
+import { readDb, type Db } from "@/db/read";
 import { vehicleOdometerReadings, vehicleRenewals, vehicleServices, vehicles } from "@/db/schema";
 import { plateKey } from "./plate";
 import { UUID_RE } from "@/features/shared/validation";
@@ -55,9 +55,9 @@ export async function listServices(vehicleId: string) {
 }
 
 /** Every service record of every ACTIVE (not archived) vehicle, with the vehicle's nickname. For reminders. */
-export async function listServicesOfActiveVehicles() {
+export async function listServicesOfActiveVehicles(from?: Db) {
   await connection();
-  const db = await readDb();
+  const db = from ?? (await readDb());
   return db
     .select({
       id: vehicleServices.id,
@@ -85,9 +85,9 @@ export async function listRenewals(vehicleId: string) {
 }
 
 /** Every renewal of every ACTIVE (not archived) vehicle, with the vehicle's nickname. For reminders. */
-export async function listRenewalsOfActiveVehicles() {
+export async function listRenewalsOfActiveVehicles(from?: Db) {
   await connection();
-  const db = await readDb();
+  const db = from ?? (await readDb());
   return db
     .select({
       id: vehicleRenewals.id,

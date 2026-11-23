@@ -41,6 +41,14 @@ export function addDays(ymd: string, days: number): string {
   return new Date(utcMidnight(ymd) + days * MS_PER_DAY).toISOString().slice(0, 10);
 }
 
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** A calendar day as day and short month, e.g. dayMonth("2026-12-23") === "23 Dec" (for short messages). */
+export function dayMonth(ymd: string): string {
+  const d = new Date(utcMidnight(ymd));
+  return `${d.getUTCDate()} ${SHORT_MONTHS[d.getUTCMonth()]}`;
+}
+
 /** The calendar day it currently is in `timeZone` (e.g. "Asia/Colombo") at the instant `now`. */
 export function todayIn(timeZone: string, now: Date): string {
   // The en-CA locale formats dates as YYYY-MM-DD.

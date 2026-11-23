@@ -359,7 +359,7 @@ Every page in the app and the board that shows it. "Exists" means the route is i
 | Tasks and notes | `/tasks` | `HTasksNotes` | exists |
 | More | `/more` | `HMore` | new (phone only) |
 | Settings | `/settings` | `HSettings` | built (R.6) |
-| Meters and rules, Notifications, Data and backup | `/settings/meters`, `/settings/backup` | `HSettingsMore` | Meters and rules and Data and backup built read-only (R.6); Notifications waits for P35/P36 |
+| Meters and rules, Notifications, Data and backup | `/settings/meters`, `/settings/notifications`, `/settings/backup` | `HSettingsMore` | Meters and rules and Data and backup built read-only (R.6); Notifications built in N.1 (C139): Coming up as a line of day nodes, Recently sent, both channels "not set up yet" (switches come with N.2 and N.3; no weekly email, no per-kind switches, no quiet hours) |
 | People and roles, one person, invite, activity | `/settings/people` | `HAdmin`, `HAdminPhone` | People and roles built (S.8, C114): add, approve, access per section, block; invites by email and activity later |
 | Setup, step 1 add a meter | `/setup` | `HAddForms` | new |
 | 404 | `not-found.tsx` | `HSystem`, `H404Desktop` | built (R.6) |
@@ -367,7 +367,7 @@ Every page in the app and the board that shows it. "Exists" means the route is i
 | Something went wrong ("Lost the connection") | `(app)/error.tsx` | `HStates` | built (R.6) |
 | Offline | banner in the shell | `HSystem` | built (R.6) |
 
-Designed but needing a decision before building: the **Notifications** page shows phone notifications and a weekly email, but phone notifications were decided against (C63) and email is 4.3 (P35, P36); **All documents** is P39; **People and roles** and its presets answer part of P40; **Which meter is live** is built (issue #69, C102).
+Designed but needing a decision before building: **All documents** is P39; **People and roles** and its presets answer part of P40; **Which meter is live** is built (issue #69, C102).
 
 ## Motion
 

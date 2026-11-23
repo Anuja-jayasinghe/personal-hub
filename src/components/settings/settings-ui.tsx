@@ -8,6 +8,7 @@ import Link from "next/link";
 export const SETTINGS_PAGES = [
   { href: "/settings", label: "Settings", hint: "look, parts of the hub, the slab rule" },
   { href: "/settings/meters", label: "Meters and rules", hint: "your meters, 120 / 180, read every few days" },
+  { href: "/settings/notifications", label: "Notifications", hint: "what the hub would tell you, and when" },
   { href: "/settings/backup", label: "Data and backup", hint: "backups, exports, files stored" },
   { href: "/settings/people", label: "People and roles", hint: "who can see and do what" },
 ] as const;
