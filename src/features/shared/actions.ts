@@ -10,6 +10,7 @@ import { recordUpload, removeAttachment, uploadedFrom } from "./files";
 import type { ActionState } from "./types";
 import { areaOfFile, areaOfOwner, type Level } from "@/features/people/access";
 import { fileArea } from "@/features/people/file-area";
+import { renewalFileName } from "@/features/vehicles/doc-naming";
 import { isOwnerType } from "@/lib/owners";
 import { requireUser } from "@/lib/auth";
 import {
@@ -177,8 +178,10 @@ export async function uploadAttachment(_prev: ActionState, fd: FormData): Promis
     // The section the file will belong to, not just its record's: a file on a vehicle or a renewal is a
     // Vehicle document (C114), so it needs Add there.
     await requireUser({ area: areaOfFile(owner.ownerType), level: "add" });
-    // The browser has already put the file in storage (C115); this records it after checking it.
-    await recordUpload(owner, uploadedFrom(fd));
+    // The browser has already put the file in storage (C115); this records it after checking it. A file on a
+    // renewal is named by the hub from the renewal (issue #179), never by the uploader.
+    const nameFor = owner.ownerType === "vehicle_renewal" ? (mimeType: string) => renewalFileName(owner.ownerId, mimeType) : undefined;
+    await recordUpload(owner, uploadedFrom(fd), undefined, undefined, null, nameFor);
     refresh();
     return { ok: true };
   } catch (err) {

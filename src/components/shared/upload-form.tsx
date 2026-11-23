@@ -9,7 +9,7 @@ import { initialActionState } from "@/features/shared/types";
 import type { OwnerRef } from "@/lib/owners";
 
 /** Small upload form: pick an image or PDF (up to 10 MB) and attach it to `owner`. It goes straight to storage (C115). */
-export function UploadForm({ owner }: { owner: OwnerRef }) {
+export function UploadForm({ owner, nameHint }: { owner: OwnerRef; nameHint?: string }) {
   const [state, formAction, saving] = useActionState(uploadAttachment, initialActionState);
   const formRef = useRef<HTMLFormElement>(null);
   const { onSubmit, error, sending } = useDirectUpload(formAction, () => ({ purpose: "attachment", ...owner }));
@@ -29,7 +29,15 @@ export function UploadForm({ owner }: { owner: OwnerRef }) {
           {sending || saving ? "Uploading…" : "Upload"}
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">Images or PDF, up to 10 MB.</p>
+      <p className="text-xs text-muted-foreground">
+        Images or PDF, up to 10 MB.
+        {nameHint ? (
+          <>
+            {" "}
+            Saved as <span className="font-mono break-all text-foreground">{nameHint.replace(/\.pdf$/, "")}</span>
+          </>
+        ) : null}
+      </p>
       {shown ? (
         <p role="alert" className="text-sm text-destructive">
           {shown}

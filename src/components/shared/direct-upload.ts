@@ -4,7 +4,7 @@ import { useState, useTransition, type FormEvent } from "react";
 import { prepareUpload } from "@/features/shared/upload-actions";
 import type { UploadPurpose } from "@/lib/upload-rules";
 
-export type UploadTarget = { purpose: UploadPurpose; ownerType: string; ownerId: string };
+export type UploadTarget = { purpose: UploadPurpose; ownerType: string; ownerId: string; doc?: { kind?: string; date?: string; title?: string } };
 
 /** Browsers sometimes send an empty type for HEIC photos; fall back to the extension (as the server does). */
 function typeOf(file: File): string {

@@ -4,6 +4,9 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { vehicles } from "@/db/schema";
 import { areaOfFile } from "@/features/people/access";
+import { parseDocUpload } from "@/features/vehicles/doc-names";
+import { renewalFileName, vehicleDocFileName } from "@/features/vehicles/doc-naming";
+import { DOC_TITLE_MAX } from "@/features/vehicles/documents";
 import { requireUser } from "@/lib/auth";
 import { isOwnerType, type OwnerRef } from "@/lib/owners";
 import { COVER_TYPE_MESSAGE, COVER_TYPES } from "@/lib/storage";
@@ -12,7 +15,16 @@ import { signUpload } from "./files";
 import { toActionState } from "./errors";
 import { UUID_RE, ValidationError } from "./validation";
 
-export type PrepareUploadInput = { purpose: UploadPurpose; ownerType: string; ownerId: string; fileName: string; mimeType: string; size: number };
+export type PrepareUploadInput = {
+  purpose: UploadPurpose;
+  ownerType: string;
+  ownerId: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  /** For a vehicle document: what it is and its date, which name the file (issue #179). */
+  doc?: { kind?: string; date?: string; title?: string };
+};
 
 export type PrepareUploadResult = { ok: true; path: string; signedUrl: string } | { ok: false; error: string };
 
@@ -34,7 +46,9 @@ export async function prepareUpload(input: PrepareUploadInput): Promise<PrepareU
       // A new file is never the cover photo (that is its own purpose below), so on a vehicle or a
       // renewal it is a Vehicle document and needs Add there, the same as the Documents tab.
       await requireUser({ area: areaOfFile(owner.ownerType), level: "add" });
-      return { ok: true, ...(await signUpload(owner, file)) };
+      // A renewal's file is stored under the name the hub gives it (issue #179).
+      const named = owner.ownerType === "vehicle_renewal" ? { ...file, fileName: await renewalFileName(owner.ownerId, file.mimeType) } : file;
+      return { ok: true, ...(await signUpload(owner, named)) };
     }
     if (owner.ownerType !== "vehicle") throw new ValidationError("That item could not be found.");
     const [vehicle] = await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, owner.ownerId));
@@ -44,7 +58,9 @@ export async function prepareUpload(input: PrepareUploadInput): Promise<PrepareU
       return { ok: true, ...(await signUpload(owner, file, COVER_TYPES, COVER_TYPE_MESSAGE)) };
     }
     await requireUser({ area: "vehicle_documents", level: "add" });
-    return { ok: true, ...(await signUpload(owner, file)) };
+    const doc = parseDocUpload(input.doc ?? {}, DOC_TITLE_MAX);
+    if (!doc.ok) throw new ValidationError(doc.error);
+    return { ok: true, ...(await signUpload(owner, { ...file, fileName: await vehicleDocFileName(owner.ownerId, doc.value, file.mimeType) })) };
   } catch (err) {
     const state = toActionState(err);
     return { ok: false, error: state.error ?? "Could not prepare the upload." };

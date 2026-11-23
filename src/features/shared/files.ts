@@ -39,6 +39,8 @@ export async function recordUpload(
   allowedTypes: readonly string[] = ALLOWED_ATTACHMENT_TYPES,
   typeMessage = "Only JPEG, PNG, WebP, HEIC images and PDF files are allowed.",
   title: string | null = null,
+  /** Names the file from the hub's data (issue #179) instead of the uploader's name; gets the checked type. */
+  nameFor?: (mimeType: string) => Promise<string>,
 ): Promise<Attachment> {
   if (!pathBelongsTo(uploaded.path, owner)) throw new ValidationError("That upload does not belong here. Please try again.");
   const storage = storageClient().storage.from(ATTACHMENT_BUCKET);
@@ -51,6 +53,7 @@ export async function recordUpload(
     throw new ValidationError(problem);
   }
   try {
+    const fileName = nameFor ? await nameFor(stored.mimeType) : uploaded.fileName;
     const [row] = await db
       .insert(attachments)
       .values({
@@ -58,7 +61,7 @@ export async function recordUpload(
         ownerId: owner.ownerId,
         bucket: ATTACHMENT_BUCKET,
         storagePath: uploaded.path,
-        fileName: uploaded.fileName.slice(0, 255) || "file",
+        fileName: fileName.slice(0, 255) || "file",
         title,
         mimeType: stored.mimeType,
         sizeBytes: stored.size,

@@ -1,0 +1,71 @@
+import { describe, expect, it } from "vitest";
+import { defaultDocTitle, docFileName, documentKind, extensionFor, parseDocUpload, renewalKind, vehiclePart } from "./doc-names";
+
+describe("vehiclePart", () => {
+  it("uses the plate without its province", () => {
+    expect(vehiclePart({ registrationNumber: "BAK-9366", nickname: "Aprilia" })).toBe("BAK-9366");
+    expect(vehiclePart({ registrationNumber: "WP CAB-1234", nickname: "Car" })).toBe("CAB-1234");
+    expect(vehiclePart({ registrationNumber: "wp cab 1234", nickname: "Car" })).toBe("CAB-1234");
+  });
+
+  it("falls back to the nickname when there is no plate", () => {
+    expect(vehiclePart({ registrationNumber: null, nickname: "Family car" })).toBe("FAMILY-CAR");
+    expect(vehiclePart({ registrationNumber: "", nickname: "!!" })).toBe("VEHICLE");
+  });
+});
+
+describe("kinds", () => {
+  it("maps the renewal types to their short names", () => {
+    expect(renewalKind("Revenue license")).toBe("license");
+    expect(renewalKind("Emission test")).toBe("emission");
+    expect(renewalKind("Insurance")).toBe("insurance");
+    expect(renewalKind("Fitness certificate")).toBe("fitness-certificate");
+  });
+
+  it("names an Other document after its title", () => {
+    expect(documentKind("book", "anything")).toBe("book");
+    expect(documentKind("other", "Service invoice #12")).toBe("service-invoice-12");
+    expect(documentKind("other", "  ")).toBe("other");
+  });
+});
+
+describe("docFileName", () => {
+  const parts = { vehicle: "BAK-9366", kind: "license", date: "2027-09-23", ext: "pdf" };
+
+  it("builds PLATE_type_date.ext", () => {
+    expect(docFileName(parts)).toBe("BAK-9366_license_2027-09-23.pdf");
+  });
+
+  it("adds _2, _3 when the record already has that name", () => {
+    expect(docFileName(parts, ["BAK-9366_license_2027-09-23.pdf"])).toBe("BAK-9366_license_2027-09-23_2.pdf");
+    expect(docFileName(parts, ["bak-9366_license_2027-09-23.PDF", "BAK-9366_license_2027-09-23_2.pdf"])).toBe("BAK-9366_license_2027-09-23_3.pdf");
+    expect(docFileName({ ...parts, ext: "jpg" }, ["BAK-9366_license_2027-09-23.pdf"])).toBe("BAK-9366_license_2027-09-23.jpg");
+  });
+
+  it("never takes the extension from a name, only from the checked type", () => {
+    expect(extensionFor("application/pdf")).toBe("pdf");
+    expect(extensionFor("image/jpeg")).toBe("jpg");
+    expect(extensionFor("text/html")).toBe("bin");
+  });
+});
+
+describe("defaultDocTitle", () => {
+  it("makes a title from the kind and date", () => {
+    expect(defaultDocTitle("book", "2018-06-26")).toBe("Registration book");
+    expect(defaultDocTitle("insurance", "2027-05-01")).toBe("Insurance until 2027-05-01");
+  });
+});
+
+describe("parseDocUpload", () => {
+  it("needs a kind and a real date, and makes a title when none is typed", () => {
+    expect(parseDocUpload({ kind: "book", date: "2018-06-26", title: "" }, 100)).toEqual({ ok: true, value: { kind: "book", date: "2018-06-26", title: "Registration book" } });
+    expect(parseDocUpload({ kind: "x", date: "2018-06-26" }, 100)).toMatchObject({ ok: false });
+    expect(parseDocUpload({ kind: "license", date: "2027-02-30" }, 100)).toMatchObject({ ok: false });
+    expect(parseDocUpload({ kind: "license", date: "" }, 100)).toMatchObject({ ok: false });
+  });
+
+  it("needs a title for Other", () => {
+    expect(parseDocUpload({ kind: "other", date: "2026-05-01", title: " " }, 100)).toMatchObject({ ok: false });
+    expect(parseDocUpload({ kind: "other", date: "2026-05-01", title: "Service invoice" }, 100)).toMatchObject({ ok: true, value: { title: "Service invoice" } });
+  });
+});

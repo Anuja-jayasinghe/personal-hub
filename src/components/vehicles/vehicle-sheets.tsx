@@ -36,7 +36,7 @@ export function AddServiceSheet({ vehicleId, vehicleName, serviceTypes, defaultD
   );
 }
 
-export function AddDocumentSheet({ vehicleId, vehicleName }: { vehicleId: string; vehicleName: string }) {
+export function AddDocumentSheet({ vehicleId, vehicleName, namePrefix }: { vehicleId: string; vehicleName: string; namePrefix: string }) {
   return (
     <SheetButton
       label="Add document"
@@ -45,7 +45,7 @@ export function AddDocumentSheet({ vehicleId, vehicleName }: { vehicleId: string
       description="Name it so you can search for it, like Insurance 2026–2027. Images or PDF, up to 10 MB."
       variant="default"
     >
-      {(close) => <DocumentUploadForm vehicleId={vehicleId} onDone={close} />}
+      {(close) => <DocumentUploadForm vehicleId={vehicleId} namePrefix={namePrefix} onDone={close} />}
     </SheetButton>
   );
 }
