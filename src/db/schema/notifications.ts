@@ -6,11 +6,13 @@ import { createdAt } from "./_columns";
  * The send log of notifications (Notifications N.1, DECISIONS C139): one row per notice (item, step,
  * recipient). Row-level security on (C27).
  *
- * A row is written as `pending` BEFORE a real send and stamped `sent` (or `failed`) after, so a crash
- * can never send twice: the partial unique index makes a second real row for the same recipient and
- * dedupe key impossible. A dry run (a channel not built or not switched on) writes `dry_run` rows,
- * which have their own unique index and never block a later real send of the same key.
- * The daily run deletes rows older than a year.
+ * A row is written as `pending` BEFORE a real send and stamped `sent` after, so a crash can never send
+ * twice: the partial unique index makes a second pending or sent row for the same recipient and dedupe
+ * key impossible. A send the provider refused (nothing went out) is stamped `failed`, which does not
+ * block a retry while the notice is still timely; an unknown outcome stays `pending` and blocks for
+ * good. A dry run (a channel not built or not switched on) writes `dry_run` rows, which have their own
+ * unique index and never block a later real send of the same key.
+ * The daily run deletes rows older than a year (housekeeping).
  */
 export const notifications = pgTable(
   "notifications",
@@ -37,11 +39,14 @@ export const notifications = pgTable(
     check("notifications_status_check", sql`${t.status} in ('dry_run', 'pending', 'sent', 'failed')`),
     check("notifications_recipient_check", sql`${t.recipient} = lower(${t.recipient})`),
     check("notifications_sent_at_check", sql`${t.status} <> 'sent' or ${t.sentAt} is not null`),
-    // A real notice (pending, sent or failed) exists at most once per recipient and key: no repeats, ever.
-    uniqueIndex("notifications_real_once").on(t.recipient, t.dedupeKey).where(sql`${t.status} <> 'dry_run'`),
+    // A real notice that went out or may have gone out (pending or sent) exists at most once per recipient
+    // and key: no repeats, ever. A `failed` row (known to have sent nothing) does not block a retry.
+    uniqueIndex("notifications_real_once").on(t.recipient, t.dedupeKey).where(sql`${t.status} in ('pending', 'sent')`),
     // A dry run logs each notice once too, without blocking the real send later.
     uniqueIndex("notifications_dry_run_once").on(t.recipient, t.dedupeKey).where(sql`${t.status} = 'dry_run'`),
-    // "Recently sent" in Settings, and the run's look at a recipient's log.
+    // The run's and Settings' look at one recipient's log.
+    index("notifications_recipient_idx").on(t.recipient),
+    // "Recently sent" in Settings, newest first.
     index("notifications_recent_idx").on(t.createdAt.desc()),
   ],
 ).enableRLS();

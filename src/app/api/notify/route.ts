@@ -1,5 +1,6 @@
 import { notifyGate } from "@/features/notifications/gate";
 import { runNotifications } from "@/features/notifications/run";
+import { safeErrorSummary } from "@/lib/errors";
 
 const noStore = { "Cache-Control": "no-store" };
 
@@ -22,7 +23,8 @@ export async function GET(request: Request) {
     const report = await runNotifications();
     return Response.json({ ok: true, ...report }, { headers: noStore });
   } catch (err) {
-    console.error("Notification run failed:", err);
+    // Name and code only, never the error itself: a failed query carries its parameters (emails, titles).
+    console.error(`Notification run failed: ${safeErrorSummary(err)}`);
     return Response.json({ ok: false }, { status: 500, headers: noStore });
   }
 }

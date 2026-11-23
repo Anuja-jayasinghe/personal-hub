@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { OwnerOnly } from "@/components/settings/owner-only";
 import { ReminderDaysForm } from "@/components/settings/rules-forms";
 import { HubFacts, SlabRuleTiles, SubPageList } from "@/components/settings/settings-sections";
 import { SettingsColumn, SettingsColumns, SettingsSection } from "@/components/settings/settings-ui";
@@ -42,41 +43,44 @@ async function ReminderSection() {
  * runs on, and Sign out. Everything that can change is changed here, and nothing here leads out of Settings.
  */
 export default function SettingsPage() {
+  // Owner only on its own, not just through the Settings layout (a partial request can skip it).
   return (
-    <>
-      <PageHeader title="Settings" />
+    <OwnerOnly>
+      <>
+        <PageHeader title="Settings" />
 
-      <SettingsColumns>
-        <SettingsColumn>
-          <SettingsSection label="Look">
-            <ThemeSwitcher />
-          </SettingsSection>
-
-          <div className="md:hidden">
-            <SettingsSection label="More settings">
-              <Suspense fallback={<SubPageList />}>
-                <SubPageRows />
-              </Suspense>
+        <SettingsColumns>
+          <SettingsColumn>
+            <SettingsSection label="Look">
+              <ThemeSwitcher />
             </SettingsSection>
-          </div>
 
-          <Suspense fallback={<Skeleton className="h-28 rounded-2xl" />}>
-            <SlabSection />
-          </Suspense>
-        </SettingsColumn>
+            <div className="md:hidden">
+              <SettingsSection label="More settings">
+                <Suspense fallback={<SubPageList />}>
+                  <SubPageRows />
+                </Suspense>
+              </SettingsSection>
+            </div>
 
-        <SettingsColumn>
-          <Suspense fallback={<Skeleton className="h-44 rounded-2xl" />}>
-            <ReminderSection />
-          </Suspense>
+            <Suspense fallback={<Skeleton className="h-28 rounded-2xl" />}>
+              <SlabSection />
+            </Suspense>
+          </SettingsColumn>
 
-          <SettingsSection label="This hub">
-            <HubFacts />
-          </SettingsSection>
+          <SettingsColumn>
+            <Suspense fallback={<Skeleton className="h-44 rounded-2xl" />}>
+              <ReminderSection />
+            </Suspense>
 
-          <SignOutRow />
-        </SettingsColumn>
-      </SettingsColumns>
-    </>
+            <SettingsSection label="This hub">
+              <HubFacts />
+            </SettingsSection>
+
+            <SignOutRow />
+          </SettingsColumn>
+        </SettingsColumns>
+      </>
+    </OwnerOnly>
   );
 }

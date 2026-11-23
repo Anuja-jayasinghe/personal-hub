@@ -21,7 +21,7 @@ function bill(dueDate: string, id = "bill-item:b1", autopay = false): ReminderIt
   return { id, title: "Internet · LKR 3,990.00", dueDate, href: "/bills", kind: autopay ? "autopay" : "bill", notice: { what: "Internet" } };
 }
 function task(dueDate: string, id = "task:t1"): ReminderItem {
-  return { id, title: "Water the plants", dueDate, href: "/tasks", kind: "task", notice: { what: "Task", who: "Water the plants" } };
+  return { id, title: "Water the plants", dueDate, href: "/tasks", kind: "task", notice: { what: "Task" } };
 }
 
 /** Runs the planner every day from `from` for `days` days, keeping the used keys like the send log. */
@@ -152,7 +152,17 @@ describe("rule 4: one message per day per channel per recipient", () => {
     const [push] = plan.messages;
     expect(push.channel).toBe("push");
     expect(push.title).toBe("3 things need you");
-    expect(push.body.split("\n")).toEqual(["Electricity bill overdue · Main house", "Task due today · Water the plants", "Insurance ends tomorrow · Silver car"]);
+    expect(push.body.split("\n")).toEqual(["Electricity bill overdue · Main house", "Insurance ends tomorrow · Silver car", "Task due today"]);
+  });
+
+  it("several tasks on one day become one line, never their titles", () => {
+    const three = [task(TODAY, "task:a"), task(TODAY, "task:b"), task(TODAY, "task:c")];
+    const [onlyTasks] = planNotifications({ items: three, today: TODAY, usedKeys: none }).messages;
+    expect(onlyTasks).toMatchObject({ channel: "push", title: "3 tasks due today", body: "Open Tasks", href: "/tasks" });
+    expect(onlyTasks.notices).toHaveLength(3);
+    const [mixed] = planNotifications({ items: [...three, bill(addDays(TODAY, 1))], today: TODAY, usedKeys: none }).messages;
+    expect(mixed.title).toBe("2 things need you");
+    expect(mixed.body.split("\n")).toEqual(["Internet due tomorrow · Bills", "3 tasks due today"]);
   });
 
   it("holds a channel already used today instead of sending a second message", () => {
@@ -242,7 +252,7 @@ describe("messages", () => {
     expect(push(electricity(addDays(TODAY, -1)))).toMatchObject({ title: "Electricity bill overdue", body: "Main house" });
     expect(push(renewal(addDays(TODAY, -1)))).toMatchObject({ title: "Insurance has ended", body: "Silver car" });
     expect(push(bill(addDays(TODAY, 1)))).toMatchObject({ title: "Internet due tomorrow", body: "Bills" });
-    expect(push(task(TODAY))).toMatchObject({ title: "Task due today", body: "Water the plants" });
+    expect(push(task(TODAY))).toMatchObject({ title: "Task due today", body: "Open Tasks", href: "/tasks" });
   });
 
   it("never carries an amount, a plate or a document number", () => {
@@ -268,6 +278,12 @@ describe("previewUpcoming", () => {
       [addDays(TODAY, 1), ["email: hub · Insurance · Silver car ends 24 Dec"]],
       [addDays(TODAY, 2), ["push: Task due today"]],
     ]);
+  });
+
+  it("holds today's channels that were already used, like the run", () => {
+    const items = [task(TODAY), renewal(addDays(TODAY, 30))];
+    const days = previewUpcoming(items, TODAY, none, 3, new Set(["push"]));
+    expect(days.map((d) => [d.date, d.messages.map((m) => m.channel)])).toEqual([[TODAY, ["email"]]]);
   });
 
   it("leaves out what was already sent", () => {

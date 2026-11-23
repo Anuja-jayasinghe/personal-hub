@@ -37,9 +37,30 @@ describe("real database access", () => {
   });
 
   it("only the cron route reaches the notification run, which reads the real database with nobody signed in", () => {
+    const run = "src/features/notifications/run";
     const callers = files("src")
       .map((f) => f.split(path.sep).join("/"))
-      .filter((f) => /from "@\/features\/notifications\/run";/.test(readFileSync(f, "utf8")));
+      .filter((f) => importsOf(f, readFileSync(f, "utf8")).includes(run));
     expect(callers).toEqual(["src/app/api/notify/route.ts"]);
   });
+
+  it("the import scan sees aliased, relative, side-effect and dynamic imports", () => {
+    const file = "src/features/notifications/other.ts";
+    const run = "src/features/notifications/run";
+    expect(importsOf(file, 'import { runNotifications } from "@/features/notifications/run";')).toContain(run);
+    expect(importsOf(file, "import { runNotifications } from './run.ts';")).toContain(run);
+    expect(importsOf("src/app/x/route.ts", 'const m = await import("../../features/notifications/run");')).toContain(run);
+    expect(importsOf(file, 'import "./run";')).toContain(run);
+    expect(importsOf(file, 'export { runNotifications } from "./run";')).toContain(run);
+    expect(importsOf(file, 'import { x } from "./runner";')).not.toContain(run);
+  });
 });
+
+/** Every module a file imports (static, side-effect, re-export or dynamic), as a path under src without extension. */
+function importsOf(file: string, source: string): string[] {
+  const specs = [...source.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+|\brequire\s*\(\s*)["'`]([^"'`]+)["'`]/g)].map((m) => m[1]);
+  return specs.map((spec) => {
+    const resolved = spec.startsWith("@/") ? `src/${spec.slice(2)}` : spec.startsWith(".") ? path.posix.join(path.posix.dirname(file), spec) : spec;
+    return resolved.replace(/\.(ts|tsx|js|mjs)$/, "").replace(/\/index$/, "");
+  });
+}

@@ -1,5 +1,6 @@
 import "server-only";
 import type { Area } from "@/features/people/access";
+import { safeErrorSummary } from "@/lib/errors";
 import type { ReminderItem, ReminderSource, SourceContext } from "./engine";
 import { billItemsSource } from "./sources/bill-items";
 import { electricityBillsSource } from "./sources/electricity-bills";
@@ -38,7 +39,8 @@ export async function loadSources(
   );
   const failedSources = settled.flatMap((r, i) => {
     if (r.status === "fulfilled") return [];
-    console.error(`Reminder source "${sources[i].key}" failed:`, r.reason);
+    // Name and code only: a failed query's message carries its parameters (emails, titles).
+    console.error(`Reminder source "${sources[i].key}" failed: ${safeErrorSummary(r.reason)}`);
     return [sources[i].label];
   });
   return { loaded, failedSources };

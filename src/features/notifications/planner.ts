@@ -94,14 +94,14 @@ export function composeMessage(recipient: string, channel: Channel, notices: rea
     return { recipient, channel, title, body, href: single ? single.href : "/reminders", notices: sorted };
   }
   if (single) return { recipient, channel, title: single.title, body: single.body, href: single.href, notices: sorted };
-  return {
-    recipient,
-    channel,
-    title: `${sorted.length} things need you`,
-    body: sorted.map((n) => `${n.title} · ${n.body}`).join("\n"),
-    href: "/reminders",
-    notices: sorted,
-  };
+
+  // Tasks never show their own words (free text, C139): several on one day become one line.
+  const tasks = sorted.filter((n) => n.event === "task");
+  const others = sorted.filter((n) => n.event !== "task");
+  const tasksLine = tasks.length === 1 ? tasks[0].title : `${tasks.length} tasks due today`;
+  if (others.length === 0) return { recipient, channel, title: tasksLine, body: NOTIFICATION_STEPS.task.place, href: "/tasks", notices: sorted };
+  const lines = [...others.map((n) => `${n.title} · ${n.body}`), ...(tasks.length > 0 ? [tasksLine] : [])];
+  return { recipient, channel, title: `${lines.length} things need you`, body: lines.join("\n"), href: "/reminders", notices: sorted };
 }
 
 /** The notices due today for one recipient, batched into at most one message per channel. */
@@ -149,14 +149,21 @@ export type PreviewDay = { date: string; messages: Message[] };
 /**
  * What would go out over the next `days` days (today first), for Settings › Notifications "Coming up".
  * Assumes the items stay as they are (nothing paid, renewed or added) and that each day's run happens.
- * Only days with something to send are listed.
+ * `channelsUsedToday` are the channels that already carried a message today, held back like the run
+ * does (they only apply to today). Only days with something to send are listed.
  */
-export function previewUpcoming(items: readonly ReminderItem[], today: string, usedKeys: ReadonlySet<string>, days: number): PreviewDay[] {
+export function previewUpcoming(
+  items: readonly ReminderItem[],
+  today: string,
+  usedKeys: ReadonlySet<string>,
+  days: number,
+  channelsUsedToday?: ReadonlySet<Channel>,
+): PreviewDay[] {
   const used = new Set(usedKeys);
   const out: PreviewDay[] = [];
   for (let i = 0; i < days; i++) {
     const date = addDays(today, i);
-    const plan = planNotifications({ items, today: date, usedKeys: used });
+    const plan = planNotifications({ items, today: date, usedKeys: used, channelsUsedToday: i === 0 ? channelsUsedToday : undefined });
     for (const n of plan.notices) used.add(n.dedupeKey);
     if (plan.messages.length > 0) out.push({ date, messages: plan.messages });
   }

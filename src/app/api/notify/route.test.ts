@@ -69,5 +69,7 @@ describe("GET /api/notify", () => {
     const res = await GET(call(`Bearer ${SECRET}`));
     expect(res.status).toBe(500);
     expect(await res.text()).toBe('{"ok":false}');
+    // The log gets the error's name only, never its message (a failed query's message holds its parameters).
+    expect(vi.mocked(console.error).mock.calls.flat().join(" ")).toBe("Notification run failed: Error");
   });
 });

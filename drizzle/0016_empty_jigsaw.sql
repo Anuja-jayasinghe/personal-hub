@@ -19,6 +19,7 @@ CREATE TABLE "notifications" (
 );
 --> statement-breakpoint
 ALTER TABLE "notifications" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
-CREATE UNIQUE INDEX "notifications_real_once" ON "notifications" USING btree ("recipient","dedupe_key") WHERE "notifications"."status" <> 'dry_run';--> statement-breakpoint
+CREATE UNIQUE INDEX "notifications_real_once" ON "notifications" USING btree ("recipient","dedupe_key") WHERE "notifications"."status" in ('pending', 'sent');--> statement-breakpoint
 CREATE UNIQUE INDEX "notifications_dry_run_once" ON "notifications" USING btree ("recipient","dedupe_key") WHERE "notifications"."status" = 'dry_run';--> statement-breakpoint
+CREATE INDEX "notifications_recipient_idx" ON "notifications" USING btree ("recipient");--> statement-breakpoint
 CREATE INDEX "notifications_recent_idx" ON "notifications" USING btree ("created_at" DESC NULLS LAST);

@@ -8,11 +8,23 @@ import type { Channel } from "./steps";
  * implemented and switched on in Settings (`app_settings`, key "notifications", default off). Pure.
  */
 
+/**
+ * Thrown by a sender when it KNOWS nothing went out (the provider refused the message, a bad address).
+ * The rows are stamped `failed` and the notice may be retried on a later run while still timely. Any
+ * other error is an unknown outcome: the rows stay `pending` and are never sent again.
+ */
+export class NotSentError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NotSentError";
+  }
+}
+
 export type ChannelSender = {
   channel: Channel;
   /** False until N.2 (email) / N.3 (push) build the real sender. */
   implemented: boolean;
-  /** Sends one batched message. Throws on failure; the run records the error. */
+  /** Sends one batched message. Throws `NotSentError` when nothing went out, anything else when unsure. */
   send: (message: Message) => Promise<void>;
 };
 
@@ -21,7 +33,7 @@ function notBuiltYet(channel: Channel, piece: string): ChannelSender {
     channel,
     implemented: false,
     async send() {
-      throw new Error(`The ${channel} channel is not set up yet (${piece}).`);
+      throw new NotSentError(`The ${channel} channel is not set up yet (${piece}).`);
     },
   };
 }

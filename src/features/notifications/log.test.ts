@@ -8,8 +8,8 @@ import type { Db } from "@/db/read";
 import * as schema from "@/db/schema";
 import { notifications } from "@/db/schema";
 import type { ReminderItem } from "@/features/reminders/engine";
-import { channelModes, parseSwitches } from "./channels";
-import { channelsUsedOn, pruneLog, readLog, recordDryRun, sendLive, usedKeysFrom, type LogRow } from "./log";
+import { channelModes, NotSentError, parseSwitches } from "./channels";
+import { channelsUsedOn, PENDING_UNKNOWN_AFTER_MS, pruneLog, readLog, recordDryRun, sendLive, shownStatus, usedKeysFrom, type LogRow } from "./log";
 import { planNotifications, type Message } from "./planner";
 
 /**
@@ -97,27 +97,51 @@ describe("a real send", () => {
     expect(sent[0].notices.map((n) => n.dedupeKey)).toEqual([message.notices[1].dedupeKey]);
   });
 
-  it("records a failure with its error and does not retry it", async () => {
+  it("records a refused send as failed, and retries it on a later run while still timely", async () => {
     const message = emailFor("fail@example.com");
     const result = await sendLive(db, message, {
       send: async () => {
-        throw new Error("provider said no");
+        throw new NotSentError("provider said no");
       },
     });
-    expect(result).toMatchObject({ sent: 0, failed: 2 });
+    expect(result).toMatchObject({ sent: 0, failed: 2, unknown: 0 });
     const rows = await db.select().from(notifications).where(eq(notifications.recipient, "fail@example.com"));
     expect(rows.map((r) => [r.status, r.error])).toEqual([
       ["failed", "provider said no"],
       ["failed", "provider said no"],
     ]);
+    // Nothing went out, so the failed rows block nothing: the next run plans and sends them again.
     const log = await readLog(db, "fail@example.com");
-    expect(planNotifications({ items, today: TODAY, usedKeys: usedKeysFrom(log, LIVE_EMAIL) }).notices).toEqual([]);
+    const retry = planNotifications({ recipient: "fail@example.com", items, today: TODAY, usedKeys: usedKeysFrom(log, LIVE_EMAIL) });
+    expect(retry.notices).toHaveLength(2);
+    const second = await sendLive(db, retry.messages[0], { send: async () => {} });
+    expect(second).toMatchObject({ written: 2, sent: 2 });
+  });
+
+  it("an unknown outcome stays pending and is never sent again", async () => {
+    const message = emailFor("unknown@example.com");
+    const result = await sendLive(db, message, {
+      send: async () => {
+        throw new Error("socket hang up");
+      },
+    });
+    expect(result).toMatchObject({ sent: 0, failed: 0, unknown: 2 });
+    const rows = await db.select().from(notifications).where(eq(notifications.recipient, "unknown@example.com"));
+    expect(rows.map((r) => [r.status, r.error])).toEqual([
+      ["pending", "Unknown outcome: socket hang up"],
+      ["pending", "Unknown outcome: socket hang up"],
+    ]);
+    let calls = 0;
+    expect((await sendLive(db, message, { send: async () => void calls++ })).written).toBe(0);
+    expect(calls).toBe(0);
   });
 
   it("the database itself refuses a second real row for the same recipient and key", async () => {
     const row = { recipient: "db@example.com", dedupeKey: "task:t1:act:2026-11-23", channel: "push" as const, kind: "task", title: "Task due today", body: "x", href: "/tasks", dueDate: "2026-11-23" };
     await db.insert(notifications).values({ ...row, status: "sent", sentAt: new Date() });
     await expect(db.insert(notifications).values({ ...row, status: "pending" })).rejects.toThrow();
+    // A failed row (nothing went out) of the same key is allowed: it never blocks a retry.
+    await db.insert(notifications).values({ ...row, status: "failed", error: "refused" });
     // A dry-run row of the same key is still allowed (once).
     await db.insert(notifications).values({ ...row, status: "dry_run" });
     await expect(db.insert(notifications).values({ ...row, status: "dry_run" })).rejects.toThrow();
@@ -152,9 +176,19 @@ describe("reading the log", () => {
     { dedupeKey: "c", channel: "push", status: "failed", createdAt: new Date("2026-11-21T02:10:00Z") },
   ];
 
-  it("dry-run rows count only while the channel is dry; real rows always count", () => {
-    expect([...usedKeysFrom(rows, DRY)].sort()).toEqual(["a", "b", "c"]);
-    expect([...usedKeysFrom(rows, LIVE_EMAIL)].sort()).toEqual(["b", "c"]);
+  it("dry-run rows count only while the channel is dry; pending and sent always; failed never", () => {
+    expect([...usedKeysFrom(rows, DRY)].sort()).toEqual(["a", "b"]);
+    expect([...usedKeysFrom(rows, LIVE_EMAIL)].sort()).toEqual(["b"]);
+    const pending: LogRow = { dedupeKey: "p", channel: "push", status: "pending", createdAt: new Date() };
+    expect([...usedKeysFrom([pending], LIVE_EMAIL)]).toEqual(["p"]);
+  });
+
+  it("shows a pending row older than 10 minutes as unknown", () => {
+    const now = new Date("2026-11-23T02:30:00Z");
+    const at = (ms: number) => new Date(now.getTime() - ms);
+    expect(shownStatus({ status: "pending", createdAt: at(60_000) }, now)).toBe("pending");
+    expect(shownStatus({ status: "pending", createdAt: at(PENDING_UNKNOWN_AFTER_MS + 1) }, now)).toBe("unknown");
+    expect(shownStatus({ status: "sent", createdAt: at(PENDING_UNKNOWN_AFTER_MS * 10) }, now)).toBe("sent");
   });
 
   it("knows which channels were used today, in Colombo", () => {

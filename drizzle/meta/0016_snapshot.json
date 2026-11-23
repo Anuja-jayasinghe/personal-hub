@@ -1,5 +1,5 @@
 {
-  "id": "ecb5a2f3-fa4f-4cee-92d9-8e923962853d",
+  "id": "b72ef395-afe3-4ce6-af2a-02de57210027",
   "prevId": "0318f97f-4808-491c-a36a-7ebb89715d75",
   "version": "7",
   "dialect": "postgresql",
@@ -1806,7 +1806,7 @@
             }
           ],
           "isUnique": true,
-          "where": "\"notifications\".\"status\" <> 'dry_run'",
+          "where": "\"notifications\".\"status\" in ('pending', 'sent')",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -1829,6 +1829,21 @@
           ],
           "isUnique": true,
           "where": "\"notifications\".\"status\" = 'dry_run'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notifications_recipient_idx": {
+          "name": "notifications_recipient_idx",
+          "columns": [
+            {
+              "expression": "recipient",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}

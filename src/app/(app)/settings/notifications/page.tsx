@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { OwnerOnly } from "@/components/settings/owner-only";
 import { ChannelRows, ComingUpLine, RecentList } from "@/components/settings/notifications";
 import { SettingsColumn, SettingsColumns, SettingsSection } from "@/components/settings/settings-ui";
 import { PageHeader } from "@/components/shell/page-header";
@@ -28,32 +29,35 @@ async function Recent() {
  * Settings › Notifications (N.1, DECISIONS C139; board HSettingsMore). The hub writes only when
  * something is new: a plan-ahead email, an act-now iPhone push, one push on the first day overdue.
  * Neither channel is built yet, so the daily run logs what it would send ("not sent") and sends nothing.
- * Owner only (the Settings layout checks it).
+ * Owner only: the page checks it itself (OwnerOnly) and so do its queries, as well as the Settings layout.
  */
 export default function NotificationsPage() {
+  // Owner only on its own, not just through the Settings layout (a partial request can skip it).
   return (
-    <>
-      <PageHeader title="Notifications" parent={{ href: "/settings", label: "Settings" }} />
+    <OwnerOnly>
+      <>
+        <PageHeader title="Notifications" parent={{ href: "/settings", label: "Settings" }} />
 
-      <SettingsColumns>
-        <SettingsColumn>
-          <Suspense fallback={<Skeleton className="h-64 rounded-2xl" />}>
-            <ComingUp />
-          </Suspense>
-        </SettingsColumn>
-
-        <SettingsColumn>
-          <SettingsSection label="Where to tell you">
-            <ChannelRows />
-          </SettingsSection>
-
-          <SettingsSection label="Recently sent">
-            <Suspense fallback={<Skeleton className="h-40 rounded-2xl" />}>
-              <Recent />
+        <SettingsColumns>
+          <SettingsColumn>
+            <Suspense fallback={<Skeleton className="h-64 rounded-2xl" />}>
+              <ComingUp />
             </Suspense>
-          </SettingsSection>
-        </SettingsColumn>
-      </SettingsColumns>
-    </>
+          </SettingsColumn>
+
+          <SettingsColumn>
+            <SettingsSection label="Where to tell you">
+              <ChannelRows />
+            </SettingsSection>
+
+            <SettingsSection label="Recently sent">
+              <Suspense fallback={<Skeleton className="h-40 rounded-2xl" />}>
+                <Recent />
+              </Suspense>
+            </SettingsSection>
+          </SettingsColumn>
+        </SettingsColumns>
+      </>
+    </OwnerOnly>
   );
 }

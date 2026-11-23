@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { OwnerOnly } from "@/components/settings/owner-only";
 import { SlabRulesForm } from "@/components/settings/rules-forms";
 import { LiveNow, MeterList, RuleInWords } from "@/components/settings/settings-sections";
 import { SettingsColumn, SettingsColumns, SettingsSection } from "@/components/settings/settings-ui";
@@ -48,25 +49,28 @@ async function Rules() {
  * changed here (S.2b, C107).
  */
 export default function MetersAndRulesPage() {
+  // Owner only on its own, not just through the Settings layout (a partial request can skip it).
   return (
-    <>
-      <PageHeader title="Meters and rules" parent={{ href: "/settings", label: "Settings" }} />
+    <OwnerOnly>
+      <>
+        <PageHeader title="Meters and rules" parent={{ href: "/settings", label: "Settings" }} />
 
-      <SettingsColumns>
-        <SettingsColumn>
-          <SettingsSection label="Meters">
-            <Suspense fallback={<Skeleton className="h-28 rounded-2xl" />}>
-              <Meters />
+        <SettingsColumns>
+          <SettingsColumn>
+            <SettingsSection label="Meters">
+              <Suspense fallback={<Skeleton className="h-28 rounded-2xl" />}>
+                <Meters />
+              </Suspense>
+            </SettingsSection>
+          </SettingsColumn>
+
+          <SettingsColumn>
+            <Suspense fallback={<Skeleton className="h-80 rounded-2xl" />}>
+              <Rules />
             </Suspense>
-          </SettingsSection>
-        </SettingsColumn>
-
-        <SettingsColumn>
-          <Suspense fallback={<Skeleton className="h-80 rounded-2xl" />}>
-            <Rules />
-          </Suspense>
-        </SettingsColumn>
-      </SettingsColumns>
-    </>
+          </SettingsColumn>
+        </SettingsColumns>
+      </>
+    </OwnerOnly>
   );
 }

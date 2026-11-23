@@ -74,11 +74,14 @@ export function ComingUpLine({ days, today }: { days: PreviewDay[]; today: strin
 }
 
 function StatusTag({ row }: { row: RecentNotification }) {
-  switch (row.status) {
+  switch (row.shown) {
     case "dry_run":
       return <RowMeta tone="quiet">Not sent · dry run</RowMeta>;
     case "pending":
       return <RowMeta tone="blue">Sending</RowMeta>;
+    case "unknown":
+      // Started more than 10 minutes ago and never finished: it may or may not have arrived.
+      return <span className="shrink-0 font-mono text-[10.5px] tracking-[0.12em] text-status-soon uppercase">Unknown</span>;
     case "sent":
       return <RowMeta tone="ok">Sent</RowMeta>;
     case "failed":

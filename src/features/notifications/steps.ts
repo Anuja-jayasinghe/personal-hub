@@ -87,10 +87,11 @@ export const NOTIFICATION_STEPS: Record<EventKey, EventRule> = {
   },
   /** The bank pays it: nothing is sent. */
   autopay: { verb: "due", past: "overdue", place: "Bills", steps: [] },
+  /** A task's title is free text and is never sent (C139): "Task due today" / "Open Tasks". */
   task: {
     verb: "due",
     past: "overdue",
-    place: "Tasks",
+    place: "Open Tasks",
     steps: [{ step: "act", channel: "push", daysBefore: 0 }],
   },
 };
