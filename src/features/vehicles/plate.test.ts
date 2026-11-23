@@ -12,7 +12,7 @@ describe("plateParts", () => {
 describe("plateLayout", () => {
   it("splits a plate into province, series and digits", () => {
     expect(plateLayout("wp cab-1234")).toEqual({ province: "WP", series: "CAB", digits: "1234" });
-    expect(plateLayout("KX 4512")).toEqual({ province: null, series: "KX", digits: "4512" });
+    expect(plateLayout("ZZ 1234")).toEqual({ province: null, series: "ZZ", digits: "1234" });
     expect(plateLayout("65-1234")).toEqual({ province: null, series: "65", digits: "1234" });
   });
   it("keeps anything else whole", () => {

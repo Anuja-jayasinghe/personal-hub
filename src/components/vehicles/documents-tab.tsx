@@ -153,7 +153,7 @@ export async function DocumentsTab({
       ) : null}
 
       {searching ? (
-        <SearchResults ctx={ctx} query={query} found={searchPapers(papers, query)} groups={groups} />
+        <SearchResults ctx={ctx} query={query} found={searchPapers(papers, query, shownDates)} groups={groups} />
       ) : selected ? (
         <CategoryView ctx={ctx} group={selected} groups={groups} />
       ) : (
@@ -166,6 +166,18 @@ export async function DocumentsTab({
 // ---------------------------------------------------------------------------------------------
 // Words for dates and status
 // ---------------------------------------------------------------------------------------------
+
+/** A day as the screen writes it, as a full date and as a month, so search finds "May 2027" too. */
+function shownDates(day: string): string {
+  return `${formatDate(day)} ${formatMonth(monthOf(day))}`;
+}
+
+/** Why a kind that runs out has no current paper: the last renewal has been renewed (and the new one removed), or there is none. */
+function noCurrentWords(g: PaperGroup): string {
+  const last = g.earlier[0];
+  if (last?.until) return `Nothing current: the last one ended ${formatDate(last.until)}.`;
+  return g.onFile.length ? "No renewal for this yet, so no days are counted." : `No ${g.kind === "license" ? "license" : g.label.toLowerCase()} yet.`;
+}
 
 /** "13 Feb 2026 – 12 Feb 2027", or "Until 12 Feb 2027" when the start is not known. */
 function rangeText(p: Paper): string | null {
@@ -378,12 +390,13 @@ function CategorySection({ ctx, group: g, wide }: { ctx: Ctx; group: PaperGroup;
         </article>
       ) : (
         <>
-          <OnFile ctx={ctx} papers={g.onFile} titled={false} />
           {dated ? (
             <p className="text-[13px] text-label">
-              No renewal for this yet, so no days are counted. <TrackInRenewals ctx={ctx} />
+              {noCurrentWords(g)} {g.earlier.length ? null : <TrackInRenewals ctx={ctx} />}
             </p>
           ) : null}
+          {g.timeline.length ? <Timeline ctx={ctx} group={g} /> : null}
+          {g.onFile.length ? <OnFile ctx={ctx} papers={g.onFile} titled={g.timeline.length > 0} /> : null}
         </>
       )}
     </section>
@@ -530,7 +543,11 @@ function CompactCard({ ctx, group: g }: { ctx: Ctx; group: PaperGroup }) {
   const tone = toneOf(g.status);
   const p = g.current ?? g.onFile[0] ?? g.earlier[0];
   const sub = !g.current
-    ? g.onFile.slice(0, 2).map((x) => x.name ?? monthRange(x)).join(", ") + (g.onFile.length > 2 ? "…" : "")
+    ? g.onFile.length
+      ? g.onFile.slice(0, 2).map((x) => x.name ?? monthRange(x)).join(", ") + (g.onFile.length > 2 ? "…" : "")
+      : g.earlier[0]?.until
+        ? `ended ${formatDate(g.earlier[0].until)}`
+        : ""
     : [p?.until ? `until ${formatDate(p.until)}` : p?.dated ? `printed ${formatDate(p.dated)}` : null, g.earlier.length ? `${g.earlier.length} earlier` : null, p?.name].filter(Boolean).join(" · ");
   return (
     <Link href={ctx.href(g.kind)} className={`flex items-center gap-3.5 rounded-[18px] border bg-card p-3.5 ${tone ? TONE_EDGE[tone] : ""}`}>
@@ -627,7 +644,7 @@ function CategoryView({ ctx, group: g, groups }: { ctx: Ctx; group: PaperGroup; 
           <div className="flex flex-col items-center gap-3 rounded-[22px] border border-dashed p-8 text-center">
             <span aria-hidden className="h-[72px] w-[54px] rounded-[4px] border border-dashed border-quiet" />
             <p className="text-sm text-muted-foreground">
-              {dated ? (g.onFile.length ? "No renewal for this yet, so no days are counted." : `No ${g.kind === "license" ? "license" : g.label.toLowerCase()} yet.`) : "No book yet."}
+              {dated ? noCurrentWords(g) : "No book yet."}
             </p>
             {dated ? <TrackInRenewals ctx={ctx} /> : null}
           </div>

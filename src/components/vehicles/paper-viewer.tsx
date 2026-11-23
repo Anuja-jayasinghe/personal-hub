@@ -11,7 +11,7 @@ import { PaperArt } from "@/components/vehicles/paper-art";
 import { RenewSheet } from "@/components/vehicles/vehicle-sheets";
 import type { VehicleRenewal } from "@/db/schema";
 import { deleteAttachment } from "@/features/shared/actions";
-import { kindLabel, toneOfDays, type Paper, type PaperFile } from "@/features/vehicles/papers";
+import { isDatedKind, kindLabel, toneOfDays, type Paper, type PaperFile } from "@/features/vehicles/papers";
 import { daysBetween } from "@/lib/dates";
 import { formatBytes, formatDate, formatMoney } from "@/lib/format";
 
@@ -65,6 +65,7 @@ export function PaperViewer({
   const [index, setIndex] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [failed, setFailed] = useState<string | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   /** Set when the paper is going away (deleted or replaced): focus then returns to the Documents tab, not the old button. */
   const leaving = useRef(false);
@@ -99,6 +100,16 @@ export function PaperViewer({
     leaving.current = true;
     setOpen(false);
   };
+  // Delete closes the viewer first (the paper is about to go); if the delete fails, it opens again and says so.
+  const remove = async (fd: FormData) => {
+    goAway();
+    try {
+      await deleteAttachment(fd);
+    } catch {
+      setProblem("That file could not be deleted. Please try again.");
+      setOpen(true);
+    }
+  };
   const choose = (i: number) => {
     setIndex(i);
     setZoom(1);
@@ -106,7 +117,13 @@ export function PaperViewer({
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setProblem(null);
+      }}
+    >
       <Dialog.Trigger ref={triggerRef} className={className} aria-label={ariaLabel}>
         {children}
       </Dialog.Trigger>
@@ -211,7 +228,7 @@ export function PaperViewer({
             <div className="flex flex-col gap-1">
               <span className="font-mono text-[11px] tracking-[0.12em] text-label uppercase">
                 {paper.name ? `${label} · ` : ""}
-                {isCurrent ? "Current" : paper.kind === "other" ? "On file" : "Earlier"}
+                {isCurrent ? "Current" : paper.kind === "other" || (isDatedKind(paper.kind) && !paper.renewalId) ? "On file" : "Earlier"}
               </span>
               <Dialog.Title className="font-display text-2xl leading-tight font-semibold tracking-tight">{title}</Dialog.Title>
             </div>
@@ -245,6 +262,11 @@ export function PaperViewer({
             <span className="flex-1" />
 
             <div className="flex flex-col gap-2.5">
+              {problem ? (
+                <p role="alert" className="text-sm text-destructive">
+                  {problem}
+                </p>
+              ) : null}
               {renew ? (
                 <div className="[&>button]:w-full">
                   <RenewSheet {...renew} variant="default" size="lg" onDone={goAway} />
@@ -256,7 +278,7 @@ export function PaperViewer({
                     Download
                   </a>
                 )}
-                {canEdit && !sample ? <FileMenu file={file} label={label} onGone={goAway} /> : null}
+                {canEdit && !sample ? <FileMenu file={file} label={label} onGone={goAway} onDelete={remove} /> : null}
               </div>
             </div>
           </aside>
@@ -276,7 +298,7 @@ function Fact({ term, value }: { term: string; value: string }) {
 }
 
 /** The rare file actions, tucked behind ⋯: replace the file, rename a Documents upload, delete. */
-function FileMenu({ file, label, onGone }: { file: PaperFile; label: string; onGone: () => void }) {
+function FileMenu({ file, label, onGone, onDelete }: { file: PaperFile; label: string; onGone: () => void; onDelete: (fd: FormData) => Promise<void> }) {
   const owner = file.ownerType === "vehicle_renewal" ? ("vehicle_renewal" as const) : ("vehicle" as const);
   return (
     <PopoverButton icon="more" ariaLabel="More: replace, rename or delete" align="end">
@@ -302,8 +324,7 @@ function FileMenu({ file, label, onGone }: { file: PaperFile; label: string; onG
           <form
             action={async (fd) => {
               close();
-              onGone();
-              await deleteAttachment(fd);
+              await onDelete(fd);
             }}
             className="border-t pt-3"
           >

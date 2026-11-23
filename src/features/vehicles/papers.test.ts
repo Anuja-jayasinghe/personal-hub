@@ -145,6 +145,23 @@ describe("current versus earlier", () => {
     expect(license.status).toEqual({ tone: "ok", days: 81 });
   });
 
+  it("never makes a renewed renewal current: renew A, then delete the new B, and A sits under earlier", () => {
+    const papers = only({ renewals: [renewal("A", "Insurance", "2025-12-01", "2026-12-01", { renewedAt: new Date("2026-11-20") })] });
+    const insurance = group(papers, "insurance");
+    expect(insurance.current).toBeNull();
+    expect(insurance.earlier.map((p) => p.renewalId)).toEqual(["A"]);
+    expect(insurance.status).toEqual({ tone: "file", count: 1 });
+  });
+
+  it("prefers a renewal not yet renewed even when a renewed one ends later", () => {
+    const papers = only({
+      renewals: [renewal("renewed", "Insurance", null, "2027-06-01", { renewedAt: new Date("2026-06-01") }), renewal("active", "Insurance", null, "2027-01-01")],
+    });
+    const insurance = group(papers, "insurance");
+    expect(insurance.current?.renewalId).toBe("active");
+    expect(insurance.earlier.map((p) => p.renewalId)).toEqual(["renewed"]);
+  });
+
   it("never lets a Documents upload of a dated kind be current or change the days", () => {
     const papers = only({
       renewals: [renewal("r", "Insurance", "2025-12-01", "2026-12-01")],
@@ -176,6 +193,14 @@ describe("current versus earlier", () => {
     const book = group(papers, "book");
     expect(book.current?.key).toBe("d:new-dated");
     expect(book.earlier.map((p) => p.key)).toEqual(["d:undated", "d:old-dated"]);
+  });
+
+  it("places an undated paper by its day in the app time zone, not the UTC day", () => {
+    // 20:00 UTC on 1 June is 01:30 on 2 June in Colombo, so the undated book is newer than one printed on 1 June.
+    const papers = only({
+      documents: [file("printed", "CAB-1234_book_2025-06-01.pdf"), file("undated", "Registration book.jpg", { title: "Registration book", createdAt: new Date("2025-06-01T20:00:00Z") })],
+    });
+    expect(group(papers, "book").current?.key).toBe("d:undated");
   });
 
   it("keeps the newest book as current and every other paper on file", () => {
@@ -273,5 +298,12 @@ describe("searchPapers", () => {
   it("matches the dates", () => {
     expect(searchPapers(papers, "2026-12").map((p) => p.key)).toEqual(["r:i"]);
     expect(searchPapers(papers, "2014").map((p) => p.key)).toEqual(["d:b"]);
+  });
+
+  it("matches the dates as the screen writes them", () => {
+    const shown = (day: string) => (day === "2026-12-23" ? "Dec 23, 2026 Dec 2026" : day === "2014-02-13" ? "Feb 13, 2014 Feb 2014" : "");
+    expect(searchPapers(papers, "dec 2026", shown).map((p) => p.key)).toEqual(["r:i"]);
+    expect(searchPapers(papers, "Feb 2014", shown).map((p) => p.key)).toEqual(["d:b"]);
+    expect(searchPapers(papers, "dec 2026").map((p) => p.key)).toEqual([]);
   });
 });

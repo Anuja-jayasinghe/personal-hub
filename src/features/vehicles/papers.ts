@@ -1,4 +1,5 @@
-import { addDays, daysBetween, isValidDate } from "@/lib/dates";
+import { appConfig } from "@/config/app.config";
+import { addDays, daysBetween, isValidDate, todayIn } from "@/lib/dates";
 import { DOC_KINDS, defaultDocTitle, isDocKind, renewalKind, type DocKind } from "./doc-names";
 
 /**
@@ -64,7 +65,7 @@ export type PaperGroup = {
   kind: DocKind;
   label: string;
   /**
-   * The paper in force: for a kind that runs out, the current renewal; for a book, the newest book. Null
+   * The paper in force: for a kind that runs out, the current renewal (never one already renewed); for a book, the newest book. Null
    * when there is none, and always for "Other", whose papers are not versions of one another.
    */
   current: Paper | null;
@@ -189,9 +190,12 @@ export function buildPapers(input: {
   return papers;
 }
 
-/** The day a paper is placed by: its valid-until or its date, else the day it was added (so an undated paper never sorts last by accident). */
+/**
+ * The day a paper is placed by: its valid-until or its date, else the calendar day it was added in the app
+ * time zone (so an undated paper never sorts last by accident).
+ */
 function sortDay(p: Paper): string {
-  return p.until ?? p.dated ?? p.addedAt.toISOString().slice(0, 10);
+  return p.until ?? p.dated ?? todayIn(appConfig.timeZone, p.addedAt);
 }
 
 /** Newest first: by the day that counts for the paper, then the one entered last. */
@@ -263,16 +267,19 @@ export function groupPapers(papers: readonly Paper[], today: string): PaperGroup
       return { kind, label, current: null, earlier: [], timeline: [], onFile, status: onFile.length ? { tone: "file" as const, count: onFile.length } : { tone: "none" as const } };
     }
     if (isDatedKind(kind)) {
-      // Only renewals make the current paper and the days; uploads of this kind are simply on file.
-      const [current = null, ...rest] = mine.filter((p) => p.renewalId).sort(currentFirst);
-      const earlier = rest.sort(newestFirst);
+      // Only renewals make the current paper and the days, and only one not yet renewed (C46, as the
+      // Renewals tab: renewing A and then deleting the new B leaves nothing current, A under earlier).
+      // Uploads of this kind are simply on file.
+      const renewals = mine.filter((p) => p.renewalId);
+      const [current = null, ...otherActive] = renewals.filter((p) => !p.renewed).sort(currentFirst);
+      const earlier = [...otherActive, ...renewals.filter((p) => p.renewed)].sort(newestFirst);
       const onFile = mine.filter((p) => !p.renewalId).sort(newestFirst);
       let status: PaperStatus = { tone: "none" };
       if (current?.until) {
         const days = daysBetween(today, current.until);
         status = { tone: toneOfDays(days), days };
-      } else if (onFile.length) {
-        status = { tone: "file", count: onFile.length };
+      } else if (onFile.length || earlier.length) {
+        status = { tone: "file", count: onFile.length + earlier.length };
       }
       return { kind, label, current, earlier, timeline: timelineOf(current, earlier), onFile, status };
     }
@@ -302,13 +309,17 @@ export function byUrgency(groups: readonly PaperGroup[]): PaperGroup[] {
   });
 }
 
-/** Papers whose name, kind, dates or file names contain every word of `query` (any case), newest first. */
-export function searchPapers(papers: readonly Paper[], query: string): Paper[] {
+/**
+ * Papers whose name, kind, dates or file names contain every word of `query` (any case), newest first.
+ * `shownDates` adds the dates as the screen writes them ("May 1, 2027", "May 2027"), so they match too.
+ */
+export function searchPapers(papers: readonly Paper[], query: string, shownDates: (day: string) => string = () => ""): Paper[] {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
   return papers
     .filter((p) => {
-      const haystack = [p.name, kindLabel(p.kind), p.start, p.until, p.dated, ...p.files.flatMap((f) => [f.fileName, f.title])].filter(Boolean).join(" ").toLowerCase();
+      const days = [p.start, p.until, p.dated].filter((d): d is string => Boolean(d));
+      const haystack = [p.name, kindLabel(p.kind), ...days, ...days.map(shownDates), ...p.files.flatMap((f) => [f.fileName, f.title])].filter(Boolean).join(" ").toLowerCase();
       return words.every((w) => haystack.includes(w));
     })
     .sort(newestFirst);

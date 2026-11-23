@@ -68,7 +68,7 @@ export async function recordUpload(
   nameFor?: (mimeType: string) => Promise<string>,
 ): Promise<Attachment> {
   if (!pathBelongsTo(uploaded.path, owner)) throw new ValidationError("That upload does not belong here. Please try again.");
-  if (await isReferenced(uploaded.path)) throw new ValidationError("That file is already saved. Choose the file again to upload it.");
+  if (await isReferenced(uploaded.path)) throw new ValidationError("Already saved.");
   const storage = storageClient().storage.from(ATTACHMENT_BUCKET);
   const { data: info, error } = await storage.info(uploaded.path);
   if (error || !info) throw new ValidationError("The file did not arrive. Please try again.");
@@ -96,7 +96,7 @@ export async function recordUpload(
     return row;
   } catch (dbError) {
     // A duplicate path means another row owns that object (e.g. two submits racing): leave it alone.
-    if (isUniqueViolation(dbError)) throw new ValidationError("That file is already saved. Choose the file again to upload it.");
+    if (isUniqueViolation(dbError)) throw new ValidationError("Already saved.");
     await removeIfUnreferenced(uploaded.path);
     throw dbError;
   }
