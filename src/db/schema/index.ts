@@ -12,3 +12,4 @@ export * from "./vehicle-odometer";
 export * from "./electricity-live";
 export * from "./people";
 export * from "./notifications";
+export * from "./push-subscriptions";

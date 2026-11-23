@@ -290,7 +290,7 @@ Goal: the hub reaches you only when something is new. At most three notices per 
 |-------|-------|------|
 | N.1 | #193 | ✅ **Send log, planner and the silent daily run**: the pure planner and "coming up" preview, one step map, the `notifications` table (migration 0016, applied after merge), channels as an interface, `/api/notify` once a day on production only (replaces `/api/keep-awake` and keeps Supabase awake), Settings › Notifications. Everything is a dry run: rows are logged, nothing is sent |
 | N.2 | #194 | ✅ **Plan-ahead email** 🌐 through Resend to your Gmail, and its switch in Settings (C141): Resend's REST API with `fetch` (no SDK), from the sending subdomain `mail.hub.anujajay.com`, to `NOTIFY_EMAIL_TO`; live only with both settings and the switch on (default off); one batched email per day at most, also on the first live day; Settings › Notifications › Email shows the masked address, the switch, a test email (one a minute) and the Gmail filter steps |
-| N.3 | #195 | **Act-now push on iPhone** 🌐 (web push, `web-push` approved), the add-to-home-screen subscription, and its switch |
+| N.3 | #195 | ✅ **Act-now push on iPhone** 🌐 (web push, `web-push` approved), the add-to-home-screen subscription, and its switch: VAPID keys, the `push_subscriptions` table (migrations 0017 and 0018, applied before merge), an endpoint allowlist, the push sender (404/410 removes the device and logs one email notice), a service worker that caches nothing, Settings › Notifications › This iPhone (C140) |
 | N.4 | #196 | **More sources**: cheques, the slab limit, missed meter readings, sign-ups waiting for approval |
 | N.5 | #197 | **Notifications for shared people**: each person hears only about the sections they may see |
 
@@ -308,6 +308,12 @@ Goal: every change is checked automatically, releases get a version without hand
 | 6.2 | #143 | ✅ **Versions with release-please**: a release pull request with the next version and CHANGELOG; merging it tags `vX.Y.Z` and publishes the GitHub release (pre-release below 1.0), starting after 0.6.1 |
 | 6.3 | #143 | ✅ **Live e2e after each production deploy**: `pnpm e2e` against hub.anujajay.com when Vercel reports a successful production deployment (secrets in GitHub Actions) |
 | 6.4 | #143 | ✅ **Merging needs green checks**: ruleset *main needs green checks* (pull request, squash only, CI and title checks), with an admin bypass for release-please's pull requests (C124) |
+
+## Phase D — Vehicle documents (issue #187)
+
+| Piece | Issue | What |
+|-------|-------|------|
+| D.1 | #187 | ✅ *(C138)* **Documents by category**: every paper of a vehicle in one place (renewal files included; the dates and days of licenses, emission tests and insurance come only from renewals), current paper first with earlier ones and gaps on a timeline, most urgent category first, an on-page viewer with Renew, Download, replace and delete, category chips on the phone, adding from a category with the kind preset |
 
 ## Later (each needs its own decision)
 

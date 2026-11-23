@@ -36,4 +36,17 @@ describe("demo sample data", () => {
     expect(rows.vehicles.every((v) => /^(DEM|DM)-/.test(v.registrationNumber ?? ""))).toBe(true);
     expect(rows.electricityMeters.every((m) => m.accountNumber?.startsWith("DEMO-"))).toBe(true);
   });
+
+  it("names its sample papers with the made-up plates, and they belong to demo records", () => {
+    const owners = new Set([...rows.vehicles.map((v) => v.id), ...rows.vehicleRenewals.map((r) => r.id)]);
+    expect(rows.attachments.length).toBeGreaterThan(0);
+    expect(rows.attachments.every((a) => /^(DEM-1234|DM-5678)_[a-z-]+_\d{4}-\d{2}-\d{2}(_\d+)?\.(pdf|jpg)$/.test(a.fileName))).toBe(true);
+    expect(rows.attachments.every((a) => owners.has(a.ownerId))).toBe(true);
+  });
+
+  it("keeps one current renewal per vehicle and type, the earlier ones renewed", () => {
+    const current = rows.vehicleRenewals.filter((r) => !r.renewedAt).map((r) => `${r.vehicleId}:${r.type}`);
+    expect(new Set(current).size).toBe(current.length);
+    expect(rows.vehicleRenewals.some((r) => r.renewedAt)).toBe(true);
+  });
 });

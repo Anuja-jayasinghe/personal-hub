@@ -1,6 +1,8 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/db/read";
-import { billItems, tasks } from "@/db/schema";
+import { isNull } from "drizzle-orm";
+import { appConfig } from "@/config/app.config";
+import { billItems, tasks, vehicles, vehicleServices } from "@/db/schema";
 import { previewUpcoming } from "@/features/notifications/planner";
 import { addDays } from "@/lib/dates";
 import { makeTestDb } from "@/test/pglite";
@@ -28,6 +30,12 @@ beforeAll(async () => {
   // Free text with an amount in it: a task title and a bill whose reminder title carries its amount.
   await db.insert(tasks).values({ title: "Pay LKR 25,000 to the plumber", status: "todo", priority: "normal", dueDate: TODAY });
   await db.insert(billItems).values({ name: "Plumber", kind: "bill", frequency: "one_off", amount: "25000.00", nextDueDate: addDays(TODAY, 1), autopay: false });
+  // Service types are free text too: one typed with an amount and a name in it, one from the fixed list in another case.
+  const [vehicle] = await db.select({ id: vehicles.id }).from(vehicles).where(isNull(vehicles.archivedAt)).limit(1);
+  await db.insert(vehicleServices).values([
+    { vehicleId: vehicle.id, serviceDate: addDays(TODAY, -100), serviceType: "Chain job LKR 9,000 at Silva garage", nextDueDate: TODAY },
+    { vehicleId: vehicle.id, serviceDate: addDays(TODAY, -100), serviceType: "oil CHANGE", nextDueDate: TODAY },
+  ]);
 }, 60_000);
 
 describe("reminder sources with a database passed in", () => {
@@ -53,5 +61,21 @@ describe("reminder sources with a database passed in", () => {
     expect(text).toContain("Plumber due tomorrow");
     expect(text).not.toMatch(/LKR|25,000|25000|plumber/);
     for (const i of items) if (i.notice?.who) expect(i.notice.who).not.toMatch(/LKR|DEMO-\d|DEM-\d/);
+  });
+
+  it("a service's free-text type never reaches a notification: only the fixed list, anything else is \"Service\"", async () => {
+    const { loaded } = await loadSources(reminderSources, { db, today: TODAY });
+    const services = loaded.find((l) => l.key === "vehicle-services")!.items;
+    const typed = services.find((i) => i.title.startsWith("Chain job"))!;
+    expect(typed.notice?.what).toBe("Service");
+    expect(services.find((i) => i.title.startsWith("oil CHANGE"))!.notice?.what).toBe("Oil change");
+    for (const i of services) expect(appConfig.vehicles.serviceTypes.filter((t) => t !== "Other").concat("Service")).toContain(i.notice?.what);
+
+    const text = previewUpcoming(services, TODAY, new Set(), 15)
+      .flatMap((d) => d.messages)
+      .map((m) => `${m.title}\n${m.body}`)
+      .join("\n");
+    expect(text).toContain("Service due today");
+    expect(text).not.toMatch(/Chain|LKR|9,000|Silva/);
   });
 });

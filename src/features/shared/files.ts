@@ -28,10 +28,35 @@ export async function signUpload(
   return { path: data.path, signedUrl: data.signedUrl };
 }
 
+/** True when an error is Postgres refusing a duplicate (unique_violation, 23505), also when the driver wraps it. */
+export function isUniqueViolation(err: unknown): boolean {
+  for (let e: unknown = err, depth = 0; e && typeof e === "object" && depth < 4; e = (e as { cause?: unknown }).cause, depth++) {
+    if ((e as { code?: unknown }).code === "23505") return true;
+  }
+  return false;
+}
+
+/** True when an attachment row already points at this stored object. */
+async function isReferenced(path: string): Promise<boolean> {
+  const rows = await db.select({ id: attachments.id }).from(attachments).where(eq(attachments.storagePath, path)).limit(1);
+  return rows.length > 0;
+}
+
+/**
+ * Removes a stored object that an upload left behind, but never one an attachment row points at: the browser
+ * says which path it uploaded to, so a path that already belongs to a saved file (a cover photo, the file
+ * being replaced, a second submit of the same form) must never be deleted on its behalf.
+ */
+async function removeIfUnreferenced(path: string): Promise<void> {
+  if (await isReferenced(path)) return;
+  await storageClient().storage.from(ATTACHMENT_BUCKET).remove([path]);
+}
+
 /**
  * Step 2 (C115): records a file the browser has just put in storage as an attachment of `owner`. It only
- * trusts what storage reports: the path must be inside the record's folder, and the stored size and type
- * must pass the same checks; otherwise the file is removed and nothing is recorded.
+ * trusts what storage reports: the path must be inside the record's folder, must not belong to a file that
+ * is already saved, and the stored size and type must pass the same checks; otherwise nothing is recorded
+ * and the new object is removed (never an object a saved file uses).
  */
 export async function recordUpload(
   owner: OwnerRef,
@@ -43,13 +68,14 @@ export async function recordUpload(
   nameFor?: (mimeType: string) => Promise<string>,
 ): Promise<Attachment> {
   if (!pathBelongsTo(uploaded.path, owner)) throw new ValidationError("That upload does not belong here. Please try again.");
+  if (await isReferenced(uploaded.path)) throw new ValidationError("Already saved.");
   const storage = storageClient().storage.from(ATTACHMENT_BUCKET);
   const { data: info, error } = await storage.info(uploaded.path);
   if (error || !info) throw new ValidationError("The file did not arrive. Please try again.");
   const stored = { size: Number(info.size ?? 0), mimeType: String(info.contentType ?? "") };
   const problem = uploadProblem(stored, allowedTypes, MAX_ATTACHMENT_BYTES, typeMessage);
   if (problem) {
-    await storage.remove([uploaded.path]);
+    await removeIfUnreferenced(uploaded.path);
     throw new ValidationError(problem);
   }
   try {
@@ -69,7 +95,9 @@ export async function recordUpload(
       .returning();
     return row;
   } catch (dbError) {
-    await storage.remove([uploaded.path]);
+    // A duplicate path means another row owns that object (e.g. two submits racing): leave it alone.
+    if (isUniqueViolation(dbError)) throw new ValidationError("Already saved.");
+    await removeIfUnreferenced(uploaded.path);
     throw dbError;
   }
 }

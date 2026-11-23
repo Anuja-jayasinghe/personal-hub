@@ -10,6 +10,7 @@ import type { Attachment, VehicleRenewal } from "@/db/schema";
 import { describeDays } from "@/features/reminders/engine";
 import { attachmentsByOwner } from "@/features/shared/queries";
 import { listRenewals } from "@/features/vehicles/queries";
+import { isDemo } from "@/lib/auth";
 import { deleteRenewal, renewRenewal, updateRenewal } from "@/features/vehicles/renewal-actions";
 import { docFileName, renewalKind } from "@/features/vehicles/doc-names";
 import { splitCurrentAndPast } from "@/features/vehicles/renewal-logic";
@@ -35,7 +36,8 @@ export async function RenewalsTab({
   showDocuments: boolean;
 }) {
   const list = await listRenewals(vehicleId);
-  const files = showDocuments ? await attachmentsByOwner("vehicle_renewal", list.map((r) => r.id)) : null;
+  // The demo has sample file rows but no files behind them (issue #187), so it shows no file links here.
+  const files = showDocuments && !(await isDemo()) ? await attachmentsByOwner("vehicle_renewal", list.map((r) => r.id)) : null;
   const today = todayInAppTz(); // after the queries, which opt this render into request time
   const { current, past } = splitCurrentAndPast(list);
   const types = appConfig.vehicles.renewalTypes.map((t) => t.label);

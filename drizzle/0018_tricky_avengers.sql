@@ -1,0 +1,1 @@
+ALTER TABLE "push_subscriptions" ADD COLUMN "gone_at" timestamp with time zone;

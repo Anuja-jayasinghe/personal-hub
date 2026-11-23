@@ -112,8 +112,8 @@ describe("unfitKeys", () => {
   });
 
   it("flags both values when two contradict each other and nothing says which is wrong", () => {
-    // BAK-9366: 20,000 in Feb 2024, 17,986 in Oct 2024, then 20,142 and 21,885.
-    const flagged = unfitKeys([p("feb", "2024-02-05", 20_000), p("oct", "2024-10-24", 17_986), p("sep", "2025-09-09", 20_142), p("now", "2026-10-19", 21_885)]);
+    // Made-up values: 30,000 in Feb 2024, 27,500 in Oct 2024, then 30,400 and 32,100.
+    const flagged = unfitKeys([p("feb", "2024-02-05", 30_000), p("oct", "2024-10-24", 27_500), p("sep", "2025-09-09", 30_400), p("now", "2026-10-19", 32_100)]);
     expect([...flagged].sort()).toEqual(["emission:feb", "emission:oct"]);
   });
 

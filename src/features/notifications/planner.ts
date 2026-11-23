@@ -1,7 +1,7 @@
 import { appConfig } from "@/config/app.config";
 import { describeDays, type ReminderItem } from "@/features/reminders/engine";
 import { addDays, dayMonth, daysBetween } from "@/lib/dates";
-import { NOTIFICATION_STEPS, dedupeKey, eventOf, stepIsDue, type Channel, type EventKey, type StepName } from "./steps";
+import { NOTIFICATION_STEPS, dedupeKey, eventOf, stepIsDue, type Channel, type EventKey, type NoticeKind, type StepName } from "./steps";
 
 /**
  * The notification planner (Notifications N.1, DECISIONS C139). Pure: no database, no clock, no env.
@@ -15,8 +15,10 @@ import { NOTIFICATION_STEPS, dedupeKey, eventOf, stepIsDue, type Channel, type E
 
 export type Notice = {
   item: ReminderItem;
-  event: EventKey;
-  step: StepName;
+  /** The event, or the kind of a notice the planner does not make (a test push, "iPhone stopped accepting pushes"). */
+  event: NoticeKind;
+  /** "system" for a notice the planner's steps do not make. */
+  step: StepName | "system";
   channel: Channel;
   /** `<item.id>:<step>:<dueDate>`, unique per recipient. */
   dedupeKey: string;

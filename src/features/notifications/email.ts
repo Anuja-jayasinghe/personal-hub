@@ -3,7 +3,7 @@ import { appConfig } from "@/config/app.config";
 import { describeDays } from "@/features/reminders/engine";
 import { todayIn } from "@/lib/dates";
 import type { ChannelSender } from "./channels";
-import { NotSentError } from "./not-sent";
+import { NotSentError } from "./channels";
 import type { Message } from "./planner";
 
 /**

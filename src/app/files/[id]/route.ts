@@ -8,9 +8,9 @@ import { storageClient } from "@/lib/storage";
 /**
  * Opens an attachment: looks it up, asks Supabase for a signed link that lasts 60 seconds, and
  * redirects to it. The bucket is private, so files are never reachable by a plain public URL, and
- * the link itself needs a signed-in, allowed user.
+ * the link itself needs a signed-in, allowed user. The Documents viewer shows images and PDFs through it.
  */
-export async function GET(_request: Request, ctx: RouteContext<"/files/[id]">) {
+export async function GET(request: Request, ctx: RouteContext<"/files/[id]">) {
   // Documents are private: only a signed-in, allowed person may open them (C61), and only when they
   // may see the section the file belongs to (S.8, C114).
   const state = await getAuthState();
@@ -23,9 +23,11 @@ export async function GET(_request: Request, ctx: RouteContext<"/files/[id]">) {
   if (!attachment) return new Response("Not found", { status: 404 });
   if (!allows(state.access, await fileArea(attachment), "see")) return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
 
+  // `?download=1` asks the browser to save the file under its hub name instead of showing it (issue #187).
+  const download = new URL(request.url).searchParams.get("download") === "1";
   const { data, error } = await storageClient()
     .storage.from(attachment.bucket)
-    .createSignedUrl(attachment.storagePath, 60);
+    .createSignedUrl(attachment.storagePath, 60, download ? { download: attachment.fileName } : undefined);
   if (error || !data) return new Response("Could not open file", { status: 502 });
 
   return new Response(null, {

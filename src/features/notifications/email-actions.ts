@@ -8,7 +8,7 @@ import { AuthError, requireUser } from "@/lib/auth";
 import { safeErrorSummary } from "@/lib/errors";
 import { NOTIFICATIONS_SETTINGS_KEY } from "./channels";
 import { deliveryAddress, emailSetup, maskAddress, postToResend, renderTestEmail, testIdempotencyKey } from "./email";
-import { NotSentError } from "./not-sent";
+import { NotSentError } from "./channels";
 
 // Settings › Notifications › Email (N.2, C141). Server Actions are public endpoints: owner only, inputs checked.
 

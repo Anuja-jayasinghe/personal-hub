@@ -1,18 +1,26 @@
-import { emailSender } from "./email";
-import { NotSentError } from "./not-sent";
 import type { Message } from "./planner";
 import type { Channel } from "./steps";
 
 /**
  * The ways a notification leaves the hub (Notifications N.1, C139): email (N.2, Resend) and an iPhone
- * push (N.3, web push). A channel that is not live is a dry run: it writes the send log with
- * status `dry_run` and nothing leaves the server. A channel only goes live when it is both
- * implemented (email: built in N.2, and its two settings are present) and switched on in Settings
- * (`app_settings`, key "notifications", default off).
+ * push (N.3, web push). Until a channel is built and set up, the run is a dry run for it: it writes the
+ * send log with status `dry_run` and nothing leaves the server. A channel only goes live when it is both
+ * implemented and switched on in Settings (`app_settings`, key "notifications", default off). Pure.
+ * Push is built (src/features/notifications/push, C140) but needs the database and the VAPID keys, so
+ * run.ts creates it; `SENDERS.push` below is what stands in when the keys are missing.
  */
 
-// NotSentError lives in its own file so senders can import it without an import cycle (N.2).
-export { NotSentError };
+/**
+ * Thrown by a sender when it KNOWS nothing went out (the provider refused the message, a bad address).
+ * The rows are stamped `failed` and the notice may be retried on a later run while still timely. Any
+ * other error is an unknown outcome: the rows stay `pending` and are never sent again.
+ */
+export class NotSentError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NotSentError";
+  }
+}
 
 export type ChannelSender = {
   channel: Channel;
@@ -33,8 +41,7 @@ function notBuiltYet(channel: Channel, piece: string): ChannelSender {
 }
 
 export const SENDERS: Record<Channel, ChannelSender> = {
-  // N.2 (C141): Resend; "implemented" only while RESEND_API_KEY and NOTIFY_EMAIL_TO are set.
-  email: emailSender(),
+  email: notBuiltYet("email", "N.2"),
   push: notBuiltYet("push", "N.3"),
 };
 
