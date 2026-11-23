@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { connection } from "next/server";
-import { readDb } from "@/db/read";
+import { readDb, type Db } from "@/db/read";
 import { electricityBills, electricityLiveSwitches, electricityMeters, electricityReadings } from "@/db/schema";
 import { UUID_RE } from "@/features/shared/validation";
 
@@ -50,9 +50,9 @@ export async function listAllBills() {
 }
 
 /** Unpaid bills that have a due date, with their meter's name, for the reminders (archived meters included: an unpaid bill is still owed). */
-export async function listUnpaidBillsWithDueDate() {
+export async function listUnpaidBillsWithDueDate(from?: Db) {
   await connection();
-  const db = await readDb();
+  const db = from ?? (await readDb());
   return db
     .select({
       id: electricityBills.id,

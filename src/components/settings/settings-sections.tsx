@@ -56,6 +56,7 @@ export function SubPageList({ meters, backup }: { meters?: string; backup?: stri
   return (
     <RowCard>
       <Row label="Meters and rules" hint="your meters, 120 / 180, read every few days" end={meters ? <RowMeta>{meters}</RowMeta> : null} href="/settings/meters" />
+      <Row label="Notifications" hint="what the hub would tell you, and when" href="/settings/notifications" />
       <Row label="Data and backup" hint="backups, exports, files stored" end={backup ? <RowMeta>{backup}</RowMeta> : null} href="/settings/backup" />
       <Row label="People and roles" hint="who can see and do what" href="/settings/people" />
     </RowCard>

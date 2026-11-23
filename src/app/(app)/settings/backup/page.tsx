@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { OwnerOnly } from "@/components/settings/owner-only";
 import { BackupStatus, StorageLine } from "@/components/settings/backup-panels";
 import { SettingsColumn, SettingsColumns, SettingsSection } from "@/components/settings/settings-ui";
 import { PageHeader } from "@/components/shell/page-header";
@@ -35,48 +36,51 @@ const groups = Object.entries(
 );
 
 export default function DataAndBackupPage() {
+  // Owner only on its own, not just through the Settings layout (a partial request can skip it).
   return (
-    <>
-      <PageHeader title="Data and backup" parent={{ href: "/settings", label: "Settings" }} />
+    <OwnerOnly>
+      <>
+        <PageHeader title="Data and backup" parent={{ href: "/settings", label: "Settings" }} />
 
-      <SettingsColumns>
-        <SettingsColumn>
-          <SettingsSection label="Backups">
-            <Suspense fallback={<Skeleton className="h-32 rounded-2xl" />}>
-              <BackupPanel />
-            </Suspense>
-          </SettingsSection>
-        </SettingsColumn>
+        <SettingsColumns>
+          <SettingsColumn>
+            <SettingsSection label="Backups">
+              <Suspense fallback={<Skeleton className="h-32 rounded-2xl" />}>
+                <BackupPanel />
+              </Suspense>
+            </SettingsSection>
+          </SettingsColumn>
 
-        <SettingsColumn>
-          <SettingsSection label="Files stored">
-            <Suspense fallback={<Skeleton className="h-28 rounded-2xl" />}>
-              <StoragePanel />
-            </Suspense>
-          </SettingsSection>
-        </SettingsColumn>
-      </SettingsColumns>
+          <SettingsColumn>
+            <SettingsSection label="Files stored">
+              <Suspense fallback={<Skeleton className="h-28 rounded-2xl" />}>
+                <StoragePanel />
+              </Suspense>
+            </SettingsSection>
+          </SettingsColumn>
+        </SettingsColumns>
 
-      <SettingsSection label="Download a copy" note="Spreadsheet files (CSV) of what is in the hub right now, archived records included. Photos and documents are only in the full backup.">
-        <div className="grid gap-3 sm:grid-cols-3">
-          {groups.map(([group, items]) => (
-            <div key={group} className="flex flex-col gap-1 rounded-2xl border bg-card p-3">
-              <span className="px-1 pb-1 font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">{group}</span>
-              {items.map(([key, e]) => (
-                <a
-                  key={key}
-                  href={`/settings/backup/export/${key}`}
-                  download
-                  className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-medium outline-none hover:bg-raised focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <span className="flex-1">{e.label}</span>
-                  <span className="font-mono text-[10px] tracking-[0.12em] text-primary">CSV ↓</span>
-                </a>
-              ))}
-            </div>
-          ))}
-        </div>
-      </SettingsSection>
-    </>
+        <SettingsSection label="Download a copy" note="Spreadsheet files (CSV) of what is in the hub right now, archived records included. Photos and documents are only in the full backup.">
+          <div className="grid gap-3 sm:grid-cols-3">
+            {groups.map(([group, items]) => (
+              <div key={group} className="flex flex-col gap-1 rounded-2xl border bg-card p-3">
+                <span className="px-1 pb-1 font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">{group}</span>
+                {items.map(([key, e]) => (
+                  <a
+                    key={key}
+                    href={`/settings/backup/export/${key}`}
+                    download
+                    className="flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm font-medium outline-none hover:bg-raised focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span className="flex-1">{e.label}</span>
+                    <span className="font-mono text-[10px] tracking-[0.12em] text-primary">CSV ↓</span>
+                  </a>
+                ))}
+              </div>
+            ))}
+          </div>
+        </SettingsSection>
+      </>
+    </OwnerOnly>
   );
 }

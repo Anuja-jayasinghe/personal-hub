@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { OwnerOnly } from "@/components/settings/owner-only";
 import { AccessGrid, AddPersonForm } from "@/components/settings/people";
 import { SettingsColumn, SettingsColumns, SettingsSection } from "@/components/settings/settings-ui";
 import { SubmitButton } from "@/components/shared/submit-button";
@@ -135,12 +136,15 @@ async function PeopleLists() {
  * themselves waits here for approval and sees the demo meanwhile (S.9, C118).
  */
 export default function PeoplePage() {
+  // Owner only on its own, not just through the Settings layout (a partial request can skip it).
   return (
-    <>
-      <PageHeader title="People and roles" parent={{ href: "/settings", label: "Settings" }} />
-      <Suspense fallback={<Skeleton className="h-64 rounded-2xl" />}>
-        <PeopleLists />
-      </Suspense>
-    </>
+    <OwnerOnly>
+      <>
+        <PageHeader title="People and roles" parent={{ href: "/settings", label: "Settings" }} />
+        <Suspense fallback={<Skeleton className="h-64 rounded-2xl" />}>
+          <PeopleLists />
+        </Suspense>
+      </>
+    </OwnerOnly>
   );
 }

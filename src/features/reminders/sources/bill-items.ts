@@ -17,9 +17,9 @@ const AUTOPAY_LEAD_DAYS = [1, 0] as const;
 export const billItemsSource: ReminderSource = {
   key: "bill-items",
   label: "Bills & subscriptions",
-  async load() {
-    const items = await listBillItems(false);
-    const today = todayInAppTz();
+  async load(from) {
+    const items = await listBillItems(false, from?.db);
+    const today = from?.today ?? todayInAppTz();
     return items.flatMap((item): ReminderItem[] => {
       const dueDate = item.autopay ? rollForward(item, today) : item.nextDueDate;
       if (!dueDate) return [];
@@ -32,6 +32,7 @@ export const billItemsSource: ReminderSource = {
           href: "/bills",
           kind: item.autopay ? "autopay" : item.kind,
           ownerId: item.id,
+          notice: { what: item.name },
           ...(item.autopay ? { leadDays: AUTOPAY_LEAD_DAYS } : {}),
         },
       ];

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { addDays, daysBetween, isValidDate, todayIn, yearOfInstant } from "./dates";
+import { addDays, dayMonth, daysBetween, isValidDate, todayIn, yearOfInstant } from "./dates";
+
+describe("dayMonth", () => {
+  it("writes a day as day and short month", () => {
+    expect(dayMonth("2026-12-23")).toBe("23 Dec");
+    expect(dayMonth("2027-01-01")).toBe("1 Jan");
+    expect(dayMonth("2028-02-29")).toBe("29 Feb");
+  });
+});
 
 describe("daysBetween", () => {
   it("is 0 for the same day", () => {

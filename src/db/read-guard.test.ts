@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest";
  * The demo (S.9, C118) must never show real data: pages read through `readDb()` (src/db/read.ts),
  * which hands demo visitors the in-memory sample database. Only code that first checks the person
  * itself may import the real client from "@/db": Server Actions (they start with `requireUser`),
- * the auth check, owner-only downloads, file housekeeping used by actions, and the keep-awake route
- * (it checks the cron secret first).
+ * the auth check, owner-only downloads, file housekeeping used by actions, and the daily notification
+ * run (its route checks the cron secret and production first).
  */
 const ALLOWED = [
   /actions\.ts$/,
@@ -16,7 +16,7 @@ const ALLOWED = [
   /^src\/features\/settings\/exports\.ts$/,
   /^src\/features\/shared\/(cleanup|files)\.ts$/,
   /^src\/features\/vehicles\/doc-naming\.ts$/, // names uploads inside actions, after their check (issue #179)
-  /^src\/app\/api\/keep-awake\/route\.ts$/, // checks CRON_SECRET first (C127)
+  /^src\/features\/notifications\/run\.ts$/, // no signed-in person; only /api/notify calls it, after CRON_SECRET and production (C139)
 ];
 
 function files(dir: string): string[] {
@@ -35,4 +35,32 @@ describe("real database access", () => {
       .filter((f) => !ALLOWED.some((re) => re.test(f)));
     expect(offenders).toEqual([]);
   });
+
+  it("only the cron route reaches the notification run, which reads the real database with nobody signed in", () => {
+    const run = "src/features/notifications/run";
+    const callers = files("src")
+      .map((f) => f.split(path.sep).join("/"))
+      .filter((f) => importsOf(f, readFileSync(f, "utf8")).includes(run));
+    expect(callers).toEqual(["src/app/api/notify/route.ts"]);
+  });
+
+  it("the import scan sees aliased, relative, side-effect and dynamic imports", () => {
+    const file = "src/features/notifications/other.ts";
+    const run = "src/features/notifications/run";
+    expect(importsOf(file, 'import { runNotifications } from "@/features/notifications/run";')).toContain(run);
+    expect(importsOf(file, "import { runNotifications } from './run.ts';")).toContain(run);
+    expect(importsOf("src/app/x/route.ts", 'const m = await import("../../features/notifications/run");')).toContain(run);
+    expect(importsOf(file, 'import "./run";')).toContain(run);
+    expect(importsOf(file, 'export { runNotifications } from "./run";')).toContain(run);
+    expect(importsOf(file, 'import { x } from "./runner";')).not.toContain(run);
+  });
 });
+
+/** Every module a file imports (static, side-effect, re-export or dynamic), as a path under src without extension. */
+function importsOf(file: string, source: string): string[] {
+  const specs = [...source.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+|\brequire\s*\(\s*)["'`]([^"'`]+)["'`]/g)].map((m) => m[1]);
+  return specs.map((spec) => {
+    const resolved = spec.startsWith("@/") ? `src/${spec.slice(2)}` : spec.startsWith(".") ? path.posix.join(path.posix.dirname(file), spec) : spec;
+    return resolved.replace(/\.(ts|tsx|js|mjs)$/, "").replace(/\/index$/, "");
+  });
+}

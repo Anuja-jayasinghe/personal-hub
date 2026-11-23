@@ -40,6 +40,9 @@ export const appConfig = {
   tagline: "Access. Track. Manage.",
   description: "One private place to keep on top of the house: two meters, bills, vehicles and reminders.",
 
+  /** The live address (HOSTING.md, C115), for links in notifications, which are read outside the app. */
+  siteUrl: "https://hub.anujajay.com",
+
   logo: {
     /** The mark itself is src/components/brand/hub-mark.tsx; this is its accessible name. */
     alt: "hub",

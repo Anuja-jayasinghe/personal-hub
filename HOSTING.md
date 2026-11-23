@@ -36,9 +36,13 @@ owner before it is done. Secrets are never printed, committed or pasted into cha
 
 ## Keeping Supabase awake (C127)
 
-A free Supabase project pauses after 7 days without database activity. Vercel Cron calls `/api/keep-awake` every
-3 days (`vercel.json`), which runs one read-only query and writes nothing. It needs `CRON_SECRET` (sensitive, on
-Vercel); without it the route refuses every call. Vercel's dashboard lists the job under *Settings › Cron Jobs*.
+A free Supabase project pauses after 7 days without database activity. Since C139 the daily notification run keeps
+it awake: Vercel Cron calls `/api/notify` once a day (`0 2 * * *` UTC, 07:30 to 08:29 in Colombo, `vercel.json`),
+which reads the reminders and the send log every morning (the old every-3-days `/api/keep-awake` is gone). It needs
+`CRON_SECRET` (sensitive, on Vercel, Production only); without it the route refuses every call. It only runs on
+Production (`VERCEL_ENV=production`): previews use real data, so there it answers "skipped" and does nothing. It
+writes the `notifications` send log (dry runs until N.2 and N.3 build the channels) and answers with counts only.
+Vercel's dashboard lists the job under *Settings › Cron Jobs*.
 
 ## End-to-end test (`pnpm e2e`, C121)
 

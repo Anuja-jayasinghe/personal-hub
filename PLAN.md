@@ -276,11 +276,23 @@ Goal: the hub works from your phone anywhere and reaches you, instead of only sh
 |-------|-------|------|
 | 4.1 | #38 | **Login with Clerk** 🌐 *(code written, waiting for your Clerk keys to test)* (new service and npm package). Every page, the `/files/<id>` link and every Server Action requires a signed-in user whose email is on an allowed list kept as a secret (so a stranger who signs up still gets nothing). Sign-out. The scheduled jobs are protected by their own secret, not by Clerk. Local development keeps working. Replaces C10 |
 | 4.2 | #39 | *(prep ✅ issue #126, C115; **live** ✅ C117 at https://hub.anujajay.com: Clerk production, DNS, deploys from GitHub. Google client ✅, owner signed in ✅ (C119 pooler fix), live test person check ✅ with Playwright (C121))* ✅ **Hosting on Vercel** 🌐 as a new project on your own subdomain (P34), separate from your personal-site project. Environment variables set on Vercel (each one confirmed), Clerk production setup for the new address, a check that the hosted build works against the existing database and files. Needs 4.1 first |
-| 4.3 | #40 | **Daily email digest** 🌐 (P35, P36): a Vercel scheduled job calls a protected route that runs the existing reminders engine and emails what is overdue or due soon, only when there is something. Needs 4.2 first |
+| 4.3 | #40 | ~~**Daily email digest**~~ Replaced by the **Notifications** phase below (C139): no digest, a notice only when something is new |
 | 4.4 | #41 | **Scheduled backup with a GitHub Action** 🌐 (issue #1, C64): weekly and manual runs of the existing `pnpm backup`, the zip encrypted before it is stored (P37), a limited number of copies kept, restore steps in `BACKUP.md`, GitHub's failure email as the alert. The database password and Supabase secret key become GitHub secrets |
 | 4.5 | #42 | **Phone polish**: add-to-home-screen icon and name from the app config, fixes from a real-phone check, light-mode check of the Phase 2 and 3 screens |
 
 Risks to keep in mind: the free Vercel plan limits scheduled jobs to once a day and the exact minute is not guaranteed; a free Supabase project pauses after a week of no use (a daily job keeps it awake, which is a side benefit of 4.3); the backup zip holds real data (hence P37).
+
+## Notifications (C139)
+
+Goal: the hub reaches you only when something is new. At most three notices per item, ever (a plan-ahead email, an act-now iPhone push, one push on the first day overdue), one channel per notice, one message per day per channel, about 4–8 emails and 4–8 pushes a month. No digest, no "all clear", no in-app bell.
+
+| Piece | Issue | What |
+|-------|-------|------|
+| N.1 | #193 | ✅ **Send log, planner and the silent daily run**: the pure planner and "coming up" preview, one step map, the `notifications` table (migration 0016, applied after merge), channels as an interface, `/api/notify` once a day on production only (replaces `/api/keep-awake` and keeps Supabase awake), Settings › Notifications. Everything is a dry run: rows are logged, nothing is sent |
+| N.2 | #194 | **Plan-ahead email** 🌐 through Resend to your Gmail, and its switch in Settings |
+| N.3 | #195 | **Act-now push on iPhone** 🌐 (web push, `web-push` approved), the add-to-home-screen subscription, and its switch |
+| N.4 | #196 | **More sources**: cheques, the slab limit, missed meter readings, sign-ups waiting for approval |
+| N.5 | #197 | **Notifications for shared people**: each person hears only about the sections they may see |
 
 ## Phase 5 — Sharing and roles (C83, P40)
 
@@ -308,7 +320,6 @@ Goal: every change is checked automatically, releases get a version without hand
 - **Vehicle photo treatment** (C104): make an uploaded photo look its best in-house (no outside AI service), for example cut-out, lighting and the stage around it. For now the photo is shown as it is.
 
 
-- Push notifications (decided against for now, C63)
 - Global search
 - ~~Branding session~~ (done: C90, `DESIGN.md`)
 - Electricity tariff and cost estimates (C22), import API for your automation project (C54), a Documents page (C45), per-item currencies (C59)

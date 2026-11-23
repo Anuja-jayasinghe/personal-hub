@@ -1,3 +1,4 @@
+import type { Db } from "@/db/read";
 import { daysBetween } from "@/lib/dates";
 
 /**
@@ -22,6 +23,12 @@ export type ReminderItem = {
   leadDays?: readonly number[];
   /** The record this item belongs to (a vehicle's id), so lists can count what is due per record. */
   ownerId?: string;
+  /**
+   * Safe words for a notification (Notifications N.1, C139): `what` it is ("Insurance", "Electricity
+   * bill") and `who` it is about (a vehicle's nickname, a meter's name). Never an amount, a plate or a
+   * document number, unlike `title`, which may hold an amount.
+   */
+  notice?: { what: string; who?: string };
 };
 
 /**
@@ -93,9 +100,16 @@ export function describeDays(daysUntil: number): string {
   return `In ${daysUntil} days`;
 }
 
+/**
+ * Where a source reads from when there is no signed-in person: the daily notification run passes the
+ * real database and the day (src/features/notifications/run.ts). Pages pass nothing, so the source reads
+ * through `readDb()` (the demo for visitors) and the clock.
+ */
+export type SourceContext = { db: Db; today: string };
+
 /** A module's contribution to the reminders list. Register it in sources.ts. */
 export type ReminderSource = {
   key: string;
   label: string;
-  load: () => Promise<ReminderItem[]>;
+  load: (from?: SourceContext) => Promise<ReminderItem[]>;
 };

@@ -3,6 +3,10 @@ import { db, type Db } from "@/db";
 import { demoDb } from "@/db/demo";
 import { AuthError, getAuthState, isDemoState } from "@/lib/auth";
 
+/** The client type, for code that takes a handle (the daily notification run passes the real one; see
+ * src/features/notifications/run.ts). Importing the type from here keeps "@/db" out of query modules. */
+export type { Db };
+
 /**
  * The database a page reads from (S.9, DECISIONS C118): the real one for signed-in, allowed people,
  * the in-memory demo for signed-out visitors and people waiting for approval, and nothing for anyone
