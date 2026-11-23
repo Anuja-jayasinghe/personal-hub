@@ -19,10 +19,11 @@ const km = (n: number) => `${n.toLocaleString("en-LK")} km`;
  * values. A service or test value that doesn't fit is kept, flagged, and left out of the latest value
  * and the distances.
  */
-export async function OdometerSection({ vehicleId, vehicleName }: { vehicleId: string; vehicleName: string }) {
+export async function OdometerSection({ vehicleId, vehicleName, ignoreEmissionOdometer = false }: { vehicleId: string; vehicleName: string; ignoreEmissionOdometer?: boolean }) {
   const [readings, services, renewals] = await Promise.all([listOdometerReadings(vehicleId), listServices(vehicleId), listRenewals(vehicleId)]);
   const today = todayInAppTz(); // after the queries, which opt this render into request time
-  const points = toPoints(readings, services, renewals.filter((r) => carriesOdometer(r.type)));
+  // A vehicle whose emission certificates print an inaccurate odometer leaves them out (issue #184).
+  const points = toPoints(readings, services, ignoreEmissionOdometer ? [] : renewals.filter((r) => carriesOdometer(r.type)));
   const unfit = unfitKeys(points);
   const fitting = points.filter((p) => !unfit.has(pointKey(p)));
   const latest = latestPoint(fitting);

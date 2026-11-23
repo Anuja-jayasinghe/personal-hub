@@ -1,7 +1,7 @@
 import "server-only";
 import { eq } from "drizzle-orm";
 import { readDb } from "@/db/read";
-import { vehicleOdometerReadings, vehicleRenewals, vehicleServices } from "@/db/schema";
+import { vehicleOdometerReadings, vehicleRenewals, vehicles, vehicleServices } from "@/db/schema";
 import { pointKey, toPoints, unfitKeys, type OdometerPoint } from "./odometer";
 import { carriesOdometer } from "./renewal-validate";
 
@@ -13,15 +13,16 @@ import { carriesOdometer } from "./renewal-validate";
  */
 export async function loadOdometerPoints(vehicleId: string, except?: { readingId?: string; serviceId?: string }): Promise<OdometerPoint[]> {
   const db = await readDb();
-  const [readings, services, renewals] = await Promise.all([
+  const [readings, services, renewals, [vehicle]] = await Promise.all([
     db.select().from(vehicleOdometerReadings).where(eq(vehicleOdometerReadings.vehicleId, vehicleId)),
     db.select().from(vehicleServices).where(eq(vehicleServices.vehicleId, vehicleId)),
     db.select().from(vehicleRenewals).where(eq(vehicleRenewals.vehicleId, vehicleId)),
+    db.select({ ignore: vehicles.ignoreEmissionOdometer }).from(vehicles).where(eq(vehicles.id, vehicleId)),
   ]);
   const points = toPoints(
     readings.filter((r) => r.id !== except?.readingId),
     services.filter((s) => s.id !== except?.serviceId),
-    renewals.filter((r) => carriesOdometer(r.type)),
+    vehicle?.ignore ? [] : renewals.filter((r) => carriesOdometer(r.type)),
   );
   const unfit = unfitKeys(points);
   return points.filter((p) => !unfit.has(pointKey(p)));

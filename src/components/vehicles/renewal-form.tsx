@@ -18,11 +18,13 @@ type Props = {
   renewal?: VehicleRenewal;
   mode: "create" | "edit" | "renew";
   /** Called after a successful save, e.g. to close the sheet the form sits in. */
+  /** False when the vehicle's emission certificates print an inaccurate odometer (issue #184). */
+  askOdometer?: boolean;
   onDone?: () => void;
 };
 
 /** One form for adding, editing and renewing a renewal (createRenewal / updateRenewal / renewRenewal). */
-export function RenewalForm({ action, types, vehicleId, renewal, mode, onDone }: Props) {
+export function RenewalForm({ action, types, vehicleId, renewal, mode, askOdometer = true, onDone }: Props) {
   const [state, formAction] = useActionState(action, initialActionState);
   const { formRef, onSubmit } = useKeepValuesOnError(state);
 
@@ -106,7 +108,7 @@ export function RenewalForm({ action, types, vehicleId, renewal, mode, onDone }:
         </label>
       </div>
 
-      {carriesOdometer(type) ? (
+      {askOdometer && carriesOdometer(type) ? (
         <label className={`${labelClass} sm:max-w-[calc(33%-0.5rem)]`}>
           <span className={labelTextClass}>Odometer on the test day (optional)</span>
           <Input name="odometerKm" inputMode="numeric" defaultValue={defaults.odometerKm} placeholder="42959" />

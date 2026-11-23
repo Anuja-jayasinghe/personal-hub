@@ -1,0 +1,1 @@
+ALTER TABLE "vehicles" ADD COLUMN "ignore_emission_odometer" boolean DEFAULT false NOT NULL;

@@ -20,7 +20,20 @@ import { formatDate, formatMoney, todayInAppTz } from "@/lib/format";
  * The Renewals tab: current renewals with days left, a renewed action, documents, and history. A renewal's
  * papers are Vehicle documents (C114), so they only show to people who may see that section.
  */
-export async function RenewalsTab({ vehicleId, vehicleName, namePrefix, showDocuments }: { vehicleId: string; vehicleName: string; namePrefix: string; showDocuments: boolean }) {
+export async function RenewalsTab({
+  vehicleId,
+  vehicleName,
+  namePrefix,
+  askOdometer = true,
+  showDocuments,
+}: {
+  vehicleId: string;
+  vehicleName: string;
+  namePrefix: string;
+  /** False when the vehicle's emission certificates print an inaccurate odometer (issue #184). */
+  askOdometer?: boolean;
+  showDocuments: boolean;
+}) {
   const list = await listRenewals(vehicleId);
   const files = showDocuments ? await attachmentsByOwner("vehicle_renewal", list.map((r) => r.id)) : null;
   const today = todayInAppTz(); // after the queries, which opt this render into request time
@@ -30,7 +43,7 @@ export async function RenewalsTab({ vehicleId, vehicleName, namePrefix, showDocu
   return (
     <section aria-label="Renewals" className="flex flex-col gap-4">
       <div>
-        <AddRenewalSheet vehicleId={vehicleId} vehicleName={vehicleName} types={types} />
+        <AddRenewalSheet vehicleId={vehicleId} vehicleName={vehicleName} types={types} askOdometer={askOdometer} />
       </div>
 
       {current.length === 0 ? (
@@ -40,7 +53,7 @@ export async function RenewalsTab({ vehicleId, vehicleName, namePrefix, showDocu
       ) : (
         <ul className="flex flex-col gap-2">
           {current.map((r) => (
-            <RenewalItem key={r.id} renewal={r} files={files ? (files.get(r.id) ?? []) : null} today={today} isCurrent types={types} namePrefix={namePrefix} />
+            <RenewalItem key={r.id} renewal={r} files={files ? (files.get(r.id) ?? []) : null} today={today} isCurrent types={types} namePrefix={namePrefix} askOdometer={askOdometer} />
           ))}
         </ul>
       )}
@@ -50,7 +63,7 @@ export async function RenewalsTab({ vehicleId, vehicleName, namePrefix, showDocu
           <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">History ({past.length})</summary>
           <ul className="flex flex-col gap-2 border-t p-3">
             {past.map((r) => (
-              <RenewalItem key={r.id} renewal={r} files={files ? (files.get(r.id) ?? []) : null} today={today} isCurrent={false} types={types} namePrefix={namePrefix} />
+              <RenewalItem key={r.id} renewal={r} files={files ? (files.get(r.id) ?? []) : null} today={today} isCurrent={false} types={types} namePrefix={namePrefix} askOdometer={askOdometer} />
             ))}
           </ul>
         </details>
@@ -66,6 +79,7 @@ function RenewalItem({
   isCurrent,
   types,
   namePrefix,
+  askOdometer,
 }: {
   renewal: VehicleRenewal;
   files: Attachment[] | null;
@@ -73,6 +87,7 @@ function RenewalItem({
   isCurrent: boolean;
   types: readonly string[];
   namePrefix: string;
+  askOdometer: boolean;
 }) {
   const days = daysBetween(today, r.expiryDate);
   const tone = days < 0 ? "font-medium text-status-overdue" : days <= 7 ? "text-status-soon" : "text-muted-foreground";
@@ -116,14 +131,14 @@ function RenewalItem({
           <details className="rounded-md border border-primary/40">
             <summary className="cursor-pointer px-3 py-1.5 text-sm font-medium">Renewed</summary>
             <div className="border-t p-3">
-              <RenewalForm mode="renew" action={renewRenewal} types={types} renewal={r} />
+              <RenewalForm mode="renew" action={renewRenewal} types={types} renewal={r} askOdometer={askOdometer} />
             </div>
           </details>
         ) : null}
         <details className="rounded-md border">
           <summary className="cursor-pointer px-3 py-1.5 text-sm text-muted-foreground">Edit</summary>
           <div className="border-t p-3">
-            <RenewalForm mode="edit" action={updateRenewal} types={types} renewal={r} />
+            <RenewalForm mode="edit" action={updateRenewal} types={types} renewal={r} askOdometer={askOdometer} />
           </div>
         </details>
         {files ? (

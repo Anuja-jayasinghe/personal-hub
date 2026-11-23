@@ -25,6 +25,7 @@ describe("parseVehicle", () => {
       fuelType: null,
       vehicleType: null,
       odometerKm: null,
+      ignoreEmissionOdometer: false,
     });
   });
 
@@ -40,6 +41,7 @@ describe("parseVehicle", () => {
       fuelType: "Petrol",
       vehicleType: "suv",
       odometerKm: 45200,
+      ignoreEmissionOdometer: false,
     });
   });
 
@@ -82,5 +84,12 @@ describe("parseVehicle", () => {
     expect(ok({ nickname: "A", fuelType: "Diesel" }).fuelType).toBe("Diesel");
     expect(ok({ nickname: "A", fuelType: "" }).fuelType).toBeNull();
     expect(err({ nickname: "A", fuelType: "Steam" })).toMatch(/Fuel type/);
+  });
+});
+
+describe("the emission odometer setting (issue #184)", () => {
+  it("is on only when the checkbox is ticked", () => {
+    expect(parseVehicle({ nickname: "A", ignoreEmissionOdometer: "on" }, [])).toMatchObject({ ok: true, value: { ignoreEmissionOdometer: true } });
+    expect(parseVehicle({ nickname: "A" }, [])).toMatchObject({ ok: true, value: { ignoreEmissionOdometer: false } });
   });
 });

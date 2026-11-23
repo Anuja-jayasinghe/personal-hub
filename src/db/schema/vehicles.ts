@@ -1,4 +1,4 @@
-import { check, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, index, integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createdAt, updatedAt } from "./_columns";
 import { attachments } from "./shared";
@@ -34,6 +34,12 @@ export const vehicles = pgTable(
      */
     coverAttachmentId: uuid("cover_attachment_id").references(() => attachments.id, { onDelete: "set null" }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
+    /**
+     * Set when this vehicle's emission certificates print an inaccurate odometer (issue #184): its
+     * emission tests are then not asked for one and stay off the mileage timeline, which uses only
+     * services and readings typed on the Odometer section.
+     */
+    ignoreEmissionOdometer: boolean("ignore_emission_odometer").notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
