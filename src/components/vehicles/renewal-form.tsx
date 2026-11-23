@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { labelClass, labelTextClass, selectClass } from "@/components/shared/form-styles";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { useKeepValuesOnError } from "@/components/shared/use-keep-values-on-error";
 import { Input } from "@/components/ui/input";
 import type { VehicleRenewal } from "@/db/schema";
+import { carriesOdometer } from "@/features/vehicles/renewal-validate";
 import { initialActionState, type ActionState } from "@/features/shared/types";
 
 type Props = {
@@ -32,6 +33,8 @@ export function RenewalForm({ action, types, vehicleId, renewal, mode, onDone }:
   }, [formRef, state, mode, onDone]);
 
   const renewing = mode === "renew";
+  // An emission test's certificate prints the odometer on the test day (issue #181).
+  const [type, setType] = useState(renewal?.type ?? "");
   // When renewing, the new cover normally starts where the old one ends.
   const defaults = {
     provider: renewal?.provider ?? "",
@@ -39,6 +42,7 @@ export function RenewalForm({ action, types, vehicleId, renewal, mode, onDone }:
     startDate: renewing ? (renewal?.expiryDate ?? "") : (renewal?.startDate ?? ""),
     expiryDate: renewing ? "" : (renewal?.expiryDate ?? ""),
     amount: renewing ? "" : (renewal?.amount ?? ""),
+    odometerKm: renewing ? "" : (renewal?.odometerKm?.toString() ?? ""),
   };
 
   return (
@@ -48,7 +52,7 @@ export function RenewalForm({ action, types, vehicleId, renewal, mode, onDone }:
       {mode === "create" ? (
         <label className={labelClass}>
           <span className={labelTextClass}>Type</span>
-          <select name="type" required defaultValue="" className={selectClass}>
+          <select name="type" required defaultValue="" onChange={(e) => setType(e.target.value)} className={selectClass}>
             <option value="" disabled>
               Choose…
             </option>
@@ -62,7 +66,7 @@ export function RenewalForm({ action, types, vehicleId, renewal, mode, onDone }:
       ) : mode === "edit" ? (
         <label className={labelClass}>
           <span className={labelTextClass}>Type</span>
-          <select name="type" required defaultValue={renewal?.type} className={selectClass}>
+          <select name="type" required defaultValue={renewal?.type} onChange={(e) => setType(e.target.value)} className={selectClass}>
             {types.map((t) => (
               <option key={t} value={t}>
                 {t}
@@ -101,6 +105,14 @@ export function RenewalForm({ action, types, vehicleId, renewal, mode, onDone }:
           <Input name="amount" inputMode="decimal" defaultValue={defaults.amount} placeholder="0.00" />
         </label>
       </div>
+
+      {carriesOdometer(type) ? (
+        <label className={`${labelClass} sm:max-w-[calc(33%-0.5rem)]`}>
+          <span className={labelTextClass}>Odometer on the test day (optional)</span>
+          <Input name="odometerKm" inputMode="numeric" defaultValue={defaults.odometerKm} placeholder="42959" />
+          <span className="text-xs text-muted-foreground">Printed on the certificate. The start date is the test day.</span>
+        </label>
+      ) : null}
 
       {state.error ? (
         <p role="alert" className="text-sm text-destructive">

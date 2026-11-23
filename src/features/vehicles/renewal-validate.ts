@@ -14,7 +14,14 @@ export type RenewalFields = {
   expiryDate: string;
   /** Decimal string with up to 2 decimals, e.g. "85000.50". */
   amount: string | null;
+  /** An emission test's odometer on the test day (issue #181); always null for other types. */
+  odometerKm: number | null;
 };
+
+/** Renewal types whose certificate prints the odometer: the emission test. */
+export function carriesOdometer(type: string): boolean {
+  return /^emission/i.test(type.trim());
+}
 
 export type RenewalResult = { ok: true; value: RenewalFields } | { ok: false; error: string };
 
@@ -56,5 +63,14 @@ export function parseRenewal(
     amount = amountRaw;
   }
 
-  return { ok: true, value: { type, provider: provider || null, referenceNumber: referenceNumber || null, startDate, expiryDate, amount } };
+  // The odometer printed on an emission certificate, read on the test day (the start date).
+  let odometerKm: number | null = null;
+  const odoRaw = (raw.odometerKm ?? "").replace(/[,\s]/g, "");
+  if (odoRaw && carriesOdometer(type)) {
+    if (!/^\d{1,7}$/.test(odoRaw)) return { ok: false, error: "Odometer must be a whole number of km, like 42959." };
+    if (!startDate) return { ok: false, error: "Add the test day (start date) for the odometer reading." };
+    odometerKm = Number(odoRaw);
+  }
+
+  return { ok: true, value: { type, provider: provider || null, referenceNumber: referenceNumber || null, startDate, expiryDate, amount, odometerKm } };
 }

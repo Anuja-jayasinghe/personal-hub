@@ -1,0 +1,2 @@
+ALTER TABLE "vehicle_renewals" ADD COLUMN "odometer_km" integer;--> statement-breakpoint
+ALTER TABLE "vehicle_renewals" ADD CONSTRAINT "vehicle_renewals_odometer_check" CHECK ("vehicle_renewals"."odometer_km" is null or "vehicle_renewals"."odometer_km" >= 0);

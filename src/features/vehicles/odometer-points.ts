@@ -1,21 +1,28 @@
 import "server-only";
 import { eq } from "drizzle-orm";
 import { readDb } from "@/db/read";
-import { vehicleOdometerReadings, vehicleServices } from "@/db/schema";
-import { toPoints, type OdometerPoint } from "./odometer";
+import { vehicleOdometerReadings, vehicleRenewals, vehicleServices } from "@/db/schema";
+import { pointKey, toPoints, unfitKeys, type OdometerPoint } from "./odometer";
+import { carriesOdometer } from "./renewal-validate";
 
 /**
- * Every dated odometer value of a vehicle (readings and services with an odometer), for checking
- * that a new one fits. Pass the id of the reading or service being edited to leave it out.
+ * The dated odometer values of a vehicle that fit its history (readings, services and emission tests
+ * with an odometer, issue #181), for checking that a new typed reading fits. Values that don't fit are
+ * left out, so a misread certificate never blocks a correct reading. Pass the id of the reading being
+ * edited to leave it out.
  */
 export async function loadOdometerPoints(vehicleId: string, except?: { readingId?: string; serviceId?: string }): Promise<OdometerPoint[]> {
   const db = await readDb();
-  const [readings, services] = await Promise.all([
+  const [readings, services, renewals] = await Promise.all([
     db.select().from(vehicleOdometerReadings).where(eq(vehicleOdometerReadings.vehicleId, vehicleId)),
     db.select().from(vehicleServices).where(eq(vehicleServices.vehicleId, vehicleId)),
+    db.select().from(vehicleRenewals).where(eq(vehicleRenewals.vehicleId, vehicleId)),
   ]);
-  return toPoints(
+  const points = toPoints(
     readings.filter((r) => r.id !== except?.readingId),
     services.filter((s) => s.id !== except?.serviceId),
+    renewals.filter((r) => carriesOdometer(r.type)),
   );
+  const unfit = unfitKeys(points);
+  return points.filter((p) => !unfit.has(pointKey(p)));
 }

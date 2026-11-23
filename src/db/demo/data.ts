@@ -191,16 +191,18 @@ export function demoRows(today: string): Rows {
     { id: DEMO_VEHICLES.car, nickname: "Family car", registrationNumber: "DEM-1234", make: "Toyota", model: "Corolla", year: 2017, fuelType: "Hybrid", vehicleType: "car", odometerKm: 84_310 },
     { id: DEMO_VEHICLES.bike, nickname: "Commuter bike", registrationNumber: "DM-5678", make: "Honda", model: "CB Shine", year: 2019, fuelType: "Petrol", vehicleType: "motorbike", odometerKm: 31_820 },
   );
-  const renewals: [number, string, string, string, number, number][] = [
-    [1, DEMO_VEHICLES.car, "Revenue license", "Divisional Secretariat", 42, 3_200],
-    [2, DEMO_VEHICLES.car, "Insurance", "Sample Insurance Co.", 9, 58_000],
-    [3, DEMO_VEHICLES.car, "Emission test", "Sample Testing Centre", 120, 1_800],
-    [4, DEMO_VEHICLES.bike, "Revenue license", "Divisional Secretariat", 25, 1_200],
-    [5, DEMO_VEHICLES.bike, "Insurance", "Sample Insurance Co.", 200, 9_400],
+  // The last number is an emission test's test-day odometer (issue #181), in line with the readings below.
+  const renewals: [number, string, string, string, number, number, number | null][] = [
+    [1, DEMO_VEHICLES.car, "Revenue license", "Divisional Secretariat", 42, 3_200, null],
+    [2, DEMO_VEHICLES.car, "Insurance", "Sample Insurance Co.", 9, 58_000, null],
+    [3, DEMO_VEHICLES.car, "Emission test", "Sample Testing Centre", 120, 1_800, 77_150],
+    [4, DEMO_VEHICLES.bike, "Revenue license", "Divisional Secretariat", 25, 1_200, null],
+    [5, DEMO_VEHICLES.bike, "Insurance", "Sample Insurance Co.", 200, 9_400, null],
+    [6, DEMO_VEHICLES.bike, "Emission test", "Sample Testing Centre", 60, 640, 27_600],
   ];
-  for (const [n, vehicleId, type, provider, expiresIn, amount] of renewals) {
+  for (const [n, vehicleId, type, provider, expiresIn, amount, odometerKm] of renewals) {
     const expiryDate = addDays(today, expiresIn);
-    rows.vehicleRenewals.push({ id: demoId(8, n), vehicleId, type, provider, referenceNumber: `DEMO-${1000 + n}`, startDate: addDays(expiryDate, -365), expiryDate, amount: money(amount) });
+    rows.vehicleRenewals.push({ id: demoId(8, n), vehicleId, type, provider, referenceNumber: `DEMO-${1000 + n}`, startDate: addDays(expiryDate, -365), expiryDate, amount: money(amount), odometerKm });
   }
   const services: [number, string, number, string, number, number, string, number | null][] = [
     [1, DEMO_VEHICLES.car, 260, "Full service", 76_900, 28_500, "Oil, oil filter, air filter, brake check", null],

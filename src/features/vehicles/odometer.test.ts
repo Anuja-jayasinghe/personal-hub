@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkFits, latestPoint, toPoints, withDistances, type OdometerPoint } from "./odometer";
+import { checkFits, latestPoint, toPoints, withDistances, type OdometerPoint, unfitKeys, pointKey } from "./odometer";
 import { parseOdometerReading } from "./odometer-validate";
 
 let n = 0;
@@ -87,5 +87,37 @@ describe("parseOdometerReading", () => {
     expect(parseOdometerReading({ readingDate: TODAY, km: "-5" }, TODAY)).toMatchObject({ ok: false });
     expect(parseOdometerReading({ readingDate: TODAY, km: "10000000" }, TODAY)).toMatchObject({ ok: false });
     expect(parseOdometerReading({ readingDate: TODAY, km: "5", note: "x".repeat(201) }, TODAY)).toMatchObject({ ok: false });
+  });
+});
+
+describe("emission tests on the timeline (issue #181)", () => {
+  const t = (id: string, startDate: string | null, odometerKm: number | null) => ({ id, startDate, odometerKm, referenceNumber: `CL-${id}`, provider: "drivegreen", createdAt: new Date(0) });
+
+  it("adds an emission test with an odometer, dated on its test day", () => {
+    const points = toPoints([], [], [t("a", "2026-02-25", 57263), t("b", null, 1000), t("c", "2025-03-01", null)]);
+    expect(points).toEqual([{ id: "a", source: "emission", date: "2026-02-25", km: 57263, label: "CL-a · drivegreen", createdAt: new Date(0) }]);
+  });
+});
+
+describe("unfitKeys", () => {
+  const p = (id: string, date: string, km: number, source: "reading" | "service" | "emission" = "emission") => ({ id, source, date, km, label: null, createdAt: new Date(0) });
+
+  it("flags nothing when the km only go up", () => {
+    expect(unfitKeys([p("a", "2024-01-01", 100), p("b", "2024-06-01", 200), p("c", "2024-06-01", 250), p("d", "2025-01-01", 300)]).size).toBe(0);
+  });
+
+  it("flags only the one wrong value among good ones", () => {
+    const flagged = unfitKeys([p("a", "2024-01-01", 10_000), p("typo", "2024-02-01", 200_000), p("c", "2024-03-01", 12_000), p("d", "2024-04-01", 14_000)]);
+    expect([...flagged]).toEqual(["emission:typo"]);
+  });
+
+  it("flags both values when two contradict each other and nothing says which is wrong", () => {
+    // BAK-9366: 20,000 in Feb 2024, 17,986 in Oct 2024, then 20,142 and 21,885.
+    const flagged = unfitKeys([p("feb", "2024-02-05", 20_000), p("oct", "2024-10-24", 17_986), p("sep", "2025-09-09", 20_142), p("now", "2026-10-19", 21_885)]);
+    expect([...flagged].sort()).toEqual(["emission:feb", "emission:oct"]);
+  });
+
+  it("tells the sources apart by key", () => {
+    expect(pointKey({ source: "service", id: "x" })).toBe("service:x");
   });
 });
