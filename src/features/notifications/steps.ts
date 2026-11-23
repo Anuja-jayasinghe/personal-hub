@@ -30,6 +30,13 @@ export type StepRule =
 
 export type EventKey = "renewal" | "service" | "electricity-bill" | "bill" | "autopay" | "task";
 
+/**
+ * Notices that do not come from a reminder, so never from the steps below (N.3, C140): a test push the
+ * owner asked for, and the one email saying an iPhone stopped accepting pushes.
+ */
+export type SystemKind = "push-test" | "push-gone";
+export type NoticeKind = EventKey | SystemKind;
+
 export type EventRule = {
   /** How the event reads in a message: "Insurance ends 23 Dec" / "Electricity bill due 30 Nov". */
   verb: "ends" | "due";

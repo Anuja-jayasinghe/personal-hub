@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import type { Db } from "@/db/read";
 import { notifications } from "@/db/schema";
 import { todayIn } from "@/lib/dates";
@@ -34,9 +34,22 @@ export function shownStatus(row: Pick<LogRow, "status" | "createdAt">, now: Date
   return row.status === "pending" && now.getTime() - row.createdAt.getTime() > PENDING_UNKNOWN_AFTER_MS ? "unknown" : row.status;
 }
 
-/** The dedupe keys already used for one recipient, given each channel's mode. */
+/**
+ * A notice the provider refused this many times is not planned again (review of #198): a message that
+ * is refused every time (a bad address, a payload the service rejects) must not be retried every morning.
+ */
+export const MAX_FAILED_TRIES = 3;
+
+/**
+ * The dedupe keys already used for one recipient, given each channel's mode: every key that counts as
+ * done (see `rowCounts`), and every key with MAX_FAILED_TRIES `failed` rows.
+ */
 export function usedKeysFrom(rows: readonly LogRow[], modes: ChannelModes): Set<string> {
-  return new Set(rows.filter((r) => rowCounts(r, modes)).map((r) => r.dedupeKey));
+  const used = new Set(rows.filter((r) => rowCounts(r, modes)).map((r) => r.dedupeKey));
+  const failures = new Map<string, number>();
+  for (const r of rows) if (r.status === "failed") failures.set(r.dedupeKey, (failures.get(r.dedupeKey) ?? 0) + 1);
+  for (const [key, count] of failures) if (count >= MAX_FAILED_TRIES) used.add(key);
+  return used;
 }
 
 /** The channels that already carried a message to this recipient on `today` (in `timeZone`). */
@@ -44,12 +57,18 @@ export function channelsUsedOn(rows: readonly LogRow[], modes: ChannelModes, tod
   return new Set(rows.filter((r) => rowCounts(r, modes) && todayIn(timeZone, r.createdAt) === today).map((r) => r.channel));
 }
 
-/** One recipient's log (small: a few rows a week, pruned after a year). */
+/** The kind of the rows a test push writes (N.3): logged and shown, but never part of the planning. */
+export const TEST_KIND = "push-test";
+
+/**
+ * One recipient's log (small: a few rows a week, pruned after a year), as the planning sees it: test
+ * pushes are left out, so a test never uses up the day's push or blocks a notice.
+ */
 export async function readLog(db: Db, recipient: string): Promise<LogRow[]> {
   return db
     .select({ dedupeKey: notifications.dedupeKey, channel: notifications.channel, status: notifications.status, createdAt: notifications.createdAt })
     .from(notifications)
-    .where(eq(notifications.recipient, recipient));
+    .where(and(eq(notifications.recipient, recipient), ne(notifications.kind, TEST_KIND)));
 }
 
 /**

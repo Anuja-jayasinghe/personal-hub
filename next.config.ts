@@ -25,6 +25,20 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_CLERK_KEYLESS_DISABLED: "true",
     NEXT_PUBLIC_CLERK_TELEMETRY_DISABLED: "1",
   },
+  // The service worker for iPhone push (N.3, C140; the Next.js PWA guide): always fetched fresh, served
+  // as JavaScript, and allowed to load nothing from anywhere else. It caches nothing itself.
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
+    ];
+  },
   turbopack: {
     rules: {
       "*.css": {

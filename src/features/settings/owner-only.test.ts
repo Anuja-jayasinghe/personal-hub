@@ -39,7 +39,7 @@ describe("Settings pages", () => {
 
   it("the notification queries check the owner themselves", () => {
     const source = readFileSync(path.join("src", "features", "notifications", "queries.ts"), "utf8");
-    for (const fn of ["getComingUp", "listRecentNotifications"]) {
+    for (const fn of ["getComingUp", "listRecentNotifications", "getPushSetup"]) {
       const body = source.split(`export async function ${fn}(`)[1]?.split(/\n}\n/)[0] ?? "";
       expect(body, fn).toMatch(/await viewingOwner\(\)/);
       expect(body.indexOf("viewingOwner()"), fn).toBeLessThan(body.indexOf("readDb()"));

@@ -1,13 +1,15 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { connection } from "next/server";
 import { appConfig } from "@/config/app.config";
 import { readDb, type Db } from "@/db/read";
-import { appSettings, notifications } from "@/db/schema";
+import { appSettings, notifications, pushSubscriptions } from "@/db/schema";
 import { loadSources, reminderSources } from "@/features/reminders/sources";
 import { getAuthState, requirePage } from "@/lib/auth";
 import { todayInAppTz } from "@/lib/format";
-import { channelModes, NOTIFICATIONS_SETTINGS_KEY, parseSwitches, type ChannelModes } from "./channels";
+import { channelModes, NOTIFICATIONS_SETTINGS_KEY, parseSwitches, SENDERS, type ChannelModes, type NotificationSwitches } from "./channels";
+import { vapidFromEnv } from "./push/config";
 import { channelsUsedOn, readLog, shownStatus, usedKeysFrom } from "./log";
 import { previewUpcoming, type PreviewDay } from "./planner";
 
@@ -20,9 +22,14 @@ import { previewUpcoming, type PreviewDay } from "./planner";
 /** How far ahead "Coming up" looks. */
 export const COMING_UP_DAYS = 30;
 
-async function modesFrom(db: Db): Promise<ChannelModes> {
+async function switchesFrom(db: Db): Promise<NotificationSwitches> {
   const [row] = await db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, NOTIFICATIONS_SETTINGS_KEY));
-  return channelModes(parseSwitches(row?.value ?? null));
+  return parseSwitches(row?.value ?? null);
+}
+
+/** Each channel's mode as the daily run would see it: push counts as built only when the VAPID keys are set (C140). */
+async function modesFrom(db: Db): Promise<ChannelModes> {
+  return channelModes(await switchesFrom(db), { email: SENDERS.email, push: { implemented: vapidFromEnv() !== null } });
 }
 
 /** The owner looking at the page, lower-cased (the send log's recipient); not-found for anyone else. */
@@ -71,3 +78,53 @@ export async function listRecentNotifications(limit = 20) {
 }
 
 export type RecentNotification = Awaited<ReturnType<typeof listRecentNotifications>>[number];
+
+export type PushDevice = {
+  id: string;
+  label: string;
+  createdAt: Date;
+  lastOkAt: Date | null;
+  /**
+   * SHA-256 of the endpoint, so the page can tell which row is the browser it runs in (the browser
+   * hashes its own endpoint) without the endpoint itself ever leaving the server.
+   */
+  endpointHash: string;
+};
+
+export type PushSetup = {
+  /** The VAPID keys are set on the server. */
+  configured: boolean;
+  /** The public key the browser subscribes with (public by design); null when not configured. */
+  publicKey: string | null;
+  /** The owner's "make pushes real" switch (app_settings › notifications › push). */
+  switchedOn: boolean;
+  devices: PushDevice[];
+};
+
+/** Settings › Notifications › This iPhone (N.3, C140): the viewing owner's own devices and the push switch. */
+export async function getPushSetup(): Promise<PushSetup> {
+  await connection();
+  const recipient = await viewingOwner();
+  const db = await readDb();
+  const vapid = vapidFromEnv();
+  const [switches, rows] = await Promise.all([
+    switchesFrom(db),
+    db
+      .select({
+        id: pushSubscriptions.id,
+        label: pushSubscriptions.deviceLabel,
+        endpoint: pushSubscriptions.endpoint,
+        createdAt: pushSubscriptions.createdAt,
+        lastOkAt: pushSubscriptions.lastOkAt,
+      })
+      .from(pushSubscriptions)
+      .where(eq(pushSubscriptions.recipient, recipient))
+      .orderBy(desc(pushSubscriptions.createdAt)),
+  ]);
+  return {
+    configured: vapid !== null,
+    publicKey: vapid?.publicKey ?? null,
+    switchedOn: switches.push.enabled,
+    devices: rows.map(({ endpoint, ...r }) => ({ ...r, endpointHash: createHash("sha256").update(endpoint).digest("hex") })),
+  };
+}

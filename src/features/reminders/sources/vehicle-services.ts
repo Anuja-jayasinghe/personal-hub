@@ -2,6 +2,7 @@ import "server-only";
 import { dueServices } from "@/features/vehicles/service-logic";
 import { listServicesOfActiveVehicles } from "@/features/vehicles/queries";
 import type { ReminderSource } from "../engine";
+import { serviceNoticeWord } from "../notice-words";
 
 /**
  * Next service due dates (Phase 1.2). For each active vehicle and service type, the latest
@@ -21,7 +22,8 @@ export const vehicleServicesSource: ReminderSource = {
       href: `/vehicles/${r.vehicleId}?tab=services`,
       kind: "service",
       ownerId: r.vehicleId,
-      notice: { what: r.serviceType, who: nicknames.get(r.vehicleId) ?? "Vehicle" },
+      // The type is free text: only the fixed list reaches a notification, anything else says "Service".
+      notice: { what: serviceNoticeWord(r.serviceType), who: nicknames.get(r.vehicleId) ?? "Vehicle" },
     }));
   },
 };

@@ -3,9 +3,11 @@ import type { Channel } from "./steps";
 
 /**
  * The ways a notification leaves the hub (Notifications N.1, C139): email (N.2, Resend) and an iPhone
- * push (N.3, web push). Neither is built yet, so the run is a dry run: it writes the send log with
- * status `dry_run` and nothing leaves the server. A channel only goes live when it is both
+ * push (N.3, web push). Until a channel is built and set up, the run is a dry run for it: it writes the
+ * send log with status `dry_run` and nothing leaves the server. A channel only goes live when it is both
  * implemented and switched on in Settings (`app_settings`, key "notifications", default off). Pure.
+ * Push is built (src/features/notifications/push, C140) but needs the database and the VAPID keys, so
+ * run.ts creates it; `SENDERS.push` below is what stands in when the keys are missing.
  */
 
 /**
