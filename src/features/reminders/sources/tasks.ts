@@ -11,15 +11,15 @@ import type { ReminderSource } from "../engine";
 export const tasksSource: ReminderSource = {
   key: "tasks",
   label: "Tasks",
-  async load() {
-    const db = await readDb();
+  async load(from) {
+    const db = from?.db ?? (await readDb());
     const rows = await db
       .select({ id: tasks.id, title: tasks.title, dueDate: tasks.dueDate })
       .from(tasks)
       .where(and(ne(tasks.status, "done"), isNotNull(tasks.dueDate), isNull(tasks.ownerType)));
 
     return rows.flatMap((r) =>
-      r.dueDate ? [{ id: `task:${r.id}`, title: r.title, dueDate: r.dueDate, href: "/tasks", kind: "task" }] : [],
+      r.dueDate ? [{ id: `task:${r.id}`, title: r.title, dueDate: r.dueDate, href: "/tasks", kind: "task", notice: { what: "Task", who: r.title } }] : [],
     );
   },
 };

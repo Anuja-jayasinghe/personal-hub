@@ -6,8 +6,8 @@ import { describe, expect, it } from "vitest";
  * The demo (S.9, C118) must never show real data: pages read through `readDb()` (src/db/read.ts),
  * which hands demo visitors the in-memory sample database. Only code that first checks the person
  * itself may import the real client from "@/db": Server Actions (they start with `requireUser`),
- * the auth check, owner-only downloads, file housekeeping used by actions, and the keep-awake route
- * (it checks the cron secret first).
+ * the auth check, owner-only downloads, file housekeeping used by actions, and the daily notification
+ * run (its route checks the cron secret and production first).
  */
 const ALLOWED = [
   /actions\.ts$/,
@@ -16,7 +16,7 @@ const ALLOWED = [
   /^src\/features\/settings\/exports\.ts$/,
   /^src\/features\/shared\/(cleanup|files)\.ts$/,
   /^src\/features\/vehicles\/doc-naming\.ts$/, // names uploads inside actions, after their check (issue #179)
-  /^src\/app\/api\/keep-awake\/route\.ts$/, // checks CRON_SECRET first (C127)
+  /^src\/features\/notifications\/run\.ts$/, // no signed-in person; only /api/notify calls it, after CRON_SECRET and production (C139)
 ];
 
 function files(dir: string): string[] {
@@ -34,5 +34,12 @@ describe("real database access", () => {
       .filter((f) => /from "@\/db";/.test(readFileSync(f, "utf8")))
       .filter((f) => !ALLOWED.some((re) => re.test(f)));
     expect(offenders).toEqual([]);
+  });
+
+  it("only the cron route reaches the notification run, which reads the real database with nobody signed in", () => {
+    const callers = files("src")
+      .map((f) => f.split(path.sep).join("/"))
+      .filter((f) => /from "@\/features\/notifications\/run";/.test(readFileSync(f, "utf8")));
+    expect(callers).toEqual(["src/app/api/notify/route.ts"]);
   });
 });

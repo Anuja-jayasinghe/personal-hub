@@ -13,8 +13,8 @@ import type { ReminderSource } from "../engine";
 export const vehicleRenewalsSource: ReminderSource = {
   key: "vehicle-renewals",
   label: "Vehicle renewals",
-  async load() {
-    const rows = await listRenewalsOfActiveVehicles();
+  async load(from) {
+    const rows = await listRenewalsOfActiveVehicles(from?.db);
     const nicknames = new Map(rows.map((r) => [r.vehicleId, r.nickname]));
     const leadsByType = new Map(appConfig.vehicles.renewalTypes.map((t) => [t.label, t.leadDays]));
     return currentRenewals(rows).map((r) => ({
@@ -25,6 +25,7 @@ export const vehicleRenewalsSource: ReminderSource = {
       kind: "renewal",
       ownerId: r.vehicleId,
       leadDays: leadsByType.get(r.type),
+      notice: { what: r.type, who: nicknames.get(r.vehicleId) ?? "Vehicle" },
     }));
   },
 };

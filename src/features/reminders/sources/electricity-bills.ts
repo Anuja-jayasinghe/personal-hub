@@ -11,8 +11,8 @@ import type { ReminderSource } from "../engine";
 export const electricityBillsSource: ReminderSource = {
   key: "electricity-bills",
   label: "Electricity bills",
-  async load() {
-    const rows = await listUnpaidBillsWithDueDate();
+  async load(from) {
+    const rows = await listUnpaidBillsWithDueDate(from?.db);
     return rows.flatMap((b) =>
       b.dueDate
         ? [
@@ -23,6 +23,8 @@ export const electricityBillsSource: ReminderSource = {
               href: electricityBillHref(b.id),
               kind: "bill",
               ownerId: b.meterId,
+              // The meter's name, never its account number (C139).
+              notice: { what: "Electricity bill", who: b.meterName },
             },
           ]
         : [],

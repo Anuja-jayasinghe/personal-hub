@@ -11,3 +11,4 @@ export * from "./bill-payments";
 export * from "./vehicle-odometer";
 export * from "./electricity-live";
 export * from "./people";
+export * from "./notifications";

@@ -6,8 +6,8 @@
   ],
   "crons": [
     {
-      "path": "/api/keep-awake",
-      "schedule": "0 3 */3 * *"
+      "path": "/api/notify",
+      "schedule": "0 2 * * *"
     }
   ]
 }
