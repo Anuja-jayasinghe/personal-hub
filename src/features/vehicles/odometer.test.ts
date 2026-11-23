@@ -91,11 +91,11 @@ describe("parseOdometerReading", () => {
 });
 
 describe("emission tests on the timeline (issue #181)", () => {
-  const t = (id: string, startDate: string | null, odometerKm: number | null) => ({ id, startDate, odometerKm, referenceNumber: `CL-${id}`, provider: "drivegreen", createdAt: new Date(0) });
+  const t = (id: string, startDate: string | null, odometerKm: number | null) => ({ id, startDate, odometerKm, provider: "drivegreen", createdAt: new Date(0) });
 
   it("adds an emission test with an odometer, dated on its test day", () => {
     const points = toPoints([], [], [t("a", "2026-02-25", 57263), t("b", null, 1000), t("c", "2025-03-01", null)]);
-    expect(points).toEqual([{ id: "a", source: "emission", date: "2026-02-25", km: 57263, label: "CL-a · drivegreen", createdAt: new Date(0) }]);
+    expect(points).toEqual([{ id: "a", source: "emission", date: "2026-02-25", km: 57263, label: "drivegreen", createdAt: new Date(0) }]);
   });
 });
 

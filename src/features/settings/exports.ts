@@ -93,8 +93,8 @@ export const EXPORTS = {
         .innerJoin(vehicles, eq(vehicles.id, vehicleRenewals.vehicleId))
         .orderBy(asc(vehicles.nickname), asc(vehicleRenewals.expiryDate));
       return toCsv(
-        ["vehicle", "renewal", "provider", "reference", "start", "expiry", "amount", "renewed"],
-        rows.map(({ vehicle, r }) => [vehicle, r.type, r.provider, r.referenceNumber, r.startDate, r.expiryDate, r.amount, r.renewedAt !== null]),
+        ["vehicle", "renewal", "provider", "start", "expiry", "amount", "renewed"],
+        rows.map(({ vehicle, r }) => [vehicle, r.type, r.provider, r.startDate, r.expiryDate, r.amount, r.renewedAt !== null]),
       );
     },
   },

@@ -9,7 +9,6 @@ import { daysBetween, isValidDate } from "@/lib/dates";
 export type RenewalFields = {
   type: string;
   provider: string | null;
-  referenceNumber: string | null;
   startDate: string | null;
   expiryDate: string;
   /** Decimal string with up to 2 decimals, e.g. "85000.50". */
@@ -38,8 +37,6 @@ export function parseRenewal(
 
   const provider = clean(raw.provider);
   if (provider.length > 100) return { ok: false, error: "Provider must be at most 100 characters." };
-  const referenceNumber = clean(raw.referenceNumber);
-  if (referenceNumber.length > 60) return { ok: false, error: "Reference number must be at most 60 characters." };
 
   const expiryDate = (raw.expiryDate ?? "").trim();
   if (!expiryDate) return { ok: false, error: "Expiry date is required." };
@@ -72,5 +69,5 @@ export function parseRenewal(
     odometerKm = Number(odoRaw);
   }
 
-  return { ok: true, value: { type, provider: provider || null, referenceNumber: referenceNumber || null, startDate, expiryDate, amount, odometerKm } };
+  return { ok: true, value: { type, provider: provider || null, startDate, expiryDate, amount, odometerKm } };
 }

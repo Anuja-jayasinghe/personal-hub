@@ -18,7 +18,7 @@ const typeLabels = () => appConfig.vehicles.renewalTypes.map((t) => t.label);
 
 function fieldsFrom(fd: FormData, options: { expiryAfter?: string } = {}, forcedType?: string) {
   const raw: Record<string, string | undefined> = {};
-  for (const key of ["type", "provider", "referenceNumber", "startDate", "expiryDate", "amount", "odometerKm"]) {
+  for (const key of ["type", "provider", "startDate", "expiryDate", "amount", "odometerKm"]) {
     const v = fd.get(key);
     raw[key] = typeof v === "string" ? v : undefined;
   }

@@ -23,7 +23,10 @@ export const vehicleRenewals = pgTable(
       .references(() => vehicles.id, { onDelete: "cascade" }),
     type: text("type").notNull(),
     provider: text("provider"),
-    /** Policy or licence reference number. */
+    /**
+     * UNUSED since issue #189: the policy, licence or certificate number is on the attached scan, so the
+     * hub no longer asks for it or shows it. Kept because a migration here may only add.
+     */
     referenceNumber: text("reference_number"),
     /** Calendar day the cover or licence starts, "YYYY-MM-DD". */
     startDate: date("start_date", { mode: "string" }),

@@ -40,7 +40,6 @@ export function RenewalForm({ action, types, vehicleId, renewal, mode, askOdomet
   // When renewing, the new cover normally starts where the old one ends.
   const defaults = {
     provider: renewal?.provider ?? "",
-    referenceNumber: renewing ? "" : (renewal?.referenceNumber ?? ""),
     startDate: renewing ? (renewal?.expiryDate ?? "") : (renewal?.startDate ?? ""),
     expiryDate: renewing ? "" : (renewal?.expiryDate ?? ""),
     amount: renewing ? "" : (renewal?.amount ?? ""),
@@ -86,10 +85,6 @@ export function RenewalForm({ action, types, vehicleId, renewal, mode, askOdomet
         <label className={labelClass}>
           <span className={labelTextClass}>Provider (optional)</span>
           <Input name="provider" maxLength={100} defaultValue={defaults.provider} />
-        </label>
-        <label className={labelClass}>
-          <span className={labelTextClass}>Policy / reference number (optional)</span>
-          <Input name="referenceNumber" maxLength={60} defaultValue={defaults.referenceNumber} />
         </label>
       </div>
 

@@ -202,7 +202,7 @@ export function demoRows(today: string): Rows {
   ];
   for (const [n, vehicleId, type, provider, expiresIn, amount, odometerKm] of renewals) {
     const expiryDate = addDays(today, expiresIn);
-    rows.vehicleRenewals.push({ id: demoId(8, n), vehicleId, type, provider, referenceNumber: `DEMO-${1000 + n}`, startDate: addDays(expiryDate, -365), expiryDate, amount: money(amount), odometerKm });
+    rows.vehicleRenewals.push({ id: demoId(8, n), vehicleId, type, provider, startDate: addDays(expiryDate, -365), expiryDate, amount: money(amount), odometerKm });
   }
   const services: [number, string, number, string, number, number, string, number | null][] = [
     [1, DEMO_VEHICLES.car, 260, "Full service", 76_900, 28_500, "Oil, oil filter, air filter, brake check", null],

@@ -16,13 +16,13 @@ const base = { type: "Insurance", expiryDate: "2027-03-01" };
 
 describe("parseRenewal", () => {
   it("accepts a minimal renewal (type and expiry)", () => {
-    expect(ok(base)).toEqual({ type: "Insurance", provider: null, referenceNumber: null, startDate: null, expiryDate: "2027-03-01", amount: null, odometerKm: null });
+    expect(ok(base)).toEqual({ type: "Insurance", provider: null, startDate: null, expiryDate: "2027-03-01", amount: null, odometerKm: null });
   });
 
   it("accepts and tidies a full renewal", () => {
     expect(
-      ok({ ...base, provider: "  Ceylinco   Insurance ", referenceNumber: " POL-123 ", startDate: "2026-03-02", amount: "85,000.5" }),
-    ).toEqual({ type: "Insurance", provider: "Ceylinco Insurance", referenceNumber: "POL-123", startDate: "2026-03-02", expiryDate: "2027-03-01", amount: "85000.5", odometerKm: null });
+      ok({ ...base, provider: "  Ceylinco   Insurance ", startDate: "2026-03-02", amount: "85,000.5" }),
+    ).toEqual({ type: "Insurance", provider: "Ceylinco Insurance", startDate: "2026-03-02", expiryDate: "2027-03-01", amount: "85000.5", odometerKm: null });
   });
 
   it("only allows the configured types", () => {
@@ -47,7 +47,6 @@ describe("parseRenewal", () => {
     expect(err({ ...base, amount: "-1" })).toMatch(/Amount must be a number/);
     expect(err({ ...base, amount: "1.234" })).toMatch(/Amount must be a number/);
     expect(err({ ...base, provider: "x".repeat(101) })).toMatch(/at most 100/);
-    expect(err({ ...base, referenceNumber: "x".repeat(61) })).toMatch(/at most 60/);
   });
 
   it("a renewal must expire after the one it replaces", () => {
