@@ -115,7 +115,7 @@ function RenewalItem({
             {isCurrent ? <span className={` ${tone}`}> · {days === 0 ? "expires today" : days < 0 ? `expired ${-days} day${-days === 1 ? "" : "s"} ago` : `${describeDays(days).replace("In ", "")} left`}</span> : null}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {[r.provider, r.referenceNumber, r.amount !== null ? formatMoney(Number(r.amount)) : null].filter(Boolean).join(" · ")}
+            {[r.provider, r.amount !== null ? formatMoney(Number(r.amount)) : null].filter(Boolean).join(" · ")}
           </p>
         </div>
         <form action={deleteRenewal}>

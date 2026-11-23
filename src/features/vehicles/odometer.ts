@@ -16,7 +16,7 @@ export type OdometerPoint = {
   /** "YYYY-MM-DD" */
   date: string;
   km: number;
-  /** A reading's note, a service's type ("Oil change"), or a test's certificate number and centre. */
+  /** A reading's note, a service's type ("Oil change"), or a test's centre. */
   label: string | null;
   createdAt: Date;
 };
@@ -30,7 +30,7 @@ function byTime(a: OdometerPoint, b: OdometerPoint): number {
 export function toPoints(
   readings: readonly { id: string; readingDate: string; km: number; note: string | null; createdAt: Date }[],
   services: readonly { id: string; serviceDate: string; serviceType: string; odometerKm: number | null; createdAt: Date }[],
-  tests: readonly { id: string; startDate: string | null; odometerKm: number | null; referenceNumber: string | null; provider: string | null; createdAt: Date }[] = [],
+  tests: readonly { id: string; startDate: string | null; odometerKm: number | null; provider: string | null; createdAt: Date }[] = [],
 ): OdometerPoint[] {
   const points: OdometerPoint[] = [
     ...readings.map((r): OdometerPoint => ({ id: r.id, source: "reading", date: r.readingDate, km: r.km, label: r.note, createdAt: r.createdAt })),
@@ -41,7 +41,7 @@ export function toPoints(
     ...tests.flatMap((t): OdometerPoint[] =>
       t.odometerKm === null || !t.startDate
         ? []
-        : [{ id: t.id, source: "emission", date: t.startDate, km: t.odometerKm, label: [t.referenceNumber, t.provider].filter(Boolean).join(" · ") || null, createdAt: t.createdAt }],
+        : [{ id: t.id, source: "emission", date: t.startDate, km: t.odometerKm, label: t.provider, createdAt: t.createdAt }],
     ),
   ];
   return points.sort(byTime);
