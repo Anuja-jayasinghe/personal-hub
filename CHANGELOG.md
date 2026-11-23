@@ -2,6 +2,13 @@
 
 Versions follow semver: **major** for changes that break how the hub is used or stored, **minor** for new features, **patch** for fixes (while below 1.0, breaking changes bump the minor). Since 0.6.1 they are automatic (DECISIONS C123): pull request titles follow Conventional Commits (`feat: …`, `fix: …`), release-please keeps a release pull request with the next version and its notes, and merging it tags `vX.Y.Z` and publishes the GitHub release (pre-release below 1.0). 0.6.0 and 0.6.1 were versioned by hand (C120).
 
+## [0.12.0](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.11.0...v0.12.0) (2026-11-23)
+
+
+### Features
+
+* **vehicles:** documents by category with an on-page viewer ([#199](https://github.com/Anuja-jayasinghe/personal-hub/issues/199)) ([1b4169e](https://github.com/Anuja-jayasinghe/personal-hub/commit/1b4169e4477338a0b66af98c83a74df1b150b1d0))
+
 ## [0.11.0](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.10.1...v0.11.0) (2026-11-23)
 
 
