@@ -9,7 +9,19 @@ import * as schema from "@/db/schema";
 import { notifications } from "@/db/schema";
 import type { ReminderItem } from "@/features/reminders/engine";
 import { channelModes, NotSentError, parseSwitches } from "./channels";
-import { channelsUsedOn, PENDING_UNKNOWN_AFTER_MS, pruneLog, readLog, recordDryRun, sendLive, shownStatus, usedKeysFrom, type LogRow } from "./log";
+import {
+  channelsUsedOn,
+  MAX_FAILED_TRIES,
+  PENDING_UNKNOWN_AFTER_MS,
+  pruneLog,
+  readLog,
+  recordDryRun,
+  sendLive,
+  shownStatus,
+  TEST_KIND,
+  usedKeysFrom,
+  type LogRow,
+} from "./log";
 import { planNotifications, type Message } from "./planner";
 
 /**
@@ -118,6 +130,36 @@ describe("a real send", () => {
     expect(second).toMatchObject({ written: 2, sent: 2 });
   });
 
+  it("gives up on a notice refused three times: the fourth run plans nothing", async () => {
+    const who = "refused3@example.com";
+    const refuse = { send: async () => Promise.reject(new NotSentError("provider said no")) };
+    for (let i = 0; i < MAX_FAILED_TRIES; i++) {
+      const log = await readLog(db, who);
+      const plan = planNotifications({ recipient: who, items, today: TODAY, usedKeys: usedKeysFrom(log, LIVE_EMAIL) });
+      expect(plan.notices, `try ${i + 1}`).toHaveLength(2);
+      await sendLive(db, plan.messages[0], refuse);
+    }
+    const after = planNotifications({ recipient: who, items, today: TODAY, usedKeys: usedKeysFrom(await readLog(db, who), LIVE_EMAIL) });
+    expect(after.notices).toHaveLength(0);
+  });
+
+  it("leaves test pushes out of the log the planning reads", async () => {
+    const who = "tester@example.com";
+    await db.insert(notifications).values({
+      recipient: who,
+      dedupeKey: `${TEST_KIND}:2026-11-23T02:10`,
+      channel: "push",
+      kind: TEST_KIND,
+      title: "Test",
+      body: "Test",
+      href: "/settings/notifications",
+      dueDate: TODAY,
+      status: "sent",
+      sentAt: new Date(),
+    });
+    expect(await readLog(db, who)).toEqual([]);
+  });
+
   it("an unknown outcome stays pending and is never sent again", async () => {
     const message = emailFor("unknown@example.com");
     const result = await sendLive(db, message, {
@@ -181,6 +223,18 @@ describe("reading the log", () => {
     expect([...usedKeysFrom(rows, LIVE_EMAIL)].sort()).toEqual(["b"]);
     const pending: LogRow = { dedupeKey: "p", channel: "push", status: "pending", createdAt: new Date() };
     expect([...usedKeysFrom([pending], LIVE_EMAIL)]).toEqual(["p"]);
+  });
+
+  it("stops planning a key after three failed rows (review of #198)", () => {
+    const fail = (n: number): LogRow[] =>
+      Array.from({ length: n }, (_, i) => ({ dedupeKey: "x", channel: "push" as const, status: "failed" as const, createdAt: new Date(Date.UTC(2026, 10, 20 + i)) }));
+    expect(MAX_FAILED_TRIES).toBe(3);
+    expect(usedKeysFrom(fail(1), LIVE_EMAIL).has("x")).toBe(false);
+    expect(usedKeysFrom(fail(2), LIVE_EMAIL).has("x")).toBe(false);
+    expect(usedKeysFrom(fail(3), LIVE_EMAIL).has("x")).toBe(true);
+    expect(usedKeysFrom(fail(4), DRY).has("x")).toBe(true);
+    // Failures of another key never count towards this one.
+    expect(usedKeysFrom([...fail(2), { ...fail(1)[0], dedupeKey: "y" }], LIVE_EMAIL).has("x")).toBe(false);
   });
 
   it("shows a pending row older than 10 minutes as unknown", () => {

@@ -9,6 +9,7 @@ import { safeErrorSummary } from "@/lib/errors";
 import { channelModes, NOTIFICATIONS_SETTINGS_KEY, parseSwitches, SENDERS, type ChannelModes, type ChannelSender } from "./channels";
 import { channelsUsedOn, pruneLog, readLog, rowCounts, usedKeysFrom, writeMessage } from "./log";
 import { planNotifications } from "./planner";
+import { clearLoggedGone, pushGoneNotices, withGoneNotices } from "./push/gone";
 import { itemsFor, ownerRecipients } from "./recipients";
 import { CHANNELS, type Channel } from "./steps";
 
@@ -74,16 +75,23 @@ export async function runDaily({ db, now, allowedEmails, sources = reminderSourc
   for (const recipient of recipients) {
     try {
       const log = await readLog(db, recipient.email);
+      const usedToday = channelsUsedOn(log, modes, today, appConfig.timeZone);
       const plan = planNotifications({
         recipient: recipient.email,
         items: itemsFor(recipient, loaded),
         today,
         usedKeys: usedKeysFrom(log, modes),
-        channelsUsedToday: channelsUsedOn(log, modes, today, appConfig.timeZone),
+        channelsUsedToday: usedToday,
       });
       report.held += plan.held;
 
-      for (const message of plan.messages) {
+      // A device that stopped accepting pushes since the last email (N.3, C140): its one notice joins
+      // today's email, or is held for tomorrow if an email already went today.
+      const gone = await pushGoneNotices(db, recipient.email, today);
+      const messages = withGoneNotices(recipient.email, plan.messages, gone, usedToday.has("email"));
+      if (gone.length > 0 && usedToday.has("email")) report.held += gone.length;
+
+      for (const message of messages) {
         const mode = modes[message.channel];
         const result = await writeMessage(db, message, mode, senders[message.channel]);
         if (!result.message) continue;
@@ -94,6 +102,7 @@ export async function runDaily({ db, now, allowedEmails, sources = reminderSourc
         report.rows.failed += result.failed;
         report.rows.unknown += result.unknown;
       }
+      if (gone.length > 0) await clearLoggedGone(db, recipient.email);
 
       // The month's budget: distinct days with a message, per channel (today's included).
       const month = today.slice(0, 7);

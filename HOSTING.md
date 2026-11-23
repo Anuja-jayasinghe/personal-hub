@@ -41,8 +41,36 @@ it awake: Vercel Cron calls `/api/notify` once a day (`0 2 * * *` UTC, 07:30 to 
 which reads the reminders and the send log every morning (the old every-3-days `/api/keep-awake` is gone). It needs
 `CRON_SECRET` (sensitive, on Vercel, Production only); without it the route refuses every call. It only runs on
 Production (`VERCEL_ENV=production`): previews use real data, so there it answers "skipped" and does nothing. It
-writes the `notifications` send log (dry runs until N.2 and N.3 build the channels) and answers with counts only.
+writes the `notifications` send log (dry runs for a channel until it is built, set up and switched on in Settings) and answers with counts only.
 Vercel's dashboard lists the job under *Settings › Cron Jobs*.
+
+## iPhone push (N.3, C140)
+
+Web push to the hub added to the iPhone's Home Screen needs three settings, on **Production AND Preview**
+(`vercel env add NAME --environment production,preview`):
+
+| Setting | What it is |
+|---|---|
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | The public half of the VAPID key pair; the browser subscribes with it (public by design). |
+| `VAPID_PRIVATE_KEY` | The private half, which signs every push. **Sensitive**: mark it sensitive on Vercel, never print or commit it. |
+| `VAPID_SUBJECT` | `https://hub.anujajay.com` (how a push service can reach the sender; never a personal email). |
+
+The pair was generated on this computer with web-push's `generateVAPIDKeys()` and is in `.env.local`; copy the same
+pair to Vercel (a new pair would cut off every subscribed device). If any of the three is missing, push stays "not
+set up": Settings cannot turn it on and the daily run logs pushes as dry runs. Previews never send from the daily run
+(it skips them), but Settings there can subscribe a device and send a test. **Previews share the real database**, so a
+device subscribed on a preview is stored like any other, but its service worker and Home Screen app belong to the
+preview's address: a push opens the preview, and it stops working when the preview goes. Subscribe on
+`hub.anujajay.com`, and remove preview devices from the list.
+
+**Going live, in this order** (N.3, C140):
+
+1. Apply the migrations `0017_amazing_omega_sentinel.sql` (the `push_subscriptions` table) and
+   `0018_tricky_avengers.sql` (its `gone_at` column) with `pnpm db:migrate`. Both are additive. The code reads the
+   table, so the table comes first (if it is missing, Settings shows push as not set up instead of breaking).
+2. Set the three settings above on Vercel (Production and Preview).
+3. Merge, or redeploy if already merged: `NEXT_PUBLIC_VAPID_PUBLIC_KEY` is put into the build, so a deploy made
+   before it was set does not have it.
 
 ## End-to-end test (`pnpm e2e`, C121)
 

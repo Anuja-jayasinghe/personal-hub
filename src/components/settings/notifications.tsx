@@ -1,3 +1,4 @@
+import { PushLiveSwitch } from "@/components/settings/push";
 import { RowCard, Row, RowMeta } from "@/components/settings/settings-ui";
 import type { PreviewDay } from "@/features/notifications/planner";
 import type { RecentNotification } from "@/features/notifications/queries";
@@ -7,7 +8,7 @@ import { dayMonth, daysBetween, todayIn } from "@/lib/dates";
 
 /**
  * Settings › Notifications (N.1, DECISIONS C139). Display only: the page reads the data and passes it in.
- * Nothing leaves the hub yet, so the channels say "not set up yet" and have no switches (N.2, N.3).
+ * Email says "not set up yet" until N.2; the iPhone row has its switch since N.3 (C140).
  */
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -21,12 +22,24 @@ function dayLabel(date: string, today: string): string {
 
 const CHANNEL_TAG: Record<Channel, string> = { email: "Email", push: "iPhone" };
 
-/** The two ways the hub will reach you, both waiting for their piece (N.2 email, N.3 iPhone). */
-export function ChannelRows() {
+/**
+ * The two ways the hub reaches you. Email waits for N.2. The iPhone row carries the switch that makes
+ * the morning run's pushes real (N.3, C140): off, it only logs what it would push.
+ */
+export function ChannelRows({ push }: { push: { configured: boolean; switchedOn: boolean } }) {
   return (
     <RowCard>
       <Row label="Email" hint="plans ahead: renewals 30 days before, services 14, electricity bills 7" end={<RowMeta tone="quiet">Not set up yet</RowMeta>} />
-      <Row label="iPhone" hint="acts now: the day before or on the day, and once on the first day overdue" end={<RowMeta tone="quiet">Not set up yet</RowMeta>} />
+      <Row
+        label="iPhone"
+        hint={
+          push.configured
+            ? `acts now: the day before or on the day, and once on the first day overdue${push.switchedOn ? "" : " · off: logged, not sent"}`
+            : `acts now: the day before or on the day, and once on the first day overdue${push.switchedOn ? " · not set up on the server" : ""}`
+        }
+        // Not set up: no switch, unless it was left on (then it can only be turned off).
+        end={push.configured || push.switchedOn ? <PushLiveSwitch on={push.switchedOn} configured={push.configured} /> : <RowMeta tone="quiet">Not set up yet</RowMeta>}
+      />
     </RowCard>
   );
 }
@@ -76,6 +89,7 @@ export function ComingUpLine({ days, today }: { days: PreviewDay[]; today: strin
 function StatusTag({ row }: { row: RecentNotification }) {
   switch (row.shown) {
     case "dry_run":
+      // A dry run of a channel that is not switched on yet.
       return <RowMeta tone="quiet">Not sent · dry run</RowMeta>;
     case "pending":
       return <RowMeta tone="blue">Sending</RowMeta>;
