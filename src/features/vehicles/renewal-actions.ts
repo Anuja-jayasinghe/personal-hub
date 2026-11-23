@@ -28,13 +28,23 @@ function fieldsFrom(fd: FormData, options: { expiryAfter?: string } = {}, forced
   return result.value;
 }
 
+/** A vehicle whose emission certificates print an inaccurate odometer keeps none (issue #184). */
+function withoutIgnoredOdometer<T extends { odometerKm: number | null }>(fields: T, ignore: boolean): T {
+  return ignore ? { ...fields, odometerKm: null } : fields;
+}
+
+async function ignoresOdometer(vehicleId: string): Promise<boolean> {
+  const [v] = await db.select({ ignore: vehicles.ignoreEmissionOdometer }).from(vehicles).where(eq(vehicles.id, vehicleId));
+  return v?.ignore ?? false;
+}
+
 export async function createRenewal(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
     await requireUser({ area: "vehicles", level: "add" });
     const vehicleId = idFrom(fd, "vehicleId");
-    const [vehicle] = await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, vehicleId));
+    const [vehicle] = await db.select({ id: vehicles.id, ignoreEmissionOdometer: vehicles.ignoreEmissionOdometer }).from(vehicles).where(eq(vehicles.id, vehicleId));
     if (!vehicle) throw new ValidationError("That vehicle could not be found.");
-    await db.insert(vehicleRenewals).values({ vehicleId, ...fieldsFrom(fd) });
+    await db.insert(vehicleRenewals).values({ vehicleId, ...withoutIgnoredOdometer(fieldsFrom(fd), vehicle.ignoreEmissionOdometer) });
     refresh();
     return { ok: true };
   } catch (err) {
@@ -45,7 +55,10 @@ export async function createRenewal(_prev: ActionState, fd: FormData): Promise<A
 export async function updateRenewal(_prev: ActionState, fd: FormData): Promise<ActionState> {
   try {
     await requireUser({ area: "vehicles", level: "edit" });
-    await db.update(vehicleRenewals).set(fieldsFrom(fd)).where(eq(vehicleRenewals.id, idFrom(fd)));
+    const id = idFrom(fd);
+    const [row] = await db.select({ vehicleId: vehicleRenewals.vehicleId }).from(vehicleRenewals).where(eq(vehicleRenewals.id, id));
+    if (!row) throw new ValidationError("That renewal could not be found.");
+    await db.update(vehicleRenewals).set(withoutIgnoredOdometer(fieldsFrom(fd), await ignoresOdometer(row.vehicleId))).where(eq(vehicleRenewals.id, id));
     refresh();
     return { ok: true };
   } catch (err) {
@@ -66,7 +79,7 @@ export async function renewRenewal(_prev: ActionState, fd: FormData): Promise<Ac
       const [old] = await tx.select().from(vehicleRenewals).where(eq(vehicleRenewals.id, oldId));
       if (!old) throw new ValidationError("That renewal could not be found.");
       if (old.renewedAt) throw new ValidationError("This renewal has already been renewed.");
-      const next = fieldsFrom(fd, { expiryAfter: old.expiryDate }, old.type);
+      const next = withoutIgnoredOdometer(fieldsFrom(fd, { expiryAfter: old.expiryDate }, old.type), await ignoresOdometer(old.vehicleId));
       await tx.update(vehicleRenewals).set({ renewedAt: new Date() }).where(eq(vehicleRenewals.id, oldId));
       await tx.insert(vehicleRenewals).values({ vehicleId: old.vehicleId, ...next });
     });

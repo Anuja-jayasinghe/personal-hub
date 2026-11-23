@@ -115,12 +115,12 @@ async function VehicleContent({
 
           <NotesPanel scope={{ kind: "owner", owner: { ownerType: "vehicle", ownerId: vehicle.id } }} title="Notes" quietWhenEmpty />
 
-          <OdometerSection vehicleId={vehicle.id} vehicleName={vehicle.nickname} />
+          <OdometerSection vehicleId={vehicle.id} vehicleName={vehicle.nickname} ignoreEmissionOdometer={vehicle.ignoreEmissionOdometer} />
         </div>
       ) : current.key === "services" ? (
         <ServicesTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} />
       ) : current.key === "renewals" ? (
-        <RenewalsTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} namePrefix={vehiclePart(vehicle)} showDocuments={allows(access, "vehicle_documents", "see")} />
+        <RenewalsTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} namePrefix={vehiclePart(vehicle)} askOdometer={!vehicle.ignoreEmissionOdometer} showDocuments={allows(access, "vehicle_documents", "see")} />
       ) : (
         <DocumentsTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} namePrefix={vehiclePart(vehicle)} coverAttachmentId={vehicle.coverAttachmentId} query={q ?? ""} sort={sort} />
       )}

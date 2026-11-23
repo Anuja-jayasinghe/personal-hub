@@ -14,7 +14,7 @@ import { createService } from "@/features/vehicles/service-actions";
  * sheet closes itself after saving and the tabs that show these buttons render on the server.
  */
 
-export function AddRenewalSheet({ vehicleId, vehicleName, types }: { vehicleId: string; vehicleName: string; types: readonly string[] }) {
+export function AddRenewalSheet({ vehicleId, vehicleName, types, askOdometer = true }: { vehicleId: string; vehicleName: string; types: readonly string[]; askOdometer?: boolean }) {
   return (
     <SheetButton
       label="Add renewal"
@@ -23,7 +23,7 @@ export function AddRenewalSheet({ vehicleId, vehicleName, types }: { vehicleId: 
       description="Pick what it is and when it ends; you get a countdown and reminders before it lapses."
       variant="default"
     >
-      {(close) => <RenewalForm mode="create" action={createRenewal} types={types} vehicleId={vehicleId} onDone={close} />}
+      {(close) => <RenewalForm mode="create" action={createRenewal} types={types} vehicleId={vehicleId} askOdometer={askOdometer} onDone={close} />}
     </SheetButton>
   );
 }

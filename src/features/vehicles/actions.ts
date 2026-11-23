@@ -22,7 +22,7 @@ import { requireUser } from "@/lib/auth";
 
 function fieldsFrom(fd: FormData) {
   const raw: Record<string, string | undefined> = {};
-  for (const key of ["nickname", "registrationNumber", "make", "model", "year", "fuelType", "vehicleType", "odometerKm"]) {
+  for (const key of ["nickname", "registrationNumber", "make", "model", "year", "fuelType", "vehicleType", "odometerKm", "ignoreEmissionOdometer"]) {
     const v = fd.get(key);
     raw[key] = typeof v === "string" ? v : undefined;
   }

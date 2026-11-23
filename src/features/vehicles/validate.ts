@@ -13,6 +13,8 @@ export type VehicleFields = {
   fuelType: string | null;
   vehicleType: string | null;
   odometerKm: number | null;
+  /** The vehicle's emission certificates print an inaccurate odometer, so they are left off its timeline (issue #184). */
+  ignoreEmissionOdometer: boolean;
 };
 
 export type VehicleResult = { ok: true; value: VehicleFields } | { ok: false; error: string };
@@ -78,6 +80,8 @@ export function parseVehicle(
       fuelType: fuel || null,
       vehicleType: vehicleType || null,
       odometerKm: odometer.value,
+      // A checkbox: sent as "on" when ticked, not sent at all otherwise.
+      ignoreEmissionOdometer: raw.ignoreEmissionOdometer === "on",
     },
   };
 }
