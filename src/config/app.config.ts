@@ -43,6 +43,12 @@ export const appConfig = {
   /** The live address (HOSTING.md, C115), for links in notifications, which are read outside the app. */
   siteUrl: "https://hub.anujajay.com",
 
+  /**
+   * Who the plan-ahead emails come from (N.2, C141): Resend, from the verified sending subdomain. Not a
+   * secret. The address they go to is the NOTIFY_EMAIL_TO setting, never in the code.
+   */
+  emailFrom: "hub <notify@mail.hub.anujajay.com>",
+
   logo: {
     /** The mark itself is src/components/brand/hub-mark.tsx; this is its accessible name. */
     alt: "hub",

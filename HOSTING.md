@@ -44,6 +44,19 @@ Production (`VERCEL_ENV=production`): previews use real data, so there it answer
 writes the `notifications` send log (dry runs until N.2 and N.3 build the channels) and answers with counts only.
 Vercel's dashboard lists the job under *Settings › Cron Jobs*.
 
+## Plan-ahead email (N.2, C141)
+
+The run sends the plan-ahead email through **Resend** (its REST API, no SDK) from `hub <notify@mail.hub.anujajay.com>`,
+on the sending subdomain `mail.hub.anujajay.com` verified in Resend. Two settings, both **sensitive, on Production and
+Preview**:
+
+- `RESEND_API_KEY`: a Resend key with sending access only, restricted to `mail.hub.anujajay.com`;
+- `NOTIFY_EMAIL_TO`: where the owner's emails go (a Gmail "+hub" address, so one Gmail filter catches them). Never in
+  the repo.
+
+Without both, or until the owner switches email on in *Settings › Notifications*, email stays a dry run. Previews have
+the settings (so Settings shows the right state) but never run `/api/notify`; a test email from a preview does send.
+
 ## End-to-end test (`pnpm e2e`, C121)
 
 `e2e/sharing.spec.ts` runs against the live site with Playwright: a TEST account (`hub-test-person@anujajay.com`,

@@ -1,24 +1,18 @@
+import { emailSender } from "./email";
+import { NotSentError } from "./not-sent";
 import type { Message } from "./planner";
 import type { Channel } from "./steps";
 
 /**
  * The ways a notification leaves the hub (Notifications N.1, C139): email (N.2, Resend) and an iPhone
- * push (N.3, web push). Neither is built yet, so the run is a dry run: it writes the send log with
+ * push (N.3, web push). A channel that is not live is a dry run: it writes the send log with
  * status `dry_run` and nothing leaves the server. A channel only goes live when it is both
- * implemented and switched on in Settings (`app_settings`, key "notifications", default off). Pure.
+ * implemented (email: built in N.2, and its two settings are present) and switched on in Settings
+ * (`app_settings`, key "notifications", default off).
  */
 
-/**
- * Thrown by a sender when it KNOWS nothing went out (the provider refused the message, a bad address).
- * The rows are stamped `failed` and the notice may be retried on a later run while still timely. Any
- * other error is an unknown outcome: the rows stay `pending` and are never sent again.
- */
-export class NotSentError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "NotSentError";
-  }
-}
+// NotSentError lives in its own file so senders can import it without an import cycle (N.2).
+export { NotSentError };
 
 export type ChannelSender = {
   channel: Channel;
@@ -39,7 +33,8 @@ function notBuiltYet(channel: Channel, piece: string): ChannelSender {
 }
 
 export const SENDERS: Record<Channel, ChannelSender> = {
-  email: notBuiltYet("email", "N.2"),
+  // N.2 (C141): Resend; "implemented" only while RESEND_API_KEY and NOTIFY_EMAIL_TO are set.
+  email: emailSender(),
   push: notBuiltYet("push", "N.3"),
 };
 
