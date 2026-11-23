@@ -27,15 +27,10 @@ async function Channels() {
   return <ChannelRows push={{ configured, switchedOn }} />;
 }
 
-/** Left out while push is not set up on the server: the iPhone row above already says so. */
+/** Left out while push is not set up on the server: the iPhone row above already says so. Its heading names the device. */
 async function Device() {
   const setup = await getPushSetup();
-  if (!setup.configured) return null;
-  return (
-    <SettingsSection label="This iPhone">
-      <ThisDevice setup={setup} />
-    </SettingsSection>
-  );
+  return setup.configured ? <ThisDevice setup={setup} /> : null;
 }
 
 async function Recent() {

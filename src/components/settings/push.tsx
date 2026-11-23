@@ -2,6 +2,7 @@
 
 import { Share, SquarePlus, X } from "lucide-react";
 import { useEffect, useOptimistic, useState, useTransition } from "react";
+import { SettingsSection } from "@/components/settings/settings-ui";
 import { Button } from "@/components/ui/button";
 import { appConfig } from "@/config/app.config";
 import { removePushDevice, sendTestPush, setPushLive, subscribePush, unsubscribePush } from "@/features/notifications/actions";
@@ -158,7 +159,9 @@ export function DeviceList({ devices, thisHash, busy, onRemove }: { devices: Pus
               {d.label}
               {d.endpointHash === thisHash ? <span className="font-mono text-[10px] font-normal tracking-[0.12em] text-primary uppercase">This one</span> : null}
             </span>
-            <span className="text-[12.5px] text-muted-foreground">{d.lastOkAt ? `Last reached ${shortDay(d.lastOkAt)}` : `Added ${shortDay(d.createdAt)} · nothing sent yet`}</span>
+            <span className="text-[12.5px] text-muted-foreground">
+              {d.gone ? "Stopped accepting pushes" : d.lastOkAt ? `Last reached ${shortDay(d.lastOkAt)}` : `Added ${shortDay(d.createdAt)} · nothing sent yet`}
+            </span>
           </span>
           <button
             type="button"
@@ -182,6 +185,17 @@ async function sha256Hex(text: string): Promise<string> {
 
 type Detected = { state: DeviceState; device: string; thisHash: string | null };
 
+const UNSUPPORTED: Detected = { state: "unsupported", device: "browser", thisHash: null };
+
+/** True when the subscription was made with this VAPID public key (a new key pair needs a new subscription). */
+function sameKey(sub: PushSubscription, publicKey: string): boolean {
+  const key = sub.options?.applicationServerKey;
+  if (!key) return false;
+  const a = new Uint8Array(key);
+  const b = base64UrlToBytes(publicKey);
+  return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
 async function detect(setup: PushSetup): Promise<Detected> {
   const device = deviceLabelFrom(navigator.userAgent, navigator.maxTouchPoints);
   const apple = isAppleMobile(navigator.userAgent, navigator.maxTouchPoints);
@@ -203,12 +217,15 @@ async function detect(setup: PushSetup): Promise<Detected> {
     hasPushManager,
     hasNotification,
     permission: hasNotification ? Notification.permission : "default",
-    subscribedHere: thisHash !== null && setup.devices.some((d) => d.endpointHash === thisHash),
+    subscribedHere: thisHash !== null && setup.devices.some((d) => d.endpointHash === thisHash && !d.gone),
   });
   return { state, device: device === "Browser" ? "browser" : device, thisHash };
 }
 
-/** "This iPhone": works out the state in the browser, then offers the one thing that can be done. */
+/**
+ * "This iPhone" ("This device" elsewhere): works out the state in the browser, then offers the one
+ * thing that can be done. Renders its own section, so the heading can name the device.
+ */
 export function ThisDevice({ setup }: { setup: PushSetup }) {
   const [detected, setDetected] = useState<Detected | null>(null);
   const [message, setMessage] = useState<DeviceViewProps["message"]>(null);
@@ -218,7 +235,7 @@ export function ThisDevice({ setup }: { setup: PushSetup }) {
     let live = true;
     detect(setup)
       .then((d) => live && setDetected(d))
-      .catch(() => live && setDetected({ state: "unsupported", device: "browser", thisHash: null }));
+      .catch(() => live && setDetected(UNSUPPORTED));
     return () => {
       live = false;
     };
@@ -231,7 +248,7 @@ export function ThisDevice({ setup }: { setup: PushSetup }) {
       } catch {
         setMessage({ tone: "error", text: "Something went wrong. Please try again." });
       }
-      setDetected(await detect(setup).catch(() => null));
+      setDetected(await detect(setup).catch(() => UNSUPPORTED));
     });
 
   const turnOn = () =>
@@ -241,6 +258,9 @@ export function ThisDevice({ setup }: { setup: PushSetup }) {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") return permission === "denied" ? null : { tone: "error", text: "Pushes stay off until you allow them." };
       const reg = await navigator.serviceWorker.ready;
+      // A subscription made with another key pair cannot receive our pushes: drop it and make a new one.
+      const existing = await reg.pushManager.getSubscription();
+      if (existing && !sameKey(existing, setup.publicKey)) await existing.unsubscribe();
       const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToBytes(setup.publicKey) });
       const res = await subscribePush(sub.toJSON(), deviceLabelFrom(navigator.userAgent, navigator.maxTouchPoints));
       if (!res.ok) {
@@ -264,7 +284,8 @@ export function ThisDevice({ setup }: { setup: PushSetup }) {
 
   const test = () =>
     run(async () => {
-      const res = await sendTestPush();
+      // To this device only: the server matches the hash of its endpoint against the caller's own devices.
+      const res = await sendTestPush(detected?.thisHash ?? null);
       return res.ok ? { tone: "ok", text: "Sent. It should arrive in a few seconds." } : { tone: "error", text: res.error ?? "Could not send the test." };
     });
 
@@ -274,12 +295,18 @@ export function ThisDevice({ setup }: { setup: PushSetup }) {
       return res.ok ? null : { tone: "error", text: res.error ?? "Could not remove it." };
     });
 
-  if (!detected) return <div aria-busy className="h-36 animate-pulse rounded-2xl border bg-card" />;
+  const label = detected?.device === "iPhone" || detected?.device === "iPad" ? `This ${detected.device}` : "This device";
   return (
-    <div className="flex flex-col gap-2.5">
-      <DeviceView state={detected.state} device={detected.device} busy={busy} message={message} onTurnOn={turnOn} onTurnOff={turnOff} onTest={test} />
-      <DeviceList devices={setup.devices} thisHash={detected.thisHash} busy={busy} onRemove={remove} />
-    </div>
+    <SettingsSection label={label}>
+      {detected ? (
+        <>
+          <DeviceView state={detected.state} device={detected.device} busy={busy} message={message} onTurnOn={turnOn} onTurnOff={turnOff} onTest={test} />
+          <DeviceList devices={setup.devices} thisHash={detected.thisHash} busy={busy} onRemove={remove} />
+        </>
+      ) : (
+        <div aria-busy className="h-36 animate-pulse rounded-2xl border bg-card" />
+      )}
+    </SettingsSection>
   );
 }
 
@@ -306,7 +333,8 @@ export function PushLiveSwitch({ on, configured }: { on: boolean; configured: bo
         role="switch"
         aria-checked={checked}
         aria-label="Send iPhone pushes"
-        disabled={!configured || busy}
+        // Without the keys it can still be turned OFF (a switch left on from before), never on.
+        disabled={busy || (!configured && !checked)}
         onClick={toggle}
         className={`relative h-[26px] w-11 shrink-0 rounded-full outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 ${checked ? "bg-primary" : "bg-raised ring-1 ring-border"}`}
       >

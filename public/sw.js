@@ -49,8 +49,7 @@ self.addEventListener("push", function (event) {
       icon: "/brand/hub-192.png",
       badge: "/brand/hub-192.png",
       data: { href: push.href },
-      // One notification per place: a newer push about the same page replaces the older one.
-      tag: push.href,
+      // No `tag`: a tag would make a later push to the same page silently replace the earlier one.
     }),
   );
 });
@@ -59,17 +58,28 @@ self.addEventListener("notificationclick", function (event) {
   event.notification.close();
   var origin = self.location.origin;
   var href = safePath(event.notification.data && event.notification.data.href, origin);
+  var target = origin + href;
+  var open = function () {
+    return self.clients.openWindow(target);
+  };
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (windows) {
-      for (var i = 0; i < windows.length; i++) {
-        var w = windows[i];
-        if (new URL(w.url).origin === origin && "focus" in w) {
-          return w.focus().then(function (focused) {
-            return focused && "navigate" in focused ? focused.navigate(origin + href) : focused;
-          });
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then(function (windows) {
+        for (var i = 0; i < windows.length; i++) {
+          var w = windows[i];
+          if (new URL(w.url).origin === origin && "focus" in w) {
+            return w.focus().then(function (focused) {
+              // navigate() fails for a window this worker does not control: open a new one instead.
+              if (!focused || !("navigate" in focused)) return open();
+              return focused.navigate(target).then(function (navigated) {
+                return navigated || open();
+              }, open);
+            });
+          }
         }
-      }
-      return self.clients.openWindow(origin + href);
-    }),
+        return open();
+      })
+      .catch(open),
   );
 });

@@ -9,15 +9,32 @@
  * check is made when the subscription is saved AND again before every send.
  */
 
-/** Exact hosts of the push services: Apple (Safari, iPhone), Google (Chrome, FCM), Mozilla (Firefox). */
-const EXACT_HOSTS = new Set(["web.push.apple.com", "fcm.googleapis.com", "updates.push.services.mozilla.com"]);
+/**
+ * Exact hosts of the push services: Apple's documented Safari / iPhone host, Google's FCM (and its old
+ * GCM host, still used by some Chrome installs) and Mozilla's autopush. Not every `*.googleapis.com`:
+ * that would include Google Cloud Storage, where anyone can host a URL.
+ */
+const EXACT_HOSTS = new Set(["web.push.apple.com", "fcm.googleapis.com", "android.googleapis.com", "updates.push.services.mozilla.com"]);
 
-/** Hosts ending in one of these (a dot before it, so `apple.com.evil.com` and `evilpush.apple.com` do not match). */
-const HOST_SUFFIXES = [".push.apple.com", ".googleapis.com", ".notify.windows.com"];
+/**
+ * One extra label in front of these: Apple asks servers that check endpoints to allow `*.push.apple.com`
+ * (WebKit, "Meet Web Push for Safari"), and Windows (Edge) uses `wns2-<region>.notify.windows.com`.
+ */
+const ONE_LABEL_UNDER = [".push.apple.com", ".notify.windows.com"];
 
 const MAX_ENDPOINT = 1024;
 
-/** True when `endpoint` is an https address on one of the real push services. */
+/**
+ * True when `endpoint` is an https address on one of the real push services, written in its one
+ * canonical form.
+ *
+ * Canonical matters: web-push 3.x sends with Node's legacy `url.parse()`, which reads some strings
+ * differently from the WHATWG `URL` parser used here (`https://evil.com%2eweb.push.apple.com/x`,
+ * `https:/fcm.googleapis.com/x`, a backslash, a tab or a soft hyphen in the host). So the endpoint is only
+ * accepted when `new URL(endpoint).href` is exactly the same string AND it starts with
+ * `https://<hostname>/`: then there is nothing for the two parsers to disagree about (no user info, no
+ * port, no escapes or stray characters in the host), and the string that is stored and sent is that one.
+ */
 export function isAllowedPushEndpoint(endpoint: unknown): endpoint is string {
   if (typeof endpoint !== "string" || endpoint.length === 0 || endpoint.length > MAX_ENDPOINT) return false;
   let url: URL;
@@ -26,11 +43,13 @@ export function isAllowedPushEndpoint(endpoint: unknown): endpoint is string {
   } catch {
     return false;
   }
-  if (url.protocol !== "https:" || url.port !== "" || url.username !== "" || url.password !== "") return false;
-  // URL lower-cases the host and turns IP addresses into their canonical form, so they never match a name below.
+  if (url.href !== endpoint || url.protocol !== "https:") return false;
   const host = url.hostname;
+  if (!endpoint.startsWith(`https://${host}/`)) return false;
+  // Plain ASCII names only (an IP address never matches the names below).
+  if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host)) return false;
   if (EXACT_HOSTS.has(host)) return true;
-  return HOST_SUFFIXES.some((suffix) => host.endsWith(suffix) && host.length > suffix.length && /^[a-z0-9-]+(\.[a-z0-9-]+)*$/.test(host));
+  return ONE_LABEL_UNDER.some((suffix) => host.endsWith(suffix) && /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(host.slice(0, -suffix.length)));
 }
 
 /** base64url (no padding after we strip it): letters, digits, `-` and `_` only. */

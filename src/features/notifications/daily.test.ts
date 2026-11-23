@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/db/read";
-import { notifications } from "@/db/schema";
+import { notifications, pushSubscriptions } from "@/db/schema";
 import type { ReminderSource } from "@/features/reminders/engine";
 import { makeTestDb } from "@/test/pglite";
 
@@ -97,6 +97,21 @@ describe("runDaily", () => {
     expect((await rowsOf(OWNER)).length).toBeGreaterThan(0);
     expect((await rowsOf("broken@example.com")).length).toBe(0);
     expect(vi.mocked(console.error).mock.calls.flat().join(" ")).not.toContain("broken@example.com");
+  });
+
+  it("a held 'stopped accepting pushes' notice joins the day's email once, then its device row goes (N.3)", async () => {
+    const [gone] = await db
+      .insert(pushSubscriptions)
+      .values({ recipient: OWNER, endpoint: "https://web.push.apple.com/gone", p256dh: `B${"A".repeat(86)}`, auth: "abcdefghijklmnopqrstuv", deviceLabel: "iPhone", goneAt: MORNING })
+      .returning();
+    const report = await runDaily({ db, now: MORNING, allowedEmails: OWNER });
+    expect(report.messages.email).toBe(1);
+    const rows = await rowsOf(OWNER);
+    expect(rows.filter((r) => r.kind === "push-gone").map((r) => r.dedupeKey)).toEqual([`push-gone:${gone.id}`]);
+    expect(await db.select().from(pushSubscriptions)).toEqual([]);
+    // The next run has nothing more to say about it.
+    await runDaily({ db, now: new Date(MORNING.getTime() + 24 * 60 * 60 * 1000), allowedEmails: OWNER });
+    expect((await rowsOf(OWNER)).filter((r) => r.kind === "push-gone")).toHaveLength(1);
   });
 
   it("with nobody on the list it writes nothing", async () => {

@@ -2,12 +2,11 @@ import { composeMessage, type Message, type Notice } from "./planner";
 import type { Channel, SystemKind } from "./steps";
 
 /**
- * A message the planner's steps do not make (Notifications N.3, C140): a test push, or the email saying
- * an iPhone stopped accepting pushes. It still goes through the send log like any other (one row, its
- * own dedupe key), so the unique indexes keep it to once. Pure.
+ * Notices the planner's steps do not make (Notifications N.3, C140): a test push, or the email saying
+ * a device stopped accepting pushes. They still go through the send log like any other (one row each,
+ * their own dedupe key), so the unique indexes keep each to once. Pure.
  */
-export function systemMessage(input: {
-  recipient: string;
+export type SystemNoticeInput = {
   channel: Channel;
   kind: SystemKind;
   dedupeKey: string;
@@ -16,9 +15,10 @@ export function systemMessage(input: {
   href: string;
   /** "YYYY-MM-DD" in the app time zone: the log's due date for it. */
   today: string;
-}): Message {
-  const { recipient, channel, kind, dedupeKey, title, body, href, today } = input;
-  const notice: Notice = {
+};
+
+export function systemNotice({ channel, kind, dedupeKey, title, body, href, today }: SystemNoticeInput): Notice {
+  return {
     item: { id: dedupeKey, title, dueDate: today, href, kind },
     event: kind,
     step: "system",
@@ -30,5 +30,8 @@ export function systemMessage(input: {
     title,
     body,
   };
-  return composeMessage(recipient, channel, [notice]);
+}
+
+export function systemMessage(input: SystemNoticeInput & { recipient: string }): Message {
+  return composeMessage(input.recipient, input.channel, [systemNotice(input)]);
 }

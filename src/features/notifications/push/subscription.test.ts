@@ -1,5 +1,17 @@
+import { createECDH, randomBytes } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { generateRequestDetails, generateVAPIDKeys } from "web-push";
 import { cleanDeviceLabel, deviceLabelFrom, isAllowedPushEndpoint, parseSubscription } from "./subscription";
+import { hostWebPushWouldContact } from "./transport";
+
+const ALLOWED = [
+  "https://web.push.apple.com/QGf0abc",
+  "https://api.push.apple.com/3/device/xyz",
+  "https://fcm.googleapis.com/fcm/send/abc:def",
+  "https://android.googleapis.com/gcm/send/abc",
+  "https://updates.push.services.mozilla.com/wpush/v2/gAAA",
+  "https://wns2-par02p.notify.windows.com/w/?token=abc",
+];
 
 /** Made-up keys of the right shape: a 65-byte public key (87 characters) and a 16-byte secret (22). */
 const P256DH = `B${"A".repeat(86)}`;
@@ -7,15 +19,41 @@ const AUTH = "abcdefghijklmnopqrstuv";
 const sub = (endpoint: unknown, keys: unknown = { p256dh: P256DH, auth: AUTH }) => ({ endpoint, expirationTime: null, keys });
 
 describe("push endpoint allowlist (no server-side request forgery)", () => {
-  it.each([
-    "https://web.push.apple.com/QGf0abc",
-    "https://api.push.apple.com/3/device/xyz",
-    "https://fcm.googleapis.com/fcm/send/abc:def",
-    "https://android.googleapis.com/gcm/send/abc",
-    "https://updates.push.services.mozilla.com/wpush/v2/gAAA",
-    "https://wns2-par02p.notify.windows.com/w/?token=abc",
-  ])("allows %s", (endpoint) => {
+  it.each(ALLOWED)("allows %s", (endpoint) => {
     expect(isAllowedPushEndpoint(endpoint)).toBe(true);
+  });
+
+  it.each([
+    ["a %2e escape in the host (web-push would contact evil.com)", "https://evil.com%2eweb.push.apple.com/x"],
+    ["a %2e escape in front of an IP address", "https://127.0.0.1%2efcm.googleapis.com/x"],
+    ["one slash", "https:/fcm.googleapis.com/x"],
+    ["no slashes", "https:fcm.googleapis.com/x"],
+    ["backslashes", "https:\\\\fcm.googleapis.com/x"],
+    ["a soft hyphen in the host", "https://fcm.google­apis.com/x"],
+    ["a tab in the host", "https://fcm.google\tapis.com/x"],
+    ["a newline in the host", "https://fcm.googleapis.com\n/x"],
+    ["a tab in the path", "https://fcm.googleapis.com/x\ty"],
+    ["Google Cloud Storage", "https://storage.googleapis.com/bucket/x"],
+    ["any other googleapis host", "https://www.googleapis.com/x"],
+    ["two labels under push.apple.com", "https://a.b.push.apple.com/x"],
+    ["upper case (not canonical)", "https://FCM.googleapis.com/x"],
+    ["no path", "https://fcm.googleapis.com"],
+    ["an explicit default port", "https://fcm.googleapis.com:443/x"],
+    ["a punycode look-alike", "https://xn--fcm-googleapis-com.evil/x"],
+  ])("refuses %s", (_why, endpoint) => {
+    expect(isAllowedPushEndpoint(endpoint)).toBe(false);
+  });
+
+  it("every accepted endpoint is contacted by web-push itself at exactly the host that was checked", () => {
+    const ecdh = createECDH("prime256v1");
+    ecdh.generateKeys();
+    const keys = { p256dh: ecdh.getPublicKey().toString("base64url"), auth: randomBytes(16).toString("base64url") };
+    const vapidDetails = { subject: "https://hub.example.com", ...generateVAPIDKeys() };
+    for (const endpoint of ALLOWED) {
+      const details = generateRequestDetails({ endpoint, keys }, "{}", { vapidDetails });
+      expect(details.endpoint).toBe(endpoint);
+      expect(hostWebPushWouldContact(details.endpoint), endpoint).toBe(new URL(endpoint).hostname);
+    }
   });
 
   it.each([

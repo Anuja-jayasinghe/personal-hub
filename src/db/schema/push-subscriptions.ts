@@ -10,7 +10,8 @@ import { createdAt } from "./_columns";
  * all three are secrets of a sort (anyone holding them can push to the device), so they are never
  * logged, never sent back to the browser and never shown. The endpoint must be one of the real push
  * services (checked when it is saved and again before every send, src/features/notifications/push).
- * A subscription the push service says is gone (404 or 410) is deleted.
+ * A subscription the push service says is gone (404 or 410) is marked `gone_at`, never sent to again,
+ * and deleted once its one email notice is logged.
  */
 export const pushSubscriptions = pgTable(
   "push_subscriptions",
@@ -28,6 +29,12 @@ export const pushSubscriptions = pgTable(
     createdAt: createdAt(),
     /** The last time the push service accepted a message for it. */
     lastOkAt: timestamp("last_ok_at", { withTimezone: true }),
+    /**
+     * When the push service said the subscription is gone (404 or 410). Nothing is sent to it any more;
+     * the row stays only until the one "stopped accepting pushes" email notice is logged (that day, or
+     * on the next run when an email already went that day), then it is deleted. Migration 0018.
+     */
+    goneAt: timestamp("gone_at", { withTimezone: true }),
   },
   (t) => [
     check("push_subscriptions_recipient_check", sql`${t.recipient} = lower(${t.recipient}) and length(${t.recipient}) between 3 and 320`),

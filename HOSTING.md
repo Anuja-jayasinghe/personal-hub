@@ -57,9 +57,20 @@ Web push to the hub added to the iPhone's Home Screen needs three settings, on *
 
 The pair was generated on this computer with web-push's `generateVAPIDKeys()` and is in `.env.local`; copy the same
 pair to Vercel (a new pair would cut off every subscribed device). If any of the three is missing, push stays "not
-set up": Settings cannot turn it on and the daily run logs pushes as dry runs. Previews never send (the daily run
-skips them), but Settings there can subscribe a device and send a test. The `push_subscriptions` table comes with
-migration `0017_amazing_omega_sentinel.sql`, applied after merge with `pnpm db:migrate`.
+set up": Settings cannot turn it on and the daily run logs pushes as dry runs. Previews never send from the daily run
+(it skips them), but Settings there can subscribe a device and send a test. **Previews share the real database**, so a
+device subscribed on a preview is stored like any other, but its service worker and Home Screen app belong to the
+preview's address: a push opens the preview, and it stops working when the preview goes. Subscribe on
+`hub.anujajay.com`, and remove preview devices from the list.
+
+**Going live, in this order** (N.3, C140):
+
+1. Apply the migrations `0017_amazing_omega_sentinel.sql` (the `push_subscriptions` table) and
+   `0018_tricky_avengers.sql` (its `gone_at` column) with `pnpm db:migrate`. Both are additive. The code reads the
+   table, so the table comes first (if it is missing, Settings shows push as not set up instead of breaking).
+2. Set the three settings above on Vercel (Production and Preview).
+3. Merge, or redeploy if already merged: `NEXT_PUBLIC_VAPID_PUBLIC_KEY` is put into the build, so a deploy made
+   before it was set does not have it.
 
 ## End-to-end test (`pnpm e2e`, C121)
 

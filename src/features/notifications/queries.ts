@@ -2,6 +2,8 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
 import { connection } from "next/server";
+import { cache } from "react";
+import { safeErrorSummary } from "@/lib/errors";
 import { appConfig } from "@/config/app.config";
 import { readDb, type Db } from "@/db/read";
 import { appSettings, notifications, pushSubscriptions } from "@/db/schema";
@@ -84,6 +86,8 @@ export type PushDevice = {
   label: string;
   createdAt: Date;
   lastOkAt: Date | null;
+  /** The push service said it is gone (404/410): nothing is sent to it; it is removed once its email notice is logged. */
+  gone: boolean;
   /**
    * SHA-256 of the endpoint, so the page can tell which row is the browser it runs in (the browser
    * hashes its own endpoint) without the endpoint itself ever leaving the server.
@@ -101,30 +105,41 @@ export type PushSetup = {
   devices: PushDevice[];
 };
 
-/** Settings › Notifications › This iPhone (N.3, C140): the viewing owner's own devices and the push switch. */
-export async function getPushSetup(): Promise<PushSetup> {
+/**
+ * Settings › Notifications › This iPhone (N.3, C140): the viewing owner's own devices and the push
+ * switch. If the `push_subscriptions` table is not there yet (the code deployed before migration 0017),
+ * push shows as not set up instead of breaking the page. Use `getPushSetup` (memoised per request).
+ */
+export async function loadPushSetup(): Promise<PushSetup> {
   await connection();
   const recipient = await viewingOwner();
   const db = await readDb();
   const vapid = vapidFromEnv();
-  const [switches, rows] = await Promise.all([
-    switchesFrom(db),
-    db
+  const switches = await switchesFrom(db);
+  let rows: { id: string; label: string; endpoint: string; createdAt: Date; lastOkAt: Date | null; goneAt: Date | null }[];
+  try {
+    rows = await db
       .select({
         id: pushSubscriptions.id,
         label: pushSubscriptions.deviceLabel,
         endpoint: pushSubscriptions.endpoint,
         createdAt: pushSubscriptions.createdAt,
         lastOkAt: pushSubscriptions.lastOkAt,
+        goneAt: pushSubscriptions.goneAt,
       })
       .from(pushSubscriptions)
       .where(eq(pushSubscriptions.recipient, recipient))
-      .orderBy(desc(pushSubscriptions.createdAt)),
-  ]);
+      .orderBy(desc(pushSubscriptions.createdAt));
+  } catch (err) {
+    console.error(`Could not read push devices (is migration 0017/0018 applied?): ${safeErrorSummary(err)}`);
+    return { configured: false, publicKey: null, switchedOn: switches.push.enabled, devices: [] };
+  }
   return {
     configured: vapid !== null,
     publicKey: vapid?.publicKey ?? null,
     switchedOn: switches.push.enabled,
-    devices: rows.map(({ endpoint, ...r }) => ({ ...r, endpointHash: createHash("sha256").update(endpoint).digest("hex") })),
+    devices: rows.map(({ endpoint, goneAt, ...r }) => ({ ...r, gone: goneAt !== null, endpointHash: createHash("sha256").update(endpoint).digest("hex") })),
   };
 }
+
+export const getPushSetup = cache(loadPushSetup);

@@ -60,7 +60,7 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0
       web-push:
-        specifier: ^3.6.7
+        specifier: 3.6.7
         version: 3.6.7
     devDependencies:
       '@playwright/test':

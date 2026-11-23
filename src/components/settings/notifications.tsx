@@ -35,9 +35,10 @@ export function ChannelRows({ push }: { push: { configured: boolean; switchedOn:
         hint={
           push.configured
             ? `acts now: the day before or on the day, and once on the first day overdue${push.switchedOn ? "" : " · off: logged, not sent"}`
-            : "acts now: the day before or on the day, and once on the first day overdue"
+            : `acts now: the day before or on the day, and once on the first day overdue${push.switchedOn ? " · not set up on the server" : ""}`
         }
-        end={push.configured ? <PushLiveSwitch on={push.switchedOn} configured /> : <RowMeta tone="quiet">Not set up yet</RowMeta>}
+        // Not set up: no switch, unless it was left on (then it can only be turned off).
+        end={push.configured || push.switchedOn ? <PushLiveSwitch on={push.switchedOn} configured={push.configured} /> : <RowMeta tone="quiet">Not set up yet</RowMeta>}
       />
     </RowCard>
   );
