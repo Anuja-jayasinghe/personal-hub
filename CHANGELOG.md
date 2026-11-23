@@ -2,6 +2,14 @@
 
 Versions follow semver: **major** for changes that break how the hub is used or stored, **minor** for new features, **patch** for fixes (while below 1.0, breaking changes bump the minor). Since 0.6.1 they are automatic (DECISIONS C123): pull request titles follow Conventional Commits (`feat: …`, `fix: …`), release-please keeps a release pull request with the next version and its notes, and merging it tags `vX.Y.Z` and publishes the GitHub release (pre-release below 1.0). 0.6.0 and 0.6.1 were versioned by hand (C120).
 
+## [0.9.0](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.8.0...v0.9.0) (2026-11-23)
+
+
+### Features
+
+* **vehicles:** name documents by the convention from data the hub asks for ([#179](https://github.com/Anuja-jayasinghe/personal-hub/issues/179)) ([#180](https://github.com/Anuja-jayasinghe/personal-hub/issues/180)) ([5412117](https://github.com/Anuja-jayasinghe/personal-hub/commit/54121171e3a8917a90ceeb635cbb532dcdd5075e))
+* **vehicles:** odometer timeline from readings, services and emission tests ([#181](https://github.com/Anuja-jayasinghe/personal-hub/issues/181)) ([#183](https://github.com/Anuja-jayasinghe/personal-hub/issues/183)) ([7d83dec](https://github.com/Anuja-jayasinghe/personal-hub/commit/7d83dec42820c052f6a2d79a795b066777d66ec5))
+
 ## [0.8.0](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.7.0...v0.8.0) (2026-11-22)
 
 
