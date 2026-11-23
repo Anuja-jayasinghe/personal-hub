@@ -2,7 +2,7 @@ import { plateParts } from "./plate";
 
 /**
  * The file names the hub gives vehicle documents (issue #179): `PLATE_type_date.ext`, e.g.
- * `BAK-9366_license_2027-09-23.pdf`. The uploader's own file name is never used: the plate comes from
+ * `CAB-1234_license_2027-09-23.pdf`. The uploader's own file name is never used: the plate comes from
  * the vehicle, the type and date from the renewal or from what the upload form asks, and the
  * extension from the file type the server checked. Pure, so it is testable and the form can show the
  * name before saving.
@@ -66,7 +66,10 @@ export function renewalKind(typeLabel: string): string {
 /** The type part for a Documents upload: the kind, or for "Other" the words of its title. */
 export function documentKind(kind: DocKind, title: string | null): string {
   if (kind !== "other") return kind;
-  return slug(title ?? "").toLowerCase() || "other";
+  const words = slug(title ?? "").toLowerCase() || "other";
+  // An "Other" paper titled like a kind ("Insurance") must not get that kind's name, or it would be read
+  // back as that kind (issue #187): it becomes "other-insurance".
+  return isDocKind(words) && words !== "other" ? `other-${words}` : words;
 }
 
 /**

@@ -257,6 +257,8 @@ export function demoRows(today: string): Rows {
   const invoiceDate = addDays(today, -75);
   rows.attachments.push(
     { id: demoId(13, 21), ownerType: "vehicle", ownerId: DEMO_VEHICLES.car, storagePath: `demo/vehicle/${DEMO_VEHICLES.car}/21.pdf`, fileName: `DEM-1234_book_${bookDate}.pdf`, title: "Registration book", mimeType: "application/pdf", sizeBytes: 2_310 * 1024, createdAt: new Date(`${addDays(today, -200)}T09:00:00Z`) },
+    // An upload of a kind the Renewals tab owns: shown "on file" under insurance, never as the current paper.
+    { id: demoId(13, 23), ownerType: "vehicle", ownerId: DEMO_VEHICLES.bike, storagePath: `demo/vehicle/${DEMO_VEHICLES.bike}/23.jpg`, fileName: `DM-5678_insurance_${addDays(today, 200 - 365)}.jpg`, title: "Cover note", mimeType: "image/jpeg", sizeBytes: 340 * 1024, createdAt: new Date(`${addDays(today, -165)}T10:00:00Z`) },
     { id: demoId(13, 22), ownerType: "vehicle", ownerId: DEMO_VEHICLES.car, storagePath: `demo/vehicle/${DEMO_VEHICLES.car}/22.jpg`, fileName: `DEM-1234_service-invoice_${invoiceDate}.jpg`, title: "Service invoice", mimeType: "image/jpeg", sizeBytes: 760 * 1024, createdAt: new Date(`${invoiceDate}T15:00:00Z`) },
   );
 

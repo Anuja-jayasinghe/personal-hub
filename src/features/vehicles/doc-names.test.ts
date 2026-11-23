@@ -3,7 +3,7 @@ import { defaultDocTitle, docFileName, documentKind, extensionFor, parseDocUploa
 
 describe("vehiclePart", () => {
   it("uses the plate without its province", () => {
-    expect(vehiclePart({ registrationNumber: "BAK-9366", nickname: "Aprilia" })).toBe("BAK-9366");
+    expect(vehiclePart({ registrationNumber: "BAA-5678", nickname: "Bike" })).toBe("BAA-5678");
     expect(vehiclePart({ registrationNumber: "WP CAB-1234", nickname: "Car" })).toBe("CAB-1234");
     expect(vehiclePart({ registrationNumber: "wp cab 1234", nickname: "Car" })).toBe("CAB-1234");
   });
@@ -27,19 +27,24 @@ describe("kinds", () => {
     expect(documentKind("other", "Service invoice #12")).toBe("service-invoice-12");
     expect(documentKind("other", "  ")).toBe("other");
   });
+  it("never names an Other paper like a kind", () => {
+    expect(documentKind("other", "Insurance")).toBe("other-insurance");
+    expect(documentKind("other", "book")).toBe("other-book");
+    expect(documentKind("other", "Other")).toBe("other");
+  });
 });
 
 describe("docFileName", () => {
-  const parts = { vehicle: "BAK-9366", kind: "license", date: "2027-09-23", ext: "pdf" };
+  const parts = { vehicle: "BAA-5678", kind: "license", date: "2027-09-23", ext: "pdf" };
 
   it("builds PLATE_type_date.ext", () => {
-    expect(docFileName(parts)).toBe("BAK-9366_license_2027-09-23.pdf");
+    expect(docFileName(parts)).toBe("BAA-5678_license_2027-09-23.pdf");
   });
 
   it("adds _2, _3 when the record already has that name", () => {
-    expect(docFileName(parts, ["BAK-9366_license_2027-09-23.pdf"])).toBe("BAK-9366_license_2027-09-23_2.pdf");
-    expect(docFileName(parts, ["bak-9366_license_2027-09-23.PDF", "BAK-9366_license_2027-09-23_2.pdf"])).toBe("BAK-9366_license_2027-09-23_3.pdf");
-    expect(docFileName({ ...parts, ext: "jpg" }, ["BAK-9366_license_2027-09-23.pdf"])).toBe("BAK-9366_license_2027-09-23.jpg");
+    expect(docFileName(parts, ["BAA-5678_license_2027-09-23.pdf"])).toBe("BAA-5678_license_2027-09-23_2.pdf");
+    expect(docFileName(parts, ["baa-5678_license_2027-09-23.PDF", "BAA-5678_license_2027-09-23_2.pdf"])).toBe("BAA-5678_license_2027-09-23_3.pdf");
+    expect(docFileName({ ...parts, ext: "jpg" }, ["BAA-5678_license_2027-09-23.pdf"])).toBe("BAA-5678_license_2027-09-23.jpg");
   });
 
   it("never takes the extension from a name, only from the checked type", () => {

@@ -133,6 +133,7 @@ async function VehicleContent({
             canAdd: allows(access, "vehicle_documents", "add"),
             canEdit: allows(access, "vehicle_documents", "edit"),
             canRenew: allows(access, "vehicles", "edit"),
+            canAddRenewal: allows(access, "vehicles", "add"),
           }}
           askOdometer={!vehicle.ignoreEmissionOdometer}
           basePath={vehiclePath(vehicle)}

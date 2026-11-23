@@ -13,7 +13,9 @@ import {
   buildPapers,
   byUrgency,
   groupPapers,
+  isDatedKind,
   kindLabel,
+  renewDue,
   searchPapers,
   type Paper,
   type PaperFile,
@@ -32,12 +34,14 @@ import { formatBytes, formatDate, formatMoney, formatMonth, todayInAppTz } from 
  * state; the categories follow, most urgent first, each with its current paper and the earlier ones folded
  * underneath (with the gaps between them). A paper opens in an on-page viewer.
  *
- * The renewal records stay owned by the Renewals tab (one home per action, C102): "Renew" here opens that
- * tab's own form. Adding needs Add in Vehicle documents, replacing and deleting need Edit there (C114),
+ * The renewal records stay owned by the Renewals tab (one home per action, C102): for a revenue license,
+ * emission test or insurance the current paper and its days come only from renewals, "Renew" opens that
+ * tab's own form (inside 30 days of the end or overdue), and a plain upload of those kinds is tucked away and
+ * shown as "on file". Adding needs Add in Vehicle documents, replacing and deleting need Edit there (C114),
  * renewing needs Edit in Vehicles, the same as the actions check. Use inside <Suspense>.
  */
 
-export type DocumentsAccess = { canAdd: boolean; canEdit: boolean; canRenew: boolean };
+export type DocumentsAccess = { canAdd: boolean; canEdit: boolean; canRenew: boolean; canAddRenewal: boolean };
 
 type Ctx = {
   vehicleId: string;
@@ -51,6 +55,8 @@ type Ctx = {
   askOdometer: boolean;
   /** The tab's own address, for the chips and the category view. */
   href: (kind?: DocKind) => string;
+  /** The Renewals tab, where a renewal is added (one home per action). */
+  renewalsHref: string;
 };
 
 const TONE_TEXT = { ok: "text-status-ok", soon: "text-status-soon", overdue: "text-status-overdue" } as const;
@@ -110,12 +116,13 @@ export async function DocumentsTab({
     types: appConfig.vehicles.renewalTypes.map((t) => t.label),
     askOdometer,
     href: (k) => `${basePath}?tab=documents${k ? `&kind=${k}` : ""}`,
+    renewalsHref: `${basePath}?tab=renewals`,
   };
   const searching = query.trim() !== "";
   const selected = kind ? groups.find((g) => g.kind === kind) : undefined;
 
   return (
-    <section aria-label="Documents" className="flex flex-col gap-6">
+    <section id="vehicle-documents" tabIndex={-1} aria-label="Documents" className="flex flex-col gap-6 outline-none">
       {!selected && (papers.length > 2 || access.canAdd) ? (
         <div className="flex flex-wrap items-center gap-3">
           {papers.length > 2 ? (
@@ -206,9 +213,9 @@ const plural = (g: PaperGroup, n: number) => {
   return `${n} earlier ${n === 1 ? noun : noun === "policy" ? "policies" : `${noun}s`}`;
 };
 
-/** The renew form's data, when "Renew" applies to this paper and person. */
+/** The renew form's data, when "Renew" applies: the current renewal, inside 30 days of its end or overdue, for someone who may edit Vehicles. */
 function renewFor(ctx: Ctx, p: Paper, isCurrent: boolean): RenewProps | null {
-  if (!ctx.access.canRenew || !isCurrent || !p.renewalId) return null;
+  if (!ctx.access.canRenew || !isCurrent || !p.renewalId || !p.until || !renewDue(daysBetween(ctx.today, p.until))) return null;
   const renewal = ctx.renewals.get(p.renewalId);
   if (!renewal || renewal.renewedAt) return null;
   return { renewal, vehicleName: ctx.vehicleName, types: ctx.types, askOdometer: ctx.askOdometer };
@@ -223,6 +230,7 @@ function AllPapers({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
   const shown = ordered.filter((g) => g.status.tone !== "none");
   const empty = ordered.filter((g) => g.status.tone === "none");
   const nothing = shown.length === 0;
+  const canFill = ctx.access.canAdd || ctx.access.canAddRenewal;
 
   return (
     <>
@@ -233,8 +241,8 @@ function AllPapers({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
         {shown.map((g) => (
           <CompactCard key={g.kind} ctx={ctx} group={g} />
         ))}
-        {empty.length > 0 && ctx.access.canAdd ? <EmptyRow ctx={ctx} groups={empty} /> : null}
-        {nothing && !ctx.access.canAdd ? <NothingYet /> : null}
+        {empty.length > 0 && canFill ? <EmptyRow ctx={ctx} groups={empty} /> : null}
+        {nothing && !canFill ? <NothingYet /> : null}
       </div>
 
       {/* Desktop: the at-a-glance row, then each category in full. */}
@@ -244,15 +252,15 @@ function AllPapers({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
             <GlanceTile key={g.kind} group={g} href={g.status.tone === "none" ? ctx.href(g.kind) : `#doc-${g.kind}`} />
           ))}
         </nav>
-        {nothing && !ctx.access.canAdd ? <NothingYet /> : null}
+        {nothing && !canFill ? <NothingYet /> : null}
         <div className="@container">
           <div className="grid gap-x-5 gap-y-7 @5xl:grid-cols-2">
             {shown.map((g, i) => (
-              <CategorySection key={g.kind} ctx={ctx} group={g} wide={i === 0 || g.earlier.length > 0 || toneOf(g.status) === "soon" || toneOf(g.status) === "overdue"} />
+              <CategorySection key={g.kind} ctx={ctx} group={g} wide={i === 0 || g.earlier.length > 0 || (g.current !== null && g.onFile.length > 0) || toneOf(g.status) === "soon" || toneOf(g.status) === "overdue"} />
             ))}
           </div>
         </div>
-        {empty.length > 0 && ctx.access.canAdd ? <EmptyRow ctx={ctx} groups={empty} /> : null}
+        {empty.length > 0 && canFill ? <EmptyRow ctx={ctx} groups={empty} /> : null}
       </div>
     </>
   );
@@ -290,7 +298,7 @@ function Chips({ ctx, groups, current }: { ctx: Ctx; groups: PaperGroup[]; curre
 function GlanceTile({ group: g, href }: { group: PaperGroup; href: string }) {
   const tone = toneOf(g.status);
   const empty = g.status.tone === "none";
-  const art = g.current ?? g.earlier[0];
+  const art = g.current ?? g.onFile[0] ?? g.earlier[0];
   return (
     <a
       href={href}
@@ -307,18 +315,38 @@ function GlanceTile({ group: g, href }: { group: PaperGroup; href: string }) {
   );
 }
 
-/** One category in full (desktop): its current paper as a card, earlier ones folded underneath. */
+/** "Add" for a category: plain for the book and other papers; for a kind that runs out it is tucked away,
+ * because its paper normally comes from its renewal ("Renew", then "Add the scan"). */
+function AddForKind({ ctx, group: g }: { ctx: Ctx; group: PaperGroup }) {
+  if (!ctx.access.canAdd) return null;
+  const tucked = isDatedKind(g.kind);
+  return (
+    <AddDocumentSheet
+      vehicleId={ctx.vehicleId}
+      vehicleName={ctx.vehicleName}
+      namePrefix={ctx.namePrefix}
+      kind={g.kind}
+      label={tucked ? "Add another paper" : "Add"}
+      variant={tucked ? "ghost" : "outline"}
+    />
+  );
+}
+
+/** A kind that runs out with no renewal: its days come from a renewal, which is added on the Renewals tab. */
+function TrackInRenewals({ ctx }: { ctx: Ctx }) {
+  if (!ctx.access.canAddRenewal) return null;
+  return (
+    <Link href={ctx.renewalsHref} className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
+      Track it in Renewals
+    </Link>
+  );
+}
+
+/** One category in full (desktop): its current paper as a card, earlier and other copies folded underneath. */
 function CategorySection({ ctx, group: g, wide }: { ctx: Ctx; group: PaperGroup; wide: boolean }) {
-  const meta =
-    g.kind === "other"
-      ? null
-      : g.kind === "book"
-        ? g.earlier.length
-          ? `No expiry · ${g.earlier.length} earlier`
-          : "No expiry"
-        : g.earlier.length
-          ? `Current · ${g.earlier.length} earlier`
-          : "Current · no history yet";
+  const dated = isDatedKind(g.kind);
+  const meta = g.kind === "other" ? null : g.kind === "book" ? "No expiry" : g.current ? "Current" : "On file";
+  const folded = [g.earlier.length ? plural(g, g.earlier.length) : null, g.onFile.length && g.current ? `${g.onFile.length} more on file` : null].filter(Boolean).join(" · ");
   return (
     <section id={`doc-${g.kind}`} aria-labelledby={`doc-${g.kind}-title`} className={`flex scroll-mt-6 flex-col gap-3 ${wide ? "@5xl:col-span-2" : ""}`}>
       <div className="flex items-baseline gap-2.5">
@@ -329,34 +357,52 @@ function CategorySection({ ctx, group: g, wide }: { ctx: Ctx; group: PaperGroup;
         </h2>
         {meta ? <span className="font-mono text-[11px] tracking-[0.08em] text-label uppercase">{meta}</span> : null}
         <span className="flex-1" />
-        {ctx.access.canAdd ? <AddDocumentSheet vehicleId={ctx.vehicleId} vehicleName={ctx.vehicleName} namePrefix={ctx.namePrefix} kind={g.kind} label="Add" variant="outline" /> : null}
+        <AddForKind ctx={ctx} group={g} />
       </div>
 
       {g.current ? (
         <article className={`overflow-hidden rounded-[20px] border bg-card ${TONE_EDGE[toneOf(g.status) ?? "ok"]}`}>
           <CurrentCard ctx={ctx} group={g} paper={g.current} />
-          {g.earlier.length > 0 ? (
+          {folded ? (
             <details className="group border-t">
               <summary className="flex cursor-pointer list-none items-center gap-2 px-[18px] py-3 text-[13px] text-label hover:text-foreground [&::-webkit-details-marker]:hidden">
                 <ChevronRight aria-hidden className="size-4 transition-transform group-open:rotate-90" />
-                {plural(g, g.earlier.length)}
+                {folded}
               </summary>
-              <div className="px-[18px] pb-4">
-                <Timeline ctx={ctx} group={g} />
+              <div className="flex flex-col gap-4 px-[18px] pb-4">
+                {g.timeline.length ? <Timeline ctx={ctx} group={g} /> : null}
+                {g.onFile.length ? <OnFile ctx={ctx} papers={g.onFile} titled={g.timeline.length > 0} /> : null}
               </div>
             </details>
           ) : null}
         </article>
       ) : (
-        <ul className="grid gap-2.5 @2xl:grid-cols-2 @5xl:grid-cols-3">
-          {g.earlier.map((p) => (
-            <li key={p.key}>
-              <PaperTile ctx={ctx} paper={p} />
-            </li>
-          ))}
-        </ul>
+        <>
+          <OnFile ctx={ctx} papers={g.onFile} titled={false} />
+          {dated ? (
+            <p className="text-[13px] text-label">
+              No renewal for this yet, so no days are counted. <TrackInRenewals ctx={ctx} />
+            </p>
+          ) : null}
+        </>
       )}
     </section>
+  );
+}
+
+/** Papers simply on file: tiles that open the viewer. */
+function OnFile({ ctx, papers, titled }: { ctx: Ctx; papers: Paper[]; titled: boolean }) {
+  return (
+    <div className="@container flex flex-col gap-2">
+      {titled ? <span className="font-mono text-[10.5px] tracking-[0.12em] text-label uppercase">Also on file</span> : null}
+      <ul className="grid gap-2.5 @2xl:grid-cols-2 @5xl:grid-cols-3">
+        {papers.map((p) => (
+          <li key={p.key}>
+            <PaperTile ctx={ctx} paper={p} />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -377,8 +423,8 @@ function CurrentCard({ ctx, group: g, paper: p }: { ctx: Ctx; group: PaperGroup;
         <DaysRing days={days} ofDays={p.start && p.until ? Math.max(1, daysBetween(p.start, p.until)) : 365} size={72} label={`${g.label}: ${days < 0 ? `${-days} days late` : `${days} days left`}`} />
       ) : null}
       <div className="flex shrink-0 flex-col gap-2">
+        {renew ? <RenewSheet {...renew} /> : null}
         <OpenOrAdd ctx={ctx} paper={p} isCurrent label="View" />
-        {renew && days !== null && days <= 30 ? <RenewSheet {...renew} /> : null}
       </div>
     </div>
   );
@@ -408,7 +454,7 @@ function OpenOrAdd({ ctx, paper: p, isCurrent, label, primary = false }: { ctx: 
   );
 }
 
-/** A small card for one paper that opens it in the viewer (other papers, search results, earlier papers). */
+/** A small card for one paper that opens it in the viewer (papers on file, search results, earlier papers). */
 function PaperTile({ ctx, paper: p, isCurrent = false, faded = false }: { ctx: Ctx; paper: Paper; isCurrent?: boolean; faded?: boolean }) {
   const inner = (
     <>
@@ -482,11 +528,10 @@ function Timeline({ ctx, group: g }: { ctx: Ctx; group: PaperGroup }) {
 /** Phone: one category in a compact card, opening its own view. */
 function CompactCard({ ctx, group: g }: { ctx: Ctx; group: PaperGroup }) {
   const tone = toneOf(g.status);
-  const p = g.current ?? g.earlier[0];
-  const sub =
-    g.kind === "other"
-      ? (g.earlier.slice(0, 2).map((x) => x.name ?? "Paper").join(", ") + (g.earlier.length > 2 ? "…" : ""))
-      : [p?.until ? `until ${formatDate(p.until)}` : p?.dated ? `printed ${formatDate(p.dated)}` : null, g.earlier.length ? `${g.earlier.length} earlier` : null, p?.name].filter(Boolean).join(" · ");
+  const p = g.current ?? g.onFile[0] ?? g.earlier[0];
+  const sub = !g.current
+    ? g.onFile.slice(0, 2).map((x) => x.name ?? monthRange(x)).join(", ") + (g.onFile.length > 2 ? "…" : "")
+    : [p?.until ? `until ${formatDate(p.until)}` : p?.dated ? `printed ${formatDate(p.dated)}` : null, g.earlier.length ? `${g.earlier.length} earlier` : null, p?.name].filter(Boolean).join(" · ");
   return (
     <Link href={ctx.href(g.kind)} className={`flex items-center gap-3.5 rounded-[18px] border bg-card p-3.5 ${tone ? TONE_EDGE[tone] : ""}`}>
       <span className="flex h-12 w-[74px] shrink-0 items-center justify-center">{p ? <PaperArt kind={g.kind} size="sm" /> : null}</span>
@@ -506,7 +551,7 @@ function CompactCard({ ctx, group: g }: { ctx: Ctx; group: PaperGroup }) {
   );
 }
 
-/** Categories with nothing in them, in one quiet row, each with its own Add. */
+/** Categories with nothing in them, in one quiet row: the book and other papers are added here; a kind that runs out is tracked in Renewals. */
 function EmptyRow({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 rounded-[18px] border border-dashed px-4 py-3.5 md:px-5">
@@ -514,7 +559,15 @@ function EmptyRow({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
       {groups.map((g) => (
         <span key={g.kind} className="flex items-center gap-2">
           <span className="text-sm">{g.label}</span>
-          <AddDocumentSheet vehicleId={ctx.vehicleId} vehicleName={ctx.vehicleName} namePrefix={ctx.namePrefix} kind={g.kind} label="Add" variant="outline" />
+          {isDatedKind(g.kind) ? (
+            ctx.access.canAddRenewal ? (
+              <Link href={ctx.renewalsHref} className={buttonVariants({ variant: "outline", size: "sm" })}>
+                Track in Renewals
+              </Link>
+            ) : null
+          ) : ctx.access.canAdd ? (
+            <AddDocumentSheet vehicleId={ctx.vehicleId} vehicleName={ctx.vehicleName} namePrefix={ctx.namePrefix} kind={g.kind} label="Add" variant="outline" />
+          ) : null}
         </span>
       ))}
     </div>
@@ -531,6 +584,7 @@ function CategoryView({ ctx, group: g, groups }: { ctx: Ctx; group: PaperGroup; 
   const days = "days" in g.status ? g.status.days : null;
   const renew = p ? renewFor(ctx, p, true) : null;
   const sub = p ? subline(p) : "";
+  const dated = isDatedKind(g.kind);
   return (
     <>
       <Chips ctx={ctx} groups={groups} current={g.kind} />
@@ -540,7 +594,7 @@ function CategoryView({ ctx, group: g, groups }: { ctx: Ctx; group: PaperGroup; 
         </Link>
         <h2 className="font-display text-[22px] font-semibold tracking-tight md:text-2xl">{g.label}</h2>
         <span className="flex-1" />
-        {ctx.access.canAdd ? <AddDocumentSheet vehicleId={ctx.vehicleId} vehicleName={ctx.vehicleName} namePrefix={ctx.namePrefix} kind={g.kind} label="Add" variant="outline" /> : null}
+        <AddForKind ctx={ctx} group={g} />
       </div>
 
       <div className="grid gap-5 md:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] md:items-start">
@@ -565,22 +619,35 @@ function CategoryView({ ctx, group: g, groups }: { ctx: Ctx; group: PaperGroup; 
               )}
             </div>
             <div className="flex gap-2.5 [&>button]:flex-1">
+              {renew ? <RenewSheet {...renew} size="lg" variant={p.files.length ? "outline" : "default"} /> : null}
               <OpenOrAdd ctx={ctx} paper={p} isCurrent label="View" primary />
-              {renew ? <RenewSheet {...renew} size="lg" /> : null}
             </div>
           </article>
         ) : g.kind === "other" ? null : (
           <div className="flex flex-col items-center gap-3 rounded-[22px] border border-dashed p-8 text-center">
             <span aria-hidden className="h-[72px] w-[54px] rounded-[4px] border border-dashed border-quiet" />
-            <p className="text-sm text-muted-foreground">No {g.kind === "license" ? "license" : g.label.toLowerCase()} yet.</p>
+            <p className="text-sm text-muted-foreground">
+              {dated ? (g.onFile.length ? "No renewal for this yet, so no days are counted." : `No ${g.kind === "license" ? "license" : g.label.toLowerCase()} yet.`) : "No book yet."}
+            </p>
+            {dated ? <TrackInRenewals ctx={ctx} /> : null}
           </div>
         )}
 
-        {g.timeline.length > 0 ? (
-          <section aria-label={g.kind === "other" ? g.label : `Earlier ${g.label.toLowerCase()}`} className="flex flex-col">
-            <span className="pb-2.5 pl-1 font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">{g.kind === "other" ? `${g.earlier.length} on file` : "Earlier"}</span>
-            <Timeline ctx={ctx} group={g} />
-          </section>
+        {g.timeline.length > 0 || g.onFile.length > 0 ? (
+          <div className="@container flex flex-col gap-5">
+            {g.timeline.length > 0 ? (
+              <section aria-label={`Earlier ${g.label.toLowerCase()}`} className="flex flex-col">
+                <span className="pb-2.5 pl-1 font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">Earlier</span>
+                <Timeline ctx={ctx} group={g} />
+              </section>
+            ) : null}
+            {g.onFile.length > 0 ? (
+              <section aria-label={`${g.label} on file`} className="flex flex-col">
+                <span className="pb-2.5 pl-1 font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">{g.current ? "Also on file" : "On file"}</span>
+                <OnFile ctx={ctx} papers={g.onFile} titled={false} />
+              </section>
+            ) : null}
+          </div>
         ) : g.kind === "other" ? (
           <div className="flex flex-col items-center gap-3 rounded-[22px] border border-dashed p-8 text-center md:col-span-2">
             <p className="text-sm text-muted-foreground">Service invoices, warranty cards, purchase papers: nothing yet.</p>
@@ -614,4 +681,3 @@ function SearchResults({ ctx, query, found, groups }: { ctx: Ctx; query: string;
     </section>
   );
 }
-

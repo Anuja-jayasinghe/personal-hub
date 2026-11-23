@@ -53,7 +53,7 @@ export function AddDocumentSheet({
   /** Opened from a category on the Documents tab (issue #187): that kind is already chosen. */
   kind?: DocKind;
   label?: string;
-  variant?: "default" | "outline";
+  variant?: "default" | "outline" | "ghost";
 }) {
   const kindLabel = DOC_KINDS.find((k) => k.key === kind)?.label;
   return (
@@ -63,7 +63,8 @@ export function AddDocumentSheet({
       crumb={`/ ${vehicleName} / ${kindLabel ?? "New document"}`}
       description="Say what it is and its date; the hub names the file. Images or PDF, up to 10 MB."
       variant={variant}
-      size={variant === "outline" ? "sm" : "default"}
+      size={variant === "default" ? "default" : "sm"}
+      plus={variant !== "ghost"}
     >
       {(close) => <DocumentUploadForm vehicleId={vehicleId} namePrefix={namePrefix} defaultKind={kind} onDone={close} />}
     </SheetButton>

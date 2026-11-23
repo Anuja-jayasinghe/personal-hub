@@ -139,9 +139,17 @@ export function ReplaceFileForm({ id, owner, onDone }: { id: string; owner: { ow
   const { onSubmit, error, sending } = useDirectUpload(formAction, () => ({ purpose: "attachment", ...owner }));
 
   useEffect(() => {
-    if (state.ok) onDone?.();
+    if (state.ok && !state.notice) onDone?.();
   }, [state, onDone]);
 
+  // Replaced, but the old file is still there: say so, and offer no second replace (it would add a third file).
+  if (state.ok && state.notice) {
+    return (
+      <p role="status" className="text-sm text-status-soon">
+        {state.notice}
+      </p>
+    );
+  }
   const shown = error ?? state.error;
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-2">

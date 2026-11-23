@@ -301,7 +301,7 @@ Goal: every change is checked automatically, releases get a version without hand
 
 | Piece | Issue | What |
 |-------|-------|------|
-| D.1 | #187 | ✅ *(C138)* **Documents by category**: every paper of a vehicle in one place (renewal files included), current paper first with earlier ones and gaps on a timeline, most urgent category first, an on-page viewer with Renew, Download, replace and delete, category chips on the phone, adding from a category with the kind preset |
+| D.1 | #187 | ✅ *(C138)* **Documents by category**: every paper of a vehicle in one place (renewal files included; the dates and days of licenses, emission tests and insurance come only from renewals), current paper first with earlier ones and gaps on a timeline, most urgent category first, an on-page viewer with Renew, Download, replace and delete, category chips on the phone, adding from a category with the kind preset |
 
 ## Later (each needs its own decision)
 

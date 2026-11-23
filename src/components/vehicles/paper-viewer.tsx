@@ -2,7 +2,7 @@
 
 import { Dialog } from "@base-ui/react/dialog";
 import { ChevronLeft, ExternalLink, Minus, Plus } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { PopoverButton } from "@/components/electricity/popover-button";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { buttonVariants } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { PaperArt } from "@/components/vehicles/paper-art";
 import { RenewSheet } from "@/components/vehicles/vehicle-sheets";
 import type { VehicleRenewal } from "@/db/schema";
 import { deleteAttachment } from "@/features/shared/actions";
-import { daysWords, kindLabel, toneOfDays, type Paper, type PaperFile } from "@/features/vehicles/papers";
+import { kindLabel, toneOfDays, type Paper, type PaperFile } from "@/features/vehicles/papers";
 import { daysBetween } from "@/lib/dates";
 import { formatBytes, formatDate, formatMoney } from "@/lib/format";
 
@@ -65,13 +65,40 @@ export function PaperViewer({
   const [index, setIndex] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [failed, setFailed] = useState<string | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  /** Set when the paper is going away (deleted or replaced): focus then returns to the Documents tab, not the old button. */
+  const leaving = useRef(false);
   const file = paper.files[Math.min(index, paper.files.length - 1)];
+  const fileId = file?.id;
+  const pdf = file ? isPdf(file) : false;
+
+  // An iframe gives no sign when the file behind it cannot be had, so ask the private route first (without
+  // following its redirect to storage): a refusal or a missing file shows the fallback instead.
+  useEffect(() => {
+    if (!open || sample || !pdf || !fileId) return;
+    let live = true;
+    fetch(`/files/${fileId}`, { redirect: "manual", cache: "no-store" })
+      .then((res) => {
+        if (live && res.type !== "opaqueredirect" && !res.ok) setFailed(fileId);
+      })
+      .catch(() => {
+        if (live) setFailed(fileId);
+      });
+    return () => {
+      live = false;
+    };
+  }, [open, sample, pdf, fileId]);
+
   if (!file) return null;
 
   const label = kindLabel(paper.kind);
   const title = paper.name ?? label;
   const days = isCurrent && paper.until ? daysBetween(today, paper.until) : null;
   const tone = days === null ? null : toneOfDays(days);
+  const goAway = () => {
+    leaving.current = true;
+    setOpen(false);
+  };
   const choose = (i: number) => {
     setIndex(i);
     setZoom(1);
@@ -80,12 +107,18 @@ export function PaperViewer({
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger className={className} aria-label={ariaLabel}>
+      <Dialog.Trigger ref={triggerRef} className={className} aria-label={ariaLabel}>
         {children}
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 z-50 bg-[rgb(5_7_11/0.66)] transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0" />
-        <Dialog.Popup className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-background text-foreground shadow-[0_24px_40px_-16px_rgb(0_0_0/0.7)] transition duration-200 outline-none data-ending-style:opacity-0 data-starting-style:opacity-0 md:inset-6 md:flex-row md:overflow-hidden md:rounded-3xl md:border lg:inset-10">
+        <Dialog.Popup
+          finalFocus={() => {
+            const back = leaving.current || !triggerRef.current?.isConnected ? document.getElementById("vehicle-documents") : triggerRef.current;
+            leaving.current = false;
+            return back ?? true;
+          }}
+          className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-background text-foreground shadow-[0_24px_40px_-16px_rgb(0_0_0/0.7)] transition duration-200 outline-none data-ending-style:opacity-0 data-starting-style:opacity-0 md:inset-6 md:flex-row md:overflow-hidden md:rounded-3xl md:border lg:inset-10">
           <div className="flex min-w-0 shrink-0 flex-col md:min-h-0 md:flex-1 md:shrink">
             <div className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background px-3 py-2.5 md:static md:px-4">
               <Dialog.Close className={buttonVariants({ variant: "ghost", size: "icon" })} aria-label="Back to documents">
@@ -127,7 +160,10 @@ export function PaperViewer({
               ) : failed === file.id ? (
                 <div className="flex flex-col items-center gap-3 p-6 text-center">
                   <PaperArt kind={paper.kind} size="lg" month={paper.until?.slice(0, 7)} faded />
-                  <p className="max-w-xs text-sm text-muted-foreground">This file can’t be shown here. Download it to open it on this device.</p>
+                  <p className="max-w-xs text-sm text-muted-foreground">This file can’t be shown here.</p>
+                  <a href={`/files/${file.id}`} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline" })}>
+                    Open in a new tab
+                  </a>
                 </div>
               ) : isImage(file) ? (
                 <div className="flex h-full w-full items-center justify-center p-4 md:p-8">
@@ -189,13 +225,12 @@ export function PaperViewer({
                     {days === 0 ? "Ends today" : days < 0 ? `Ended ${formatDate(paper.until!)}` : `Ends ${formatDate(paper.until!)}`}
                   </span>
                 </span>
-                <span className="sr-only">{daysWords(days)}</span>
               </div>
             ) : null}
 
             <dl className="grid grid-cols-2 gap-x-3 gap-y-3.5">
               {paper.start ? <Fact term="From" value={formatDate(paper.start)} /> : null}
-              {paper.until ? <Fact term="Until" value={formatDate(paper.until)} /> : null}
+              {paper.until && days === null ? <Fact term="Until" value={formatDate(paper.until)} /> : null}
               {paper.dated ? <Fact term={paper.kind === "book" ? "Printed" : "Dated"} value={formatDate(paper.dated)} /> : null}
               {paper.amount !== null ? <Fact term="Paid" value={formatMoney(Number(paper.amount))} /> : null}
             </dl>
@@ -212,7 +247,7 @@ export function PaperViewer({
             <div className="flex flex-col gap-2.5">
               {renew ? (
                 <div className="[&>button]:w-full">
-                  <RenewSheet {...renew} variant="default" size="lg" onDone={() => setOpen(false)} />
+                  <RenewSheet {...renew} variant="default" size="lg" onDone={goAway} />
                 </div>
               ) : null}
               <div className="flex gap-2.5">
@@ -221,7 +256,7 @@ export function PaperViewer({
                     Download
                   </a>
                 )}
-                {canEdit && !sample ? <FileMenu file={file} label={label} onGone={() => setOpen(false)} /> : null}
+                {canEdit && !sample ? <FileMenu file={file} label={label} onGone={goAway} /> : null}
               </div>
             </div>
           </aside>
@@ -264,7 +299,14 @@ function FileMenu({ file, label, onGone }: { file: PaperFile; label: string; onG
               <DocumentRenameForm id={file.id} title={file.title ?? ""} />
             </div>
           ) : null}
-          <form action={deleteAttachment} className="border-t pt-3">
+          <form
+            action={async (fd) => {
+              close();
+              onGone();
+              await deleteAttachment(fd);
+            }}
+            className="border-t pt-3"
+          >
             <input type="hidden" name="id" value={file.id} />
             <SubmitButton variant="ghost" size="sm" className="w-full text-status-overdue" confirm={`Delete this ${label.toLowerCase()} file? This cannot be undone.`}>
               Delete this file…
