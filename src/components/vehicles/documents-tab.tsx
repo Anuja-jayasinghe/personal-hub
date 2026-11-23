@@ -19,12 +19,15 @@ import { Input } from "@/components/ui/input";
 export async function DocumentsTab({
   vehicleId,
   vehicleName,
+  namePrefix,
   coverAttachmentId,
   query,
   sort,
 }: {
   vehicleId: string;
   vehicleName: string;
+  /** The vehicle part of document file names (issue #179), for the upload form's preview. */
+  namePrefix: string;
   coverAttachmentId: string | null;
   query: string;
   sort: string | undefined;
@@ -39,7 +42,7 @@ export async function DocumentsTab({
   return (
     <section aria-label="Documents" className="flex flex-col gap-4">
       <div>
-        <AddDocumentSheet vehicleId={vehicleId} vehicleName={vehicleName} />
+        <AddDocumentSheet vehicleId={vehicleId} vehicleName={vehicleName} namePrefix={namePrefix} />
       </div>
       {all.length === 0 ? (
         <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">

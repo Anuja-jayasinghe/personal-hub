@@ -15,6 +15,7 @@ const ALLOWED = [
   /^src\/db\//,
   /^src\/features\/settings\/exports\.ts$/,
   /^src\/features\/shared\/(cleanup|files)\.ts$/,
+  /^src\/features\/vehicles\/doc-naming\.ts$/, // names uploads inside actions, after their check (issue #179)
   /^src\/app\/api\/keep-awake\/route\.ts$/, // checks CRON_SECRET first (C127)
 ];
 

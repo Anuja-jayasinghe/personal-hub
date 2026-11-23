@@ -11,6 +11,7 @@ import { describeDays } from "@/features/reminders/engine";
 import { attachmentsByOwner } from "@/features/shared/queries";
 import { listRenewals } from "@/features/vehicles/queries";
 import { deleteRenewal, renewRenewal, updateRenewal } from "@/features/vehicles/renewal-actions";
+import { docFileName, renewalKind } from "@/features/vehicles/doc-names";
 import { splitCurrentAndPast } from "@/features/vehicles/renewal-logic";
 import { daysBetween } from "@/lib/dates";
 import { formatDate, formatMoney, todayInAppTz } from "@/lib/format";
@@ -19,7 +20,7 @@ import { formatDate, formatMoney, todayInAppTz } from "@/lib/format";
  * The Renewals tab: current renewals with days left, a renewed action, documents, and history. A renewal's
  * papers are Vehicle documents (C114), so they only show to people who may see that section.
  */
-export async function RenewalsTab({ vehicleId, vehicleName, showDocuments }: { vehicleId: string; vehicleName: string; showDocuments: boolean }) {
+export async function RenewalsTab({ vehicleId, vehicleName, namePrefix, showDocuments }: { vehicleId: string; vehicleName: string; namePrefix: string; showDocuments: boolean }) {
   const list = await listRenewals(vehicleId);
   const files = showDocuments ? await attachmentsByOwner("vehicle_renewal", list.map((r) => r.id)) : null;
   const today = todayInAppTz(); // after the queries, which opt this render into request time
@@ -39,7 +40,7 @@ export async function RenewalsTab({ vehicleId, vehicleName, showDocuments }: { v
       ) : (
         <ul className="flex flex-col gap-2">
           {current.map((r) => (
-            <RenewalItem key={r.id} renewal={r} files={files ? (files.get(r.id) ?? []) : null} today={today} isCurrent types={types} />
+            <RenewalItem key={r.id} renewal={r} files={files ? (files.get(r.id) ?? []) : null} today={today} isCurrent types={types} namePrefix={namePrefix} />
           ))}
         </ul>
       )}
@@ -49,7 +50,7 @@ export async function RenewalsTab({ vehicleId, vehicleName, showDocuments }: { v
           <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">History ({past.length})</summary>
           <ul className="flex flex-col gap-2 border-t p-3">
             {past.map((r) => (
-              <RenewalItem key={r.id} renewal={r} files={files ? (files.get(r.id) ?? []) : null} today={today} isCurrent={false} types={types} />
+              <RenewalItem key={r.id} renewal={r} files={files ? (files.get(r.id) ?? []) : null} today={today} isCurrent={false} types={types} namePrefix={namePrefix} />
             ))}
           </ul>
         </details>
@@ -64,12 +65,14 @@ function RenewalItem({
   today,
   isCurrent,
   types,
+  namePrefix,
 }: {
   renewal: VehicleRenewal;
   files: Attachment[] | null;
   today: string;
   isCurrent: boolean;
   types: readonly string[];
+  namePrefix: string;
 }) {
   const days = daysBetween(today, r.expiryDate);
   const tone = days < 0 ? "font-medium text-status-overdue" : days <= 7 ? "text-status-soon" : "text-muted-foreground";
@@ -127,7 +130,11 @@ function RenewalItem({
           <details className="rounded-md border">
             <summary className="cursor-pointer px-3 py-1.5 text-sm text-muted-foreground">Documents ({files.length})</summary>
             <div className="border-t p-3">
-              <AttachmentsPanel owner={{ ownerType: "vehicle_renewal", ownerId: r.id }} items={files} />
+              <AttachmentsPanel
+                owner={{ ownerType: "vehicle_renewal", ownerId: r.id }}
+                items={files}
+                nameHint={docFileName({ vehicle: namePrefix, kind: renewalKind(r.type), date: r.expiryDate, ext: "pdf" }, files.map((f) => f.fileName))}
+              />
             </div>
           </details>
         ) : null}

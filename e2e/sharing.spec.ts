@@ -16,7 +16,11 @@ const EMAIL = "hub-test-person@anujajay.com";
 const SAMPLE_PLATE = "DEM-1234"; // only ever in the demo's sample data
 // The plate is drawn in pieces (series, a dash bar, digits; C130), so find it by its accessible name.
 const samplePlate = (page: Page) => page.getByRole("img", { name: `Plate ${SAMPLE_PLATE}` });
+// The hub names uploads itself (issue #179), so the TEST file is found by its title; the old name stays in the
+// clean-up for files left by runs before that change.
+const TEST_TITLE = "TEST upload";
 const TEST_FILE = "TEST upload.pdf";
+const TEST_DATE = "2000-01-01";
 /** The smallest file a PDF reader accepts, made here so the test needs no file on disk. */
 const TEST_PDF = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n");
 
@@ -35,7 +39,7 @@ async function clerk<T>(method: string, path: string, body?: unknown): Promise<T
 
 /** Removes every TEST upload: the stored file first, then its row. */
 async function deleteTestFiles(sql: postgres.Sql) {
-  const rows = await sql<{ id: string; bucket: string; storage_path: string }[]>`select id, bucket, storage_path from attachments where file_name = ${TEST_FILE}`;
+  const rows = await sql<{ id: string; bucket: string; storage_path: string }[]>`select id, bucket, storage_path from attachments where title = ${TEST_TITLE} or file_name = ${TEST_FILE}`;
   if (rows.length === 0) return;
   const storage = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!, { auth: { persistSession: false } }).storage;
   for (const r of rows) {
@@ -118,13 +122,18 @@ test.describe("sharing with a person who signs in by themselves", () => {
     test.skip(!vehicle, "the hub has no vehicle to attach the TEST file to");
     await page.goto(`/vehicles/${vehicle.id}?tab=documents`);
     await page.getByRole("button", { name: "Add document" }).click();
-    await page.getByLabel("Title").fill("TEST upload");
+    await page.getByLabel("What is it?").selectOption("other");
+    await page.getByLabel("Date").fill(TEST_DATE);
+    await page.getByLabel("What is it called?").fill(TEST_TITLE);
     await page.locator('input[type="file"][name="file"]').setInputFiles({ name: TEST_FILE, mimeType: "application/pdf", buffer: TEST_PDF });
+    await expect(page.getByText(/Saved as .*_test-upload_2000-01-01\.pdf/)).toBeVisible();
     await page.getByRole("button", { name: "Save document" }).click();
-    const link = page.getByRole("link", { name: "TEST upload" });
+    const link = page.getByRole("link", { name: TEST_TITLE });
     await expect(link).toBeVisible({ timeout: 45_000 });
 
-    const [stored] = await sql<{ id: string; size_bytes: number; mime_type: string }[]>`select id, size_bytes, mime_type from attachments where file_name = ${TEST_FILE}`;
+    // The hub named it PLATE_test-upload_2000-01-01.pdf, not the uploader's "TEST upload.pdf".
+    const [stored] = await sql<{ id: string; size_bytes: number; mime_type: string; file_name: string }[]>`select id, size_bytes, mime_type, file_name from attachments where title = ${TEST_TITLE}`;
+    expect(stored?.file_name).toMatch(/^[A-Z0-9-]+_test-upload_2000-01-01\.pdf$/);
     expect(stored?.mime_type).toBe("application/pdf");
     expect(Number(stored?.size_bytes)).toBe(TEST_PDF.length);
     const opened = await page.request.get(`/files/${stored.id}`);

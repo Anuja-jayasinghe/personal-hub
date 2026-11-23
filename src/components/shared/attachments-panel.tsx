@@ -11,7 +11,16 @@ import type { OwnerRef } from "@/lib/owners";
  * notes can fetch all their attachments in one query. Files open through /files/<id>, which
  * redirects to a short-lived signed link — the bucket itself is private.
  */
-export function AttachmentsPanel({ owner, items }: { owner: OwnerRef; items: Attachment[] }) {
+export function AttachmentsPanel({
+  owner,
+  items,
+  nameHint,
+}: {
+  owner: OwnerRef;
+  items: Attachment[];
+  /** The name the hub will give an upload here (vehicle renewals, issue #179), shown under the picker. */
+  nameHint?: string;
+}) {
   return (
     <div className="flex flex-col gap-3">
       {items.length > 0 ? (
@@ -48,7 +57,7 @@ export function AttachmentsPanel({ owner, items }: { owner: OwnerRef; items: Att
       ) : (
         <p className="text-sm text-muted-foreground">No files yet.</p>
       )}
-      <UploadForm owner={owner} />
+      <UploadForm owner={owner} nameHint={nameHint} />
     </div>
   );
 }
