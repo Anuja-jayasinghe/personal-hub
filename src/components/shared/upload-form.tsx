@@ -9,14 +9,16 @@ import { initialActionState } from "@/features/shared/types";
 import type { OwnerRef } from "@/lib/owners";
 
 /** Small upload form: pick an image or PDF (up to 10 MB) and attach it to `owner`. It goes straight to storage (C115). */
-export function UploadForm({ owner, nameHint }: { owner: OwnerRef; nameHint?: string }) {
+export function UploadForm({ owner, nameHint, onDone }: { owner: OwnerRef; nameHint?: string; /** Called after a successful upload, e.g. to close the sheet it sits in. */ onDone?: () => void }) {
   const [state, formAction, saving] = useActionState(uploadAttachment, initialActionState);
   const formRef = useRef<HTMLFormElement>(null);
   const { onSubmit, error, sending } = useDirectUpload(formAction, () => ({ purpose: "attachment", ...owner }));
 
   useEffect(() => {
-    if (state.ok) formRef.current?.reset();
-  }, [state]);
+    if (!state.ok) return;
+    formRef.current?.reset();
+    onDone?.();
+  }, [state, onDone]);
 
   const shown = error ?? state.error;
   return (

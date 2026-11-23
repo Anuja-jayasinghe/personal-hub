@@ -74,13 +74,27 @@ export function documentKind(kind: DocKind, title: string | null): string {
  * `_3`... (a licence scanned front and back), so two files never share a name.
  */
 export function docFileName(parts: { vehicle: string; kind: string; date: string; ext: string }, taken: readonly string[] = []): string {
-  const base = `${parts.vehicle}_${parts.kind}_${parts.date}`;
+  return uniqueName(`${parts.vehicle}_${parts.kind}_${parts.date}`, parts.ext, taken);
+}
+
+function uniqueName(base: string, ext: string, taken: readonly string[]): string {
   const used = new Set(taken.map((n) => n.toLowerCase()));
-  if (!used.has(`${base}.${parts.ext}`.toLowerCase())) return `${base}.${parts.ext}`;
+  if (!used.has(`${base}.${ext}`.toLowerCase())) return `${base}.${ext}`;
   for (let i = 2; ; i++) {
-    const name = `${base}_${i}.${parts.ext}`;
+    const name = `${base}_${i}.${ext}`;
     if (!used.has(name.toLowerCase())) return name;
   }
+}
+
+/**
+ * The name a replacement file gets (issue #187): the name of the file it replaces, with the new file's
+ * extension, kept unique among the record's other files. A hub name loses its `_2` first, so replacing
+ * the only file of a record gives back the plain name.
+ */
+export function replacementName(oldName: string, ext: string, siblings: readonly string[]): string {
+  const stem = oldName.replace(/\.[A-Za-z0-9]{1,5}$/, "");
+  const hub = /^([A-Za-z0-9-]+_[a-z0-9-]+_\d{4}-\d{2}-\d{2})(?:_\d+)?$/i.exec(stem);
+  return uniqueName(hub ? hub[1] : stem || "file", ext, siblings);
 }
 
 /** The title a Documents upload gets when none is typed: the kind, and its date unless it is a book. */

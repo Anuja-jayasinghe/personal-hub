@@ -128,8 +128,9 @@ test.describe("sharing with a person who signs in by themselves", () => {
     await page.locator('input[type="file"][name="file"]').setInputFiles({ name: TEST_FILE, mimeType: "application/pdf", buffer: TEST_PDF });
     await expect(page.getByText(/Saved as .*_test-upload_2000-01-01\.pdf/)).toBeVisible();
     await page.getByRole("button", { name: "Save document" }).click();
-    const link = page.getByRole("link", { name: TEST_TITLE });
-    await expect(link).toBeVisible({ timeout: 45_000 });
+    // It shows under Other on the Documents tab, as a paper that opens in the viewer (issue #187).
+    const paper = page.getByRole("button", { name: new RegExp(TEST_TITLE) });
+    await expect(paper).toBeVisible({ timeout: 45_000 });
 
     // The hub named it PLATE_test-upload_2000-01-01.pdf, not the uploader's "TEST upload.pdf".
     const [stored] = await sql<{ id: string; size_bytes: number; mime_type: string; file_name: string }[]>`select id, size_bytes, mime_type, file_name from attachments where title = ${TEST_TITLE}`;

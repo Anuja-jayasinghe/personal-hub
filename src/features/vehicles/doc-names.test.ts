@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defaultDocTitle, docFileName, documentKind, extensionFor, parseDocUpload, renewalKind, vehiclePart } from "./doc-names";
+import { defaultDocTitle, docFileName, documentKind, extensionFor, parseDocUpload, renewalKind, replacementName, vehiclePart } from "./doc-names";
 
 describe("vehiclePart", () => {
   it("uses the plate without its province", () => {
@@ -46,6 +46,21 @@ describe("docFileName", () => {
     expect(extensionFor("application/pdf")).toBe("pdf");
     expect(extensionFor("image/jpeg")).toBe("jpg");
     expect(extensionFor("text/html")).toBe("bin");
+  });
+});
+
+describe("replacementName", () => {
+  it("keeps the replaced file's name with the new extension", () => {
+    expect(replacementName("CAB-1234_insurance_2027-05-01.pdf", "jpg", [])).toBe("CAB-1234_insurance_2027-05-01.jpg");
+    expect(replacementName("CAB-1234_license_2027-02-12_2.jpg", "jpg", [])).toBe("CAB-1234_license_2027-02-12.jpg");
+  });
+
+  it("stays unique among the record's other files", () => {
+    expect(replacementName("CAB-1234_license_2027-02-12_2.jpg", "jpg", ["CAB-1234_license_2027-02-12.jpg"])).toBe("CAB-1234_license_2027-02-12_2.jpg");
+  });
+
+  it("keeps an older, non-hub name as it was", () => {
+    expect(replacementName("IMG_2041.jpg", "pdf", [])).toBe("IMG_2041.pdf");
   });
 });
 
