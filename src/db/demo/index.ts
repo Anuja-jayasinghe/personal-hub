@@ -37,6 +37,7 @@ async function build(day: string): Promise<Db> {
   await demo.insert(schema.vehicleOdometerReadings).values(rows.vehicleOdometerReadings);
   await demo.insert(schema.tasks).values(rows.tasks);
   await demo.insert(schema.notes).values(rows.notes);
+  await demo.insert(schema.attachments).values(rows.attachments);
 
   // Same query builder as the real client; the pages only read through it, so the two drivers'
   // differences (raw `execute` results) never come up.

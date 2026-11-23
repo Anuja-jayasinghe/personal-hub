@@ -2,7 +2,7 @@ import { plateParts } from "./plate";
 
 /**
  * The file names the hub gives vehicle documents (issue #179): `PLATE_type_date.ext`, e.g.
- * `BAK-9366_license_2027-09-23.pdf`. The uploader's own file name is never used: the plate comes from
+ * `CAB-1234_license_2027-09-23.pdf`. The uploader's own file name is never used: the plate comes from
  * the vehicle, the type and date from the renewal or from what the upload form asks, and the
  * extension from the file type the server checked. Pure, so it is testable and the form can show the
  * name before saving.
@@ -66,7 +66,10 @@ export function renewalKind(typeLabel: string): string {
 /** The type part for a Documents upload: the kind, or for "Other" the words of its title. */
 export function documentKind(kind: DocKind, title: string | null): string {
   if (kind !== "other") return kind;
-  return slug(title ?? "").toLowerCase() || "other";
+  const words = slug(title ?? "").toLowerCase() || "other";
+  // An "Other" paper titled like a kind ("Insurance") must not get that kind's name, or it would be read
+  // back as that kind (issue #187): it becomes "other-insurance".
+  return isDocKind(words) && words !== "other" ? `other-${words}` : words;
 }
 
 /**
@@ -74,13 +77,27 @@ export function documentKind(kind: DocKind, title: string | null): string {
  * `_3`... (a licence scanned front and back), so two files never share a name.
  */
 export function docFileName(parts: { vehicle: string; kind: string; date: string; ext: string }, taken: readonly string[] = []): string {
-  const base = `${parts.vehicle}_${parts.kind}_${parts.date}`;
+  return uniqueName(`${parts.vehicle}_${parts.kind}_${parts.date}`, parts.ext, taken);
+}
+
+function uniqueName(base: string, ext: string, taken: readonly string[]): string {
   const used = new Set(taken.map((n) => n.toLowerCase()));
-  if (!used.has(`${base}.${parts.ext}`.toLowerCase())) return `${base}.${parts.ext}`;
+  if (!used.has(`${base}.${ext}`.toLowerCase())) return `${base}.${ext}`;
   for (let i = 2; ; i++) {
-    const name = `${base}_${i}.${parts.ext}`;
+    const name = `${base}_${i}.${ext}`;
     if (!used.has(name.toLowerCase())) return name;
   }
+}
+
+/**
+ * The name a replacement file gets (issue #187): the name of the file it replaces, with the new file's
+ * extension, kept unique among the record's other files. A hub name loses its `_2` first, so replacing
+ * the only file of a record gives back the plain name.
+ */
+export function replacementName(oldName: string, ext: string, siblings: readonly string[]): string {
+  const stem = oldName.replace(/\.[A-Za-z0-9]{1,5}$/, "");
+  const hub = /^([A-Za-z0-9-]+_[a-z0-9-]+_\d{4}-\d{2}-\d{2})(?:_\d+)?$/i.exec(stem);
+  return uniqueName(hub ? hub[1] : stem || "file", ext, siblings);
 }
 
 /** The title a Documents upload gets when none is typed: the kind, and its date unless it is a book. */

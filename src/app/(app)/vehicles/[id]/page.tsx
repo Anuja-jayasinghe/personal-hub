@@ -1,4 +1,4 @@
-import { vehiclePart } from "@/features/vehicles/doc-names";
+import { isDocKind, vehiclePart } from "@/features/vehicles/doc-names";
 import { allows } from "@/features/people/access";
 import { requirePage } from "@/lib/auth";
 import type { Metadata } from "next";
@@ -44,16 +44,16 @@ async function VehicleContent({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; q?: string; sort?: string }>;
+  searchParams: Promise<{ tab?: string; q?: string; kind?: string }>;
 }) {
   const access = await requirePage({ area: "vehicles", level: "see" });
-  const [{ id }, { tab, q, sort }] = await Promise.all([params, searchParams]);
+  const [{ id }, { tab, q, kind }] = await Promise.all([params, searchParams]);
   const vehicle = await getVehicle(id);
   if (!vehicle) notFound();
   // Old links by id move to the plate address, keeping the tab (S.6).
   const canonical = vehiclePath(vehicle);
   if (decodeURIComponent(id) !== canonical.slice("/vehicles/".length)) {
-    const query = new URLSearchParams(Object.entries({ tab, q, sort }).filter((e): e is [string, string] => typeof e[1] === "string")).toString();
+    const query = new URLSearchParams(Object.entries({ tab, q, kind }).filter((e): e is [string, string] => typeof e[1] === "string")).toString();
     redirect(query ? `${canonical}?${query}` : canonical);
   }
   // Documents only for people who may see Vehicle documents (S.8, C114).
@@ -122,7 +122,22 @@ async function VehicleContent({
       ) : current.key === "renewals" ? (
         <RenewalsTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} namePrefix={vehiclePart(vehicle)} askOdometer={!vehicle.ignoreEmissionOdometer} showDocuments={allows(access, "vehicle_documents", "see")} />
       ) : (
-        <DocumentsTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} namePrefix={vehiclePart(vehicle)} coverAttachmentId={vehicle.coverAttachmentId} query={q ?? ""} sort={sort} />
+        <DocumentsTab
+          vehicleId={vehicle.id}
+          vehicleName={vehicle.nickname}
+          namePrefix={vehiclePart(vehicle)}
+          coverAttachmentId={vehicle.coverAttachmentId}
+          query={q ?? ""}
+          kind={isDocKind(kind) ? kind : null}
+          access={{
+            canAdd: allows(access, "vehicle_documents", "add"),
+            canEdit: allows(access, "vehicle_documents", "edit"),
+            canRenew: allows(access, "vehicles", "edit"),
+            canAddRenewal: allows(access, "vehicles", "add"),
+          }}
+          askOdometer={!vehicle.ignoreEmissionOdometer}
+          basePath={vehiclePath(vehicle)}
+        />
       )}
     </>
   );
@@ -134,7 +149,7 @@ export default function VehiclePage(props: PageProps<"/vehicles/[id]">) {
     <Suspense fallback={<Skeleton className="h-64 w-full rounded-xl" aria-label="Loading vehicle" />}>
       <VehicleContent
         params={props.params as Promise<{ id: string }>}
-        searchParams={props.searchParams as Promise<{ tab?: string; q?: string; sort?: string }>}
+        searchParams={props.searchParams as Promise<{ tab?: string; q?: string; kind?: string }>}
       />
     </Suspense>
   );
