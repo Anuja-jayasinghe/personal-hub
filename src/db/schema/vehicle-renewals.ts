@@ -1,4 +1,4 @@
-import { check, date, index, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { check, date, index, integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createdAt, updatedAt } from "./_columns";
 import { vehicles } from "./vehicles";
@@ -30,6 +30,12 @@ export const vehicleRenewals = pgTable(
     /** Calendar day it expires, "YYYY-MM-DD". Feeds Reminders while the record is current. */
     expiryDate: date("expiry_date", { mode: "string" }).notNull(),
     amount: numeric("amount", { precision: 12, scale: 2 }),
+    /**
+     * For an emission test: the odometer printed on the certificate, read on the test day (the start
+     * date). It is a point on the vehicle's mileage timeline, combined in code like a service's
+     * odometer, so it is never typed twice (issue #181).
+     */
+    odometerKm: integer("odometer_km"),
     /** Set when this record was renewed; the new record carries on from here. */
     renewedAt: timestamp("renewed_at", { withTimezone: true }),
     createdAt: createdAt(),
@@ -38,6 +44,7 @@ export const vehicleRenewals = pgTable(
   (t) => [
     index("vehicle_renewals_vehicle_expiry_idx").on(t.vehicleId, t.expiryDate),
     check("vehicle_renewals_amount_check", sql`${t.amount} is null or ${t.amount} >= 0`),
+    check("vehicle_renewals_odometer_check", sql`${t.odometerKm} is null or ${t.odometerKm} >= 0`),
     check("vehicle_renewals_dates_check", sql`${t.startDate} is null or ${t.startDate} <= ${t.expiryDate}`),
   ],
 ).enableRLS();

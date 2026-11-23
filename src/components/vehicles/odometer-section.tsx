@@ -3,25 +3,32 @@ import Link from "next/link";
 import { OdometerForm } from "@/components/vehicles/odometer-form";
 import { AddOdometerSheet } from "@/components/vehicles/vehicle-sheets";
 import { SubmitButton } from "@/components/shared/submit-button";
-import { Badge } from "@/components/ui/badge";
 import { deleteOdometerReading, updateOdometerReading } from "@/features/vehicles/odometer-actions";
-import { latestPoint, toPoints, withDistances } from "@/features/vehicles/odometer";
-import { listOdometerReadings, listServices } from "@/features/vehicles/queries";
+import { OdometerTimeline, SOURCE_NAMES, SourceMarker } from "@/components/vehicles/odometer-timeline";
+import { latestPoint, pointKey, toPoints, unfitKeys, withDistances } from "@/features/vehicles/odometer";
+import { listOdometerReadings, listRenewals, listServices } from "@/features/vehicles/queries";
+import { carriesOdometer } from "@/features/vehicles/renewal-validate";
 import { formatDate, todayInAppTz } from "@/lib/format";
 
 const km = (n: number) => `${n.toLocaleString("en-LK")} km`;
 
 /**
- * A vehicle's odometer as dated readings: the latest value with the day it was read, a form to add
- * a reading, and the history with the distance between values. A service with an odometer counts as
- * a reading (edit it on the Services tab).
+ * A vehicle's odometer as dated values from three sources (issue #181): readings typed here, services
+ * with an odometer and emission tests with the test-day odometer (edit those on their own tab). It shows
+ * the latest value, the timeline (marker shape = source) and the history with the distance between
+ * values. A service or test value that doesn't fit is kept, flagged, and left out of the latest value
+ * and the distances.
  */
 export async function OdometerSection({ vehicleId, vehicleName }: { vehicleId: string; vehicleName: string }) {
-  const [readings, services] = await Promise.all([listOdometerReadings(vehicleId), listServices(vehicleId)]);
+  const [readings, services, renewals] = await Promise.all([listOdometerReadings(vehicleId), listServices(vehicleId), listRenewals(vehicleId)]);
   const today = todayInAppTz(); // after the queries, which opt this render into request time
-  const points = toPoints(readings, services);
-  const latest = latestPoint(points);
-  const history = withDistances(points).reverse(); // newest first
+  const points = toPoints(readings, services, renewals.filter((r) => carriesOdometer(r.type)));
+  const unfit = unfitKeys(points);
+  const fitting = points.filter((p) => !unfit.has(pointKey(p)));
+  const latest = latestPoint(fitting);
+  // Distances between the values that fit; a flagged value is listed without one.
+  const distance = new Map(withDistances(fitting).map((p) => [pointKey(p), p]));
+  const history = [...points].reverse(); // newest first
   const rowOf = new Map(readings.map((r) => [r.id, r]));
 
   return (
@@ -46,11 +53,16 @@ export async function OdometerSection({ vehicleId, vehicleName }: { vehicleId: s
                 </span>
               ))}
           </span>
-          <span className="font-mono text-[11px] text-label uppercase">km · as of {formatDate(latest.date)}</span>
+          <span className="flex items-center gap-1.5 font-mono text-[11px] text-label uppercase">
+            km · as of {formatDate(latest.date)} · <SourceMarker source={latest.source} />
+            <span className="sr-only">{SOURCE_NAMES[latest.source]}</span>
+          </span>
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">No readings yet. Add one with the date you read it, so an old value is never mistaken for today&apos;s.</p>
       )}
+
+      <OdometerTimeline points={points} unfit={unfit} />
 
       {history.length > 0 ? (
         <details className="rounded-lg border" open={history.length <= 6}>
@@ -58,19 +70,25 @@ export async function OdometerSection({ vehicleId, vehicleName }: { vehicleId: s
           <ul className="flex flex-col divide-y border-t">
             {history.map((p) => {
               const row = p.source === "reading" ? rowOf.get(p.id) : undefined;
+              const bad = unfit.has(pointKey(p));
+              const since = distance.get(pointKey(p));
               return (
-                <li key={`${p.source}:${p.id}`} className="px-4 py-2.5">
+                <li key={pointKey(p)} className="px-4 py-2.5">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                    <SourceMarker source={p.source} unfit={bad} />
+                    <span className="sr-only">{SOURCE_NAMES[p.source]}</span>
                     <span className="font-medium">{formatDate(p.date)}</span>
-                    <span>{km(p.km)}</span>
-                    {p.sinceKm !== null && p.sinceDays !== null ? (
+                    <span className={bad ? "text-status-overdue line-through decoration-1" : undefined}>{km(p.km)}</span>
+                    {bad ? (
+                      <span className="font-mono text-[10.5px] tracking-wide text-status-overdue uppercase">Doesn&apos;t fit</span>
+                    ) : since && since.sinceKm !== null && since.sinceDays !== null ? (
                       <span className="text-muted-foreground">
-                        +{km(p.sinceKm)} in {p.sinceDays} day{p.sinceDays === 1 ? "" : "s"}
+                        +{km(since.sinceKm)} in {since.sinceDays} day{since.sinceDays === 1 ? "" : "s"}
                       </span>
                     ) : null}
-                    {p.source === "service" ? (
-                      <Link href={`/vehicles/${vehicleId}?tab=services`} className="underline-offset-2 hover:underline">
-                        <Badge variant="outline">Service · {p.label}</Badge>
+                    {p.source === "service" || p.source === "emission" ? (
+                      <Link href={`/vehicles/${vehicleId}?tab=${p.source === "service" ? "services" : "renewals"}`} className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+                        {p.label ?? SOURCE_NAMES[p.source]}
                       </Link>
                     ) : p.label ? (
                       <span className="text-muted-foreground">{p.label}</span>

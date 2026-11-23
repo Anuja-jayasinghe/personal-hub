@@ -99,6 +99,13 @@
       "when": 1795091929295,
       "tag": "0013_burly_trauma",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795406272453,
+      "tag": "0014_elite_cloak",
+      "breakpoints": true
     }
   ]
 }

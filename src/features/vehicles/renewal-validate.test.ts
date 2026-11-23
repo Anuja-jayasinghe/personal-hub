@@ -16,13 +16,13 @@ const base = { type: "Insurance", expiryDate: "2027-03-01" };
 
 describe("parseRenewal", () => {
   it("accepts a minimal renewal (type and expiry)", () => {
-    expect(ok(base)).toEqual({ type: "Insurance", provider: null, referenceNumber: null, startDate: null, expiryDate: "2027-03-01", amount: null });
+    expect(ok(base)).toEqual({ type: "Insurance", provider: null, referenceNumber: null, startDate: null, expiryDate: "2027-03-01", amount: null, odometerKm: null });
   });
 
   it("accepts and tidies a full renewal", () => {
     expect(
       ok({ ...base, provider: "  Ceylinco   Insurance ", referenceNumber: " POL-123 ", startDate: "2026-03-02", amount: "85,000.5" }),
-    ).toEqual({ type: "Insurance", provider: "Ceylinco Insurance", referenceNumber: "POL-123", startDate: "2026-03-02", expiryDate: "2027-03-01", amount: "85000.5" });
+    ).toEqual({ type: "Insurance", provider: "Ceylinco Insurance", referenceNumber: "POL-123", startDate: "2026-03-02", expiryDate: "2027-03-01", amount: "85000.5", odometerKm: null });
   });
 
   it("only allows the configured types", () => {
@@ -54,5 +54,23 @@ describe("parseRenewal", () => {
     expect(ok({ ...base, expiryDate: "2027-03-02" }, { expiryAfter: "2027-03-01" }).expiryDate).toBe("2027-03-02");
     expect(err({ ...base, expiryDate: "2027-03-01" }, { expiryAfter: "2027-03-01" })).toMatch(/must be after the one it replaces/);
     expect(err({ ...base, expiryDate: "2026-12-01" }, { expiryAfter: "2027-03-01" })).toMatch(/must be after/);
+  });
+});
+
+describe("an emission test's odometer (issue #181)", () => {
+  const test = { type: "Emission test", startDate: "2026-02-25", expiryDate: "2027-02-24" };
+  const parse = (raw: Record<string, string>) => parseRenewal(raw, TYPES);
+
+  it("keeps the test-day odometer, allowing thousands separators", () => {
+    expect(parse({ ...test, odometerKm: "57,263" })).toMatchObject({ ok: true, value: { odometerKm: 57263 } });
+  });
+
+  it("needs a whole number and the test day", () => {
+    expect(parse({ ...test, odometerKm: "57.5" })).toMatchObject({ ok: false });
+    expect(parse({ ...test, startDate: "", odometerKm: "57263" })).toMatchObject({ ok: false, error: expect.stringMatching(/test day/) });
+  });
+
+  it("ignores an odometer on other renewal types", () => {
+    expect(parse({ type: "Insurance", expiryDate: "2027-02-24", odometerKm: "1000" })).toMatchObject({ ok: true, value: { odometerKm: null } });
   });
 });
