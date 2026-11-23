@@ -7,7 +7,7 @@ import { labelClass, labelTextClass, selectClass } from "@/components/shared/for
 import { SubmitButton } from "@/components/shared/submit-button";
 import { useKeepValuesOnError } from "@/components/shared/use-keep-values-on-error";
 import { Input } from "@/components/ui/input";
-import { renameVehicleDocument, uploadVehicleDocument } from "@/features/vehicles/document-actions";
+import { renameVehicleDocument, replaceVehicleFile, uploadVehicleDocument } from "@/features/vehicles/document-actions";
 import { DOC_KINDS, defaultDocTitle, docFileName, documentKind, extensionFor, type DocKind } from "@/features/vehicles/doc-names";
 import { DOC_TITLE_MAX } from "@/features/vehicles/documents";
 import { initialActionState } from "@/features/shared/types";
@@ -15,11 +15,12 @@ import { initialActionState } from "@/features/shared/types";
 /**
  * Add a document (issue #179): what it is and its date are asked, because they name the file
  * (`PLATE_type_date.pdf`, shown before saving); the title is optional. The file goes straight to storage (C115).
+ * Opened from a category on the Documents tab, the kind is already chosen (issue #187).
  */
-export function DocumentUploadForm({ vehicleId, namePrefix, onDone }: { vehicleId: string; namePrefix: string; onDone?: () => void }) {
+export function DocumentUploadForm({ vehicleId, namePrefix, defaultKind, onDone }: { vehicleId: string; namePrefix: string; defaultKind?: DocKind; onDone?: () => void }) {
   const [state, formAction, saving] = useActionState(uploadVehicleDocument, initialActionState);
   const formRef = useRef<HTMLFormElement>(null);
-  const [kind, setKind] = useState<DocKind | "">("");
+  const [kind, setKind] = useState<DocKind | "">(defaultKind ?? "");
   const [date, setDate] = useState("");
   const [title, setTitle] = useState("");
   const [ext, setExt] = useState("pdf");
@@ -123,6 +124,43 @@ export function DocumentRenameForm({ id, title }: { id: string; title: string })
       {state.error ? (
         <p role="alert" className="text-sm text-destructive">
           {state.error}
+        </p>
+      ) : null}
+    </form>
+  );
+}
+
+/**
+ * Replace a paper's file (issue #187): pick the new image or PDF; it keeps the old file's name and title,
+ * and the old file is removed once the new one is saved. Same upload as the record's own form (C115).
+ */
+export function ReplaceFileForm({ id, owner, onDone }: { id: string; owner: { ownerType: "vehicle" | "vehicle_renewal"; ownerId: string }; onDone?: () => void }) {
+  const [state, formAction, saving] = useActionState(replaceVehicleFile, initialActionState);
+  const { onSubmit, error, sending } = useDirectUpload(formAction, () => ({ purpose: "attachment", ...owner }));
+
+  useEffect(() => {
+    if (state.ok && !state.notice) onDone?.();
+  }, [state, onDone]);
+
+  // Replaced, but the old file is still there: say so, and offer no second replace (it would add a third file).
+  if (state.ok && state.notice) {
+    return (
+      <p role="status" className="text-sm text-status-soon">
+        {state.notice}
+      </p>
+    );
+  }
+  const shown = error ?? state.error;
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col gap-2">
+      <input type="hidden" name="id" value={id} />
+      <Input type="file" name="file" required aria-label="New file" accept="image/jpeg,image/png,image/webp,image/heic,application/pdf,.heic" />
+      <Button type="submit" variant="outline" size="sm" disabled={sending || saving}>
+        {sending || saving ? "Replacing…" : "Replace file"}
+      </Button>
+      {shown ? (
+        <p role="alert" className="text-sm text-destructive">
+          {shown}
         </p>
       ) : null}
     </form>

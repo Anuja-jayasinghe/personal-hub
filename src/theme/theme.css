@@ -53,6 +53,21 @@
   --status-overdue: #d2453b;
   --status-overdue-soft: #fbe3e0;
 
+  /* Paper colours for the small CSS drawings of vehicle papers (issue #187, C138): the colour of the real
+     paper and its ink. Paper is paper in both themes, so .dark does not change them. */
+  --paper-book: #f6cfdc;
+  --paper-book-ink: #782846;
+  --paper-license: #ddd0f1;
+  --paper-license-ink: #3b3150;
+  --paper-emission: #d3e9c8;
+  --paper-emission-band: #7fb46a;
+  --paper-emission-ink: #1e3c1e;
+  --paper-insurance: #b9dcf6;
+  --paper-insurance-deep: #6fb0e8;
+  --paper-insurance-ink: #1d3f8f;
+  --paper-other: #e4e8ee;
+  --paper-other-ink: #3a4352;
+
   /* Charts: blue first, then greys and the state colours. */
   --chart-1: #2869d8;
   --chart-2: #687386;

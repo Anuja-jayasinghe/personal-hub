@@ -1,5 +1,6 @@
 import { addDays } from "@/lib/dates";
 import type {
+  attachments,
   billItems,
   billPayments,
   electricityBills,
@@ -37,6 +38,7 @@ type Rows = {
   vehicleOdometerReadings: (typeof vehicleOdometerReadings.$inferInsert)[];
   tasks: (typeof tasks.$inferInsert)[];
   notes: (typeof notes.$inferInsert)[];
+  attachments: (typeof attachments.$inferInsert)[];
 };
 
 /** Fixed ids, so demo addresses stay the same between visits. Group `g`, number `n`. */
@@ -102,6 +104,7 @@ export function demoRows(today: string): Rows {
     vehicleOdometerReadings: [],
     tasks: [],
     notes: [],
+    attachments: [],
   };
 
   // ---- Electricity: two meters, a reading every few days, three bills each -----------------------
@@ -204,6 +207,61 @@ export function demoRows(today: string): Rows {
     const expiryDate = addDays(today, expiresIn);
     rows.vehicleRenewals.push({ id: demoId(8, n), vehicleId, type, provider, startDate: addDays(expiryDate, -365), expiryDate, amount: money(amount), odometerKm });
   }
+  // Earlier papers, renewed (issue #187): the car's license has a stretch with none on file, so the Documents
+  // timeline shows a gap.
+  const earlier: [number, string, string, string, string, string, number][] = [
+    // n, vehicle, type, provider, start, expiry, amount
+    [7, DEMO_VEHICLES.car, "Revenue license", "Divisional Secretariat", addDays(today, 42 - 730), addDays(today, 42 - 366), 3_000],
+    [8, DEMO_VEHICLES.car, "Revenue license", "Divisional Secretariat", addDays(today, 42 - 1460 - 730), addDays(today, 42 - 1460 - 366), 2_400],
+    [9, DEMO_VEHICLES.car, "Insurance", "Sample Insurance Co.", addDays(today, 9 - 730), addDays(today, 9 - 366), 54_500],
+    [10, DEMO_VEHICLES.car, "Emission test", "Sample Testing Centre", addDays(today, 120 - 730), addDays(today, 120 - 366), 1_600],
+    [11, DEMO_VEHICLES.bike, "Revenue license", "Divisional Secretariat", addDays(today, 25 - 730), addDays(today, 25 - 366), 1_100],
+  ];
+  for (const [n, vehicleId, type, provider, startDate, expiryDate, amount] of earlier) {
+    rows.vehicleRenewals.push({ id: demoId(8, n), vehicleId, type, provider, startDate, expiryDate, amount: money(amount), renewedAt: new Date(`${expiryDate}T09:00:00Z`) });
+  }
+  // Sample papers: only the rows, there are no files behind them (the viewer shows a drawing in the demo).
+  // Named the way the hub names them (C134): plate, kind, date.
+  const plateOf = (vehicleId: string) => (vehicleId === DEMO_VEHICLES.car ? "DEM-1234" : "DM-5678");
+  const renewalOf = (n: number) => rows.vehicleRenewals.find((r) => r.id === demoId(8, n))!;
+  const kindOf: Record<string, string> = { "Revenue license": "license", Insurance: "insurance", "Emission test": "emission" };
+  const papers: [number, number, string, number, number][] = [
+    // n, renewal n, mime type, size in KB, days after the renewal's start it was added
+    [1, 1, "application/pdf", 556, 2],
+    [2, 2, "image/jpeg", 1_240, 1],
+    [3, 2, "image/jpeg", 1_180, 1],
+    [4, 3, "application/pdf", 410, 0],
+    [5, 5, "image/jpeg", 980, 3],
+    [6, 4, "application/pdf", 520, 4],
+    [7, 7, "application/pdf", 548, 2],
+    [8, 8, "image/jpeg", 870, 5],
+    [9, 9, "image/jpeg", 1_110, 1],
+    [10, 11, "application/pdf", 490, 6],
+  ];
+  for (const [n, renewalN, mimeType, kb, after] of papers) {
+    const r = renewalOf(renewalN);
+    const ext = mimeType === "application/pdf" ? "pdf" : "jpg";
+    const second = n === 3 ? "_2" : "";
+    rows.attachments.push({
+      id: demoId(13, n),
+      ownerType: "vehicle_renewal",
+      ownerId: r.id!,
+      storagePath: `demo/vehicle_renewal/${r.id}/${n}.${ext}`,
+      fileName: `${plateOf(r.vehicleId)}_${kindOf[r.type]}_${r.expiryDate}${second}.${ext}`,
+      mimeType,
+      sizeBytes: kb * 1024,
+      createdAt: new Date(`${addDays(r.startDate!, after)}T09:00:00Z`),
+    });
+  }
+  const bookDate = "2017-03-02";
+  const invoiceDate = addDays(today, -75);
+  rows.attachments.push(
+    { id: demoId(13, 21), ownerType: "vehicle", ownerId: DEMO_VEHICLES.car, storagePath: `demo/vehicle/${DEMO_VEHICLES.car}/21.pdf`, fileName: `DEM-1234_book_${bookDate}.pdf`, title: "Registration book", mimeType: "application/pdf", sizeBytes: 2_310 * 1024, createdAt: new Date(`${addDays(today, -200)}T09:00:00Z`) },
+    // An upload of a kind the Renewals tab owns: shown "on file" under insurance, never as the current paper.
+    { id: demoId(13, 23), ownerType: "vehicle", ownerId: DEMO_VEHICLES.bike, storagePath: `demo/vehicle/${DEMO_VEHICLES.bike}/23.jpg`, fileName: `DM-5678_insurance_${addDays(today, 200 - 365)}.jpg`, title: "Cover note", mimeType: "image/jpeg", sizeBytes: 340 * 1024, createdAt: new Date(`${addDays(today, -165)}T10:00:00Z`) },
+    { id: demoId(13, 22), ownerType: "vehicle", ownerId: DEMO_VEHICLES.car, storagePath: `demo/vehicle/${DEMO_VEHICLES.car}/22.jpg`, fileName: `DEM-1234_service-invoice_${invoiceDate}.jpg`, title: "Service invoice", mimeType: "image/jpeg", sizeBytes: 760 * 1024, createdAt: new Date(`${invoiceDate}T15:00:00Z`) },
+  );
+
   const services: [number, string, number, string, number, number, string, number | null][] = [
     [1, DEMO_VEHICLES.car, 260, "Full service", 76_900, 28_500, "Oil, oil filter, air filter, brake check", null],
     [2, DEMO_VEHICLES.car, 75, "Full service", 82_600, 31_200, "Oil, oil filter, cabin filter, wheel alignment", 105],

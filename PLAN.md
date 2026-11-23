@@ -309,6 +309,12 @@ Goal: every change is checked automatically, releases get a version without hand
 | 6.3 | #143 | ✅ **Live e2e after each production deploy**: `pnpm e2e` against hub.anujajay.com when Vercel reports a successful production deployment (secrets in GitHub Actions) |
 | 6.4 | #143 | ✅ **Merging needs green checks**: ruleset *main needs green checks* (pull request, squash only, CI and title checks), with an admin bypass for release-please's pull requests (C124) |
 
+## Phase D — Vehicle documents (issue #187)
+
+| Piece | Issue | What |
+|-------|-------|------|
+| D.1 | #187 | ✅ *(C138)* **Documents by category**: every paper of a vehicle in one place (renewal files included; the dates and days of licenses, emission tests and insurance come only from renewals), current paper first with earlier ones and gaps on a timeline, most urgent category first, an on-page viewer with Renew, Download, replace and delete, category chips on the phone, adding from a category with the kind preset |
+
 ## Later (each needs its own decision)
 
 - **Vehicle photo treatment** (C104): make an uploaded photo look its best in-house (no outside AI service), for example cut-out, lighting and the stage around it. For now the photo is shown as it is.

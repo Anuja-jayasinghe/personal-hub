@@ -27,7 +27,7 @@ export function SheetButton({
   /** The breadcrumb above the title, e.g. "/ Electricity / New reading". */
   crumb: string;
   description?: string;
-  variant?: "default" | "outline";
+  variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "lg";
   plus?: boolean;
   children: ReactNode | ((close: () => void) => ReactNode);
