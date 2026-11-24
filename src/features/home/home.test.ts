@@ -54,7 +54,7 @@ describe("nextDays", () => {
 
 describe("dueByArea", () => {
   it("counts reminders per area by where they link, within the window", () => {
-    const counts = dueByArea([rem("r1", "/vehicles/1?tab=renewals", 10), rem("r2", "/vehicles/2", -1), rem("b", "/bills", 40), rem("t", "/tasks", 0)], 30);
+    const counts = dueByArea([rem("r1", "/vehicles/1?item=renewal:r1", 10), rem("r2", "/vehicles/2", -1), rem("b", "/bills", 40), rem("t", "/tasks", 0)], 30);
     expect(counts).toEqual([
       { area: "vehicles", due: 2, overdue: 1 },
       { area: "bills", due: 0, overdue: 0 },

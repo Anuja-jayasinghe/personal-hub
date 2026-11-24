@@ -13,8 +13,6 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ItemSheet } from "@/components/vehicles/item-sheet";
 import { VehicleOverview } from "@/components/vehicles/overview";
-import { RenewalsTab } from "@/components/vehicles/renewals-tab";
-import { ServicesTab } from "@/components/vehicles/services-tab";
 import { DocumentsTab } from "@/components/vehicles/documents-tab";
 import { VehicleCover } from "@/components/vehicles/vehicle-cover";
 import { appConfig, isModuleEnabled } from "@/config/app.config";
@@ -23,18 +21,12 @@ import { addChoices, hasAddChoice } from "@/features/vehicles/add-menu";
 import { paperContext } from "@/features/vehicles/paper-context";
 import { getVehicle, listRenewals } from "@/features/vehicles/queries";
 import { todayInAppTz } from "@/lib/format";
+import { landOnTab, redirectAddress, vehicleTabs } from "@/features/vehicles/tabs";
 import { findVehicleType } from "@/features/vehicles/vehicle-type";
 
 type SearchParams = { tab?: string; q?: string; kind?: string; item?: string };
 
 export const metadata: Metadata = { title: "Vehicle" };
-
-const TABS = [
-  { key: "overview", label: "Overview" },
-  { key: "services", label: "Services" },
-  { key: "renewals", label: "Renewals" },
-  { key: "documents", label: "Documents" },
-] as const;
 
 async function VehicleContent({
   params,
@@ -47,15 +39,17 @@ async function VehicleContent({
   const [{ id }, { tab, q, kind, item }] = await Promise.all([params, searchParams]);
   const vehicle = await getVehicle(id);
   if (!vehicle) notFound();
-  // Old links by id move to the plate address, keeping the tab (S.6).
-  const canonical = vehiclePath(vehicle);
-  if (decodeURIComponent(id) !== canonical.slice("/vehicles/".length)) {
-    const query = new URLSearchParams(Object.entries({ tab, q, kind, item }).filter((e): e is [string, string] => typeof e[1] === "string")).toString();
-    redirect(query ? `${canonical}?${query}` : canonical);
-  }
   // Documents only for people who may see Vehicle documents (S.8, C114).
-  const tabs = TABS.filter((t) => t.key !== "documents" || allows(access, "vehicle_documents", "see"));
-  const current = tabs.find((t) => t.key === tab) ?? tabs[0];
+  const canSeeDocuments = allows(access, "vehicle_documents", "see");
+  const tabs = vehicleTabs(canSeeDocuments);
+  // The old Services and Renewals tabs, a tab this person may not open and any unknown value land on the Overview (V.3, C150).
+  const landing = landOnTab({ tab, item }, canSeeDocuments);
+  const current = tabs.find((t) => t.key === landing.tab) ?? tabs[0];
+  // Old links by id move to the plate address, keeping the tab (S.6); an old tab name moves to the Overview, keeping the item.
+  const canonical = vehiclePath(vehicle);
+  const wrongId = decodeURIComponent(id) !== canonical.slice("/vehicles/".length);
+  const moveTo = redirectAddress({ canonical, wrongId, query: { tab, q, kind, item }, landing });
+  if (moveTo) redirect(moveTo);
   const subtitle = [vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(" ");
   const type = findVehicleType(appConfig.vehicles.types, vehicle.vehicleType);
   // The one Add button (V.1a, C147): each choice only for a person who may do it, worked out here on the server.
@@ -109,32 +103,26 @@ async function VehicleContent({
         </div>
       </section>
 
-      <nav aria-label="Vehicle sections" className="flex w-fit max-w-full flex-wrap gap-1 rounded-xl bg-deepest p-1 ring-1 ring-border">
-        {tabs.map((t) => (
-          <Link
-            key={t.key}
-            href={t.key === "overview" ? vehiclePath(vehicle) : vehiclePath(vehicle, `?tab=${t.key}`)}
-            aria-current={t.key === current.key ? "page" : undefined}
-            className={`flex min-h-9 items-center rounded-[10px] px-3.5 text-sm transition-colors ${
-              t.key === current.key ? "bg-accent font-semibold text-foreground ring-1 ring-primary/45" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {t.label}
-          </Link>
-        ))}
-      </nav>
+      {/* Two tabs, a segmented control as wide as the phone; a person who may not see Documents has only the Overview, so no bar. */}
+      {tabs.length > 1 ? (
+        <nav aria-label="Vehicle sections" className="grid w-full grid-cols-2 gap-1 rounded-xl bg-deepest p-1 ring-1 ring-border sm:w-fit sm:min-w-64">
+          {tabs.map((t) => (
+            <Link
+              key={t.key}
+              href={t.key === "overview" ? vehiclePath(vehicle) : vehiclePath(vehicle, `?tab=${t.key}`)}
+              aria-current={t.key === current.key ? "page" : undefined}
+              className={`flex min-h-11 items-center justify-center rounded-[10px] px-4 text-sm transition-colors ${
+                t.key === current.key ? "bg-accent font-semibold text-foreground ring-1 ring-primary/45" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t.label}
+            </Link>
+          ))}
+        </nav>
+      ) : null}
 
       {current.key === "overview" ? (
         <VehicleOverview vehicle={vehicle} rules={rules} />
-      ) : current.key === "services" ? (
-        <ServicesTab
-          vehicleId={vehicle.id}
-          vehicleName={vehicle.nickname}
-          namePrefix={vehiclePart(vehicle)}
-          docs={{ canSee: allows(access, "vehicle_documents", "see"), canAdd: allows(access, "vehicle_documents", "add") }}
-        />
-      ) : current.key === "renewals" ? (
-        <RenewalsTab vehicleId={vehicle.id} namePrefix={vehiclePart(vehicle)} askOdometer={!vehicle.ignoreEmissionOdometer} showDocuments={allows(access, "vehicle_documents", "see")} paper={paper} />
       ) : (
         <DocumentsTab
           vehicleId={vehicle.id}

@@ -34,16 +34,6 @@ export function currentRenewals<T extends RenewalRow>(rows: readonly T[]): T[] {
   return [...best.values()];
 }
 
-/** Current renewals (soonest expiry first) and past ones (newest expiry first). */
-export function splitCurrentAndPast<T extends RenewalRow>(rows: readonly T[]): { current: T[]; past: T[] } {
-  const current = currentRenewals(rows);
-  const ids = new Set(current.map((r) => r.id));
-  return {
-    current: [...current].sort((a, b) => a.expiryDate.localeCompare(b.expiryDate) || a.type.localeCompare(b.type)),
-    past: rows.filter((r) => !ids.has(r.id)).sort((a, b) => b.expiryDate.localeCompare(a.expiryDate)),
-  };
-}
-
 // ---------------------------------------------------------------------------------------------
 // Where a new record of a kind belongs in the history (V.1b, C148)
 // ---------------------------------------------------------------------------------------------

@@ -26,7 +26,7 @@ describe("plate keys and addresses", () => {
   });
   it("makes an address from the plate, or falls back to the id", () => {
     expect(plateSlug(" WP  CAB-1234 ")).toBe("wp-cab-1234");
-    expect(vehiclePath({ id: "abc", registrationNumber: "CAB-1234" }, "?tab=renewals")).toBe("/vehicles/cab-1234?tab=renewals");
+    expect(vehiclePath({ id: "abc", registrationNumber: "CAB-1234" }, "?tab=documents")).toBe("/vehicles/cab-1234?tab=documents");
     expect(vehiclePath({ id: "abc", registrationNumber: null })).toBe("/vehicles/abc");
     expect(vehiclePath({ id: "abc", registrationNumber: "###" })).toBe("/vehicles/abc");
   });

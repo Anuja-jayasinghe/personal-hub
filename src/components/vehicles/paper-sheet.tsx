@@ -6,15 +6,14 @@ import { kindsFor, type PaperContext, type PaperKind } from "@/features/vehicles
 
 /**
  * The one flow for adding a paper (V.1b, C148) in a sheet: a bottom sheet on a phone, a window in the middle of the
- * screen on a wide one, like every other add form. `kind` presets the chip (the Documents tab's categories),
- * `kinds` limits the chips (the Renewals tab only has the three that make renewals).
+ * screen on a wide one, like every other add form. `kind` presets the chip (the Documents tab's categories).
  */
 
 const DESCRIPTION = "The file, what it is and its dates. The hub makes the record and names the file.";
 
 /** True when this person can add any of these kinds, so a button that opens the sheet is worth showing. */
-function canAddAny(ctx: PaperContext, kind?: PaperKind, kinds?: readonly PaperKind[]): boolean {
-  const offered = kindsFor(ctx.can).filter((k) => !kinds || kinds.includes(k.key));
+function canAddAny(ctx: PaperContext, kind?: PaperKind): boolean {
+  const offered = kindsFor(ctx.can);
   return kind ? offered.some((k) => k.key === kind) : offered.length > 0;
 }
 
@@ -22,7 +21,6 @@ function canAddAny(ctx: PaperContext, kind?: PaperKind, kinds?: readonly PaperKi
 export function AddPaperButton({
   ctx,
   kind,
-  kinds,
   label = "Add a paper",
   title = "Add a paper",
   variant = "default",
@@ -30,13 +28,12 @@ export function AddPaperButton({
 }: {
   ctx: PaperContext;
   kind?: PaperKind;
-  kinds?: readonly PaperKind[];
   label?: string;
   title?: string;
   variant?: "default" | "outline" | "ghost";
   plus?: boolean;
 }) {
-  if (!canAddAny(ctx, kind, kinds)) return null;
+  if (!canAddAny(ctx, kind)) return null;
   return (
     <SheetButton
       label={label}
@@ -47,7 +44,7 @@ export function AddPaperButton({
       size={variant === "default" ? "default" : "sm"}
       plus={plus && variant !== "ghost"}
     >
-      {(close) => <PaperForm ctx={ctx} kind={kind} kinds={kinds} onDone={close} />}
+      {(close) => <PaperForm ctx={ctx} kind={kind} onDone={close} />}
     </SheetButton>
   );
 }

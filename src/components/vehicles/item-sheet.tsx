@@ -1,4 +1,5 @@
 import { FileText } from "lucide-react";
+import { AttachmentsPanel } from "@/components/shared/attachments-panel";
 import Link from "next/link";
 import { DaysRing } from "@/components/shared/days-ring";
 import { buttonVariants } from "@/components/ui/button";
@@ -308,6 +309,16 @@ function ServiceContent({ s, model, vehicle, namePrefix, rules }: { s: VehicleSe
           </span>
           <AddInvoiceSheet serviceId={s.id} serviceLabel={s.serviceType} vehicleName={vehicle.nickname} nameHint={docFileName({ vehicle: namePrefix, kind: SERVICE_FILE_KIND, date: s.serviceDate, ext: "pdf" }, [])} />
         </div>
+      ) : null}
+
+      {/* More than one file, or a second to add: the Services tab's file list moved here, tucked, because a service usually has one invoice (V.3, C150). */}
+      {files && files.length > 0 && model.can.manageFiles ? (
+        <details className="rounded-2xl border">
+          <summary className="flex min-h-11 cursor-pointer items-center px-4 text-sm text-muted-foreground">Manage files ({files.length})</summary>
+          <div className="border-t p-4">
+            <AttachmentsPanel owner={{ ownerType: "vehicle_service", ownerId: s.id }} items={files} nameHint={docFileName({ vehicle: namePrefix, kind: SERVICE_FILE_KIND, date: s.serviceDate, ext: "pdf" }, files.map((f) => f.fileName))} />
+          </div>
+        </details>
       ) : null}
 
       {model.can.edit || model.can.download || model.can.delete || model.can.deleteFile ? (

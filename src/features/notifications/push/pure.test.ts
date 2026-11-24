@@ -29,10 +29,10 @@ describe("vapidFrom", () => {
 
 describe("push payload", () => {
   it("carries title, body and a same-origin href only", () => {
-    expect(JSON.parse(pushPayload({ title: "Insurance ends tomorrow", body: "Silver car", href: "/vehicles/v1?tab=renewals" }))).toEqual({
+    expect(JSON.parse(pushPayload({ title: "Insurance ends tomorrow", body: "Silver car", href: "/vehicles/v1?item=renewal:r1" }))).toEqual({
       title: "Insurance ends tomorrow",
       body: "Silver car",
-      href: "/vehicles/v1?tab=renewals",
+      href: "/vehicles/v1?item=renewal:r1",
     });
   });
 
@@ -98,6 +98,8 @@ describe("service worker (public/sw.js)", () => {
 
   it("opens only paths on the hub; anything else falls back to /", () => {
     const origin = "https://hub.example.com";
+    expect(safePath("/vehicles/v1?item=renewal:r1", origin)).toBe("/vehicles/v1?item=renewal:r1");
+    // A push already sent before the two-tab page (V.3, C150) still opens: the old address is a path on the hub, and the page lands it on the Overview.
     expect(safePath("/vehicles/v1?tab=renewals", origin)).toBe("/vehicles/v1?tab=renewals");
     expect(safePath("/reminders#today", origin)).toBe("/reminders#today");
     for (const evil of ["https://evil.com/x", "//evil.com/x", "/\\evil.com", "\\\\evil.com", "javascript:alert(1)", "data:text/html,hi", "reminders", "/a b", "", null, 42, {}]) {

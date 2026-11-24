@@ -125,10 +125,20 @@ describe("a service's sheet", () => {
     const run = (access: ReturnType<typeof sheetAccess>, sample = false) => serviceSheet({ service: s, services: [s], oil: oilOf([s]), rules, files: [f], today: TODAY, access, sample });
     expect(run(sheetAccess(person(["vehicles", "see"]))).files).toBeNull();
     expect(run(sheetAccess(person(["vehicles", "see"], ["vehicle_documents", "see"]))).files).toHaveLength(1);
-    expect(run(sheetAccess(person(["vehicles", "see"], ["vehicle_documents", "see"]))).can).toEqual({ edit: false, delete: false, addInvoice: false, deleteFile: false, download: true });
+    expect(run(sheetAccess(person(["vehicles", "see"], ["vehicle_documents", "see"]))).can).toEqual({ edit: false, delete: false, addInvoice: false, deleteFile: false, manageFiles: false, download: true });
     expect(run(sheetAccess(person(["vehicles", "see"]))).can).toMatchObject({ download: false });
-    expect(run(sheetAccess({ owner: true })).can).toEqual({ edit: true, delete: true, addInvoice: false, deleteFile: true, download: true });
-    expect(run(sheetAccess({ owner: true }), true).can).toMatchObject({ deleteFile: false, download: false });
+    expect(run(sheetAccess({ owner: true })).can).toEqual({ edit: true, delete: true, addInvoice: false, deleteFile: true, manageFiles: true, download: true });
+    expect(run(sheetAccess({ owner: true }), true).can).toMatchObject({ deleteFile: false, manageFiles: false, download: false });
+  });
+  it("\"Manage files\" (add another, delete any) shows for a service that has files, for someone who may add or delete them (V.3, C150)", () => {
+    const s = service("Tyres", 10);
+    const f = file(s.id, "TEST-1_service_2026-11-14.pdf");
+    const run = (access: ReturnType<typeof sheetAccess>, files = [f]) => serviceSheet({ service: s, services: [s], oil: oilOf([s]), rules, files, today: TODAY, access, sample: false }).can.manageFiles;
+    expect(run(sheetAccess(person(["vehicles", "see"], ["vehicle_documents", "add"])))).toBe(true);
+    expect(run(sheetAccess(person(["vehicles", "see"], ["vehicle_documents", "edit"])))).toBe(true);
+    expect(run(sheetAccess(person(["vehicles", "edit"], ["vehicle_documents", "see"])))).toBe(false);
+    expect(run(sheetAccess(person(["vehicles", "edit"])))).toBe(false);
+    expect(run(sheetAccess({ owner: true }), [])).toBe(false);
   });
   it("Add the invoice shows for a service with no file, only for someone who may add files", () => {
     const s = service("Tyres", 10);

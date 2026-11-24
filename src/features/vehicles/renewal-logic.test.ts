@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { currentRenewals, placeRenewal, renewedMoment, splitCurrentAndPast, type PlacedRow, type RenewalRow } from "./renewal-logic";
+import { currentRenewals, placeRenewal, renewedMoment, type PlacedRow, type RenewalRow } from "./renewal-logic";
 
 let n = 0;
 function ren(over: Partial<RenewalRow> & Pick<RenewalRow, "expiryDate">): RenewalRow {
@@ -40,18 +40,6 @@ describe("currentRenewals", () => {
     const insAgain = ren({ type: " insurance ", expiryDate: "2027-06-01" });
     const ids = currentRenewals([ins, lic, otherCar, insAgain]).map((r) => r.id).sort();
     expect(ids).toEqual([lic.id, otherCar.id, insAgain.id].sort());
-  });
-});
-
-describe("splitCurrentAndPast", () => {
-  it("lists current soonest-first and past newest-first", () => {
-    const old1 = ren({ expiryDate: "2025-03-01", renewedAt: renewed });
-    const old2 = ren({ expiryDate: "2026-03-01", renewedAt: renewed });
-    const ins = ren({ type: "Insurance", expiryDate: "2027-03-01" });
-    const lic = ren({ type: "Revenue license", expiryDate: "2026-12-01" });
-    const { current, past } = splitCurrentAndPast([old1, ins, old2, lic]);
-    expect(current.map((r) => r.id)).toEqual([lic.id, ins.id]);
-    expect(past.map((r) => r.id)).toEqual([old2.id, old1.id]);
   });
 });
 

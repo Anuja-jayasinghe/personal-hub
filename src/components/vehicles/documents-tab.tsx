@@ -40,10 +40,10 @@ import { formatBytes, formatDate, formatMoney, formatMonth, todayInAppTz } from 
  * state; the categories follow, most urgent first, each with its current paper and the earlier ones folded
  * underneath (with the gaps between them). A paper opens in an on-page viewer.
  *
- * The renewal records stay owned by the Renewals tab (one home per action, C102): for a revenue license,
- * emission test or insurance the current paper and its days come only from renewals, "Renew" opens that
- * tab's own form (inside 30 days of the end or overdue), and a plain upload of those kinds is tucked away and
- * shown as "on file". Adding needs Add in Vehicle documents, replacing and deleting need Edit there (C114),
+ * The renewal records are made by the one flow for papers and opened in the Overview's detail sheets (one home per
+ * action, C102, C150): for a revenue license, emission test or insurance the current paper and its days come only
+ * from renewals, "Renew" opens the renew form (inside 30 days of the end or overdue), and a plain upload of those
+ * kinds is tucked away and shown as "on file". Adding needs Add in Vehicle documents, replacing and deleting need Edit there (C114),
  * renewing needs Edit in Vehicles, the same as the actions check. Use inside <Suspense>.
  */
 
@@ -63,8 +63,6 @@ type Ctx = {
   paper: PaperContext;
   /** The tab's own address, for the chips and the category view. */
   href: (kind?: DocKind) => string;
-  /** The Renewals tab, where a renewal is added (one home per action). */
-  renewalsHref: string;
 };
 
 const TONE_TEXT = { ok: "text-status-ok", soon: "text-status-soon", overdue: "text-status-overdue" } as const;
@@ -128,7 +126,6 @@ export async function DocumentsTab({
     askOdometer,
     paper,
     href: (k) => `${basePath}?tab=documents${k ? `&kind=${k}` : ""}`,
-    renewalsHref: `${basePath}?tab=renewals`,
   };
   const searching = query.trim() !== "";
   const selected = kind ? groups.find((g) => g.kind === kind) : undefined;
@@ -389,14 +386,10 @@ function AddForKind({ ctx, group: g }: { ctx: Ctx; group: PaperGroup }) {
   return <AddPaperButton ctx={ctx.paper} kind={g.kind} label={tucked ? "Add another paper" : "Add"} variant={tucked ? "ghost" : "outline"} />;
 }
 
-/** A kind that runs out with no renewal: its days come from a renewal, which is added on the Renewals tab. */
-function TrackInRenewals({ ctx }: { ctx: Ctx }) {
+/** A kind that runs out with no renewal: its days come from a renewal, which the one flow for papers makes (V.3: the Renewals tab is gone). */
+function TrackIt({ ctx, kind }: { ctx: Ctx; kind: DocKind }) {
   if (!ctx.access.canAddRenewal) return null;
-  return (
-    <Link href={ctx.renewalsHref} className="text-sm font-semibold text-primary underline-offset-4 hover:underline">
-      Track it in Renewals
-    </Link>
-  );
+  return <AddPaperButton ctx={ctx.paper} kind={kind} label="Track it" title="Track it" variant="ghost" />;
 }
 
 /** One category in full (desktop): its current paper as a card, earlier and other copies folded underneath. */
@@ -437,7 +430,7 @@ function CategorySection({ ctx, group: g, wide }: { ctx: Ctx; group: PaperGroup;
         <>
           {dated ? (
             <p className="text-[13px] text-label">
-              {noCurrentWords(g)} {g.earlier.length ? null : <TrackInRenewals ctx={ctx} />}
+              {noCurrentWords(g)} {g.earlier.length ? null : <TrackIt ctx={ctx} kind={g.kind} />}
             </p>
           ) : null}
           {g.timeline.length ? <Timeline ctx={ctx} group={g} /> : null}
@@ -613,7 +606,7 @@ function CompactCard({ ctx, group: g }: { ctx: Ctx; group: PaperGroup }) {
   );
 }
 
-/** Categories with nothing in them, in one quiet row: the book and other papers are added here; a kind that runs out is tracked in Renewals. */
+/** Categories with nothing in them, in one quiet row: the book and other papers are added here; a kind that runs out is tracked with "Track it". */
 function EmptyRow({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 rounded-[18px] border border-dashed px-4 py-3.5 md:px-5">
@@ -622,11 +615,7 @@ function EmptyRow({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
         <span key={g.kind} className="flex items-center gap-2">
           <span className="text-sm">{g.label}</span>
           {isDatedKind(g.kind) ? (
-            ctx.access.canAddRenewal ? (
-              <Link href={ctx.renewalsHref} className={buttonVariants({ variant: "outline", size: "sm" })}>
-                Track in Renewals
-              </Link>
-            ) : null
+            ctx.access.canAddRenewal ? <AddPaperButton ctx={ctx.paper} kind={g.kind} label="Track it" title="Track it" variant="outline" plus={false} /> : null
           ) : (
             <AddPaperButton ctx={ctx.paper} kind={g.kind} label="Add" variant="outline" />
           )}
@@ -691,7 +680,7 @@ function CategoryView({ ctx, group: g, groups }: { ctx: Ctx; group: PaperGroup; 
             <p className="text-sm text-muted-foreground">
               {dated ? noCurrentWords(g) : "No book yet."}
             </p>
-            {dated ? <TrackInRenewals ctx={ctx} /> : null}
+            {dated ? <TrackIt ctx={ctx} kind={g.kind} /> : null}
           </div>
         )}
 

@@ -8,7 +8,7 @@ import { DOC_KINDS, defaultDocTitle, isDocKind, renewalKind, type DocKind } from
  * one place, the files uploaded on the tab and the files on its renewals, grouped by what they are
  * (registration book, revenue license, emission test, insurance, other).
  *
- * For the kinds that run out (revenue license, emission test, insurance) the Renewals tab owns the record:
+ * For the kinds that run out (revenue license, emission test, insurance) the renewal record owns it:
  * the current paper, its days left and the earlier papers come only from renewals. A Documents upload of
  * one of those kinds is shown in its category as a paper "on file", never as the current one, and never
  * changes the days. The gaps between renewals are worked out from their dates.
@@ -37,7 +37,7 @@ export type Paper = {
   /** "r:<renewal id>" or "d:<attachment id>", unique within a vehicle. */
   key: string;
   kind: DocKind;
-  /** The renewal it belongs to, when it came from the Renewals tab. That tab owns the record (one home per action). */
+  /** The renewal it belongs to, when it came from a renewal. The renewal owns the record (one home per action). */
   renewalId: string | null;
   /** True for a renewal that has been renewed (history). */
   renewed: boolean;
@@ -79,7 +79,7 @@ export type PaperGroup = {
   status: PaperStatus;
 };
 
-/** Kinds that run out: their papers have a "valid until" and a days-left count, owned by the Renewals tab. */
+/** Kinds that run out: their papers have a "valid until" and a days-left count, owned by the renewal record. */
 export const DATED_KINDS: readonly DocKind[] = ["license", "emission", "insurance"];
 export const isDatedKind = (kind: DocKind) => DATED_KINDS.includes(kind);
 
@@ -207,7 +207,7 @@ function newestFirst(a: Paper, b: Paper): number {
   return b.addedAt.getTime() - a.addedAt.getTime();
 }
 
-/** The renewal in force first: latest valid-until, then one not yet renewed, then the one entered last (as the Renewals tab, C46). */
+/** The renewal in force first: latest valid-until, then one not yet renewed, then the one entered last (as the Overview cards, C46). */
 function currentFirst(a: Paper, b: Paper): number {
   const da = a.until ?? "";
   const db = b.until ?? "";
@@ -269,7 +269,7 @@ export function groupPapers(papers: readonly Paper[], today: string): PaperGroup
     }
     if (isDatedKind(kind)) {
       // Only renewals make the current paper and the days, and only one not yet renewed (C46, as the
-      // Renewals tab: renewing A and then deleting the new B leaves nothing current, A under earlier).
+      // Overview: renewing A and then deleting the new B leaves nothing current, A under earlier).
       // Uploads of this kind are simply on file.
       const renewals = mine.filter((p) => p.renewalId);
       const [current = null, ...otherActive] = renewals.filter((p) => !p.renewed).sort(currentFirst);
