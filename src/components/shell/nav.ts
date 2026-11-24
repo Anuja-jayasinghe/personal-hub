@@ -45,6 +45,6 @@ export function morePageItems(): NavItem[] {
 /** True when `pathname` is inside `item` (Home only matches "/"). More also covers the pages it lists. */
 export function isCurrent(item: NavItem, pathname: string): boolean {
   if (item.href === "/") return pathname === "/";
-  if (item.key === "more") return pathname.startsWith("/more") || morePageItems().some((p) => pathname.startsWith(p.href));
+  if (item.key === "more") return pathname.startsWith("/more") || pathname.startsWith("/notifications") || morePageItems().some((p) => pathname.startsWith(p.href));
   return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }

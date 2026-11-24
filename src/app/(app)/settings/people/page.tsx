@@ -6,7 +6,7 @@ import { SettingsColumn, SettingsColumns, SettingsSection } from "@/components/s
 import { SubmitButton } from "@/components/shared/submit-button";
 import { PageHeader } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import { removePerson, setPersonStatus } from "@/features/people/actions";
+import { removePerson, setPersonNotifications, setPersonStatus } from "@/features/people/actions";
 import { listPeople, type PersonWithAccess } from "@/features/people/queries";
 import { formatDate } from "@/lib/format";
 import { parseAllowedEmails } from "@/lib/allowed-emails";
@@ -36,13 +36,35 @@ function RemoveForm({ person }: { person: PersonWithAccess }) {
   );
 }
 
-function Who({ person }: { person: PersonWithAccess }) {
+/** Their notifications at a glance: off, or on with how many devices can take a push (N.5, C144). */
+function notificationsNote(person: PersonWithAccess): string {
+  if (!person.notificationsEnabled) return "notifications off";
+  if (person.devices === 0) return "notifications on, no device yet";
+  return `notifications on, ${person.devices} ${person.devices === 1 ? "device" : "devices"}`;
+}
+
+/** Switch a person's notifications off or on (N.5, C144). Tucked inside their card: it is rarely used. */
+function NotificationsForm({ person }: { person: PersonWithAccess }) {
+  return (
+    <form action={setPersonNotifications} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t border-raised pt-3">
+      <input type="hidden" name="id" value={person.id} />
+      <input type="hidden" name="enabled" value={String(!person.notificationsEnabled)} />
+      <SubmitButton variant="outline" size="sm">
+        {person.notificationsEnabled ? "Turn their notifications off" : "Turn their notifications on"}
+      </SubmitButton>
+      <span className="text-xs text-muted-foreground">Pushes only, for what they can see.</span>
+    </form>
+  );
+}
+
+function Who({ person, note }: { person: PersonWithAccess; note?: string }) {
   return (
     <span className="flex min-w-0 flex-1 flex-col">
       <span className="truncate text-[15px] font-semibold">{person.name ?? person.email}</span>
       <span className="truncate text-xs text-muted-foreground">
         {person.name ? `${person.email} · ` : ""}
         {person.lastSeenAt ? `last here ${formatDate(person.lastSeenAt)}` : "has not signed in yet"}
+        {note ? ` · ${note}` : ""}
       </span>
     </span>
   );
@@ -85,7 +107,7 @@ async function PeopleLists() {
               {active.map((p) => (
                 <details key={p.id} className="group rounded-2xl border bg-card px-4">
                   <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
-                    <Who person={p} />
+                    <Who person={p} note={notificationsNote(p)} />
                     <span className="font-mono text-[10.5px] tracking-[0.12em] text-label uppercase">
                       {Object.keys(p.access.grants).length === 0 ? "sees nothing yet" : `${Object.keys(p.access.grants).length} of 7 sections`}
                     </span>
@@ -94,6 +116,7 @@ async function PeopleLists() {
                   </summary>
                   <div className="flex flex-col gap-3 pb-4">
                     <AccessGrid personId={p.id} grants={p.access.grants} />
+                    <NotificationsForm person={p} />
                     <div className="flex flex-wrap gap-2 border-t border-raised pt-3">
                       <StatusForm id={p.id} status="blocked" label="Block" />
                       <RemoveForm person={p} />

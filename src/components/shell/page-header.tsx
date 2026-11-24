@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { getAuthState } from "@/lib/auth";
 import { Logo } from "@/components/brand/logo";
 import { AccountMenu } from "@/components/shell/account-menu";
 
@@ -11,11 +13,20 @@ export function PhoneMark() {
   );
 }
 
+/** The menu with its Notifications link, for people the hub lets in (N.5, C144); the plain menu for visitors. */
+async function AccountMenuForPerson() {
+  const state = await getAuthState();
+  return <AccountMenu notifications={state.status === "ok"} />;
+}
+
 /** Your profile circle, at the top right of every app page (S.1, owner's list items 9 and 10). */
 export function HeaderAccount() {
   return (
     <span className="flex size-10 shrink-0 items-center justify-center">
-      <AccountMenu />
+      {/* The session is request-time data, so it is read inside its own Suspense; until it is known the plain menu shows. */}
+      <Suspense fallback={<AccountMenu />}>
+        <AccountMenuForPerson />
+      </Suspense>
     </span>
   );
 }

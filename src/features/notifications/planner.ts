@@ -58,6 +58,11 @@ export type PlanInput = {
    * them on the next run if they are still timely.
    */
   channelsUsedToday?: ReadonlySet<Channel>;
+  /**
+   * The channels this recipient may be written to (default both). People get push only (N.5, C144):
+   * a step on another channel is left out entirely, not held, so it uses no key and counts nothing.
+   */
+  channels?: readonly Channel[];
 };
 
 export type Plan = {
@@ -121,7 +126,8 @@ export function composeMessage(recipient: string, channel: Channel, notices: rea
 }
 
 /** The notices due today for one recipient, batched into at most one message per channel. */
-export function planNotifications({ recipient = "", items, events = [], today, usedKeys, channelsUsedToday }: PlanInput): Plan {
+export function planNotifications({ recipient = "", items, events = [], today, usedKeys, channelsUsedToday, channels }: PlanInput): Plan {
+  const allowed = (channel: Channel) => channels === undefined || channels.includes(channel);
   const notices: Notice[] = [];
   const seen = new Set<string>();
   let held = 0;
@@ -131,7 +137,7 @@ export function planNotifications({ recipient = "", items, events = [], today, u
     if (!event) continue;
     const daysUntil = daysBetween(today, item.dueDate);
     for (const rule of NOTIFICATION_STEPS[event].steps) {
-      if (!stepIsDue(rule, daysUntil)) continue;
+      if (!allowed(rule.channel) || !stepIsDue(rule, daysUntil)) continue;
       const key = dedupeKey(item.id, rule.step, item.dueDate);
       if (usedKeys.has(key) || seen.has(key)) continue;
       seen.add(key);
@@ -157,6 +163,7 @@ export function planNotifications({ recipient = "", items, events = [], today, u
   for (const e of events) {
     if (!inWindow(e, today)) continue;
     for (const rule of NOTIFICATION_STEPS[e.event].steps) {
+      if (!allowed(rule.channel)) continue;
       if (usedKeys.has(e.key) || seen.has(e.key)) continue;
       seen.add(e.key);
       if (channelsUsedToday?.has(rule.channel)) {

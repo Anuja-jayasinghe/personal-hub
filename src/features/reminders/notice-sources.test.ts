@@ -197,8 +197,8 @@ describe("event sources fail closed", () => {
     };
     const { loaded } = await loadNoticeSources([unmapped], { db, today: "2026-11-20" });
     expect(loaded[0].area).toBe("owner");
-    expect(itemsFor({ email: OWNER, access: { owner: true } }, loaded)).toHaveLength(1);
-    expect(itemsFor({ email: "p@example.com", access: { owner: false, grants: { electricity_readings: "edit", vehicles: "edit" } } }, loaded)).toEqual([]);
+    expect(itemsFor({ email: OWNER, access: { owner: true }, channels: ["email", "push"] }, loaded)).toHaveLength(1);
+    expect(itemsFor({ email: "p@example.com", access: { owner: false, grants: { electricity_readings: "edit", vehicles: "edit" } }, channels: ["push"] }, loaded)).toEqual([]);
     // Reminder sources keep their own default.
     expect((await loadSources([{ ...unmapped, load: async () => [] }], { db, today: "2026-11-20" })).loaded[0].area).toBe("tasks_notes");
   });

@@ -11,6 +11,7 @@ import {
   emailSender,
   emailSetup,
   escapeHtml,
+  mailbox,
   maskAddress,
   noticeIdempotencyKey,
   oneLine,
@@ -59,10 +60,25 @@ const bodyOf = (f: ReturnType<typeof okFetch>, call = 0) => JSON.parse(String(f.
 const headersOf = (f: ReturnType<typeof okFetch>, call = 0) => f.mock.calls[call][1]?.headers as Record<string, string>;
 
 describe("routing", () => {
-  it("an owner whose address is NOTIFY_EMAIL_TO without the +tag gets it at NOTIFY_EMAIL_TO", () => {
-    expect(deliveryAddress("owner@example.com", "owner+tag@example.com")).toBe("owner+tag@example.com");
-    expect(deliveryAddress("Owner@Example.COM", "owner+tag@example.com")).toBe("owner+tag@example.com");
-    expect(deliveryAddress("owner+other@example.com", "OWNER+tag@example.com")).toBe("OWNER+tag@example.com");
+  it("an owner whose Gmail address is NOTIFY_EMAIL_TO without the +tag gets it at NOTIFY_EMAIL_TO", () => {
+    expect(deliveryAddress("madeupx7q@gmail.com", "madeupx7q+tag@gmail.com")).toBe("madeupx7q+tag@gmail.com");
+    expect(deliveryAddress("MadeUpX7q@GMAIL.COM", "madeupx7q+tag@gmail.com")).toBe("madeupx7q+tag@gmail.com");
+    expect(deliveryAddress("madeupx7q+other@gmail.com", "MADEUPX7Q+tag@gmail.com")).toBe("MADEUPX7Q+tag@gmail.com");
+  });
+
+  it("a +tag is only ignored for Gmail: at any other provider it is a different mailbox (N.2 review, L2)", () => {
+    expect(deliveryAddress("owner@example.com", "owner+tag@example.com")).toBe("owner@example.com");
+    expect(deliveryAddress("owner+other@example.com", "owner+tag@example.com")).toBe("owner+other@example.com");
+    // The same address, written another way, is still the same mailbox.
+    expect(deliveryAddress("Owner+Tag@Example.COM", "owner+tag@example.com")).toBe("owner+tag@example.com");
+  });
+
+  it("an address with nothing in front of the tag names no mailbox", () => {
+    expect(mailbox("+tag@gmail.com")).toBe("+tag@gmail.com");
+    expect(mailbox("@gmail.com")).toBe("@gmail.com");
+    expect(deliveryAddress("+tag@gmail.com", "+tag@gmail.com")).toBe("+tag@gmail.com");
+    expect(deliveryAddress("+a@gmail.com", "+b@gmail.com")).toBe("+a@gmail.com");
+    expect(deliveryAddress("someone@gmail.com", "+tag@gmail.com")).toBe("someone@gmail.com");
   });
 
   it("any other owner gets it at their own address", () => {
@@ -288,16 +304,18 @@ describe("postToResend and the sender", () => {
 
   it("the sender routes to NOTIFY_EMAIL_TO and keys by recipient, the run's day and notices", async () => {
     const f = okFetch();
-    const sender = emailSender(() => ENV, { fetch: f });
+    // A made-up Gmail owner: only Gmail ignores the +tag, so only there is the tagged address the same mailbox.
+    const gmailTo = "madeupx7q+tag@gmail.com";
+    const sender = emailSender(() => ({ ...ENV, NOTIFY_EMAIL_TO: gmailTo }), { fetch: f });
     expect(sender.implemented).toBe(true);
-    const message = emailOf([renewal(30)]);
+    const message = emailOf([renewal(30)], "madeupx7q@gmail.com");
     await sender.send(message, { today: TODAY });
-    expect(bodyOf(f).to).toEqual([TO]);
-    expect(headersOf(f)["Idempotency-Key"]).toBe(noticeIdempotencyKey(TO, TODAY, message.notices.map((n) => n.dedupeKey)));
+    expect(bodyOf(f).to).toEqual([gmailTo]);
+    expect(headersOf(f)["Idempotency-Key"]).toBe(noticeIdempotencyKey(gmailTo, TODAY, message.notices.map((n) => n.dedupeKey)));
 
     // The day comes from the run, not the sender's clock.
     await sender.send(message, { today: "2027-01-02" });
-    expect(headersOf(f, 1)["Idempotency-Key"]).toBe(noticeIdempotencyKey(TO, "2027-01-02", message.notices.map((n) => n.dedupeKey)));
+    expect(headersOf(f, 1)["Idempotency-Key"]).toBe(noticeIdempotencyKey(gmailTo, "2027-01-02", message.notices.map((n) => n.dedupeKey)));
 
     await sender.send(emailOf([renewal(30)], "second@example.com"), { today: TODAY });
     expect(bodyOf(f, 2).to).toEqual(["second@example.com"]);

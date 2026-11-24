@@ -86,10 +86,28 @@ not have them, so there Settings shows email as "Not set up" and the test button
 
 The Gmail filter matches the **sender** (From `notify@mail.hub.anujajay.com`), never only the delivery address: the
 tag is easy to guess, and a filter on To with "Never send it to Spam" would let anyone's mail past the spam filter.
+DMARC on `mail.hub.anujajay.com` is `p=quarantine; adkim=s` (strict alignment), so mail that fails it goes to spam
+and the sender-matching Gmail filter is what keeps the real ones in the inbox.
+
+A message Resend refuses (400, 401, 403, 404, 422 or 429) is logged `failed` and retried on the next morning's run
+while it is still timely, **but at most 3 times**; after that it is never planned again. So a wrong `NOTIFY_EMAIL_TO`
+(Resend answers 422) loses a notice after three mornings: fix the configuration promptly. **Email is the owners'
+only** (N.5, C144): shared people are never emailed, whatever their grants; they get pushes.
 
 ## Pushes that need no due date (N.4, C142)
 
 The daily run also pushes when a meter nears or crosses its slab limit and when a meter reading is overdue; **no new setting and no migration**. "Someone asked for access" is sent right away (from Next's `after()`, when a stranger is first recorded as pending) **only on Production**, only to the `ALLOWED_EMAILS` owners, only after 09:00 Colombo and only if no push has gone to that owner today; otherwise the next daily run includes it in the day's one push. Two sign-ups at the same instant send one push (an atomic per-owner, per-day claim in `app_settings`). A sign-up at 08:45 Colombo waits for the next morning's run, because instant pushes start at 09:00 and that morning's run has gone. On the first run after this ships, a meter already near or over its limit gets one push, and anyone who signed up within the last 7 days and is still pending gets one batched push; the 7-day windows are a design choice. Previews and local development share the real database but never send it. It needs push to be set up and switched on like every other push (otherwise it is logged as a dry run).
+
+## Notifications for shared people (N.5, C144)
+
+The daily run also pushes to **active shared people** who have turned pushes on for a device: only for what their grants
+let them see, push only (no email, ever, and never a sign-up request). **One migration, apply it BEFORE merging:**
+`0019_overconfident_lady_mastermind.sql` adds `people.notifications_enabled boolean not null default true` with
+`pnpm db:migrate`. It is additive, so the code already live keeps working with the column in place; the other way round
+(code first) Settings › People fails until it is applied (sign-in does not, a person's own page only cannot say
+"paused", and the daily run carries on for the owners without the people). No new setting. A person turns pushes on at
+`/notifications` (profile menu or More), on `hub.anujajay.com` and with the hub on their iPhone's Home Screen; the owner
+sees each person's devices in Settings › People and can switch a person's notifications off there.
 
 ## End-to-end test (`pnpm e2e`, C121)
 

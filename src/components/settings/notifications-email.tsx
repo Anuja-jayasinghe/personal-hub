@@ -143,7 +143,17 @@ export function EmailRow({ status }: { status: EmailStatus }) {
             <span className="block font-mono text-[11px]">{why}</span>
           </>
         }
-        end={<RowMeta tone="quiet">{status.state === "no-address" ? "No address" : "Not set up"}</RowMeta>}
+        // A switch left on can still be turned OFF here (the same as the iPhone row); it cannot be turned on without the setup.
+        end={
+          status.enabled ? (
+            <span className="flex shrink-0 items-center gap-3">
+              <RowMeta tone="quiet">{status.state === "no-address" ? "No address" : "Not set up"}</RowMeta>
+              <EmailSwitch initial />
+            </span>
+          ) : (
+            <RowMeta tone="quiet">{status.state === "no-address" ? "No address" : "Not set up"}</RowMeta>
+          )
+        }
       />
     );
   }

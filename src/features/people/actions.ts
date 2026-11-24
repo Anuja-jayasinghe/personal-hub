@@ -44,6 +44,18 @@ export async function setPersonStatus(fd: FormData): Promise<void> {
   refresh();
 }
 
+/**
+ * Switches one person's notifications on or off (N.5, C144). Off, the daily run skips them; the setting
+ * is the owner's, so a person cannot change it, and it does not touch their devices or their access.
+ */
+export async function setPersonNotifications(fd: FormData): Promise<void> {
+  await requireUser("owner");
+  const enabled = String(fd.get("enabled") ?? "");
+  if (enabled !== "true" && enabled !== "false") throw new ValidationError("Choose on or off.");
+  await db.update(people).set({ notificationsEnabled: enabled === "true" }).where(eq(people.id, idFrom(fd)));
+  refresh();
+}
+
 /** Removes a person and their access. If they sign in again they come back as waiting. */
 export async function removePerson(fd: FormData): Promise<void> {
   await requireUser("owner");

@@ -1,5 +1,6 @@
 import "server-only";
 import type { Db } from "@/db/read";
+import { parseAllowedEmails } from "@/lib/allowed-emails";
 import type { ChannelSender } from "./channels";
 import { emailSender } from "./email";
 import { vapidFromEnv } from "./push/config";
@@ -18,6 +19,14 @@ import type { Channel } from "./steps";
 export function buildSenders(db: Db, options: { onlyEndpointHash?: string } = {}): Record<Channel, ChannelSender> {
   const email = emailSender();
   const vapid = vapidFromEnv();
-  const push = createPushSender({ db, transport: vapid ? webPushTransport(vapid) : null, emailSender: email, onlyEndpointHash: options.onlyEndpointHash });
+  // Email goes to the owners only (N.5, C144): the "stopped accepting pushes" email is never written for a person.
+  const owners = new Set(parseAllowedEmails(process.env.ALLOWED_EMAILS));
+  const push = createPushSender({
+    db,
+    transport: vapid ? webPushTransport(vapid) : null,
+    emailSender: email,
+    onlyEndpointHash: options.onlyEndpointHash,
+    canEmail: (recipient) => owners.has(recipient.trim().toLowerCase()),
+  });
   return { email, push };
 }

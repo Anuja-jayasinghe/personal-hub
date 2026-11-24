@@ -1,12 +1,14 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { desc, eq } from "drizzle-orm";
+import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { cache } from "react";
 import { safeErrorSummary } from "@/lib/errors";
 import { appConfig } from "@/config/app.config";
 import { readDb, type Db } from "@/db/read";
-import { appSettings, notifications, pushSubscriptions } from "@/db/schema";
+import { appSettings, notifications, people, pushSubscriptions } from "@/db/schema";
+import type { Access } from "@/features/people/access";
 import { loadNoticeSources, loadSources, noticeSources, reminderSources } from "@/features/reminders/sources";
 import { getAuthState, requirePage } from "@/lib/auth";
 import { todayInAppTz } from "@/lib/format";
@@ -109,13 +111,11 @@ export type PushSetup = {
 };
 
 /**
- * Settings › Notifications › This iPhone (N.3, C140): the viewing owner's own devices and the push
- * switch. If the `push_subscriptions` table is not there yet (the code deployed before migration 0017),
- * push shows as not set up instead of breaking the page. Use `getPushSetup` (memoised per request).
+ * The devices of ONE recipient and the push switch. If the `push_subscriptions` table is not there yet
+ * (the code deployed before migration 0017), push shows as not set up instead of breaking the page. The
+ * recipient always comes from the verified sign-in (`viewingOwner` or `viewingPerson`), never from a request.
  */
-export async function loadPushSetup(): Promise<PushSetup> {
-  await connection();
-  const recipient = await viewingOwner();
+async function pushSetupFor(recipient: string): Promise<PushSetup> {
   const db = await readDb();
   const vapid = vapidFromEnv();
   const switches = await switchesFrom(db);
@@ -145,4 +145,53 @@ export async function loadPushSetup(): Promise<PushSetup> {
   };
 }
 
+/**
+ * Settings › Notifications › This iPhone (N.3, C140): the viewing owner's own devices and the push
+ * switch. Use `getPushSetup` (memoised per request).
+ */
+export async function loadPushSetup(): Promise<PushSetup> {
+  await connection();
+  return pushSetupFor(await viewingOwner());
+}
+
 export const getPushSetup = cache(loadPushSetup);
+
+/**
+ * The signed-in, ALLOWED person looking at their own notifications page (N.5, C144): an owner or an
+ * active person. Anyone else (a signed-out visitor or a person waiting for approval, who see the demo; a
+ * blocked person) gets "not found" and nothing is read. Deliberately NOT `requirePage("signed-in")`: that
+ * lets the demo through, and `readDb()` would then hand it the demo database.
+ */
+async function viewingPerson(): Promise<{ recipient: string; access: Access }> {
+  const state = await getAuthState();
+  if (state.status !== "ok") notFound();
+  return { recipient: state.email.trim().toLowerCase(), access: state.access };
+}
+
+export type OwnNotifications = {
+  setup: PushSetup;
+  access: Access;
+  /** The owner switched this person's notifications off (Settings › People): the run skips them. */
+  paused: boolean;
+};
+
+/** The person page's data: their own devices, what they may hear about (from their grants) and whether they are paused. */
+export async function loadOwnNotifications(): Promise<OwnNotifications> {
+  await connection();
+  const { recipient, access } = await viewingPerson();
+  const setup = await pushSetupFor(recipient);
+  let paused = false;
+  if (!access.owner) {
+    const db = await readDb();
+    try {
+      const [row] = await db.select({ on: people.notificationsEnabled }).from(people).where(eq(people.email, recipient));
+      paused = row ? !row.on : false;
+    } catch (err) {
+      // The code deployed before migration 0019: the page still works, it just cannot say "paused".
+      console.error(`Could not read the notifications switch (is migration 0019 applied?): ${safeErrorSummary(err)}`);
+    }
+  }
+  return { setup, access, paused };
+}
+
+export const getOwnNotifications = cache(loadOwnNotifications);

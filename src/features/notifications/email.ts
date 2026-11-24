@@ -48,18 +48,22 @@ export function emailSetup(env: EmailEnv): EmailSetup | null {
 const GMAIL_DOMAINS = new Set(["gmail.com", "googlemail.com"]);
 
 /**
- * An address as its mailbox: lower-cased, without its "+tag", and for Gmail without dots in the name
- * and with googlemail.com as gmail.com (Gmail delivers all of those to the same inbox):
- * `Me.Name+tag@GoogleMail.com` → `mename@gmail.com`.
+ * An address as its mailbox: lower-cased and, for Gmail only, without its "+tag" and without dots in the
+ * name, with googlemail.com as gmail.com (Gmail delivers all of those to the same inbox):
+ * `Me.Name+tag@GoogleMail.com` → `mename@gmail.com`. At any other provider a "+tag" is not known to
+ * mean the same mailbox (some providers treat `a+b` as a different user), so it is kept as it is. An
+ * address with no name in front of the "@" is returned as it is (L2, N.2 review).
  */
-function mailbox(address: string): string {
+export function mailbox(address: string): string {
   const clean = address.trim().toLowerCase();
   const at = clean.lastIndexOf("@");
   if (at < 1) return clean;
-  let local = clean.slice(0, at).split("+")[0];
+  let local = clean.slice(0, at);
   let domain = clean.slice(at + 1);
   if (GMAIL_DOMAINS.has(domain)) {
-    local = local.replace(/\./g, "");
+    local = local.split("+")[0].replace(/\./g, "");
+    // "+tag@gmail.com" has nothing in front of the tag: it names no mailbox.
+    if (!local) return clean;
     domain = "gmail.com";
   }
   return `${local}@${domain}`;
@@ -67,7 +71,7 @@ function mailbox(address: string): string {
 
 /**
  * Where an owner's email goes: NOTIFY_EMAIL_TO when it is the same mailbox as the owner's own address
- * (compared without the tag, ignoring case, Gmail's dots and googlemail.com), so every hub email
+ * (ignoring case; for Gmail also the +tag, the dots and googlemail.com), so every hub email
  * arrives at the tagged address; any other owner gets it at their own address.
  */
 export function deliveryAddress(recipient: string, notifyTo: string): string {

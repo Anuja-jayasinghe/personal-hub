@@ -19,15 +19,21 @@ import { saveSwitch } from "./switches";
 import { systemMessage } from "./system";
 
 /**
- * iPhone push (Notifications N.3, DECISIONS C140): turning it on for a device, off again, a test push
- * and the switch that makes the daily run's pushes real. Owners only for now. Server Actions are public
- * HTTP endpoints, so every input is checked here; a device is always bound to the signed-in owner, and
- * an owner can only remove or test their own devices. Nothing about a device is ever logged.
+ * iPhone push (Notifications N.3, DECISIONS C140; for shared people N.5, C144): turning it on for a
+ * device, off again, removing one, a test push, and (owners only) the switch that makes the daily run's
+ * pushes real. Server Actions are public HTTP endpoints, so every input is checked here.
+ *
+ * The four device actions are for ANY signed-in, allowed person (an owner, or an active person):
+ * `requireUser("signed-in")` refuses signed-out visitors, people waiting for approval (they see the
+ * demo), blocked people and everyone else, because only an `ok` state passes. The recipient is always
+ * the caller's own verified email from that check, never anything the client sends; a device is bound
+ * to it, and a person can only list, remove or test their own. `setPushLive` stays owner-only. Nothing
+ * about a device is ever logged.
  */
 
-/** At most this many devices per owner (a phone, a tablet, a computer or two). */
+/** At most this many devices per person (a phone, a tablet, a computer or two). */
 const MAX_DEVICES = 10;
-/** One test push per clock minute per owner. */
+/** One test push per clock minute per person. */
 const TEST_EVERY_MS = 60_000;
 
 const NOT_SET_UP = "iPhone push is not set up on the server yet (the VAPID keys are missing).";
@@ -41,10 +47,10 @@ function failed(err: unknown): ActionState {
 
 const lower = (email: string) => email.trim().toLowerCase();
 
-/** Saves this browser's push subscription for the signed-in owner (upsert by endpoint). */
+/** Saves this browser's push subscription for the signed-in person (upsert by endpoint). */
 export async function subscribePush(subscription: unknown, label: unknown): Promise<ActionState> {
   try {
-    const { email } = await requireUser("owner");
+    const { email } = await requireUser("signed-in");
     if (!vapidFromEnv()) throw new ValidationError(NOT_SET_UP);
     const parsed = parseSubscription(subscription);
     if (!parsed.ok) throw new ValidationError(parsed.error);
@@ -58,7 +64,7 @@ export async function subscribePush(subscription: unknown, label: unknown): Prom
       .where(and(eq(pushSubscriptions.endpoint, parsed.value.endpoint), eq(pushSubscriptions.recipient, recipient)));
     if (!existing && (mine?.n ?? 0) >= MAX_DEVICES) throw new ValidationError(`Pushes are on for ${MAX_DEVICES} devices already. Remove one first.`);
 
-    // Upsert by endpoint, but never move a device that belongs to another owner: the update only applies
+    // Upsert by endpoint, but never move a device that belongs to another account: the update only applies
     // to the caller's own row, and nothing comes back otherwise. A resubscribe also clears `gone_at`.
     const saved = await db
       .insert(pushSubscriptions)
@@ -69,7 +75,7 @@ export async function subscribePush(subscription: unknown, label: unknown): Prom
         setWhere: eq(pushSubscriptions.recipient, recipient),
       })
       .returning({ id: pushSubscriptions.id });
-    if (saved.length === 0) throw new ValidationError("Pushes on this device belong to another owner. Turn them off there first.");
+    if (saved.length === 0) throw new ValidationError("Pushes on this device belong to another account. Turn them off there first.");
     refresh();
     return { ok: true };
   } catch (err) {
@@ -80,7 +86,7 @@ export async function subscribePush(subscription: unknown, label: unknown): Prom
 /** Turns pushes off for this browser: deletes its subscription, only if it is the caller's own. */
 export async function unsubscribePush(endpoint: unknown): Promise<ActionState> {
   try {
-    const { email } = await requireUser("owner");
+    const { email } = await requireUser("signed-in");
     if (typeof endpoint !== "string" || endpoint.length === 0 || endpoint.length > 1024) throw new ValidationError("That is not a push subscription.");
     await db.delete(pushSubscriptions).where(and(eq(pushSubscriptions.endpoint, endpoint), eq(pushSubscriptions.recipient, lower(email))));
     refresh();
@@ -95,7 +101,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Removes one of the caller's own devices from the list. */
 export async function removePushDevice(id: unknown): Promise<ActionState> {
   try {
-    const { email } = await requireUser("owner");
+    const { email } = await requireUser("signed-in");
     if (typeof id !== "string" || !UUID.test(id)) throw new ValidationError("That device is not in the list.");
     await db.delete(pushSubscriptions).where(and(eq(pushSubscriptions.id, id), eq(pushSubscriptions.recipient, lower(email))));
     refresh();
@@ -115,7 +121,7 @@ export async function removePushDevice(id: unknown): Promise<ActionState> {
  */
 export async function sendTestPush(thisEndpointHash: unknown): Promise<ActionState> {
   try {
-    const { email } = await requireUser("owner");
+    const { email, access } = await requireUser("signed-in");
     if (!vapidFromEnv()) throw new ValidationError(NOT_SET_UP);
     if (typeof thisEndpointHash !== "string" || !/^[0-9a-f]{64}$/.test(thisEndpointHash)) throw new ValidationError("Turn pushes on for this device first.");
     const recipient = lower(email);
@@ -144,7 +150,8 @@ export async function sendTestPush(thisEndpointHash: unknown): Promise<ActionSta
       dedupeKey,
       title: `Test from the ${appConfig.name}`,
       body: "Pushes reach this device.",
-      href: "/settings/notifications",
+      // Settings is the owners'; a shared person's page is /notifications (N.5, C144).
+      href: access.owner ? "/settings/notifications" : "/notifications",
       today: todayIn(appConfig.timeZone, now),
     });
     const result = await sendLive(db, message, buildSenders(db, { onlyEndpointHash: thisEndpointHash }).push);
