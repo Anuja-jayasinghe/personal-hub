@@ -4,7 +4,9 @@
  * "anchor day"), so a bill due on the 31st goes Jan 31, Feb 28, Mar 31 and does not drift to the 28th.
  */
 
-export const FREQUENCIES = ["weekly", "monthly", "quarterly", "yearly", "one_off"] as const;
+import { dayMonth } from "@/lib/dates";
+
+export const FREQUENCIES =["weekly", "monthly", "quarterly", "yearly", "one_off"] as const;
 export type Frequency = (typeof FREQUENCIES)[number];
 
 export const FREQUENCY_LABELS: Record<Frequency, string> = {
@@ -63,21 +65,81 @@ function addDaysTo(ymd: string, days: number): string {
   return `${pad(date.getUTCFullYear(), 4)}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
 }
 
+type ScheduledItem = { kind: "bill" | "subscription"; frequency: Frequency; autopay: boolean; anchorDay: number | null };
+
 /**
- * The first day a due date can be paid (owner, 2026-11-24). A monthly bill that is not on autopay is
- * processed by its provider on the bill day, so the bill due by `due` (the next bill day, S.5) does not
- * exist, and is not shown or reminded, until the bill day before it has passed: SLT's bill of the 6th
- * of December is only payable from the 7th. Null means payable at any time: subscriptions, items on
- * autopay and every other frequency (their date is the date to pay by, shown ahead as before).
+ * The bill date of the bill that is due by `payBy` (owner, 2026-11-24). A "bill-day item" is a monthly
+ * bill that is not on autopay: its provider processes each bill on the bill day (the anchor day) and it
+ * can only be paid after that day. Its stored due date is the **pay-by date**, the next bill day after the
+ * bill being paid (S.5, C110), so the bill it settles was processed one month earlier: with bill day the
+ * 6th, a stored 6 Dec settles "the 6 Nov bill" and 6 Jan is the pay-by date of "the 6 Dec bill". Null for
+ * every other item (subscriptions, autopay, weekly, quarterly, yearly, one-off): their date is only the
+ * date to pay by, and the screens keep saying so.
  */
-export function payableFrom(
-  item: { kind: "bill" | "subscription"; frequency: Frequency; autopay: boolean; anchorDay: number | null },
-  due: string,
-): string | null {
+export function billDateOf(item: ScheduledItem, payBy: string): string | null {
   if (item.kind !== "bill" || item.frequency !== "monthly" || item.autopay) return null;
-  const arrived = addMonthsKeepingDay(due, -1, item.anchorDay ?? anchorDayOf(due));
-  return addDaysTo(arrived, 1);
+  return addMonthsKeepingDay(payBy, -1, item.anchorDay ?? anchorDayOf(payBy));
 }
+
+/**
+ * The first day the bill due by `due` can be paid: the day after its bill date, since the provider
+ * processes it on the bill day (the bill of 6 Dec is payable from the 7th). Null means payable at any
+ * time: every item that is not a bill-day item (see `billDateOf`).
+ */
+export function payableFrom(item: ScheduledItem, due: string): string | null {
+  const billDate = billDateOf(item, due);
+  return billDate === null ? null : addDaysTo(billDate, 1);
+}
+
+/**
+ * Why an item cannot be paid today, or null when it can. A bill-day item whose bill is not processed
+ * yet cannot ("The 6 Dec bill is processed on 6 Dec and can be paid from 7 Dec."); everything else can
+ * always be paid. Mark paid checks this inside its transaction.
+ */
+export function payRefusal(item: ScheduledItem & { nextDueDate: string | null }, today: string): string | null {
+  if (item.nextDueDate === null) return null;
+  const from = payableFrom(item, item.nextDueDate);
+  if (from === null || from <= today) return null;
+  const billDay = dayMonth(billDateOf(item, item.nextDueDate)!);
+  return `The ${billDay} bill is processed on ${billDay} and can be paid from ${dayMonth(from)}.`;
+}
+
+/**
+ * The words for a bill-day item's bill, in bill dates (owner, 2026-11-24). `payBy` is the stored due
+ * date; `today` decides whether the bill can be paid yet. Null for every other item, which keeps the
+ * old "due date" wording.
+ */
+export type BillDayWording =
+  | { payable: false; nextBill: string; payableFrom: string }
+  | { payable: true; billOf: string; payBy: string };
+
+export function billDayWording(item: ScheduledItem, payBy: string, today: string): BillDayWording | null {
+  const billDate = billDateOf(item, payBy);
+  if (billDate === null) return null;
+  const from = addDaysTo(billDate, 1);
+  return from > today
+    ? { payable: false, nextBill: dayMonth(billDate), payableFrom: dayMonth(from) }
+    : { payable: true, billOf: dayMonth(billDate), payBy: dayMonth(payBy) };
+}
+
+/** Meta line of a due entry in a list: "6 Nov bill · pay by 6 Dec". */
+export const billDayMeta = (billDate: string, payBy: string): string => `${dayMonth(billDate)} bill · pay by ${dayMonth(payBy)}`;
+
+/** Help text under Mark paid; `formatLong` writes a date for the old wording (e.g. "6 Dec 2026"). */
+export function markPaidHelp(item: ScheduledItem & { nextDueDate: string }, formatLong: (ymd: string) => string): string {
+  const billDate = billDateOf(item, item.nextDueDate);
+  if (billDate !== null) return `Records a payment for the ${dayMonth(billDate)} bill and moves on to the ${dayMonth(item.nextDueDate)} bill.`;
+  return `Records a payment for the ${formatLong(item.nextDueDate)} due date${item.frequency === "one_off" ? " and marks this item done." : " and moves the next due date forward."}`;
+}
+
+/** What a recorded payment settled: "the 6 Nov bill" for a bill-day item, else "the 6 Dec 2026 due date". */
+export function paymentFor(item: ScheduledItem, dueDate: string, formatLong: (ymd: string) => string): string {
+  const billDate = billDateOf(item, dueDate);
+  return billDate !== null ? `the ${dayMonth(billDate)} bill` : `the ${formatLong(dueDate)} due date`;
+}
+
+/** A due entry's title with its bill date, for the calendar list: "SLT Fibre · 6 Nov bill". */
+export const titleWithBill = (title: string, billDate: string | null | undefined): string => (billDate ? `${title} · ${dayMonth(billDate)} bill` : title);
 
 /**
  * The due date after `due`, or null for a one-off item (it is finished once paid).

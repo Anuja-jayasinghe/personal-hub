@@ -1,6 +1,6 @@
 import { addDays, daysBetween } from "@/lib/dates";
 import { toCents } from "@/lib/decimal";
-import { nextDueAfter, payableFrom, rollForward, type Frequency } from "./schedule";
+import { billDateOf, nextDueAfter, payableFrom, rollForward, type Frequency } from "./schedule";
 
 /**
  * What is coming up, the calendar grid and the monthly commitments (Phase 3.4). Pure: no database,
@@ -55,6 +55,11 @@ export type Occurrence = {
   overdue: boolean;
   /** The bill item it belongs to, or null (electricity bills live on their own page). */
   itemId: string | null;
+  /**
+   * For a monthly bill that is not on autopay: the bill date of the bill `date` is the pay-by date of
+   * ("6 Nov bill, pay by 6 Dec"). Absent or null for every other entry (see `billDateOf`).
+   */
+  billDate?: string | null;
   href: string;
 };
 
@@ -79,6 +84,7 @@ export function occurrencesOf(item: BillLike, today: string, to: string): Occurr
     autopay: item.autopay,
     overdue,
     itemId: item.id,
+    billDate: billDateOf(item, date),
     href: `/bills#item-${item.id}`,
   });
   const step = (date: string) => nextDueAfter(item.frequency, date, item.anchorDay ?? undefined);

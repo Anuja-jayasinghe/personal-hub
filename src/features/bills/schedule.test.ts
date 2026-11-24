@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { addMonthsKeepingDay, anchorDayOf, daysInMonth, isFrequency, nextDueAfter, rollForward, nextBillDayAfter, payableFrom } from "./schedule";
+import {
+  addMonthsKeepingDay,
+  anchorDayOf,
+  billDateOf,
+  billDayMeta,
+  billDayWording,
+  daysInMonth,
+  isFrequency,
+  markPaidHelp,
+  nextBillDayAfter,
+  nextDueAfter,
+  paymentFor,
+  payableFrom,
+  payRefusal,
+  rollForward,
+  titleWithBill,
+} from "./schedule";
 
 describe("daysInMonth / anchorDayOf", () => {
   it("knows month lengths and leap years", () => {
@@ -112,5 +128,91 @@ describe("payableFrom", () => {
     expect(payableFrom({ ...bill, autopay: true }, "2027-01-06")).toBeNull();
     expect(payableFrom({ ...bill, frequency: "yearly" }, "2027-01-06")).toBeNull();
     expect(payableFrom({ ...bill, frequency: "one_off" }, "2027-01-06")).toBeNull();
+  });
+});
+
+describe("billDateOf (bill dates for a bill-day item)", () => {
+  const bill = { kind: "bill" as const, frequency: "monthly" as const, autopay: false, anchorDay: 6 };
+  it("is the pay-by date minus one month, keeping the bill day", () => {
+    expect(billDateOf(bill, "2026-12-06")).toBe("2026-11-06");
+    expect(billDateOf(bill, "2027-01-06")).toBe("2026-12-06");
+    expect(billDateOf({ ...bill, anchorDay: null }, "2027-01-06")).toBe("2026-12-06");
+  });
+  it("keeps a month-end bill day through short months", () => {
+    expect(billDateOf({ ...bill, anchorDay: 31 }, "2027-02-28")).toBe("2027-01-31");
+    expect(billDateOf({ ...bill, anchorDay: 31 }, "2027-03-31")).toBe("2027-02-28");
+    expect(billDateOf({ ...bill, anchorDay: 31 }, "2028-03-31")).toBe("2028-02-29");
+    expect(billDateOf({ ...bill, anchorDay: 31 }, "2027-01-31")).toBe("2026-12-31");
+  });
+  it("is null for every other item, which keeps the due-date wording", () => {
+    expect(billDateOf({ ...bill, kind: "subscription" }, "2027-01-06")).toBeNull();
+    expect(billDateOf({ ...bill, autopay: true }, "2027-01-06")).toBeNull();
+    for (const frequency of ["weekly", "quarterly", "yearly", "one_off"] as const) expect(billDateOf({ ...bill, frequency }, "2027-01-06")).toBeNull();
+  });
+  it("payableFrom is the day after the bill date", () => {
+    expect(payableFrom(bill, "2027-01-06")).toBe("2026-12-07");
+    expect(payableFrom({ ...bill, anchorDay: 31 }, "2027-03-31")).toBe("2027-03-01");
+  });
+});
+
+describe("payRefusal (the guard behind Mark paid)", () => {
+  const slt = { kind: "bill" as const, frequency: "monthly" as const, autopay: false, anchorDay: 6, nextDueDate: "2027-01-06" as string | null };
+  it("refuses before the bill is payable, with the reason", () => {
+    expect(payRefusal(slt, "2026-11-24")).toBe("The 6 Dec bill is processed on 6 Dec and can be paid from 7 Dec.");
+    expect(payRefusal(slt, "2026-12-01")).not.toBeNull();
+  });
+  it("refuses on the bill day itself: it is processed that day and payable the next", () => {
+    expect(payRefusal(slt, "2026-12-06")).toBe("The 6 Dec bill is processed on 6 Dec and can be paid from 7 Dec.");
+    expect(payRefusal(slt, "2026-12-07")).toBeNull();
+    expect(payRefusal(slt, "2027-01-06")).toBeNull(); // on the pay-by date, and later (late)
+    expect(payRefusal(slt, "2027-02-01")).toBeNull();
+  });
+  it("lets the November bill be paid now (its pay-by date is 6 Dec)", () => {
+    expect(payRefusal({ ...slt, nextDueDate: "2026-12-06" }, "2026-11-24")).toBeNull();
+  });
+  it("handles month-end bill days", () => {
+    const end = { ...slt, anchorDay: 31, nextDueDate: "2027-02-28" };
+    expect(payRefusal(end, "2027-01-31")).toBe("The 31 Jan bill is processed on 31 Jan and can be paid from 1 Feb.");
+    expect(payRefusal(end, "2027-02-01")).toBeNull();
+  });
+  it("never refuses other items or a finished one", () => {
+    expect(payRefusal({ ...slt, kind: "subscription" }, "2026-11-24")).toBeNull();
+    expect(payRefusal({ ...slt, autopay: true }, "2026-11-24")).toBeNull();
+    expect(payRefusal({ ...slt, frequency: "yearly" }, "2026-11-24")).toBeNull();
+    expect(payRefusal({ ...slt, frequency: "one_off" }, "2026-11-24")).toBeNull();
+    expect(payRefusal({ ...slt, nextDueDate: null }, "2026-11-24")).toBeNull();
+  });
+});
+
+describe("the wording in bill dates", () => {
+  const slt = { kind: "bill" as const, frequency: "monthly" as const, autopay: false, anchorDay: 6 };
+  const long = (ymd: string) => `<${ymd}>`;
+  it("card: not payable yet says the next bill and when it is payable", () => {
+    expect(billDayWording(slt, "2027-01-06", "2026-11-24")).toEqual({ payable: false, nextBill: "6 Dec", payableFrom: "7 Dec" });
+    expect(billDayWording(slt, "2027-01-06", "2026-12-06")).toEqual({ payable: false, nextBill: "6 Dec", payableFrom: "7 Dec" });
+  });
+  it("card: payable says the bill of and the pay-by date", () => {
+    expect(billDayWording(slt, "2026-12-06", "2026-11-24")).toEqual({ payable: true, billOf: "6 Nov", payBy: "6 Dec" });
+    expect(billDayWording(slt, "2027-01-06", "2026-12-07")).toEqual({ payable: true, billOf: "6 Dec", payBy: "6 Jan" });
+  });
+  it("card: other items have no bill-date wording", () => {
+    expect(billDayWording({ ...slt, kind: "subscription" }, "2027-01-06", "2026-11-24")).toBeNull();
+    expect(billDayWording({ ...slt, frequency: "weekly" }, "2027-01-06", "2026-11-24")).toBeNull();
+  });
+  it("list meta and calendar title", () => {
+    expect(billDayMeta("2026-11-06", "2026-12-06")).toBe("6 Nov bill · pay by 6 Dec");
+    expect(titleWithBill("SLT Fibre", "2026-11-06")).toBe("SLT Fibre · 6 Nov bill");
+    expect(titleWithBill("Netflix", null)).toBe("Netflix");
+    expect(titleWithBill("Netflix", undefined)).toBe("Netflix");
+  });
+  it("Mark paid help: bill dates for a bill-day item, the old text for the rest", () => {
+    expect(markPaidHelp({ ...slt, nextDueDate: "2026-12-06" }, long)).toBe("Records a payment for the 6 Nov bill and moves on to the 6 Dec bill.");
+    expect(markPaidHelp({ ...slt, frequency: "yearly", nextDueDate: "2026-12-06" }, long)).toBe("Records a payment for the <2026-12-06> due date and moves the next due date forward.");
+    expect(markPaidHelp({ ...slt, frequency: "one_off", nextDueDate: "2026-12-06" }, long)).toBe("Records a payment for the <2026-12-06> due date and marks this item done.");
+    expect(markPaidHelp({ ...slt, kind: "subscription", nextDueDate: "2026-12-06" }, long)).toBe("Records a payment for the <2026-12-06> due date and moves the next due date forward.");
+  });
+  it("payment history: the SLT payment settled the 6 Nov bill", () => {
+    expect(paymentFor(slt, "2026-12-06", long)).toBe("the 6 Nov bill");
+    expect(paymentFor({ ...slt, autopay: true }, "2026-12-06", long)).toBe("the <2026-12-06> due date");
   });
 });

@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { emptyDot, ledFill, ledText, todayRing, type LedTone } from "@/components/shared/circuit";
+import { titleWithBill } from "@/features/bills/schedule";
 import { byDate, monthGrid, type Occurrence } from "@/features/bills/upcoming";
 import { formatDate, formatMoney } from "@/lib/format";
 
@@ -10,7 +11,7 @@ const monthTitle = new Intl.DateTimeFormat("en-GB", { month: "long", year: "nume
 /** Something already paid this month, shown as a green node (S.5b). */
 export type PaidMark = { key: string; date: string; title: string; amount: number | null; href: string };
 
-type Entry = { key: string; title: string; amount: number | null; href: string; tone: LedTone; autopay?: boolean };
+type Entry = { key: string; title: string; amount: number | null; href: string; tone: LedTone; autopay?: boolean; billDate?: string | null };
 
 const SHORT_AMOUNT = new Intl.NumberFormat("en-LK", { maximumFractionDigits: 0 });
 
@@ -40,7 +41,7 @@ export function BillsCalendar({
 }) {
   const due = byDate(occurrences);
   const entriesOn = (date: string): Entry[] => [
-    ...(due.get(date) ?? []).map((o) => ({ key: o.key, title: o.title, amount: o.amount, href: o.href, tone: (o.overdue ? "late" : "due") as LedTone, autopay: o.autopay })),
+    ...(due.get(date) ?? []).map((o) => ({ key: o.key, title: o.title, amount: o.amount, href: o.href, tone: (o.overdue ? "late" : "due") as LedTone, autopay: o.autopay, billDate: o.billDate })),
     ...paid.filter((p) => p.date === date).map((p) => ({ key: p.key, title: p.title, amount: p.amount, href: p.href, tone: "paid" as LedTone })),
   ];
   const weeks = monthGrid(month);
@@ -136,7 +137,7 @@ export function BillsCalendar({
               <li key={e.key} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 px-3.5 py-2">
                 <Link href={e.href} className="flex min-w-0 basis-full items-center gap-3 font-medium underline-offset-2 hover:underline sm:flex-1 sm:basis-0">
                   <span aria-hidden className={`size-2 shrink-0 rounded-full ${ledFill[e.tone]}`} />
-                  <span className="truncate">{e.title}</span>
+                  <span className="truncate">{titleWithBill(e.title, e.billDate)}</span>
                 </Link>
                 <span className="pl-5 font-mono text-xs text-muted-foreground sm:pl-0">
                   {e.tone === "paid" ? "paid " : e.tone === "late" ? "late, was due " : "due "}

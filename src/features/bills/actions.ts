@@ -9,7 +9,7 @@ import { toActionState } from "@/features/shared/errors";
 import type { ActionState } from "@/features/shared/types";
 import { idFrom, ValidationError } from "@/features/shared/validation";
 import { applyPayment, dueAfterUndo } from "./payments";
-import { anchorDayOf } from "./schedule";
+import { anchorDayOf, payRefusal } from "./schedule";
 import { parseBillItem, parsePayment } from "./validate";
 import { requireUser } from "@/lib/auth";
 import { todayInAppTz } from "@/lib/format";
@@ -122,6 +122,9 @@ export async function markBillItemPaid(_prev: ActionState, fd: FormData): Promis
       if (item.archivedAt) throw new ValidationError("Unarchive this item before recording a payment.");
       const paid = applyPayment(item);
       if (!paid.ok) throw new ValidationError(paid.error);
+      // A monthly bill is processed on its bill day and can only be paid after it (C153).
+      const tooEarly = payRefusal(item, todayInAppTz());
+      if (tooEarly) throw new ValidationError(tooEarly);
       await tx.insert(billPayments).values({ itemId, dueDate: paid.settles, ...f });
       await tx.update(billItems).set({ nextDueDate: paid.nextDueDate }).where(eq(billItems.id, itemId));
     });

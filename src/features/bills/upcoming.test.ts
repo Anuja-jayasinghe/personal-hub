@@ -92,6 +92,15 @@ describe("a monthly bill is not shown before it can be paid", () => {
     expect(dates(occurrencesOf(slt({ frequency: "quarterly" }), "2026-11-24", "2027-01-31"))).toEqual(["2027-01-06"]);
   });
 
+  it("carries the bill date of a bill-day item (the pay-by date minus a month), and only for those", () => {
+    const os = occurrencesOf(slt({ nextDueDate: "2026-11-06" }), "2026-11-24", "2027-03-31");
+    expect(os.map((o) => [o.date, o.billDate])).toEqual([["2026-11-06", "2026-10-06"], ["2026-12-06", "2026-11-06"]]);
+    expect(occurrencesOf(slt({ nextDueDate: "2027-02-28", anchorDay: 31 }), "2027-02-01", "2027-03-31")[0].billDate).toBe("2027-01-31");
+    expect(occurrencesOf(slt({ kind: "subscription" }), "2026-11-24", "2027-01-31")[0].billDate).toBeNull();
+    expect(occurrencesOf(slt({ autopay: true }), "2026-11-24", "2027-01-31")[0].billDate).toBeNull();
+    expect(occurrencesOf(slt({ frequency: "yearly" }), "2026-11-24", "2027-01-31")[0].billDate).toBeNull();
+  });
+
   it("leaves the upcoming list empty of it too", () => {
     expect(upcoming([slt()], [], "2026-11-24", 60)).toEqual([]);
   });
