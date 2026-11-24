@@ -1,9 +1,7 @@
-import { Trash2 } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { OdometerForm } from "@/components/vehicles/odometer-form";
+import { OdometerReadingRow } from "@/components/vehicles/odometer-reading-row";
 import { AddOdometerSheet } from "@/components/vehicles/vehicle-sheets";
-import { SubmitButton } from "@/components/shared/submit-button";
-import { deleteOdometerReading, updateOdometerReading } from "@/features/vehicles/odometer-actions";
 import { OdometerTimeline, SOURCE_NAMES, SourceMarker } from "@/components/vehicles/odometer-timeline";
 import { latestPoint, pointKey, toPoints, unfitKeys, withDistances } from "@/features/vehicles/odometer";
 import type { VehicleOdometerReading, VehicleRenewal, VehicleService } from "@/db/schema";
@@ -14,10 +12,11 @@ const km = (n: number) => `${n.toLocaleString("en-LK")} km`;
 
 /**
  * A vehicle's odometer as dated values from three sources (issue #181): readings typed here, services
- * with an odometer and emission tests with the test-day odometer (edit those on their own tab). It shows
+ * with an odometer and emission tests with the test-day odometer (edit those in their own sheet). It shows
  * the latest value, the timeline (marker shape = source) and the history with the distance between
  * values. A service or test value that doesn't fit is kept, flagged, and left out of the latest value
- * and the distances.
+ * and the distances. Issue #237: the history rows are tidy lines (date and source on the left, the km on the
+ * right) and a typed reading's Edit and Delete are quiet icon buttons inside its row (`OdometerReadingRow`).
  */
 export function OdometerSection({
   vehicleId,
@@ -53,9 +52,9 @@ export function OdometerSection({
   const rowOf = new Map(readings.map((r) => [r.id, r]));
 
   return (
-    <section aria-labelledby="odometer" className="flex flex-col gap-3 rounded-2xl border bg-card p-4">
+    <section aria-labelledby="odometer" className="flex flex-col gap-4 rounded-[18px] border bg-card p-4 md:rounded-[20px] md:p-5">
       <div className="flex items-center gap-3">
-        <h2 id="odometer" className="font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase">
+        <h2 id="odometer" className="font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase md:text-[11px]">
           Odometer
         </h2>
         {canAdd ? (
@@ -65,13 +64,16 @@ export function OdometerSection({
         ) : null}
       </div>
       {latest ? (
-        <p className="flex flex-wrap items-center gap-3">
-          <span role="img" aria-label={`${km(latest.km)}`} className="flex gap-0.5">
+        <p className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <span role="img" aria-label={`${km(latest.km)}`} className="flex gap-1">
             {String(latest.km)
               .padStart(6, "0")
               .split("")
-              .map((d, i) => (
-                <span key={i} className="flex h-8 w-6 items-center justify-center rounded-[5px] bg-raised font-mono text-base font-semibold">
+              .map((d, i, all) => (
+                <span
+                  key={i}
+                  className={`flex h-10 w-7 items-center justify-center rounded-lg font-mono text-xl font-semibold md:h-11 md:w-8 ${i === all.length - 1 ? "bg-primary text-primary-foreground" : "bg-raised"}`}
+                >
                   {d}
                 </span>
               ))}
@@ -83,59 +85,54 @@ export function OdometerSection({
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">
-          No readings yet.{canAdd ? " Add one with the date you read it, so an old value is never mistaken for today\u2019s." : ""}
+          No readings yet.{canAdd ? " Add one with the date you read it, so an old value is never mistaken for today’s." : ""}
         </p>
       )}
 
       <OdometerTimeline points={points} unfit={unfit} />
 
       {history.length > 0 ? (
-        <details className="rounded-lg border" open={history.length <= 6}>
-          <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">History ({history.length})</summary>
+        <details className="group rounded-xl border" open={history.length <= 6}>
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-[inherit] px-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring md:px-4 [&::-webkit-details-marker]:hidden">
+            <ChevronRight aria-hidden className="size-4 text-label transition-transform group-open:rotate-90 motion-reduce:transition-none" />
+            History ({history.length})
+          </summary>
           <ul className="flex flex-col divide-y border-t">
             {history.map((p) => {
               const row = p.source === "reading" && canEdit ? rowOf.get(p.id) : undefined;
               const bad = unfit.has(pointKey(p));
               const since = distance.get(pointKey(p));
               return (
-                <li key={pointKey(p)} className="px-4 py-2.5">
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                <OdometerReadingRow key={pointKey(p)} reading={row} dateLabel={formatDate(p.date)} spare={canEdit}>
+                  <div className="flex items-center gap-3">
                     <SourceMarker source={p.source} unfit={bad} />
                     <span className="sr-only">{SOURCE_NAMES[p.source]}</span>
-                    <span className="font-medium">{formatDate(p.date)}</span>
-                    <span className={bad ? "text-status-overdue line-through decoration-1" : undefined}>{km(p.km)}</span>
-                    {bad ? (
-                      <span className="font-mono text-[10.5px] tracking-wide text-status-overdue uppercase">Doesn&apos;t fit</span>
-                    ) : since && since.sinceKm !== null && since.sinceDays !== null ? (
-                      <span className="text-muted-foreground">
-                        +{km(since.sinceKm)} in {since.sinceDays} day{since.sinceDays === 1 ? "" : "s"}
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="flex flex-wrap items-baseline gap-x-2.5 text-sm">
+                        <span className="font-medium whitespace-nowrap">{formatDate(p.date)}</span>
+                        {p.source === "service" || p.source === "emission" ? (
+                          <Link
+                            href={`/vehicles/${vehicleId}?item=${p.source === "service" ? "service" : "renewal"}:${p.id}`}
+                            scroll={false}
+                            className="-my-2 inline-flex min-h-11 items-center rounded-sm text-muted-foreground underline-offset-2 outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring"
+                          >
+                            {p.label ?? SOURCE_NAMES[p.source]}
+                          </Link>
+                        ) : p.label ? (
+                          <span className="text-muted-foreground">{p.label}</span>
+                        ) : null}
                       </span>
-                    ) : null}
-                    {p.source === "service" || p.source === "emission" ? (
-                      <Link href={`/vehicles/${vehicleId}?item=${p.source === "service" ? "service" : "renewal"}:${p.id}`} scroll={false} className="-my-1 inline-flex min-h-11 items-center text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
-                        {p.label ?? SOURCE_NAMES[p.source]}
-                      </Link>
-                    ) : p.label ? (
-                      <span className="text-muted-foreground">{p.label}</span>
-                    ) : null}
-                    {row ? (
-                      <form action={deleteOdometerReading} className="ml-auto">
-                        <input type="hidden" name="id" value={row.id} />
-                        <SubmitButton variant="ghost" size="icon-sm" aria-label={`Delete the reading from ${formatDate(p.date)}`} confirm="Delete this odometer reading?">
-                          <Trash2 aria-hidden />
-                        </SubmitButton>
-                      </form>
-                    ) : null}
+                      {bad ? (
+                        <span className="font-mono text-[10.5px] tracking-wide text-status-overdue uppercase">Doesn&apos;t fit</span>
+                      ) : since && since.sinceKm !== null && since.sinceDays !== null ? (
+                        <span className="text-xs text-muted-foreground">
+                          +{km(since.sinceKm)} in {since.sinceDays} day{since.sinceDays === 1 ? "" : "s"}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span className={`shrink-0 font-mono text-[13px] font-semibold tabular-nums md:text-sm ${bad ? "text-status-overdue line-through decoration-1" : ""}`}>{km(p.km)}</span>
                   </div>
-                  {row ? (
-                    <details className="mt-2 rounded-md border">
-                      <summary className="flex min-h-11 cursor-pointer items-center px-3 text-xs text-muted-foreground">Edit</summary>
-                      <div className="border-t p-3">
-                        <OdometerForm action={updateOdometerReading} reading={row} />
-                      </div>
-                    </details>
-                  ) : null}
-                </li>
+                </OdometerReadingRow>
               );
             })}
           </ul>

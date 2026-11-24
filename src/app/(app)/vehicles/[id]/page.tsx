@@ -4,7 +4,6 @@ import { requirePage } from "@/lib/auth";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PageTopBar } from "@/components/shell/page-header";
-import { SriLankaPlate } from "@/components/vehicles/sl-plate";
 import { VehicleAddMenu } from "@/components/vehicles/vehicle-add-menu";
 import { VehicleManageMenu } from "@/components/vehicles/vehicle-manage-menu";
 import { vehiclePath } from "@/features/vehicles/plate";
@@ -14,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ItemSheet } from "@/components/vehicles/item-sheet";
 import { VehicleOverview } from "@/components/vehicles/overview";
 import { DocumentsTab } from "@/components/vehicles/documents-tab";
-import { VehicleCover } from "@/components/vehicles/vehicle-cover";
+import { VehicleHero } from "@/components/vehicles/vehicle-hero";
 import { appConfig, isModuleEnabled } from "@/config/app.config";
 import { getRules } from "@/features/settings/queries";
 import { addChoices, hasAddChoice } from "@/features/vehicles/add-menu";
@@ -69,39 +68,23 @@ async function VehicleContent({
   });
 
   return (
-    <>
+    // The page keeps a readable width on a very wide screen (about 2000 px): the content is centred in a 1400 px column.
+    <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-6">
       <PageTopBar parent={{ href: "/vehicles", label: "Vehicles" }} />
-      <section aria-label={vehicle.nickname} className="overflow-hidden rounded-3xl border border-raised bg-deepest">
-        <div className="flex items-start gap-3 px-4 pt-4 md:px-6 md:pt-5">
-          {vehicle.registrationNumber ? <SriLankaPlate registration={vehicle.registrationNumber} size="lg" /> : null}
-          <div className="ml-auto min-w-0 text-right">
-            <h1 className="truncate font-display text-2xl leading-tight font-semibold tracking-tight md:text-3xl">{vehicle.nickname}</h1>
-            <p className="font-mono text-[10.5px] tracking-wide text-label uppercase">
-              {[subtitle, type?.label, vehicle.fuelType].filter(Boolean).join(" · ")}
-              {vehicle.archivedAt ? " · archived" : ""}
-            </p>
-          </div>
-        </div>
-        <VehicleCover
-          vehicle={vehicle}
-          alt={`${vehicle.nickname} photo`}
-          className="mx-auto h-44 w-full max-w-xl md:h-56"
-        />
-        <div className="flex items-center gap-2.5 px-4 pb-3 md:justify-end md:px-6">
-          {hasAddChoice(choices) ? (
-            <VehicleAddMenu
-              vehicleId={vehicle.id}
-              vehicleName={vehicle.nickname}
-              paper={paper}
-              choices={choices}
-              serviceTypes={appConfig.vehicles.serviceTypes}
-              defaultDate={today}
-              oil={{ oilChangeMonths: rules.oilChangeMonths, oilChangeKm: rules.oilChangeKm, oilChangeTypes: rules.oilChangeTypes }}
-            />
-          ) : null}
-          {allows(access, "vehicles", "edit") ? <VehicleManageMenu vehicle={vehicle} /> : null}
-        </div>
-      </section>
+      <VehicleHero vehicle={vehicle} subtitle={subtitle} typeLabel={type?.label}>
+        {hasAddChoice(choices) ? (
+          <VehicleAddMenu
+            vehicleId={vehicle.id}
+            vehicleName={vehicle.nickname}
+            paper={paper}
+            choices={choices}
+            serviceTypes={appConfig.vehicles.serviceTypes}
+            defaultDate={today}
+            oil={{ oilChangeMonths: rules.oilChangeMonths, oilChangeKm: rules.oilChangeKm, oilChangeTypes: rules.oilChangeTypes }}
+          />
+        ) : null}
+        {allows(access, "vehicles", "edit") ? <VehicleManageMenu vehicle={vehicle} /> : null}
+      </VehicleHero>
 
       {/* Two tabs, a segmented control as wide as the phone; a person who may not see Documents has only the Overview, so no bar. */}
       {tabs.length > 1 ? (
@@ -147,7 +130,7 @@ async function VehicleContent({
       <Suspense fallback={null}>
         <ItemSheet vehicle={vehicle} itemParam={item} basePath={vehiclePath(vehicle)} closeHref={closeHref} access={access} />
       </Suspense>
-    </>
+    </div>
   );
 }
 
