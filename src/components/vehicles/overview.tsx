@@ -6,6 +6,7 @@ import { OverviewServices } from "@/components/vehicles/overview-services";
 import { ScrollToAnchor } from "@/components/vehicles/scroll-to-anchor";
 import { OdometerSection } from "@/components/vehicles/odometer-section";
 import { OverviewTimeline, type TimelineRow } from "@/components/vehicles/overview-timeline";
+import { VehicleDetailsCard } from "@/components/vehicles/vehicle-details-card";
 import { appConfig } from "@/config/app.config";
 import type { Vehicle } from "@/db/schema";
 import type { HubRules } from "@/features/settings/rules";
@@ -24,22 +25,11 @@ import { formatDate, formatMoney, todayInAppTz } from "@/lib/format";
 /**
  * The new Overview of a vehicle (V.2, C149; owner-approved design): the Needs you bar, the at-a-glance cards
  * soonest first, the latest services and the odometer on the left with the timeline on the right (below them on
- * a phone), then the notes and the vehicle's details tucked into one quiet row. Everything is worked out here on
+ * a phone), the vehicle's details in a compact card under the timeline, then the notes (issue #237 polished the look). Everything is worked out here on
  * the server from the vehicle's own rows; the browser gets plain values. Use inside <Suspense>.
  */
 
 const SERVICES_SHOWN = 3;
-const label = "font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase md:text-[11px]";
-
-function Detail({ term, value }: { term: string; value: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <dt className="text-xs text-muted-foreground">{term}</dt>
-      <dd className="text-sm">{value ?? "—"}</dd>
-    </div>
-  );
-}
-
 export async function VehicleOverview({
   vehicle,
   rules,
@@ -141,29 +131,18 @@ export async function VehicleOverview({
             />
           </div>
 
-          {model.show.timeline ? <OverviewTimeline rows={rows} /> : null}
+          {/* The right column: the timeline, then the vehicle's details tucked into a compact card so the column is not left short. */}
+          <div className="flex min-w-0 flex-col gap-4 md:gap-5">
+            {model.show.timeline ? <OverviewTimeline rows={rows} /> : null}
+            <VehicleDetailsCard vehicle={vehicle} typeLabel={type?.label} />
+          </div>
         </div>
       )}
 
-      <NotesPanel scope={{ kind: "owner", owner: { ownerType: "vehicle", ownerId: vehicle.id } }} title="Notes" hideWhenEmpty />
+      {/* A vehicle with nothing recorded has no columns, so its details card stands on its own. */}
+      {blank ? <VehicleDetailsCard vehicle={vehicle} typeLabel={type?.label} /> : null}
 
-      <details className="group rounded-2xl border">
-        <summary className="flex min-h-12 cursor-pointer list-none items-center gap-3 rounded-2xl px-4 text-sm text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring md:px-[18px] [&::-webkit-details-marker]:hidden">
-          <span className={label}>Vehicle details</span>
-          <span className="flex-1" />
-          <span aria-hidden className="transition-transform group-open:rotate-90">
-            ▸
-          </span>
-        </summary>
-        <dl className="grid gap-4 border-t px-4 py-4 sm:grid-cols-3 md:px-[18px]">
-          <Detail term="Type" value={type?.label} />
-          <Detail term="Make" value={vehicle.make} />
-          <Detail term="Model" value={vehicle.model} />
-          <Detail term="Year" value={vehicle.year} />
-          <Detail term="Fuel" value={vehicle.fuelType} />
-          <Detail term="Registration" value={vehicle.registrationNumber} />
-        </dl>
-      </details>
+      <NotesPanel scope={{ kind: "owner", owner: { ownerType: "vehicle", ownerId: vehicle.id } }} title="Notes" hideWhenEmpty />
     </div>
   );
 }

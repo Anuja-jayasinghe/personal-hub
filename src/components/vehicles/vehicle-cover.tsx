@@ -18,15 +18,35 @@ export function VehicleCover({
   vehicle,
   alt,
   className = "",
+  priority = false,
+  position,
+  renderClassName = "w-full",
 }: {
   vehicle: Pick<Vehicle, "id" | "coverAttachmentId" | "vehicleType" | "make" | "model">;
   alt: string;
   className?: string;
+  /** The page's main image (the vehicle hero): load it at once and first, instead of lazily. */
+  priority?: boolean;
+  /** CSS object-position of a photo, to keep the vehicle in a crop (the owner's photos are portrait). */
+  position?: string;
+  /** Size classes of the drawing on its stage (default: the stage's width). */
+  renderClassName?: string;
 }) {
   if (vehicle.coverAttachmentId) {
     // A plain <img>: /files/<id> redirects to a short-lived signed link, which Next's image optimiser can't follow.
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={`/files/${vehicle.coverAttachmentId}`} alt={alt} loading="lazy" className={`object-cover ${className}`} />;
+    // The page's main image loads eagerly with high priority; list cards stay lazy. Its box comes from the layout, so it never shifts the page.
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={`/files/${vehicle.coverAttachmentId}`}
+        alt={alt}
+        loading={priority ? "eager" : "lazy"}
+        fetchPriority={priority ? "high" : undefined}
+        decoding="async"
+        style={position ? { objectPosition: position } : undefined}
+        className={`object-cover ${className}`}
+      />
+    );
   }
   const look = vehicleLook(vehicle);
   const idPrefix = `render-${vehicle.id}`;
@@ -41,9 +61,9 @@ export function VehicleCover({
   return (
     <div className={`flex items-end justify-center overflow-hidden ${STAGE} ${className}`} aria-hidden>
       {look.family === "car" ? (
-        <CarRender idPrefix={idPrefix} className="w-full" />
+        <CarRender idPrefix={idPrefix} className={renderClassName} />
       ) : (
-        <BikeRender idPrefix={idPrefix} kind={look.family === "scooter" ? "scooter" : look.kind} paint={look.paint} className="w-full" />
+        <BikeRender idPrefix={idPrefix} kind={look.family === "scooter" ? "scooter" : look.kind} paint={look.paint} className={renderClassName} />
       )}
     </div>
   );
