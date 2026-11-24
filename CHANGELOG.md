@@ -2,6 +2,13 @@
 
 Versions follow semver: **major** for changes that break how the hub is used or stored, **minor** for new features, **patch** for fixes (while below 1.0, breaking changes bump the minor). Since 0.6.1 they are automatic (DECISIONS C123): pull request titles follow Conventional Commits (`feat: …`, `fix: …`), release-please keeps a release pull request with the next version and its notes, and merging it tags `vX.Y.Z` and publishes the GitHub release (pre-release below 1.0). 0.6.0 and 0.6.1 were versioned by hand (C120).
 
+## [0.15.2](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.15.1...v0.15.2) (2026-11-24)
+
+
+### Fixes
+
+* **vehicles:** Documents tiles open their paper and empty ones are hidden ([#213](https://github.com/Anuja-jayasinghe/personal-hub/issues/213)) ([8d8bb06](https://github.com/Anuja-jayasinghe/personal-hub/commit/8d8bb06c4f0244ff1f32a4cbeb46060f85ea76ba))
+
 ## [0.15.1](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.15.0...v0.15.1) (2026-11-24)
 
 
