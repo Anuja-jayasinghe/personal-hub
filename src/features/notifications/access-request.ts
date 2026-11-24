@@ -93,7 +93,7 @@ export async function notifyAccessRequest(db: Db, deps: AccessRequestDeps = {}):
       report.held += plan.held;
       const message = plan.messages.find((m) => m.channel === "push");
       if (!message) continue;
-      const result = await writeMessage(db, message, modes.push, senders.push);
+      const result = await writeMessage(db, message, modes.push, senders.push, { today });
       if (result.written > 0) report.written++;
       report.sent += result.sent > 0 ? 1 : 0;
     } catch (err) {

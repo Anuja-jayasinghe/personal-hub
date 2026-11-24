@@ -133,12 +133,10 @@ describe("createPushSender", () => {
     quiet();
     const sent: string[] = [];
     const email: Pick<ChannelSender, "implemented" | "send"> = { implemented: true, send: async (m) => void sent.push(m.title) };
-    // The log rows are stamped by the database clock, so this test follows the real clock too (a fixed day broke it once that day passed).
-    const live = { emailSender: email, now: () => new Date() };
     await db.insert(appSettings).values({ key: "notifications", value: { email: { enabled: true }, push: { enabled: true } } });
 
     await addDevice("https://web.push.apple.com/phone");
-    await sender(fakeService(410).transport, live)
+    await sender(fakeService(410).transport, { emailSender: email })
       .send(message())
       .catch(() => {});
     expect(sent).toEqual(["hub · iPhone stopped accepting pushes"]);
@@ -148,7 +146,7 @@ describe("createPushSender", () => {
 
     // A second device gone the same day: held, its row stays marked gone, no second email.
     const tablet = await addDevice("https://web.push.apple.com/tablet", OWNER, "iPad");
-    await sender(fakeService(410).transport, live)
+    await sender(fakeService(410).transport, { emailSender: email })
       .send(message())
       .catch(() => {});
     expect(sent).toHaveLength(1);

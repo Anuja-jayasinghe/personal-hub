@@ -87,6 +87,10 @@ not have them, so there Settings shows email as "Not set up" and the test button
 The Gmail filter matches the **sender** (From `notify@mail.hub.anujajay.com`), never only the delivery address: the
 tag is easy to guess, and a filter on To with "Never send it to Spam" would let anyone's mail past the spam filter.
 
+## Pushes that need no due date (N.4, C142)
+
+The daily run also pushes when a meter nears or crosses its slab limit and when a meter reading is overdue; **no new setting and no migration**. "Someone asked for access" is sent right away (from Next's `after()`, when a stranger is first recorded as pending) **only on Production**, only to the `ALLOWED_EMAILS` owners, only after 09:00 Colombo and only if no push has gone to that owner today; otherwise the next daily run includes it in the day's one push. Previews and local development share the real database but never send it. It needs push to be set up and switched on like every other push (otherwise it is logged as a dry run).
+
 ## End-to-end test (`pnpm e2e`, C121)
 
 `e2e/sharing.spec.ts` runs against the live site with Playwright: a TEST account (`hub-test-person@anujajay.com`,
