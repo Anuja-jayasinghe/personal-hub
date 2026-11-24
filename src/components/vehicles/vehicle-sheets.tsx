@@ -2,14 +2,12 @@
 
 import { SheetButton } from "@/components/shared/sheet-button";
 import { UploadForm } from "@/components/shared/upload-form";
-import { DocumentUploadForm } from "@/components/vehicles/document-forms";
 import { OdometerForm } from "@/components/vehicles/odometer-form";
 import { RenewalForm } from "@/components/vehicles/renewal-form";
 import { ServiceForm } from "@/components/vehicles/service-form";
 import type { VehicleRenewal } from "@/db/schema";
-import { DOC_KINDS, type DocKind } from "@/features/vehicles/doc-names";
 import { addOdometerReading } from "@/features/vehicles/odometer-actions";
-import { createRenewal, renewRenewal } from "@/features/vehicles/renewal-actions";
+import { renewRenewal } from "@/features/vehicles/renewal-actions";
 import { createService } from "@/features/vehicles/service-actions";
 import type { OilRules } from "@/features/vehicles/service-logic";
 
@@ -17,20 +15,6 @@ import type { OilRules } from "@/features/vehicles/service-logic";
  * The vehicle "add" forms as bottom sheets (R.5a; board HVehicleForms). Client wrappers, because a
  * sheet closes itself after saving and the tabs that show these buttons render on the server.
  */
-
-export function AddRenewalSheet({ vehicleId, vehicleName, types, askOdometer = true }: { vehicleId: string; vehicleName: string; types: readonly string[]; askOdometer?: boolean }) {
-  return (
-    <SheetButton
-      label="Add renewal"
-      title="Add a renewal"
-      crumb={`/ ${vehicleName} / New renewal`}
-      description="Pick what it is and when it ends; you get a countdown and reminders before it lapses."
-      variant="default"
-    >
-      {(close) => <RenewalForm mode="create" action={createRenewal} types={types} vehicleId={vehicleId} askOdometer={askOdometer} onDone={close} />}
-    </SheetButton>
-  );
-}
 
 export function AddServiceSheet({
   vehicleId,
@@ -61,38 +45,6 @@ export function AddInvoiceSheet({ serviceId, serviceLabel, vehicleName, nameHint
   return (
     <SheetButton label="Add the invoice" title="Add the invoice" crumb={`/ ${vehicleName} / ${serviceLabel}`} variant="ghost" size="sm">
       {(close) => <UploadForm owner={{ ownerType: "vehicle_service", ownerId: serviceId }} nameHint={nameHint} onDone={close} />}
-    </SheetButton>
-  );
-}
-
-export function AddDocumentSheet({
-  vehicleId,
-  vehicleName,
-  namePrefix,
-  kind,
-  label = "Add document",
-  variant = "default",
-}: {
-  vehicleId: string;
-  vehicleName: string;
-  namePrefix: string;
-  /** Opened from a category on the Documents tab (issue #187): that kind is already chosen. */
-  kind?: DocKind;
-  label?: string;
-  variant?: "default" | "outline" | "ghost";
-}) {
-  const kindLabel = DOC_KINDS.find((k) => k.key === kind)?.label;
-  return (
-    <SheetButton
-      label={label}
-      title={!kindLabel ? "Add a document" : kind === "other" ? "Add a paper" : `Add ${kind === "book" ? "the" : "a"} ${kindLabel.toLowerCase()}`}
-      crumb={`/ ${vehicleName} / ${kindLabel ?? "New document"}`}
-      description="Say what it is and its date; the hub names the file. Images or PDF, up to 10 MB."
-      variant={variant}
-      size={variant === "default" ? "default" : "sm"}
-      plus={variant !== "ghost"}
-    >
-      {(close) => <DocumentUploadForm vehicleId={vehicleId} namePrefix={namePrefix} defaultKind={kind} onDone={close} />}
     </SheetButton>
   );
 }

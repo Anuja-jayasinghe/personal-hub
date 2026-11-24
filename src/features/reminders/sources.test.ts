@@ -34,7 +34,8 @@ beforeAll(async () => {
   const [vehicle] = await db.select({ id: vehicles.id }).from(vehicles).where(isNull(vehicles.archivedAt)).limit(1);
   await db.insert(vehicleServices).values([
     { vehicleId: vehicle.id, serviceDate: addDays(TODAY, -100), serviceType: "Chain job LKR 9,000 at Silva garage", nextDueDate: TODAY },
-    { vehicleId: vehicle.id, serviceDate: addDays(TODAY, -100), serviceType: "oil CHANGE", nextDueDate: TODAY },
+    // The newest of the oil-change types (V.1b: one cycle) decides the reminder, so this one is newer than the sample ones.
+    { vehicleId: vehicle.id, serviceDate: addDays(TODAY, -1), serviceType: "oil CHANGE", nextDueDate: TODAY },
   ]);
 }, 60_000);
 

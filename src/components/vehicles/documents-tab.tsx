@@ -4,7 +4,8 @@ import { DaysRing } from "@/components/shared/days-ring";
 import { buttonVariants } from "@/components/ui/button";
 import { PaperArt } from "@/components/vehicles/paper-art";
 import { PaperViewer, type RenewProps } from "@/components/vehicles/paper-viewer";
-import { AddDocumentSheet, AddScanSheet, RenewSheet } from "@/components/vehicles/vehicle-sheets";
+import { AddPaperButton } from "@/components/vehicles/paper-sheet";
+import { AddScanSheet, RenewSheet } from "@/components/vehicles/vehicle-sheets";
 import { appConfig } from "@/config/app.config";
 import type { Attachment, VehicleRenewal } from "@/db/schema";
 import { attachmentsByOwner } from "@/features/shared/queries";
@@ -26,6 +27,7 @@ import {
   type PaperGroup,
   type PaperStatus,
 } from "@/features/vehicles/papers";
+import type { PaperContext } from "@/features/vehicles/paper-flow";
 import { listRenewals } from "@/features/vehicles/queries";
 import { isDemo } from "@/lib/auth";
 import { daysBetween, monthOf } from "@/lib/dates";
@@ -57,6 +59,8 @@ type Ctx = {
   renewals: Map<string, VehicleRenewal>;
   types: readonly string[];
   askOdometer: boolean;
+  /** The one flow for adding a paper (V.1b). */
+  paper: PaperContext;
   /** The tab's own address, for the chips and the category view. */
   href: (kind?: DocKind) => string;
   /** The Renewals tab, where a renewal is added (one home per action). */
@@ -81,6 +85,7 @@ export async function DocumentsTab({
   access,
   askOdometer,
   basePath,
+  paper,
 }: {
   vehicleId: string;
   vehicleName: string;
@@ -95,6 +100,8 @@ export async function DocumentsTab({
   askOdometer: boolean;
   /** The vehicle's address, e.g. "/vehicles/CAB-1234". */
   basePath: string;
+  /** What the one flow for papers needs (V.1b): behind every Add on this tab. */
+  paper: PaperContext;
 }) {
   const [own, renewalRows] = await Promise.all([attachmentsByOwner("vehicle", [vehicleId]), listRenewals(vehicleId)]);
   const renewalFiles = await attachmentsByOwner("vehicle_renewal", renewalRows.map((r) => r.id));
@@ -119,6 +126,7 @@ export async function DocumentsTab({
     renewals: new Map(renewalRows.map((r) => [r.id, { ...r, referenceNumber: null }])),
     types: appConfig.vehicles.renewalTypes.map((t) => t.label),
     askOdometer,
+    paper,
     href: (k) => `${basePath}?tab=documents${k ? `&kind=${k}` : ""}`,
     renewalsHref: `${basePath}?tab=renewals`,
   };
@@ -127,7 +135,7 @@ export async function DocumentsTab({
 
   return (
     <section id="vehicle-documents" tabIndex={-1} aria-label="Documents" className="flex flex-col gap-6 outline-none">
-      {!selected && (papers.length > 2 || access.canAdd) ? (
+      {!selected && (papers.length > 2 || paper.can.files || paper.can.records) ? (
         <div className="flex flex-wrap items-center gap-3">
           {papers.length > 2 ? (
             <form method="get" action={basePath} className="flex min-w-0 flex-1 items-center gap-2">
@@ -152,7 +160,7 @@ export async function DocumentsTab({
           ) : (
             <span className="flex-1" />
           )}
-          {access.canAdd ? <AddDocumentSheet vehicleId={vehicleId} vehicleName={vehicleName} namePrefix={namePrefix} /> : null}
+          <AddPaperButton ctx={paper} />
         </div>
       ) : null}
 
@@ -374,20 +382,11 @@ function GlanceTile({ ctx, group: g }: { ctx: Ctx; group: PaperGroup }) {
 }
 
 /** "Add" for a category: plain for the book and other papers; for a kind that runs out it is tucked away,
- * because its paper normally comes from its renewal ("Renew", then "Add the scan"). */
+ * because its paper normally comes from its renewal ("Renew", then "Add the scan"). It opens the one flow for papers
+ * with the kind chosen, and is not shown to a person who may not add that kind. */
 function AddForKind({ ctx, group: g }: { ctx: Ctx; group: PaperGroup }) {
-  if (!ctx.access.canAdd) return null;
   const tucked = isDatedKind(g.kind);
-  return (
-    <AddDocumentSheet
-      vehicleId={ctx.vehicleId}
-      vehicleName={ctx.vehicleName}
-      namePrefix={ctx.namePrefix}
-      kind={g.kind}
-      label={tucked ? "Add another paper" : "Add"}
-      variant={tucked ? "ghost" : "outline"}
-    />
-  );
+  return <AddPaperButton ctx={ctx.paper} kind={g.kind} label={tucked ? "Add another paper" : "Add"} variant={tucked ? "ghost" : "outline"} />;
 }
 
 /** A kind that runs out with no renewal: its days come from a renewal, which is added on the Renewals tab. */
@@ -628,9 +627,9 @@ function EmptyRow({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
                 Track in Renewals
               </Link>
             ) : null
-          ) : ctx.access.canAdd ? (
-            <AddDocumentSheet vehicleId={ctx.vehicleId} vehicleName={ctx.vehicleName} namePrefix={ctx.namePrefix} kind={g.kind} label="Add" variant="outline" />
-          ) : null}
+          ) : (
+            <AddPaperButton ctx={ctx.paper} kind={g.kind} label="Add" variant="outline" />
+          )}
         </span>
       ))}
     </div>

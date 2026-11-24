@@ -323,7 +323,7 @@ Goal: one place to add anything to a vehicle, an oil-change reminder that sets i
 | Piece | Issue | What |
 |-------|-------|------|
 | V.1a | #220 | ✅ *(C147)* **The Add button, the oil-change marker and files on services**: one "+ Add" next to Manage ("What happened?": a paper, a service, an odometer reading or a note, each only for a person who may do it, no button at all for someone who may add none); the next-oil-change date from three new rules in Settings (months, km, which service types) shown as a card in the service form, stored in the service's own next-due date; invoices on services (`vehicle_service` files, Vehicle documents access, named `PLATE_service_<date>`), deleted with the service and with the vehicle. The per-tab Add buttons stay until V.3. Service files in the Documents tab wait for V.4 |
-| V.1b | | The new paper flow behind "A paper" (the paper makes its record too, all-or-nothing with the service invoice) |
+| V.1b | #221 | ✅ *(C148)* **One flow for papers**: the file, "What is it?" chips, only the fields that kind needs (prefilled from the last record, never numbers), "Saved as", "When you save", one Save; the paper makes its record (license, insurance, emission test, service) or is kept as a document (book, other); `preparePaper` + `savePaper` in one database transaction, the stored object removed on failure; access combinations decided by the server; history kept right (renewed days), no duplicates ("Attach the file to it"); one oil-change cycle. "Add another page" (needs a PDF merge) is a follow-up |
 | V.2 | | The km glance beside the oil-change date |
 | V.3 | | One Overview, the per-tab Add buttons and the tabs go |
 | V.4 | | Service files in the Documents tab; the service detail |

@@ -2,16 +2,16 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import { sendToStorage } from "@/components/shared/direct-upload";
-import { labelClass, labelTextClass, textareaClass } from "@/components/shared/form-styles";
+import { labelClass, labelTextClass } from "@/components/shared/form-styles";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { useKeepValuesOnError } from "@/components/shared/use-keep-values-on-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ServiceFields, useOilMarker } from "@/components/vehicles/service-fields";
 import type { VehicleService } from "@/db/schema";
 import { uploadAttachment } from "@/features/shared/actions";
 import { initialActionState, type ActionState } from "@/features/shared/types";
-import { oilChangeMarker, oilChangeWords, type OilRules } from "@/features/vehicles/service-logic";
-import { formatDate } from "@/lib/format";
+import type { OilRules } from "@/features/vehicles/service-logic";
 
 type Props = {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
@@ -41,11 +41,7 @@ export function ServiceForm({ action, serviceTypes, vehicleId, service, defaultD
   const [serviceType, setServiceType] = useState(service?.serviceType ?? "");
 
   // The oil-change marker (create only).
-  const marker = !service && oil ? oilChangeMarker(serviceDate, serviceType, oil) : null;
-  const [remind, setRemind] = useState(true);
-  const [changing, setChanging] = useState(false);
-  const [custom, setCustom] = useState("");
-  const markerDate = marker ? (custom || marker) : null;
+  const marker = useOilMarker(serviceDate, serviceType, service ? undefined : oil);
 
   // The invoice: the file never goes to the server action (it would hit the request size limit); it goes
   // straight to storage once the service is saved, and is then recorded against the new service.
@@ -100,68 +96,16 @@ export function ServiceForm({ action, serviceTypes, vehicleId, service, defaultD
     >
       {service ? <input type="hidden" name="id" value={service.id} /> : <input type="hidden" name="vehicleId" value={vehicleId} />}
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        <label className={labelClass}>
-          <span className={labelTextClass}>Service date</span>
-          <Input type="date" name="serviceDate" required value={serviceDate} onChange={(e) => setServiceDate(e.target.value)} />
-        </label>
-        <label className={labelClass}>
-          <span className={labelTextClass}>Type</span>
-          <Input
-            name="serviceType"
-            required
-            maxLength={60}
-            list={listId}
-            value={serviceType}
-            onChange={(e) => setServiceType(e.target.value)}
-            placeholder="Pick or type, e.g. Oil change"
-          />
-          <datalist id={listId}>
-            {serviceTypes.map((t) => (
-              <option key={t} value={t} />
-            ))}
-          </datalist>
-        </label>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        <label className={labelClass}>
-          <span className={labelTextClass}>Garage (optional)</span>
-          <Input name="garage" maxLength={100} defaultValue={service?.garage ?? ""} />
-        </label>
-        <label className={labelClass}>
-          <span className={labelTextClass}>Cost (optional)</span>
-          <Input name="cost" inputMode="decimal" defaultValue={service?.cost ?? ""} placeholder="0.00" />
-        </label>
-        <label className={labelClass}>
-          <span className={labelTextClass}>Odometer at service, km (optional)</span>
-          <Input name="odometerKm" inputMode="numeric" defaultValue={service?.odometerKm ?? ""} placeholder="45200" />
-        </label>
-      </div>
-
-      <label className={labelClass}>
-        <span className={labelTextClass}>Items done (optional)</span>
-        <textarea name="itemsDone" maxLength={5000} defaultValue={service?.itemsDone ?? ""} className={textareaClass} />
-      </label>
-
-      {oil && markerDate ? (
-        <OilMarkerCard
-          oil={oil}
-          date={markerDate}
-          remind={remind}
-          onRemind={setRemind}
-          changing={changing}
-          onChange={() => setChanging(true)}
-          custom={custom}
-          onCustom={setCustom}
-          min={serviceDate}
-        />
-      ) : (
-        <label className={labelClass}>
-          <span className={labelTextClass}>Next due date (optional): you get reminded as it gets close</span>
-          <Input type="date" name="nextDueDate" defaultValue={service?.nextDueDate ?? ""} className="max-w-48" />
-        </label>
-      )}
+      <ServiceFields
+        serviceTypes={serviceTypes}
+        listId={listId}
+        serviceDate={serviceDate}
+        onServiceDate={setServiceDate}
+        serviceType={serviceType}
+        onServiceType={setServiceType}
+        service={service}
+        marker={marker}
+      />
 
       {canAttach && !service ? (
         <label className={labelClass}>
@@ -199,76 +143,5 @@ export function ServiceForm({ action, serviceTypes, vehicleId, service, defaultD
         </SubmitButton>
       )}
     </form>
-  );
-}
-
-/**
- * "Next oil change" (V.1a, C147; the owner-approved design): the date is the service date plus the rule's
- * months, a "Remind me" switch (on by default; off sends no date at all), and a quiet "Change the date". The
- * date is stored in the service's own next-due field, so reminders, Home and notifications follow it with
- * nothing else to change. The km half is only a glance: it is shown beside the date in words (C24).
- */
-function OilMarkerCard({
-  oil,
-  date,
-  remind,
-  onRemind,
-  changing,
-  onChange,
-  custom,
-  onCustom,
-  min,
-}: {
-  oil: OilRules;
-  date: string;
-  remind: boolean;
-  onRemind: (on: boolean) => void;
-  changing: boolean;
-  onChange: () => void;
-  custom: string;
-  onCustom: (date: string) => void;
-  min: string;
-}) {
-  return (
-    <section aria-label="Next oil change" className="flex flex-col gap-2.5 rounded-2xl border border-dashed border-status-soon-mark/50 bg-status-soon-mark/10 p-4">
-      <div className="flex items-center gap-3">
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="font-mono text-[10.5px] tracking-[0.14em] text-status-soon uppercase">Next oil change</span>
-          <span className="text-base font-semibold">{remind ? `By ${formatDate(date)}` : "No reminder"}</span>
-        </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={remind}
-          aria-label="Remind me"
-          onClick={() => onRemind(!remind)}
-          className={`flex h-[30px] w-[52px] shrink-0 items-center rounded-full p-[3px] outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-            remind ? "justify-end bg-status-soon-mark" : "justify-start bg-border"
-          }`}
-        >
-          <span className="size-6 rounded-full bg-background shadow-sm" />
-        </button>
-      </div>
-      <p className="text-[12.5px] text-muted-foreground">
-        {oilChangeWords(oil)}.{" "}
-        {remind && !changing ? (
-          <button type="button" onClick={onChange} className="rounded-sm font-medium text-status-soon underline-offset-2 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
-            Change the date
-          </button>
-        ) : null}
-      </p>
-      {remind && changing ? (
-        <label className={labelClass}>
-          <span className={labelTextClass}>Remind me on</span>
-          <Input type="date" min={min} value={custom || date} onChange={(e) => onCustom(e.target.value)} className="max-w-48" />
-        </label>
-      ) : null}
-      <p className="text-xs text-muted-foreground">
-        {remind ? "If you service earlier, the new service moves this date. You are told before it and on the day." : "Nothing will remind you about the next oil change."}
-      </p>
-      {/* What the server receives: the date only while the switch is on; the switch itself so it can tell "off" from "blank". */}
-      <input type="hidden" name="nextDueDate" value={remind ? date : ""} />
-      <input type="hidden" name="markerRemind" value={remind ? "on" : "off"} />
-    </section>
   );
 }

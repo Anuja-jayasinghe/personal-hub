@@ -1,6 +1,6 @@
 import "server-only";
 import { eq } from "drizzle-orm";
-import { db } from "@/db";
+import { db, type Db } from "@/db";
 import { attachments, type Attachment } from "@/db/schema";
 import type { OwnerRef } from "@/lib/owners";
 import { ALLOWED_ATTACHMENT_TYPES, ATTACHMENT_BUCKET, MAX_ATTACHMENT_BYTES, storageClient } from "@/lib/storage";
@@ -45,11 +45,69 @@ async function isReferenced(path: string): Promise<boolean> {
 /**
  * Removes a stored object that an upload left behind, but never one an attachment row points at: the browser
  * says which path it uploaded to, so a path that already belongs to a saved file (a cover photo, the file
- * being replaced, a second submit of the same form) must never be deleted on its behalf.
+ * being replaced, a second submit of the same form) must never be deleted on its behalf. Callers only pass a path
+ * that has passed `pathBelongsTo` for a record the person may add to.
  */
-async function removeIfUnreferenced(path: string): Promise<void> {
-  if (await isReferenced(path)) return;
-  await storageClient().storage.from(ATTACHMENT_BUCKET).remove([path]);
+export async function discardUpload(path: string): Promise<void> {
+  try {
+    if (await isReferenced(path)) return;
+    const { error } = await storageClient().storage.from(ATTACHMENT_BUCKET).remove([path]);
+    if (error) console.error(`Could not remove an unused upload: ${error.message}`);
+  } catch (err) {
+    // Never hide the failure the caller is already reporting; an object left behind is only wasted space.
+    console.error("Could not remove an unused upload", err);
+  }
+}
+
+/**
+ * Checks what a browser says it uploaded (C115): the path must be inside the record's folder and not belong to a
+ * saved file, and storage must report a file of an allowed size and type. Returns what storage reports; otherwise
+ * throws, removing the new object first (never one a saved file uses).
+ */
+export async function verifyUpload(
+  owner: OwnerRef,
+  path: string,
+  allowedTypes: readonly string[] = ALLOWED_ATTACHMENT_TYPES,
+  typeMessage = "Only JPEG, PNG, WebP, HEIC images and PDF files are allowed.",
+): Promise<{ size: number; mimeType: string }> {
+  if (!pathBelongsTo(path, owner)) throw new ValidationError("That upload does not belong here. Please try again.");
+  if (await isReferenced(path)) throw new ValidationError("Already saved.");
+  const { data: info, error } = await storageClient().storage.from(ATTACHMENT_BUCKET).info(path);
+  if (error || !info) throw new ValidationError("The file did not arrive. Please try again.");
+  const stored = { size: Number(info.size ?? 0), mimeType: String(info.contentType ?? "") };
+  const problem = uploadProblem(stored, allowedTypes, MAX_ATTACHMENT_BYTES, typeMessage);
+  if (problem) {
+    await discardUpload(path);
+    throw new ValidationError(problem);
+  }
+  return stored;
+}
+
+/** Where an attachment row can be written: the real client, or a transaction (the paper flow saves the record and its file in one). */
+type Writer = Pick<Db, "insert">;
+
+/** Inserts the attachment row for a verified upload. Does not touch storage: on failure the caller discards the object. */
+export async function insertAttachment(
+  writer: Writer,
+  owner: OwnerRef,
+  uploaded: { path: string; fileName: string },
+  stored: { size: number; mimeType: string },
+  title: string | null = null,
+): Promise<Attachment> {
+  const [row] = await writer
+    .insert(attachments)
+    .values({
+      ownerType: owner.ownerType,
+      ownerId: owner.ownerId,
+      bucket: ATTACHMENT_BUCKET,
+      storagePath: uploaded.path,
+      fileName: uploaded.fileName.slice(0, 255) || "file",
+      title,
+      mimeType: stored.mimeType,
+      sizeBytes: stored.size,
+    })
+    .returning();
+  return row;
 }
 
 /**
@@ -67,37 +125,14 @@ export async function recordUpload(
   /** Names the file from the hub's data (issue #179) instead of the uploader's name; gets the checked type. */
   nameFor?: (mimeType: string) => Promise<string>,
 ): Promise<Attachment> {
-  if (!pathBelongsTo(uploaded.path, owner)) throw new ValidationError("That upload does not belong here. Please try again.");
-  if (await isReferenced(uploaded.path)) throw new ValidationError("Already saved.");
-  const storage = storageClient().storage.from(ATTACHMENT_BUCKET);
-  const { data: info, error } = await storage.info(uploaded.path);
-  if (error || !info) throw new ValidationError("The file did not arrive. Please try again.");
-  const stored = { size: Number(info.size ?? 0), mimeType: String(info.contentType ?? "") };
-  const problem = uploadProblem(stored, allowedTypes, MAX_ATTACHMENT_BYTES, typeMessage);
-  if (problem) {
-    await removeIfUnreferenced(uploaded.path);
-    throw new ValidationError(problem);
-  }
+  const stored = await verifyUpload(owner, uploaded.path, allowedTypes, typeMessage);
   try {
     const fileName = nameFor ? await nameFor(stored.mimeType) : uploaded.fileName;
-    const [row] = await db
-      .insert(attachments)
-      .values({
-        ownerType: owner.ownerType,
-        ownerId: owner.ownerId,
-        bucket: ATTACHMENT_BUCKET,
-        storagePath: uploaded.path,
-        fileName: fileName.slice(0, 255) || "file",
-        title,
-        mimeType: stored.mimeType,
-        sizeBytes: stored.size,
-      })
-      .returning();
-    return row;
+    return await insertAttachment(db, owner, { path: uploaded.path, fileName }, stored, title);
   } catch (dbError) {
     // A duplicate path means another row owns that object (e.g. two submits racing): leave it alone.
     if (isUniqueViolation(dbError)) throw new ValidationError("Already saved.");
-    await removeIfUnreferenced(uploaded.path);
+    await discardUpload(uploaded.path);
     throw dbError;
   }
 }

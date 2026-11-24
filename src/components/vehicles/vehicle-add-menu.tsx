@@ -7,13 +7,14 @@ import { SheetBody, SheetPanel } from "@/components/shared/sheet-button";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetTrigger } from "@/components/ui/sheet";
-import { DocumentUploadForm } from "@/components/vehicles/document-forms";
 import { OdometerForm } from "@/components/vehicles/odometer-form";
+import { PaperPanel } from "@/components/vehicles/paper-sheet";
 import { ServiceForm } from "@/components/vehicles/service-form";
 import { createNote } from "@/features/shared/actions";
 import type { AddChoices } from "@/features/vehicles/add-menu";
 import { addOdometerReading } from "@/features/vehicles/odometer-actions";
 import { createService } from "@/features/vehicles/service-actions";
+import type { PaperContext } from "@/features/vehicles/paper-flow";
 import type { OilRules } from "@/features/vehicles/service-logic";
 
 type Choice = "paper" | "service" | "reading" | "note";
@@ -87,7 +88,7 @@ const TRIGGER = "h-[46px] flex-1 rounded-[14px] px-5 text-[15px] font-semibold m
 export function VehicleAddMenu({
   vehicleId,
   vehicleName,
-  namePrefix,
+  paper,
   choices,
   serviceTypes,
   defaultDate,
@@ -95,8 +96,8 @@ export function VehicleAddMenu({
 }: {
   vehicleId: string;
   vehicleName: string;
-  /** The vehicle part of file names, for the paper form's "Saved as" preview. */
-  namePrefix: string;
+  /** What the one flow for papers needs (V.1b): the vehicle, what the person may do, and what to prefill. */
+  paper: PaperContext;
   choices: AddChoices;
   serviceTypes: readonly string[];
   /** Today, "YYYY-MM-DD" in the app time zone. */
@@ -144,21 +145,11 @@ export function VehicleAddMenu({
         </Popover>
       </div>
 
-      {choices.paper ? (
-        <SheetPanel
-          open={form === "paper"}
-          onOpenChange={(o) => (o ? setForm("paper") : closeForm())}
-          title="Add a paper"
-          crumb={`/ ${vehicleName} / New document`}
-          description="Say what it is and its date; the hub names the file. Images or PDF, up to 10 MB."
-        >
-          {(close) => <DocumentUploadForm vehicleId={vehicleId} namePrefix={namePrefix} onDone={close} />}
-        </SheetPanel>
-      ) : null}
+      {choices.paper ? <PaperPanel ctx={paper} open={form === "paper"} onOpenChange={(o) => (o ? setForm("paper") : closeForm())} /> : null}
       {choices.service ? (
         <SheetPanel open={form === "service"} onOpenChange={(o) => (o ? setForm("service") : closeForm())} title="Add a service" crumb={`/ ${vehicleName} / New service`}>
           {(close) => (
-            <ServiceForm action={createService} serviceTypes={serviceTypes} vehicleId={vehicleId} defaultDate={defaultDate} oil={oil} canAttach={choices.paper} onDone={close} />
+            <ServiceForm action={createService} serviceTypes={serviceTypes} vehicleId={vehicleId} defaultDate={defaultDate} oil={oil} canAttach={paper.can.files} onDone={close} />
           )}
         </SheetPanel>
       ) : null}

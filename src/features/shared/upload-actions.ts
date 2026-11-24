@@ -4,9 +4,7 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { vehicles } from "@/db/schema";
 import { areaOfFile } from "@/features/people/access";
-import { parseDocUpload } from "@/features/vehicles/doc-names";
-import { renewalFileName, serviceFileName, vehicleDocFileName } from "@/features/vehicles/doc-naming";
-import { DOC_TITLE_MAX } from "@/features/vehicles/documents";
+import { renewalFileName, serviceFileName } from "@/features/vehicles/doc-naming";
 import { requireUser } from "@/lib/auth";
 import { isOwnerType, type OwnerRef } from "@/lib/owners";
 import { COVER_TYPE_MESSAGE, COVER_TYPES } from "@/lib/storage";
@@ -22,8 +20,6 @@ export type PrepareUploadInput = {
   fileName: string;
   mimeType: string;
   size: number;
-  /** For a vehicle document: what it is and its date, which name the file (issue #179). */
-  doc?: { kind?: string; date?: string; title?: string };
 };
 
 export type PrepareUploadResult = { ok: true; path: string; signedUrl: string } | { ok: false; error: string };
@@ -62,10 +58,7 @@ export async function prepareUpload(input: PrepareUploadInput): Promise<PrepareU
       await requireUser({ area: "vehicles", level: "edit" });
       return { ok: true, ...(await signUpload(owner, file, COVER_TYPES, COVER_TYPE_MESSAGE)) };
     }
-    await requireUser({ area: "vehicle_documents", level: "add" });
-    const doc = parseDocUpload(input.doc ?? {}, DOC_TITLE_MAX);
-    if (!doc.ok) throw new ValidationError(doc.error);
-    return { ok: true, ...(await signUpload(owner, { ...file, fileName: await vehicleDocFileName(owner.ownerId, doc.value, file.mimeType) })) };
+    throw new ValidationError("Unknown upload.");
   } catch (err) {
     const state = toActionState(err);
     return { ok: false, error: state.error ?? "Could not prepare the upload." };

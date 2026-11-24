@@ -96,10 +96,58 @@ describe("the newest oil change replaces the older marker", () => {
     expect(dueServices([june, later])).toEqual([]);
   });
 
-  it("a Full service is a different type, so it keeps its own marker beside the oil change's", () => {
+  it("without a shared cycle given, a Full service is a different type and keeps its own marker", () => {
     const oilChange = row("2026-06-14");
     const full = row("2026-07-01", { serviceType: "Full service", nextDueDate: oilChangeMarker("2026-07-01", "Full service", DEFAULT_RULES) });
     expect(dueServices([oilChange, full]).map((r) => r.nextDueDate).sort()).toEqual(["2026-12-14", "2027-01-01"]);
+  });
+
+  describe("one oil cycle (V.1b, C148)", () => {
+    const oil = DEFAULT_RULES.oilChangeTypes;
+    const full = (date: string, over: Partial<ServiceRow> = {}) =>
+      row(date, { serviceType: "Full service", nextDueDate: oilChangeMarker(date, "Full service", DEFAULT_RULES), ...over });
+
+    it("a newer Full service replaces an older Oil change's marker", () => {
+      const oilChange = row("2026-06-14");
+      const service = full("2026-07-01");
+      expect(dueServices([oilChange, service], oil).map((r) => r.id)).toEqual([service.id]);
+      expect(dueServices([service, oilChange], oil).map((r) => r.nextDueDate)).toEqual(["2027-01-01"]);
+    });
+
+    it("and a newer Oil change replaces an older Full service's", () => {
+      const service = full("2026-03-01");
+      const oilChange = row("2026-06-14");
+      expect(dueServices([service, oilChange], oil).map((r) => r.id)).toEqual([oilChange.id]);
+    });
+
+    it("a newer one of the cycle with the switch off silences the other type's older marker", () => {
+      const oilChange = row("2026-06-14");
+      const silent = full("2026-09-01", { nextDueDate: null });
+      expect(dueServices([oilChange, silent], oil)).toEqual([]);
+    });
+
+    it("matches the cycle's types ignoring case and spacing, per vehicle", () => {
+      const a = row("2026-06-14", { serviceType: " oil  CHANGE " });
+      const b = full("2026-07-01");
+      const other = row("2026-07-01", { vehicleId: "v2", serviceType: "FULL service" });
+      expect(latestPerType([a, b, other], oil).map((r) => r.id).sort()).toEqual([b.id, other.id].sort());
+    });
+
+    it("leaves every other type with a cycle of its own", () => {
+      const oilChange = row("2026-06-14");
+      const tyres = row("2026-05-01", { serviceType: "Tyres", nextDueDate: "2027-05-01" });
+      const tyres2 = row("2026-08-01", { serviceType: "tyres", nextDueDate: "2027-08-01" });
+      const brakes = row("2026-04-01", { serviceType: "Brakes", nextDueDate: "2026-12-01" });
+      const ids = latestPerType([oilChange, tyres, tyres2, brakes], oil).map((r) => r.id);
+      expect(ids.sort()).toEqual([oilChange.id, tyres2.id, brakes.id].sort());
+    });
+
+    it("follows the rule's list: a type added to it joins the cycle, one removed leaves it", () => {
+      const oilChange = row("2026-06-14");
+      const tyres = row("2026-07-01", { serviceType: "Tyres", nextDueDate: "2027-07-01" });
+      expect(latestPerType([oilChange, tyres], ["Oil change", "Tyres"]).map((r) => r.id)).toEqual([tyres.id]);
+      expect(latestPerType([oilChange, tyres], ["Oil change"]).map((r) => r.id).sort()).toEqual([oilChange.id, tyres.id].sort());
+    });
   });
 });
 

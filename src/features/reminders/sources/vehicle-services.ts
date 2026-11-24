@@ -1,4 +1,6 @@
 import "server-only";
+import { readDb } from "@/db/read";
+import { loadRules } from "@/features/settings/queries";
 import { dueServices } from "@/features/vehicles/service-logic";
 import { listServicesOfActiveVehicles } from "@/features/vehicles/queries";
 import type { ReminderSource } from "../engine";
@@ -13,9 +15,12 @@ export const vehicleServicesSource: ReminderSource = {
   key: "vehicle-services",
   label: "Vehicle services",
   async load(from) {
-    const rows = await listServicesOfActiveVehicles(from?.db);
+    const db = from?.db ?? (await readDb());
+    const rows = await listServicesOfActiveVehicles(db);
+    // The oil-change types are one cycle (V.1b): the newest of them decides the marker.
+    const { oilChangeTypes } = await loadRules(db);
     const nicknames = new Map(rows.map((r) => [r.vehicleId, r.nickname]));
-    return dueServices(rows).map((r) => ({
+    return dueServices(rows, oilChangeTypes).map((r) => ({
       id: `service:${r.id}`,
       title: `${r.serviceType} · ${nicknames.get(r.vehicleId) ?? "Vehicle"}`,
       dueDate: r.nextDueDate,

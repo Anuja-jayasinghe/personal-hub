@@ -5,7 +5,7 @@
  * what actually arrived there.
  */
 
-export const UPLOAD_PURPOSES = ["attachment", "cover", "document"] as const;
+export const UPLOAD_PURPOSES = ["attachment", "cover"] as const;
 export type UploadPurpose = (typeof UPLOAD_PURPOSES)[number];
 
 export function safeFileName(name: string): string {

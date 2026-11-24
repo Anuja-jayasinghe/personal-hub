@@ -9,6 +9,7 @@ import { deleteAttachmentsOf } from "@/features/shared/cleanup";
 import { toActionState } from "@/features/shared/errors";
 import type { ActionState } from "@/features/shared/types";
 import { idFrom, ValidationError } from "@/features/shared/validation";
+import { markRenewed } from "./renewal-write";
 import { parseRenewal } from "./renewal-validate";
 import { requireUser } from "@/lib/auth";
 
@@ -36,20 +37,6 @@ function withoutIgnoredOdometer<T extends { odometerKm: number | null }>(fields:
 async function ignoresOdometer(vehicleId: string): Promise<boolean> {
   const [v] = await db.select({ ignore: vehicles.ignoreEmissionOdometer }).from(vehicles).where(eq(vehicles.id, vehicleId));
   return v?.ignore ?? false;
-}
-
-export async function createRenewal(_prev: ActionState, fd: FormData): Promise<ActionState> {
-  try {
-    await requireUser({ area: "vehicles", level: "add" });
-    const vehicleId = idFrom(fd, "vehicleId");
-    const [vehicle] = await db.select({ id: vehicles.id, ignoreEmissionOdometer: vehicles.ignoreEmissionOdometer }).from(vehicles).where(eq(vehicles.id, vehicleId));
-    if (!vehicle) throw new ValidationError("That vehicle could not be found.");
-    await db.insert(vehicleRenewals).values({ vehicleId, ...withoutIgnoredOdometer(fieldsFrom(fd), vehicle.ignoreEmissionOdometer) });
-    refresh();
-    return { ok: true };
-  } catch (err) {
-    return toActionState(err);
-  }
 }
 
 export async function updateRenewal(_prev: ActionState, fd: FormData): Promise<ActionState> {
@@ -80,7 +67,7 @@ export async function renewRenewal(_prev: ActionState, fd: FormData): Promise<Ac
       if (!old) throw new ValidationError("That renewal could not be found.");
       if (old.renewedAt) throw new ValidationError("This renewal has already been renewed.");
       const next = withoutIgnoredOdometer(fieldsFrom(fd, { expiryAfter: old.expiryDate }, old.type), await ignoresOdometer(old.vehicleId));
-      await tx.update(vehicleRenewals).set({ renewedAt: new Date() }).where(eq(vehicleRenewals.id, oldId));
+      await markRenewed(tx, [oldId], new Date());
       await tx.insert(vehicleRenewals).values({ vehicleId: old.vehicleId, ...next });
     });
     refresh();
