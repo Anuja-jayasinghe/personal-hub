@@ -2,6 +2,13 @@
 
 Versions follow semver: **major** for changes that break how the hub is used or stored, **minor** for new features, **patch** for fixes (while below 1.0, breaking changes bump the minor). Since 0.6.1 they are automatic (DECISIONS C123): pull request titles follow Conventional Commits (`feat: …`, `fix: …`), release-please keeps a release pull request with the next version and its notes, and merging it tags `vX.Y.Z` and publishes the GitHub release (pre-release below 1.0). 0.6.0 and 0.6.1 were versioned by hand (C120).
 
+## [0.22.1](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.22.0...v0.22.1) (2026-11-24)
+
+
+### Fixes
+
+* **bills:** do not show or remind a monthly bill before it can be paid ([#241](https://github.com/Anuja-jayasinghe/personal-hub/issues/241)) ([ad98f5f](https://github.com/Anuja-jayasinghe/personal-hub/commit/ad98f5f6a0717be9423b4f43b827e2691c885ca6))
+
 ## [0.22.0](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.21.0...v0.22.0) (2026-11-24)
 
 
