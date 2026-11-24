@@ -67,17 +67,6 @@ export function nextDays(input: {
     .map(([day, items]) => ({ day, date: addDays(input.today, day), items }));
 }
 
-export type AreaCount = { area: "vehicles" | "bills" | "tasks"; due: number; overdue: number };
-
-/** How many reminders each area has due in the next `days` days (and how many of those are overdue), from where they link to. */
-export function dueByArea(reminders: readonly ReminderResult[], days: number): AreaCount[] {
-  const areas: AreaCount["area"][] = ["vehicles", "bills", "tasks"];
-  return areas.map((area) => {
-    const mine = reminders.filter((r) => r.daysUntil <= days && r.item.href.startsWith(`/${area}`));
-    return { area, due: mine.length, overdue: mine.filter((r) => r.daysUntil < 0).length };
-  });
-}
-
 /** What first-day setup still needs: each step is done once its records exist (board HStates). */
 export function setupSteps(input: { meters: number; bills: number; readingsSinceBill: number }) {
   return [
@@ -147,4 +136,137 @@ export function placeLabels(days: readonly TimelineDay[], windowDays: number, wi
     }
     return { day: d.day, text: null, lane: null };
   });
+}
+
+// ---- The redesigned Home (issue #218, C157): greeting, what needs you, a glance at each area ----
+
+/** "Good morning, Anuja." or, without a name, "Good evening." (the name is the signed-in person's own first name, never a guess). */
+export function greetingLine(hour: number, firstName: string | null): string {
+  return `Good ${greetingFor(hour).toLowerCase()}${firstName ? `, ${firstName}` : ""}.`;
+}
+
+/** "tomorrow", "in 12 days", "today", "3 days ago" for a count of days from today. */
+export function daysWords(daysUntil: number): string {
+  if (daysUntil === 0) return "today";
+  if (daysUntil === 1) return "tomorrow";
+  if (daysUntil === -1) return "yesterday";
+  return daysUntil < 0 ? `${-daysUntil} days ago` : `in ${daysUntil} days`;
+}
+
+/** Items due within this many days (or late) are "needs you"; the rest are "coming up". The reminder engine's own "soon" window. */
+export const NEEDS_WITHIN_DAYS = 7;
+
+export type NeedRow = TimelineItem & { date: string; sub: string };
+
+/**
+ * What needs the person now, most urgent first: everything late, everything due within a week (what the
+ * Reminders page calls overdue, today and soon), and a meter read once it is due or late. Later dates are
+ * not here (they are on the 30-day line and in each area's glance). Nothing is dropped: it is the same
+ * reminders and meter reads that `nextDays` works from.
+ */
+export function needsNow(input: {
+  reminders: readonly ReminderResult[];
+  checks: readonly { meterName: string; dueDate: string }[];
+  checkEveryDays: number;
+  today: string;
+}): NeedRow[] {
+  const rows: NeedRow[] = [];
+  for (const c of input.checks) {
+    const day = daysBetween(input.today, c.dueDate);
+    if (day > 0) continue;
+    rows.push({ key: `check:${c.meterName}`, label: `Read ${c.meterName}`, href: "/electricity", tone: day < 0 ? "overdue" : "check", daysUntil: day, date: c.dueDate, sub: `every ${input.checkEveryDays} days` });
+  }
+  for (const r of input.reminders) {
+    if (r.daysUntil > NEEDS_WITHIN_DAYS) continue;
+    rows.push({ key: r.item.id, label: r.item.title, href: r.item.href, tone: r.daysUntil < 0 ? "overdue" : "due", daysUntil: r.daysUntil, date: r.item.dueDate, sub: r.item.kind });
+  }
+  return rows.sort((a, b) => a.daysUntil - b.daysUntil || a.label.localeCompare(b.label));
+}
+
+export type AreaGlance = {
+  area: "vehicles" | "bills" | "tasks";
+  /** Reminders due in the window (late ones included). */
+  due: number;
+  overdue: number;
+  /** The most urgent of them (a late one first), or null with nothing due. */
+  soonest: { title: string; href: string; kind: string; daysUntil: number; date: string } | null;
+  /** How many distinct records (vehicles) have something due, from `ownerId`. */
+  records: number;
+};
+
+/** For each area: how much is due in the window, how much is late, and the soonest item with where it opens. */
+export function areaGlances(reminders: readonly ReminderResult[], days: number): AreaGlance[] {
+  const areas: AreaGlance["area"][] = ["vehicles", "bills", "tasks"];
+  return areas.map((area) => {
+    const mine = reminders.filter((r) => r.daysUntil <= days && r.item.href.startsWith(`/${area}`)).sort((a, b) => a.daysUntil - b.daysUntil);
+    const first = mine[0];
+    return {
+      area,
+      due: mine.length,
+      overdue: mine.filter((r) => r.daysUntil < 0).length,
+      soonest: first ? { title: first.item.title, href: first.item.href, kind: first.item.kind, daysUntil: first.daysUntil, date: first.item.dueDate } : null,
+      records: new Set(mine.map((r) => r.item.ownerId ?? r.item.id)).size,
+    };
+  });
+}
+
+export type ElectricityNote = { tone: "overdue" | "soon"; text: string };
+
+/** One line on the slab rule for the brief: the meter over its limit (red) or near it (amber), or null when all is well. */
+export function electricityNote(
+  limits: readonly { id: string; state: "ok" | "near" | "over"; left: number; limit: number }[],
+  nameOf: (id: string) => string,
+): ElectricityNote | null {
+  const over = limits.find((m) => m.state === "over");
+  if (over) return { tone: "overdue", text: `${nameOf(over.id)} is ${Math.round(-over.left)} over ${over.limit}` };
+  const near = limits.find((m) => m.state === "near");
+  if (near) return { tone: "soon", text: `${nameOf(near.id)} is ${Math.round(near.left)} units from ${near.limit}` };
+  return null;
+}
+
+export type HomeBrief = {
+  tone: "overdue" | "soon" | "ok";
+  headline: string;
+  /** The detail behind the headline, each in its own state colour. Empty when all is well. */
+  chips: { text: string; tone: "overdue" | "soon" }[];
+  /** With nothing needing the person: what comes next ("Next up: Revenue license, in 12 days."), or that nothing is coming. */
+  nextUp: string | null;
+};
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/**
+ * The one line under the greeting: how many things need the person, split into late, due this week, meter
+ * reads and the slab rule, or a calm "all clear" with what comes next. The tone is the worst of them.
+ */
+export function homeBrief(input: {
+  needs: readonly NeedRow[];
+  ahead: readonly { label: string; daysUntil: number }[];
+  electricity: ElectricityNote | null;
+  windowDays: number;
+  /** The owner is still on the first-day steps: welcome them instead of saying "All clear". */
+  settingUp?: boolean;
+}): HomeBrief {
+  const late = input.needs.filter((n) => n.daysUntil < 0).length;
+  const reads = input.needs.filter((n) => n.daysUntil >= 0 && n.tone === "check").length;
+  const week = input.needs.length - late - reads;
+  const total = input.needs.length + (input.electricity ? 1 : 0);
+
+  if (total === 0 && input.settingUp) return { tone: "ok", headline: "Welcome to your hub.", chips: [], nextUp: null };
+  if (total === 0) {
+    const next = [...input.ahead].sort((a, b) => a.daysUntil - b.daysUntil)[0];
+    return {
+      tone: "ok",
+      headline: "All clear.",
+      chips: [],
+      nextUp: next ? `Next up: ${next.label}, ${daysWords(next.daysUntil)}.` : `Nothing is due in the next ${input.windowDays} days.`,
+    };
+  }
+  const chips: HomeBrief["chips"] = [];
+  if (late > 0) chips.push({ text: `${late} late`, tone: "overdue" });
+  if (week > 0) chips.push({ text: `${plural(week, "item", "items")} due this week`, tone: "soon" });
+  if (reads > 0) chips.push({ text: plural(reads, "meter read", "meter reads") + " due", tone: "soon" });
+  if (input.electricity) chips.push(input.electricity);
+  const tone = late > 0 || input.electricity?.tone === "overdue" ? "overdue" : "soon";
+  return { tone, headline: `${plural(total, "thing needs", "things need")} you.`, chips, nextUp: null };
 }

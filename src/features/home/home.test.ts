@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ReminderResult } from "@/features/reminders/engine";
-import { dayLabel, dayOfYear, dayStamp, dueByArea, placeLabels, greetingFor, meterCheckDue, nextDays, setupSteps, whenLabel } from "./home";
+import { areaGlances, dayLabel, dayOfYear, dayStamp, daysWords, electricityNote, greetingLine, homeBrief, needsNow, placeLabels, greetingFor, meterCheckDue, nextDays, setupSteps, whenLabel } from "./home";
 
 const rem = (id: string, href: string, daysUntil: number): ReminderResult => ({
   item: { id, title: id, dueDate: "2026-12-01", href, kind: "x" },
@@ -49,17 +49,6 @@ describe("nextDays", () => {
 
   it("is empty when nothing is coming", () => {
     expect(nextDays({ today, days: 30, checks: [], reminders: [] })).toEqual([]);
-  });
-});
-
-describe("dueByArea", () => {
-  it("counts reminders per area by where they link, within the window", () => {
-    const counts = dueByArea([rem("r1", "/vehicles/1?item=renewal:r1", 10), rem("r2", "/vehicles/2", -1), rem("b", "/bills", 40), rem("t", "/tasks", 0)], 30);
-    expect(counts).toEqual([
-      { area: "vehicles", due: 2, overdue: 1 },
-      { area: "bills", due: 0, overdue: 0 },
-      { area: "tasks", due: 1, overdue: 0 },
-    ]);
   });
 });
 
@@ -114,5 +103,126 @@ describe("dayOfYear", () => {
     expect(dayOfYear("2026-12-31")).toEqual({ day: 365, of: 365 });
     expect(dayOfYear("2028-12-31")).toEqual({ day: 366, of: 366 });
     expect(dayOfYear("2028-03-01")).toEqual({ day: 61, of: 366 });
+  });
+});
+
+describe("greetingLine", () => {
+  it("greets by the time of day, with the first name only when there is one", () => {
+    expect(greetingLine(7, "Sam")).toBe("Good morning, Sam.");
+    expect(greetingLine(13, null)).toBe("Good afternoon.");
+    expect(greetingLine(20, "Sam")).toBe("Good evening, Sam.");
+    expect(greetingLine(2, null)).toBe("Good evening.");
+  });
+});
+
+describe("daysWords", () => {
+  it("says a count of days the way a person would", () => {
+    expect(daysWords(0)).toBe("today");
+    expect(daysWords(1)).toBe("tomorrow");
+    expect(daysWords(12)).toBe("in 12 days");
+    expect(daysWords(-1)).toBe("yesterday");
+    expect(daysWords(-3)).toBe("3 days ago");
+  });
+});
+
+describe("needsNow", () => {
+  const today = "2026-11-18";
+  const rows = (reminders: ReturnType<typeof rem>[], checks: { meterName: string; dueDate: string }[] = []) => needsNow({ reminders, checks, checkEveryDays: 5, today });
+
+  it("keeps what is late or due within a week, the most urgent first, and leaves later dates out", () => {
+    const out = rows([rem("far", "/bills", 20), rem("soon", "/bills", 5), rem("late", "/vehicles/1", -3), rem("today", "/tasks", 0), rem("edge", "/tasks", 8), rem("week", "/tasks", 7)]);
+    expect(out.map((r) => r.key)).toEqual(["late", "today", "soon", "week"]);
+  });
+
+  it("counts a meter read only once it is due or late, never ahead of its date", () => {
+    const out = rows(
+      [],
+      [
+        { meterName: "A", dueDate: "2026-11-20" },
+        { meterName: "B", dueDate: "2026-11-18" },
+        { meterName: "C", dueDate: "2026-11-16" },
+      ],
+    );
+    expect(out.map((r) => [r.key, r.tone])).toEqual([
+      ["check:C", "overdue"],
+      ["check:B", "check"],
+    ]);
+  });
+
+  it("is empty when nothing needs the person", () => {
+    expect(rows([rem("far", "/bills", 12)])).toEqual([]);
+  });
+});
+
+describe("areaGlances", () => {
+  const withOwner = (id: string, href: string, d: number, ownerId: string): ReminderResult => ({ ...rem(id, href, d), item: { ...rem(id, href, d).item, ownerId } });
+
+  it("gives each area its count, its late count, its soonest item and how many records are involved", () => {
+    const g = areaGlances(
+      [withOwner("r1", "/vehicles/1?item=renewal:r1", 10, "v1"), withOwner("r2", "/vehicles/2", -1, "v2"), withOwner("r3", "/vehicles/2", 12, "v2"), rem("b", "/bills", 40), rem("t", "/tasks", 0)],
+      30,
+    );
+    expect(g.map((x) => [x.area, x.due, x.overdue, x.records])).toEqual([
+      ["vehicles", 3, 1, 2],
+      ["bills", 0, 0, 0],
+      ["tasks", 1, 0, 1],
+    ]);
+    expect(g[0].soonest).toMatchObject({ title: "r2", daysUntil: -1, href: "/vehicles/2" });
+    expect(g[1].soonest).toBeNull();
+  });
+});
+
+describe("electricityNote", () => {
+  const nameOf = (id: string) => (id === "a" ? "Annex" : "Main house");
+  it("names the meter over its limit first, then one near it, or says nothing", () => {
+    expect(
+      electricityNote(
+        [
+          { id: "a", state: "near", left: 800, limit: 18000 },
+          { id: "m", state: "over", left: -300, limit: 12000 },
+        ],
+        nameOf,
+      ),
+    ).toEqual({ tone: "overdue", text: "Main house is 300 over 12000" });
+    expect(electricityNote([{ id: "a", state: "near", left: 800, limit: 18000 }], nameOf)).toEqual({ tone: "soon", text: "Annex is 800 units from 18000" });
+    expect(electricityNote([{ id: "a", state: "ok", left: 5000, limit: 18000 }], nameOf)).toBeNull();
+  });
+});
+
+describe("homeBrief", () => {
+  const need = (key: string, daysUntil: number, tone: "overdue" | "due" | "check" = "due") => ({ key, label: key, href: "/", tone, daysUntil, date: "2026-11-18", sub: "" });
+  const base = { ahead: [], electricity: null, windowDays: 30 };
+
+  it("is a calm all clear, with what comes next, when nothing needs the person", () => {
+    const b = homeBrief({
+      ...base,
+      needs: [],
+      ahead: [
+        { label: "Emission test", daysUntil: 20 },
+        { label: "Revenue license", daysUntil: 12 },
+      ],
+    });
+    expect(b).toMatchObject({ tone: "ok", headline: "All clear.", chips: [], nextUp: "Next up: Revenue license, in 12 days." });
+    expect(homeBrief({ ...base, needs: [] }).nextUp).toBe("Nothing is due in the next 30 days.");
+  });
+
+  it("counts late, due this week, meter reads and the slab rule, and takes the worst tone", () => {
+    const b = homeBrief({
+      ...base,
+      needs: [need("a", -2), need("b", 3), need("c", 6), need("Read A", 0, "check")],
+      electricity: { tone: "soon", text: "Annex is 800 units from 18000" },
+    });
+    expect(b.headline).toBe("5 things need you.");
+    expect(b.tone).toBe("overdue");
+    expect(b.chips.map((c) => c.text)).toEqual(["1 late", "2 items due this week", "1 meter read due", "Annex is 800 units from 18000"]);
+  });
+
+  it("is amber with nothing late, singular for one thing, and a meter over its limit alone is red", () => {
+    expect(homeBrief({ ...base, needs: [need("a", 2)] })).toMatchObject({ tone: "soon", headline: "1 thing needs you." });
+    expect(homeBrief({ ...base, needs: [], electricity: { tone: "overdue", text: "Annex is 10 over 18000" } }).tone).toBe("overdue");
+  });
+
+  it("welcomes the owner who is still on the first-day steps", () => {
+    expect(homeBrief({ ...base, needs: [], settingUp: true }).headline).toBe("Welcome to your hub.");
   });
 });

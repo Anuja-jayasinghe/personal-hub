@@ -20,6 +20,7 @@ export function NextDaysLine({
   windowDays,
   title,
   link = { href: "/reminders", label: "Reminders" },
+  framed = true,
 }: {
   days: TimelineDay[];
   windowDays: number;
@@ -27,13 +28,19 @@ export function NextDaysLine({
   title?: string;
   /** The link at the top right; null for none. */
   link?: { href: string; label: string } | null;
+  /** A card of its own (default), or bare, to sit inside another panel (Home's top). */
+  framed?: boolean;
 }) {
   const at = (day: number) => `${(day / windowDays) * 100}%`;
   const toneOf = (d: TimelineDay) => (d.items.some((i) => i.tone === "overdue") ? "overdue" : d.items.some((i) => i.tone === "due") ? "due" : "check");
   const labels = placeLabels(days, windowDays, LINE_PX);
 
   return (
-    <section aria-labelledby="next-days-title" className="flex flex-col gap-2 rounded-2xl border bg-card px-4 pt-3 pb-2.5">
+    <section
+      aria-labelledby="next-days-title"
+      className={framed ? "flex flex-col gap-2 rounded-2xl border bg-card px-4 pt-3 pb-2.5" : "flex flex-col gap-2"}
+      style={{ "--ring-bg": framed ? "var(--card)" : "var(--deepest)" } as React.CSSProperties}
+    >
       <div className="flex items-baseline">
         <h2 id="next-days-title" className="font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase">
           {title ?? `Next ${windowDays} days`}
@@ -70,7 +77,7 @@ export function NextDaysLine({
                     />
                   ) : null}
                   <span
-                    className={`absolute top-1/2 -translate-1/2 rounded-full ${d.day === 0 && tone === "check" ? `size-3.5 ${todayRing}` : node[tone]} ${d.day === 0 && tone !== "check" ? "ring-2 ring-primary ring-offset-2 ring-offset-card" : ""}`}
+                    className={`absolute top-1/2 -translate-1/2 rounded-full ${d.day === 0 && tone === "check" ? `size-3.5 ${todayRing}` : node[tone]} ${d.day === 0 && tone !== "check" ? "ring-2 ring-primary ring-offset-2 ring-offset-(--ring-bg)" : ""}`}
                     style={{ left: at(d.day) }}
                   />
                   {label.text ? (

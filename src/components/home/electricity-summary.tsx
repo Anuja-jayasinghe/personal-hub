@@ -2,7 +2,8 @@ import Link from "next/link";
 import { MeterBadge, toneFor } from "@/components/electricity/meter-tone";
 import { gaugeTop, ringPoint, ringShare } from "@/features/electricity/gauge";
 import type { ElectricitySnapshot } from "@/features/electricity/snapshot";
-import { adviceLine, roomText } from "@/features/electricity/limits-text";
+import { checkedText } from "@/features/electricity/last-checked";
+import { adviceLine, paceLine, roomText } from "@/features/electricity/limits-text";
 
 const STATE_STROKE = { near: "var(--status-soon-mark)", over: "var(--status-overdue)" } as const;
 
@@ -18,6 +19,7 @@ export function ElectricitySummary({ snapshot, action }: { snapshot: Electricity
   const { meters, limits, units, live } = snapshot;
   const nameOf = (id: string) => meters.find((m) => m.id === id)?.name ?? "Meter";
   const advice = adviceLine(limits.advice, limits, nameOf, units, live?.meterId ?? null);
+  const pace = paceLine(limits);
   const top = gaugeTop(units.high);
   const rows = meters.slice(0, 3).map((m, i) => {
     const limit = limits.meters.find((l) => l.id === m.id)!;
@@ -31,7 +33,7 @@ export function ElectricitySummary({ snapshot, action }: { snapshot: Electricity
   return (
     <section
       aria-label="Electricity"
-      className="relative flex flex-col gap-3.5 rounded-3xl border border-border dark:border-raised bg-[radial-gradient(120%_90%_at_85%_0%,color-mix(in_oklab,var(--primary)_14%,var(--deepest))_0%,var(--deepest)_60%)] p-4 has-[>div>a:hover]:border-primary/50 has-[>div>a:focus-visible]:ring-2 has-[>div>a:focus-visible]:ring-ring md:p-6"
+      className="relative flex h-full flex-col gap-3.5 rounded-3xl border border-border dark:border-raised bg-[radial-gradient(120%_90%_at_85%_0%,color-mix(in_oklab,var(--primary)_14%,var(--deepest))_0%,var(--deepest)_60%)] p-4 has-[>div>a:hover]:border-primary/50 has-[>div>a:focus-visible]:ring-2 has-[>div>a:focus-visible]:ring-ring md:p-6"
     >
       <div className="flex min-h-8 items-center gap-3">
         <Link href="/electricity" aria-label={words} className="font-mono text-[10.5px] tracking-[0.14em] text-label uppercase outline-none after:absolute after:inset-0 after:rounded-3xl">
@@ -40,7 +42,7 @@ export function ElectricitySummary({ snapshot, action }: { snapshot: Electricity
         {action ? <div className="relative z-10 ml-auto">{action}</div> : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+      <div className="flex flex-1 flex-wrap items-center gap-x-8 gap-y-4 md:py-2">
         <svg viewBox="0 0 260 260" className="size-44 shrink-0 md:size-56" aria-hidden>
           {rows.map((r) => {
             const c = 2 * Math.PI * r.radius;
@@ -78,7 +80,7 @@ export function ElectricitySummary({ snapshot, action }: { snapshot: Electricity
           </text>
         </svg>
 
-        <div className="flex min-w-48 flex-1 flex-col gap-3">
+        <div className="flex min-w-48 max-w-md flex-1 flex-col gap-3">
           {rows.map((r) => (
             <div key={r.m.id} className="flex items-center gap-3">
               <span aria-hidden className="size-3 shrink-0 rounded-full" style={{ background: r.stroke }} />
@@ -90,11 +92,15 @@ export function ElectricitySummary({ snapshot, action }: { snapshot: Electricity
                     <span className={`ml-2 font-mono text-[9.5px] font-semibold tracking-[0.14em] ${r.isLive ? "text-primary" : "text-label"}`}>{r.isLive ? "LIVE" : "IDLE"}</span>
                   ) : null}
                 </span>
-                <span className="text-xs text-muted-foreground">{roomText(r.limit, units)}</span>
+                <span className="text-xs text-muted-foreground">
+                  {roomText(r.limit, units)}
+                  {snapshot.checks.get(r.m.id) ? ` · ${checkedText(snapshot.checks.get(r.m.id)!).toLowerCase()}` : ""}
+                </span>
               </span>
               <span className="font-display text-2xl font-semibold tabular-nums">{r.used === null ? "–" : Math.round(r.used)}</span>
             </div>
           ))}
+          {pace ? <p className={`text-xs leading-relaxed ${pace.tone === "warn" ? "text-status-soon" : "text-muted-foreground"}`}>{pace.text}</p> : null}
           {advice ? (
             <p className="flex gap-2 text-sm leading-relaxed text-status-soon">
               <span aria-hidden className="mt-1.5 size-2 shrink-0 rounded-full bg-status-soon-mark" />
