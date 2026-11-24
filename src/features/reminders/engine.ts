@@ -139,6 +139,8 @@ export type NoticeEvent = {
   href: string;
   title: string;
   body: string;
+  /** How many more events of this kind were left out of the list (a cap), so a message can still count them. */
+  extra?: number;
 };
 
 /** A module's events for the notification planner (never the Reminders page). Register it in sources.ts under `noticeSources`. */

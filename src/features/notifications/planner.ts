@@ -25,6 +25,8 @@ export type Notice = {
   dueDate: string;
   href: string;
   daysUntil: number;
+  /** More notices of this kind left out of the list by a cap (events only), counted in a batched line. */
+  extra?: number;
   /** What this notice says on its own (the send log keeps it per row). */
   title: string;
   body: string;
@@ -105,11 +107,17 @@ export function composeMessage(recipient: string, channel: Channel, notices: rea
   const requests = sorted.filter((n) => n.event === "access-request");
   const others = sorted.filter((n) => n.event !== "task" && n.event !== "access-request");
   const tasksLine = tasks.length === 1 ? tasks[0].title : `${tasks.length} tasks due today`;
-  const requestsLine = requests.length === 1 ? requests[0].title : `${requests.length} people asked for access`;
+  const requestCount = requests.reduce((n, r) => n + 1 + (r.extra ?? 0), 0);
+  const requestsLine = requestCount === 1 ? requests[0].title : `${requestCount} people asked for access`;
   if (others.length === 0 && requests.length === 0) return { recipient, channel, title: tasksLine, body: NOTIFICATION_STEPS.task.place, href: "/tasks", notices: sorted };
   if (others.length === 0 && tasks.length === 0) return { recipient, channel, title: requestsLine, body: requests[0].body, href: requests[0].href, notices: sorted };
-  const lines = [...others.map((n) => `${n.title} · ${n.body}`), ...(tasks.length > 0 ? [tasksLine] : []), ...(requests.length > 0 ? [requestsLine] : [])];
-  return { recipient, channel, title: `${lines.length} things need you`, body: lines.join("\n"), href: "/reminders", notices: sorted };
+  const lines = [...others.map((n) => `${n.title} · ${n.body}`), ...(tasks.length > 0 ? [tasksLine] : [])];
+  // A request never says who; in a mixed batch it is one short line, and the link stays on the list of things.
+  if (requests.length > 0) lines.push(requestCount === 1 ? "Plus a request in People" : `Plus ${requestCount} requests in People`);
+  // A batch whose notices all open the same page (electricity only) opens that page; a mixed one opens the list.
+  const pages = new Set(sorted.map((n) => n.href));
+  const href = pages.size === 1 ? sorted[0].href : "/reminders";
+  return { recipient, channel, title: `${lines.length} things need you`, body: lines.join("\n"), href, notices: sorted };
 }
 
 /** The notices due today for one recipient, batched into at most one message per channel. */
@@ -167,6 +175,7 @@ export function planNotifications({ recipient = "", items, events = [], today, u
         daysUntil: 0,
         title: e.title,
         body: e.body,
+        extra: e.extra,
       });
     }
   }

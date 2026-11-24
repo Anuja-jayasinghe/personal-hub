@@ -153,3 +153,53 @@ describe("the daily run with events", () => {
     expect(new Set(rows.map((r) => r.recipient))).toEqual(new Set([OWNER, "second@example.com"]));
   });
 });
+
+describe("sign-up requests are bounded", () => {
+  it("only people first seen in the last 8 days, newest first, at most 50, with the true count in the message", async () => {
+    const { planNotifications } = await import("@/features/notifications/planner");
+    const today = "2026-11-20";
+    await db.insert(people).values([
+      // 60 recent requests, a minute apart, the newest last.
+      ...Array.from({ length: 60 }, (_, i) => ({ email: `p${i}@example.net`, status: "pending" as const, createdAt: new Date(Date.UTC(2026, 10, 20, 4, i)) })),
+      // Too old, and already approved: never events.
+      { email: "old@example.net", status: "pending" as const, createdAt: new Date("2026-11-01T04:00:00Z") },
+      { email: "active@example.net", status: "active" as const, createdAt: new Date("2026-11-20T04:00:00Z") },
+    ]);
+    const { loaded } = await loadSources(
+      noticeSources.filter((s) => s.key === "access-requests"),
+      { db, today },
+    );
+    const events = loaded.flatMap((l) => l.items);
+    expect(events).toHaveLength(50);
+    expect(events[0].extra).toBe(10);
+    expect(events.slice(1).every((e) => e.extra === undefined)).toBe(true);
+    // Newest first: the first event is minute 59, and nothing older than minute 10 is in.
+    const rows = await db.select({ id: people.id, email: people.email }).from(people);
+    const emails = events.map((e) => rows.find((r) => `access-request:${r.id}` === e.key)!.email);
+    expect(emails[0]).toBe("p59@example.net");
+    expect(emails).not.toContain("old@example.net");
+    expect(emails).not.toContain("active@example.net");
+    expect(emails).not.toContain("p9@example.net");
+    expect(emails).toContain("p10@example.net");
+    const plan = planNotifications({ events, items: [], today, usedKeys: new Set() });
+    expect(plan.messages[0].title).toBe("60 people asked for access");
+  });
+});
+
+describe("event sources fail closed", () => {
+  it("an event source with no line in SOURCE_AREA belongs to the owners alone", async () => {
+    const { loadNoticeSources } = await import("./sources");
+    const { itemsFor } = await import("@/features/notifications/recipients");
+    const unmapped = {
+      key: "something-new",
+      label: "Something new",
+      load: async () => [{ event: "access-request" as const, key: "k", anchor: "2026-11-20", from: "2026-11-20", until: "2026-11-20", href: "/", title: "t", body: "b" }],
+    };
+    const { loaded } = await loadNoticeSources([unmapped], { db, today: "2026-11-20" });
+    expect(loaded[0].area).toBe("owner");
+    expect(itemsFor({ email: OWNER, access: { owner: true } }, loaded)).toHaveLength(1);
+    expect(itemsFor({ email: "p@example.com", access: { owner: false, grants: { electricity_readings: "edit", vehicles: "edit" } } }, loaded)).toEqual([]);
+    // Reminder sources keep their own default.
+    expect((await loadSources([{ ...unmapped, load: async () => [] }], { db, today: "2026-11-20" })).loaded[0].area).toBe("tasks_notes");
+  });
+});

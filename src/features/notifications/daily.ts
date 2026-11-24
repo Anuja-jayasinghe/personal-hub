@@ -3,7 +3,7 @@ import { appConfig } from "@/config/app.config";
 import type { Db } from "@/db/read";
 import { appSettings } from "@/db/schema";
 import type { NoticeSource, ReminderSource } from "@/features/reminders/engine";
-import { loadSources, noticeSources as defaultNoticeSources, reminderSources } from "@/features/reminders/sources";
+import { loadNoticeSources, loadSources, noticeSources as defaultNoticeSources, reminderSources } from "@/features/reminders/sources";
 import { todayIn } from "@/lib/dates";
 import { safeErrorSummary } from "@/lib/errors";
 import { channelModes, NOTIFICATIONS_SETTINGS_KEY, parseSwitches, SENDERS, type ChannelModes, type ChannelSender } from "./channels";
@@ -60,7 +60,7 @@ export async function runDaily({ db, now, allowedEmails, sources = reminderSourc
 
   const pruned = await pruneLog(db, now);
   const { loaded, failedSources: failedItemSources } = await loadSources(sources, { db, today });
-  const { loaded: loadedEvents, failedSources: failedEventSources } = await loadSources(noticeSources, { db, today });
+  const { loaded: loadedEvents, failedSources: failedEventSources } = await loadNoticeSources(noticeSources, { db, today });
   const failedSources = [...failedItemSources, ...failedEventSources];
 
   const report: RunReport = {

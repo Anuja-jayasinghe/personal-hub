@@ -45,10 +45,12 @@ export type LoadedNoticeSource = LoadedSource<NoticeEvent>;
 export async function loadSources<T = ReminderItem>(
   sources: readonly { key: string; label: string; load: (from?: SourceContext) => Promise<T[]> }[],
   from?: SourceContext,
+  /** The section of a source with no line in SOURCE_AREA. Event sources pass "owner": a source nobody mapped is heard by nobody else. */
+  fallbackArea: SourceArea = "tasks_notes",
 ): Promise<{ loaded: LoadedSource<T>[]; failedSources: string[] }> {
   const settled = await Promise.allSettled(sources.map((s) => s.load(from)));
   const loaded = settled.flatMap((r, i) =>
-    r.status === "fulfilled" ? [{ key: sources[i].key, area: SOURCE_AREA[sources[i].key] ?? "tasks_notes", items: r.value }] : [],
+    r.status === "fulfilled" ? [{ key: sources[i].key, area: SOURCE_AREA[sources[i].key] ?? fallbackArea, items: r.value }] : [],
   );
   const failedSources = settled.flatMap((r, i) => {
     if (r.status === "fulfilled") return [];
@@ -57,4 +59,12 @@ export async function loadSources<T = ReminderItem>(
     return [sources[i].label];
   });
   return { loaded, failedSources };
+}
+
+/**
+ * Loads event sources (N.4). Fails closed: an event source with no line in SOURCE_AREA belongs to the
+ * owners alone, so forgetting the line can never show an owner-only notice to someone else (N.5).
+ */
+export function loadNoticeSources(sources: readonly NoticeSource[], from?: SourceContext) {
+  return loadSources<NoticeEvent>(sources, from, "owner");
 }

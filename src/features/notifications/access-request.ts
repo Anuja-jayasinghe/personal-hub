@@ -1,5 +1,5 @@
 import "server-only";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { appConfig } from "@/config/app.config";
 import type { Db } from "@/db/read";
 import { appSettings } from "@/db/schema";
@@ -60,6 +60,9 @@ export type AccessRequestDeps = {
   senders?: Record<"email" | "push", ChannelSender>;
 };
 
+/** The day's claim on an owner's instant sign-up push (one row in app_settings, released if nothing went out). */
+export const claimKey = (owner: string, day: string) => `access-request-push:${owner}:${day}`;
+
 export async function notifyAccessRequest(db: Db, deps: AccessRequestDeps = {}): Promise<AccessRequestReport> {
   const { now = new Date(), environment = process.env.VERCEL_ENV, allowedEmails = process.env.ALLOWED_EMAILS } = deps;
   const report: AccessRequestReport = { skipped: false, held: 0, written: 0, sent: 0, failed: 0 };
@@ -67,7 +70,7 @@ export async function notifyAccessRequest(db: Db, deps: AccessRequestDeps = {}):
 
   const today = todayIn(appConfig.timeZone, now);
   const recipients = ownerRecipients(allowedEmails);
-  const events = await loadAccessRequestEvents(db);
+  const events = await loadAccessRequestEvents(db, today);
   if (events.length === 0 || recipients.length === 0) return report;
 
   if (hourIn(appConfig.timeZone, now) < MORNING_RUN_DONE_HOUR) {
@@ -93,7 +96,18 @@ export async function notifyAccessRequest(db: Db, deps: AccessRequestDeps = {}):
       report.held += plan.held;
       const message = plan.messages.find((m) => m.channel === "push");
       if (!message) continue;
+      // Two sign-ups at the same instant must not each send a push to this owner: whoever wins this
+      // atomic claim (one row per owner and day, not a lock and not an open transaction) sends; the
+      // other holds and the daily run announces their person.
+      const claim = claimKey(recipient.email, today);
+      const won = await db.insert(appSettings).values({ key: claim, value: { at: now.toISOString() } }).onConflictDoNothing().returning({ key: appSettings.key });
+      if (won.length === 0) {
+        report.held++;
+        continue;
+      }
       const result = await writeMessage(db, message, modes.push, senders.push, { today });
+      // Nothing went out (the push service refused it): give the day's claim back so a later try may send.
+      if (result.failed > 0 && result.sent === 0) await db.delete(appSettings).where(and(eq(appSettings.key, claim)));
       if (result.written > 0) report.written++;
       report.sent += result.sent > 0 ? 1 : 0;
     } catch (err) {

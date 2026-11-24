@@ -25,6 +25,7 @@ import { electricitySnapshot } from "./snapshot";
 export const ELECTRICITY_HREF = "/electricity";
 
 const whole = (hundredths: number) => Math.round(hundredths / 100);
+// Used is rounded DOWN like "left", so the title and the body agree (119.6 units reads "119 of 120", "0 left", never "120 of 120").
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 /** ", 9 days to the bill" while the cycle's end is still ahead; nothing once it has passed. */
@@ -59,7 +60,7 @@ export function electricityEvents(input: {
         from: today,
         until: today,
         href: ELECTRICITY_HREF,
-        title: kind === "near" ? `${whole(limit.used)} of ${whole(limit.limit)} units used` : `Over the ${whole(limit.limit)} unit limit`,
+        title: kind === "near" ? `${Math.floor(limit.used / 100)} of ${whole(limit.limit)} units used` : `Over the ${whole(limit.limit)} unit limit`,
         body: `${meter.name} · ${kind === "near" ? `${left} left` : `${-left} over`}${bill}`,
       });
     }

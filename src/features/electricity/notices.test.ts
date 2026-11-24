@@ -104,6 +104,37 @@ describe("slab limit events", () => {
     expect(sent).toEqual(["2026-11-20 slab-near", "2026-11-24 slab-over", "2026-12-10 slab-near"]);
   });
 
+  it("the title and the body agree at the edges: rounded down, exactly the margin, exactly the limit, 0.01 over", () => {
+    const slabOf = (kwh: number, bills = [cycle], meters = [A], readings = [reading("a", "2026-11-19", 1000 + kwh)]) =>
+      events("2026-11-20", bills, readings, meters)
+        .filter((e) => e.event.startsWith("slab"))
+        .map((e) => `${e.event} ${e.title} / ${e.body.split(" · ")[1].split(",")[0]}`);
+    // Just outside the 15-unit margin: nothing. Exactly on it: near.
+    expect(slabOf(104.99)).toEqual([]);
+    expect(slabOf(105)).toEqual(["slab-near 105 of 120 units used / 15 left"]);
+    // 119.6 is "119 of 120" and "0 left", never "120 of 120" with "0 left".
+    expect(slabOf(119.6)).toEqual(["slab-near 119 of 120 units used / 0 left"]);
+    // Exactly the limit is still within it.
+    expect(slabOf(120)).toEqual(["slab-near 120 of 120 units used / 0 left"]);
+    // 0.01 over, on a meter held to the low slab (the other meter already holds the high one).
+    const two = [bill("a", "2026-11-01", 1000), bill("b", "2026-11-01", 2000)];
+    const over = events("2026-11-20", two, [reading("a", "2026-11-19", 1130), reading("b", "2026-11-19", 2120.01)], [A, B]);
+    expect(over.filter((e) => e.event === "slab-over").map((e) => `${e.title} / ${e.body}`)).toEqual(["Over the 120 unit limit / Meter B · 1 over, 11 days to the bill"]);
+  });
+
+  it("the role flips with the readings: the most-used meter past the low slab is judged against the high one, the other against the low", () => {
+    const two = [bill("a", "2026-11-01", 1000), bill("b", "2026-11-01", 2000)];
+    const slabs = (a: number, b: number) =>
+      events("2026-11-20", two, [reading("a", "2026-11-19", 1000 + a), reading("b", "2026-11-19", 2000 + b)], [A, B])
+        .filter((e) => e.event.startsWith("slab"))
+        .map((e) => e.key.split(":").slice(1, 3).join(" "));
+    // B crosses 120 first: it holds the high slab (125 of 180: nothing to say), A is judged against 120.
+    expect(slabs(80, 125)).toEqual([]);
+    expect(slabs(110, 125)).toEqual(["a near"]);
+    // Then A becomes the most-used meter: A is the high one, and B, at 125, is now over the low limit.
+    expect(slabs(140, 125)).toEqual(["b over"]);
+  });
+
   it("is about today only: it never appears in a preview of later days", () => {
     const list = events("2026-11-20", [cycle], [reading("a", "2026-11-19", 1108)]).filter((e) => e.event.startsWith("slab"));
     const days = previewUpcoming([], "2026-11-20", none, 10, undefined, list);

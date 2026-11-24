@@ -19,7 +19,7 @@ vi.mock("@/db/read", () => ({
   },
 }));
 
-const { notifyAccessRequest } = await import("./access-request");
+const { claimKey, notifyAccessRequest } = await import("./access-request");
 const { runDaily } = await import("./daily");
 const { pushPayload } = await import("./push/payload");
 
@@ -207,5 +207,65 @@ describe("notifyAccessRequest", () => {
     expect(report.failed).toBe(1);
     expect(report.sent).toBe(1);
     expect(log.mock.calls.flat().join(" ")).not.toContain("broken@example.com");
+  });
+
+  describe("the day's claim on an owner's instant push", () => {
+    const claims = () => db.select().from(appSettings).where(sql`${appSettings.key} like 'access-request-push:%'`);
+
+    it("is taken by a send and kept", async () => {
+      await pushLive();
+      await addPerson();
+      await run();
+      expect((await claims()).map((c) => c.key)).toEqual([claimKey(OWNER, "2026-11-23")]);
+    });
+
+    // The claim is what stops two DIFFERENT people's sends (each planned before the other's row existed); the next test pins that.
+    it("two sign-ups at the same instant send one push between them", async () => {
+      await pushLive();
+      await addPerson();
+      await addPerson("another@example.net", new Date("2026-11-23T05:10:00Z"));
+      const [a, b] = await Promise.all([run(), run()]);
+      expect(sent).toHaveLength(1);
+      expect(a.sent + b.sent).toBe(1);
+    });
+
+    it("a lost claim holds the notice: nothing sent, nothing written, and the daily run announces the person", async () => {
+      await pushLive();
+      // Another sign-up's send won the claim and has not written its log row yet.
+      await db.insert(appSettings).values({ key: claimKey(OWNER, "2026-11-23"), value: {} });
+      const person = await addPerson();
+      expect(await run()).toMatchObject({ held: 1, written: 0, sent: 0 });
+      expect(sent).toEqual([]);
+      expect(await logOf()).toEqual([]);
+      const next = await daily(new Date("2026-11-24T02:10:00Z"));
+      expect(next.messages.push).toBe(1);
+      expect((await logOf()).map((r) => r.dedupeKey)).toEqual([`access-request:${person.id}`]);
+    });
+
+    it("is given back when the push service refused it, so a later sign-up can still send", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      await pushLive();
+      await addPerson();
+      pushSend = async () => {
+        throw new NotSentError("refused");
+      };
+      await run();
+      expect(await claims()).toEqual([]);
+      pushSend = async (m) => void sent.push(m);
+      await run();
+      expect(sent).toHaveLength(1);
+      expect(await claims()).toHaveLength(1);
+    });
+
+    it("is kept when the outcome is unknown, so nothing is sent twice", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      await pushLive();
+      await addPerson();
+      pushSend = async () => {
+        throw new Error("the connection dropped");
+      };
+      await run();
+      expect(await claims()).toHaveLength(1);
+    });
   });
 });

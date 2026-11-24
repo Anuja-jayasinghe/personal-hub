@@ -65,7 +65,32 @@ describe("rule 4: one message per day per channel, several items batched", () =>
     const plan = planNotifications({ events: [person("p1"), person("p2")], items: [task], today: TODAY, usedKeys: none });
     expect(plan.messages).toHaveLength(1);
     expect(plan.messages[0].title).toBe("2 things need you");
-    expect(plan.messages[0].body.split("\n")).toEqual(["Task due today", "2 people asked for access"]);
+    expect(plan.messages[0].body.split("\n")).toEqual(["Task due today", "Plus 2 requests in People"]);
+    expect(plan.messages[0].href).toBe("/reminders");
+    // One request: one short line, and still no name.
+    const one = planNotifications({ events: [person("p1")], items: [task], today: TODAY, usedKeys: none });
+    expect(one.messages[0].body.split("\n")).toEqual(["Task due today", "Plus a request in People"]);
+  });
+
+  it("counts requests the cap left out, so the message says the true number", () => {
+    const plan = planNotifications({ events: [{ ...person("p1"), extra: 10 }, person("p2")], items: [], today: TODAY, usedKeys: none });
+    expect(plan.messages[0].title).toBe("12 people asked for access");
+  });
+});
+
+describe("where a batched push opens", () => {
+  const near = (key: string, event: NoticeEvent["event"] = "slab-near"): NoticeEvent => ({ ...slab(key), event });
+  const due = (key: string): NoticeEvent => ({ ...slab(key), event: "reading-due", title: "Meter reading due", body: "Meter A" });
+
+  it("when every notice opens the same page, the batch opens it (electricity only: /electricity)", () => {
+    const plan = planNotifications({ events: [near("a"), due("b")], items: [], today: TODAY, usedKeys: none });
+    expect(plan.messages[0].title).toBe("2 things need you");
+    expect(plan.messages[0].href).toBe("/electricity");
+  });
+
+  it("otherwise it opens the list of things", () => {
+    expect(planNotifications({ events: [near("a")], items: [task], today: TODAY, usedKeys: none }).messages[0].href).toBe("/reminders");
+    expect(planNotifications({ events: [near("a"), person("p1")], items: [], today: TODAY, usedKeys: none }).messages[0].href).toBe("/reminders");
   });
 });
 

@@ -7,7 +7,7 @@ import { safeErrorSummary } from "@/lib/errors";
 import { appConfig } from "@/config/app.config";
 import { readDb, type Db } from "@/db/read";
 import { appSettings, notifications, pushSubscriptions } from "@/db/schema";
-import { loadSources, noticeSources, reminderSources } from "@/features/reminders/sources";
+import { loadNoticeSources, loadSources, noticeSources, reminderSources } from "@/features/reminders/sources";
 import { getAuthState, requirePage } from "@/lib/auth";
 import { todayInAppTz } from "@/lib/format";
 import { channelModes, NOTIFICATIONS_SETTINGS_KEY, parseSwitches, type ChannelModes, type NotificationSwitches } from "./channels";
@@ -51,7 +51,7 @@ export async function getComingUp(): Promise<{ today: string; days: PreviewDay[]
   const recipient = await viewingOwner();
   const db = await readDb();
   const today = todayInAppTz();
-  const [modes, log, dated, happening] = await Promise.all([modesFrom(db), readLog(db, recipient), loadSources(reminderSources), loadSources(noticeSources)]);
+  const [modes, log, dated, happening] = await Promise.all([modesFrom(db), readLog(db, recipient), loadSources(reminderSources), loadNoticeSources(noticeSources)]);
   const items = dated.loaded.flatMap((l) => l.items);
   // Events happening now (a slab limit, a reading overdue, a sign-up request, N.4): the owner sees all of them.
   const events = happening.loaded.flatMap((l) => l.items);
