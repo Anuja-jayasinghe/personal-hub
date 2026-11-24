@@ -12,6 +12,10 @@ import { docFileName, renewalKind, type DocKind } from "@/features/vehicles/doc-
 import {
   buildPapers,
   byUrgency,
+  glanceGroups,
+  glanceLabel,
+  glanceOpens,
+  glanceTarget,
   groupPapers,
   isDatedKind,
   kindLabel,
@@ -209,14 +213,16 @@ function fileLine(p: Paper): string {
   return [first.fileName + (more.length ? ` +${more.length}` : ""), formatBytes(p.files.reduce((n, f) => n + f.sizeBytes, 0))].join(" · ");
 }
 
-/** The short state of a category, in capitals for the mono labels. */
-function statusWords(g: PaperGroup): string {
-  const s = g.status;
-  if (s.tone === "none") return "Nothing yet";
-  if (s.tone === "file") return g.kind === "other" ? `${s.count} on file` : "On file";
-  if (s.days < 0) return `${-s.days} day${s.days === -1 ? "" : "s"} late`;
-  if (s.days === 0) return "Ends today";
-  return `${s.days} day${s.days === 1 ? "" : "s"} left`;
+/** The small word beside a phone card, which already shows the dates itself: the paper count for Other, "No scan" when the paper has none, else nothing (no repeated dates, no bare "On file"). */
+function sideWords(ctx: Ctx, g: PaperGroup): string {
+  const text = glanceLabel(g, ctx.today)?.text ?? "";
+  return g.kind === "other" ? text : text.toLowerCase().includes("no scan") ? "No scan" : "";
+}
+
+/** The short state of a category: real information only (days left, printed month, paper count, no scan), never a bare "On file". Empty when there is nothing real to say. */
+function statusWords(ctx: Ctx, g: PaperGroup): string {
+  if (g.status.tone === "none") return "Nothing yet";
+  return glanceLabel(g, ctx.today)?.text ?? "";
 }
 
 const toneOf = (s: PaperStatus) => (s.tone === "ok" || s.tone === "soon" || s.tone === "overdue" ? s.tone : null);
@@ -242,6 +248,7 @@ function AllPapers({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
   const shown = ordered.filter((g) => g.status.tone !== "none");
   const empty = ordered.filter((g) => g.status.tone === "none");
   const nothing = shown.length === 0;
+  const tiles = glanceGroups(groups);
   const canFill = ctx.access.canAdd || ctx.access.canAddRenewal;
 
   return (
@@ -259,11 +266,15 @@ function AllPapers({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
 
       {/* Desktop: the at-a-glance row, then each category in full. */}
       <div className="hidden flex-col gap-7 md:flex">
-        <nav aria-label="At a glance" className="grid grid-cols-5 gap-3">
-          {groups.map((g) => (
-            <GlanceTile key={g.kind} group={g} href={g.status.tone === "none" ? ctx.href(g.kind) : `#doc-${g.kind}`} />
-          ))}
-        </nav>
+        {tiles.length > 0 ? (
+          <ul role="list" aria-label="At a glance" className="grid grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))] gap-3">
+            {tiles.map((g) => (
+              <li key={g.kind} className="flex min-w-0">
+                <GlanceTile ctx={ctx} group={g} />
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {nothing && !canFill ? <NothingYet /> : null}
         <div className="@container">
           <div className="grid gap-x-5 gap-y-7 @5xl:grid-cols-2">
@@ -297,7 +308,7 @@ function Chips({ ctx, groups, current }: { ctx: Ctx; groups: PaperGroup[]; curre
       {byUrgency(groups).map((g) => {
         const tone = toneOf(g.status);
         return (
-          <Link key={g.kind} href={ctx.href(g.kind)} aria-current={current === g.kind ? "page" : undefined} aria-label={`${g.label}: ${statusWords(g).toLowerCase()}`} className={chip(current === g.kind)}>
+          <Link key={g.kind} href={ctx.href(g.kind)} aria-current={current === g.kind ? "page" : undefined} aria-label={statusWords(ctx, g) ? `${g.label}: ${statusWords(ctx, g)}` : g.label} className={chip(current === g.kind)}>
             {tone && tone !== "ok" ? <span aria-hidden className={`size-2 rounded-full ${TONE_DOT[tone]}`} /> : null}
             {short[g.kind]}
           </Link>
@@ -307,23 +318,58 @@ function Chips({ ctx, groups, current }: { ctx: Ctx; groups: PaperGroup[]; curre
   );
 }
 
-function GlanceTile({ group: g, href }: { group: PaperGroup; href: string }) {
+/**
+ * One at-a-glance tile (desktop): a category with something in it. It opens that category's paper in the
+ * viewer (issue #211): the current one, or the newest on file. A paper with no scan yet (a renewal waiting
+ * for its scan) has nothing to show, so its tile jumps to the category's section, where "Add the scan" is.
+ * Categories with nothing in them get no tile at all; they are added from the "Nothing yet" row.
+ */
+function GlanceTile({ ctx, group: g }: { ctx: Ctx; group: PaperGroup }) {
   const tone = toneOf(g.status);
-  const empty = g.status.tone === "none";
-  const art = g.current ?? g.onFile[0] ?? g.earlier[0];
-  return (
-    <a
-      href={href}
-      className={`flex min-w-0 items-center gap-3 rounded-2xl border p-3.5 transition-colors hover:border-quiet ${empty ? "border-dashed bg-transparent" : `bg-card ${tone ? TONE_EDGE[tone] : ""}`}`}
-    >
+  const target = glanceTarget(g);
+  const opens = glanceOpens(g);
+  const label = glanceLabel(g, ctx.today);
+  const className = `flex w-full min-w-0 items-center gap-3 rounded-2xl border bg-card p-3.5 text-left transition-colors hover:border-quiet focus-visible:border-primary ${tone ? TONE_EDGE[tone] : "border-border"}`;
+  const inner = (
+    <>
       <span className="flex h-9 w-10 shrink-0 items-center justify-center">
-        {art ? <PaperArt kind={g.kind} size="xs" /> : <span aria-hidden className="h-9 w-7 rounded-[3px] border border-dashed border-quiet" />}
+        <PaperArt kind={g.kind} size="xs" />
       </span>
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="truncate text-sm font-semibold">{g.label}</span>
-        <span className={`font-mono text-[11px] tracking-[0.06em] uppercase ${tone ? TONE_TEXT[tone] : "text-label"}`}>{statusWords(g)}</span>
+        {label ? (
+          <span className={`flex flex-col font-mono text-[11px] leading-snug tracking-[0.06em] uppercase ${label.tone ? TONE_TEXT[label.tone] : "text-label"}`}>
+            {label.text.split(" · ").map((part) => (
+              <span key={part}>{part}</span>
+            ))}
+          </span>
+        ) : null}
       </span>
-    </a>
+    </>
+  );
+  if (opens !== "viewer" || !target) {
+    // No scan yet: a link to the section (where "Add the scan" is), named so it is not mistaken for a viewer button.
+    const state = label ? label.text.replace(" · no scan", ", no scan yet").replace(/^No scan$/, "no scan yet") : "no scan yet";
+    return (
+      <a href={`#doc-${g.kind}`} aria-label={`${g.label}, ${state}, go to its section`} className={className}>
+        {inner}
+      </a>
+    );
+  }
+  const what = g.kind === "other" ? (g.onFile.length === 1 ? "the paper in Other" : "the newest paper in Other") : `the ${g.label.toLowerCase()}`;
+  return (
+    <PaperViewer
+      paper={target}
+      isCurrent={target === g.current}
+      today={ctx.today}
+      sample={ctx.sample}
+      canEdit={ctx.access.canEdit}
+      renew={renewFor(ctx, target, target === g.current)}
+      ariaLabel={`Open ${what}${label ? `, ${label.text}` : ""}`}
+      className={className}
+    >
+      {inner}
+    </PaperViewer>
   );
 }
 
@@ -357,7 +403,7 @@ function TrackInRenewals({ ctx }: { ctx: Ctx }) {
 /** One category in full (desktop): its current paper as a card, earlier and other copies folded underneath. */
 function CategorySection({ ctx, group: g, wide }: { ctx: Ctx; group: PaperGroup; wide: boolean }) {
   const dated = isDatedKind(g.kind);
-  const meta = g.kind === "other" ? null : g.kind === "book" ? "No expiry" : g.current ? "Current" : "On file";
+  const meta = g.kind === "other" ? null : g.kind === "book" ? "No expiry" : g.current ? "Current" : null;
   const folded = [g.earlier.length ? plural(g, g.earlier.length) : null, g.onFile.length && g.current ? `${g.onFile.length} more on file` : null].filter(Boolean).join(" · ");
   return (
     <section id={`doc-${g.kind}`} aria-labelledby={`doc-${g.kind}-title`} className={`flex scroll-mt-6 flex-col gap-3 ${wide ? "@5xl:col-span-2" : ""}`}>
@@ -562,7 +608,7 @@ function CompactCard({ ctx, group: g }: { ctx: Ctx; group: PaperGroup }) {
           <span className="font-mono text-[9px] text-label">{g.status.days < 0 ? "LATE" : "DAYS"}</span>
         </span>
       ) : (
-        <span className="shrink-0 font-mono text-[10px] tracking-[0.06em] text-label uppercase">{statusWords(g)}</span>
+        <span className="shrink-0 font-mono text-[10px] tracking-[0.06em] text-label uppercase">{sideWords(ctx, g)}</span>
       )}
     </Link>
   );
@@ -632,7 +678,7 @@ function CategoryView({ ctx, group: g, groups }: { ctx: Ctx; group: PaperGroup; 
                   <span className="font-mono text-[9px] text-label">{days < 0 ? "LATE" : "DAYS"}</span>
                 </span>
               ) : (
-                <span className="shrink-0 font-mono text-[10px] tracking-[0.06em] text-label uppercase">{statusWords(g)}</span>
+                <span className="shrink-0 font-mono text-[10px] tracking-[0.06em] text-label uppercase">{sideWords(ctx, g)}</span>
               )}
             </div>
             <div className="flex gap-2.5 [&>button]:flex-1">
@@ -660,7 +706,7 @@ function CategoryView({ ctx, group: g, groups }: { ctx: Ctx; group: PaperGroup; 
             ) : null}
             {g.onFile.length > 0 ? (
               <section aria-label={`${g.label} on file`} className="flex flex-col">
-                <span className="pb-2.5 pl-1 font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">{g.current ? "Also on file" : "On file"}</span>
+                <span className="pb-2.5 pl-1 font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">{g.current ? "Also on file" : "Papers on file"}</span>
                 <OnFile ctx={ctx} papers={g.onFile} titled={false} />
               </section>
             ) : null}

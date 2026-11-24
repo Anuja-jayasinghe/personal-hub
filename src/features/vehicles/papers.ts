@@ -1,5 +1,6 @@
 import { appConfig } from "@/config/app.config";
-import { addDays, daysBetween, isValidDate, todayIn } from "@/lib/dates";
+import { addDays, daysBetween, isValidDate, monthOf, todayIn } from "@/lib/dates";
+import { formatMonth } from "@/lib/format";
 import { DOC_KINDS, defaultDocTitle, isDocKind, renewalKind, type DocKind } from "./doc-names";
 
 /**
@@ -249,10 +250,10 @@ export function renewDue(days: number | null): boolean {
   return days !== null && days <= RENEW_WITHIN_DAYS;
 }
 
-/** "81 days left", "expires today", "expired 3 days ago". */
+/** "81 days left", "1 day left", "Ends today", "3 days late": the one wording for a paper's days, everywhere. */
 export function daysWords(days: number): string {
-  if (days === 0) return "expires today";
-  if (days < 0) return `expired ${-days} day${days === -1 ? "" : "s"} ago`;
+  if (days === 0) return "Ends today";
+  if (days < 0) return `${-days} day${days === -1 ? "" : "s"} late`;
   return `${days} day${days === 1 ? "" : "s"} left`;
 }
 
@@ -287,6 +288,62 @@ export function groupPapers(papers: readonly Paper[], today: string): PaperGroup
     const [current = null, ...earlier] = [...mine].sort(newestFirst);
     return { kind, label, current, earlier, timeline: plain(earlier), onFile: [], status: current ? { tone: "file" as const, count: mine.length } : { tone: "none" as const } };
   });
+}
+
+/** The categories that get an at-a-glance tile: those with something in them, in the usual order (a category with nothing gets none, and the add row below the sections takes over). */
+export function glanceGroups(groups: readonly PaperGroup[]): PaperGroup[] {
+  return groups.filter((g) => g.status.tone !== "none");
+}
+
+/**
+ * The paper a category's tile opens: the current one (the one the tile's days are about); with no current
+ * paper, the newest of the others on file (preferring one that has a file to show). Null for an empty category.
+ * The tile opens the viewer only when this paper has a file; otherwise it jumps to the category's section.
+ */
+export function glanceTarget(g: PaperGroup): Paper | null {
+  if (g.current) return g.current;
+  const rest = [...g.onFile, ...g.earlier].sort(newestFirst);
+  return rest.find((p) => p.files.length > 0) ?? rest[0] ?? null;
+}
+
+/**
+ * The short line under a tile's title, only ever real information: the days left for a paper that runs
+ * out (with the colour of its state), else the book's printed month, when the newest paper ends or ended,
+ * or how many papers there are; plus "no scan" when the paper the tile is about has no file yet. Null when
+ * there is nothing real to say (a book without a known date, with its scan). Also what the phone's cards and
+ * chips say, so "On file" never stands alone as a label.
+ */
+export function glanceLabel(g: PaperGroup, today: string): { text: string; tone: "ok" | "soon" | "overdue" | null } | null {
+  const s = g.status;
+  if (s.tone === "none") return null;
+  const target = glanceTarget(g);
+  const noScan = target !== null && target.files.length === 0;
+  const withScan = (text: string | null) => (noScan ? (text ? `${text} · no scan` : "No scan") : text);
+  if (s.tone !== "file") {
+    return { text: withScan(daysWords(s.days))!, tone: s.tone };
+  }
+  const count = s.count === 1 ? "1 paper" : `${s.count} papers`;
+  let text: string | null;
+  if (g.kind === "other") {
+    text = count;
+  } else if (g.kind === "book") {
+    text = target?.dated ? formatMonth(monthOf(target.dated)) : s.count > 1 ? `${s.count} books` : null;
+  } else {
+    // A kind that runs out, with no current renewal: when the newest paper ends or ended.
+    text = target?.until ? `${target.until < today ? "Ended" : "Until"} ${formatMonth(monthOf(target.until))}` : count;
+  }
+  text = withScan(text);
+  return text ? { text, tone: null } : null;
+}
+
+/**
+ * What a tile does: "viewer" opens the paper it is about; "section" jumps to the category's section, for a
+ * paper with no scan yet (a renewal waiting for its scan, where "Add the scan" is); null for an empty category.
+ */
+export function glanceOpens(g: PaperGroup): "viewer" | "section" | null {
+  const target = glanceTarget(g);
+  if (!target) return null;
+  return target.files.length > 0 ? "viewer" : "section";
 }
 
 /**
