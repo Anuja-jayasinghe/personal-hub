@@ -1,9 +1,9 @@
 import "server-only";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { attachments, vehicleRenewals, vehicles } from "@/db/schema";
+import { attachments, vehicleRenewals, vehicleServices, vehicles } from "@/db/schema";
 import { ValidationError } from "@/features/shared/validation";
-import { docFileName, documentKind, extensionFor, renewalKind, vehiclePart, type DocUpload } from "./doc-names";
+import { docFileName, documentKind, extensionFor, renewalKind, SERVICE_FILE_KIND, vehiclePart, type DocUpload } from "./doc-names";
 
 /**
  * Names a vehicle document from the hub's own data (issue #179), never from the uploader's file name.
@@ -28,6 +28,21 @@ export async function renewalFileName(renewalId: string, mimeType: string): Prom
     .where(eq(vehicleRenewals.id, renewalId));
   if (!row) throw new ValidationError("That renewal could not be found.");
   return docFileName({ vehicle: vehiclePart(row), kind: renewalKind(row.type), date: row.expiry, ext: extensionFor(mimeType) }, await takenNames("vehicle_renewal", renewalId));
+}
+
+/**
+ * A file on a service (V.1a, C147): the plate of the vehicle the service belongs to (looked up from the
+ * service itself, never taken from the request) and the service's date. Throws when the service is not there,
+ * which is also what stops a file being attached to a record that does not exist.
+ */
+export async function serviceFileName(serviceId: string, mimeType: string): Promise<string> {
+  const [row] = await db
+    .select({ date: vehicleServices.serviceDate, registrationNumber: vehicles.registrationNumber, nickname: vehicles.nickname })
+    .from(vehicleServices)
+    .innerJoin(vehicles, eq(vehicles.id, vehicleServices.vehicleId))
+    .where(eq(vehicleServices.id, serviceId));
+  if (!row) throw new ValidationError("That service could not be found.");
+  return docFileName({ vehicle: vehiclePart(row), kind: SERVICE_FILE_KIND, date: row.date, ext: extensionFor(mimeType) }, await takenNames("vehicle_service", serviceId));
 }
 
 /** A Documents upload: the vehicle's plate and what the form asked (kind and date). */

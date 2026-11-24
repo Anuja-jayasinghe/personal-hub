@@ -316,6 +316,18 @@ Goal: every change is checked automatically, releases get a version without hand
 | D.1 | #187 | ✅ *(C138)* **Documents by category**: every paper of a vehicle in one place (renewal files included; the dates and days of licenses, emission tests and insurance come only from renewals), current paper first with earlier ones and gaps on a timeline, most urgent category first, an on-page viewer with Renew, Download, replace and delete, category chips on the phone, adding from a category with the kind preset |
 | D.2 | #211 | ✅ *(C145)* **Tiles open their paper**: each at-a-glance tile with something in it opens its current (or newest) paper in the viewer; categories with nothing get no tile; the label says days left, the book's printed month or the paper count |
 
+## Phase V — The vehicle page restructure (issue #219, the owner-approved design)
+
+Goal: one place to add anything to a vehicle, an oil-change reminder that sets itself, and invoices on services. Built in pieces; each piece is its own issue and pull request.
+
+| Piece | Issue | What |
+|-------|-------|------|
+| V.1a | #220 | ✅ *(C147)* **The Add button, the oil-change marker and files on services**: one "+ Add" next to Manage ("What happened?": a paper, a service, an odometer reading or a note, each only for a person who may do it, no button at all for someone who may add none); the next-oil-change date from three new rules in Settings (months, km, which service types) shown as a card in the service form, stored in the service's own next-due date; invoices on services (`vehicle_service` files, Vehicle documents access, named `PLATE_service_<date>`), deleted with the service and with the vehicle. The per-tab Add buttons stay until V.3. Service files in the Documents tab wait for V.4 |
+| V.1b | | The new paper flow behind "A paper" (the paper makes its record too, all-or-nothing with the service invoice) |
+| V.2 | | The km glance beside the oil-change date |
+| V.3 | | One Overview, the per-tab Add buttons and the tabs go |
+| V.4 | | Service files in the Documents tab; the service detail |
+
 ## Later (each needs its own decision)
 
 - **Vehicle photo treatment** (C104): make an uploaded photo look its best in-house (no outside AI service), for example cut-out, lighting and the stage around it. For now the photo is shown as it is.

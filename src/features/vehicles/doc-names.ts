@@ -63,6 +63,13 @@ export function renewalKind(typeLabel: string): string {
   return slug(t).toLowerCase() || "renewal";
 }
 
+/**
+ * The type part of a file on a service (V.1a, C147): `PLATE_service_2026-06-14.pdf`. The service's own type
+ * ("Oil change") is not in the name, so a name never depends on text someone typed; a second file of the same
+ * service gets `_2`, `_3` through `docFileName`.
+ */
+export const SERVICE_FILE_KIND = "service";
+
 /** The type part for a Documents upload: the kind, or for "Other" the words of its title. */
 export function documentKind(kind: DocKind, title: string | null): string {
   if (kind !== "other") return kind;

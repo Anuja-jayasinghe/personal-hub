@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageTopBar } from "@/components/shell/page-header";
 import { SriLankaPlate } from "@/components/vehicles/sl-plate";
+import { VehicleAddMenu } from "@/components/vehicles/vehicle-add-menu";
 import { VehicleManageMenu } from "@/components/vehicles/vehicle-manage-menu";
 import { vehiclePath } from "@/features/vehicles/plate";
 import { notFound, redirect } from "next/navigation";
@@ -18,7 +19,10 @@ import { DocumentsTab } from "@/components/vehicles/documents-tab";
 import { VehicleSummary } from "@/components/vehicles/vehicle-summary";
 import { VehicleCover } from "@/components/vehicles/vehicle-cover";
 import { appConfig, isModuleEnabled } from "@/config/app.config";
+import { getRules } from "@/features/settings/queries";
+import { addChoices, hasAddChoice } from "@/features/vehicles/add-menu";
 import { getVehicle } from "@/features/vehicles/queries";
+import { todayInAppTz } from "@/lib/format";
 import { findVehicleType } from "@/features/vehicles/vehicle-type";
 
 export const metadata: Metadata = { title: "Vehicle" };
@@ -61,6 +65,10 @@ async function VehicleContent({
   const current = tabs.find((t) => t.key === tab) ?? tabs[0];
   const subtitle = [vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(" ");
   const type = findVehicleType(appConfig.vehicles.types, vehicle.vehicleType);
+  // The one Add button (V.1a, C147): each choice only for a person who may do it, worked out here on the server.
+  const choices = addChoices(access);
+  const rules = await getRules();
+  const today = todayInAppTz(); // after the queries, which opt this render into request time
 
   return (
     <>
@@ -81,7 +89,18 @@ async function VehicleContent({
           alt={`${vehicle.nickname} photo`}
           className="mx-auto h-44 w-full max-w-xl md:h-56"
         />
-        <div className="flex justify-end px-4 pb-3 md:px-6">
+        <div className="flex items-center gap-2.5 px-4 pb-3 md:justify-end md:px-6">
+          {hasAddChoice(choices) ? (
+            <VehicleAddMenu
+              vehicleId={vehicle.id}
+              vehicleName={vehicle.nickname}
+              namePrefix={vehiclePart(vehicle)}
+              choices={choices}
+              serviceTypes={appConfig.vehicles.serviceTypes}
+              defaultDate={today}
+              oil={{ oilChangeMonths: rules.oilChangeMonths, oilChangeKm: rules.oilChangeKm, oilChangeTypes: rules.oilChangeTypes }}
+            />
+          ) : null}
           {allows(access, "vehicles", "edit") ? <VehicleManageMenu vehicle={vehicle} /> : null}
         </div>
       </section>
@@ -118,7 +137,12 @@ async function VehicleContent({
           <OdometerSection vehicleId={vehicle.id} vehicleName={vehicle.nickname} ignoreEmissionOdometer={vehicle.ignoreEmissionOdometer} />
         </div>
       ) : current.key === "services" ? (
-        <ServicesTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} />
+        <ServicesTab
+          vehicleId={vehicle.id}
+          vehicleName={vehicle.nickname}
+          namePrefix={vehiclePart(vehicle)}
+          docs={{ canSee: allows(access, "vehicle_documents", "see"), canAdd: allows(access, "vehicle_documents", "add") }}
+        />
       ) : current.key === "renewals" ? (
         <RenewalsTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} namePrefix={vehiclePart(vehicle)} askOdometer={!vehicle.ignoreEmissionOdometer} showDocuments={allows(access, "vehicle_documents", "see")} />
       ) : (

@@ -21,8 +21,11 @@ export function PopoverButton({
   variant = "outline",
   icon,
   align = "start",
+  className,
   children,
 }: {
+  /** Extra classes for the button itself (the vehicle header sizes Manage to sit beside Add). */
+  className?: string;
   label?: string;
   ariaLabel?: string;
   variant?: "outline" | "ghost" | "default";
@@ -34,7 +37,7 @@ export function PopoverButton({
   const close = () => setOpen(false);
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger render={<Button type="button" variant={variant} size={label ? "sm" : "icon-sm"} aria-label={ariaLabel} />}>
+      <PopoverTrigger render={<Button type="button" variant={variant} size={label ? "sm" : "icon-sm"} aria-label={ariaLabel} className={className} />}>
         {icon === "plus" ? <Plus aria-hidden /> : null}
         {label}
         {icon === "more" ? <MoreHorizontal aria-hidden /> : null}

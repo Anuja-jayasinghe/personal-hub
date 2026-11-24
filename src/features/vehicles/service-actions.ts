@@ -7,6 +7,9 @@ import { vehicleServices, vehicles } from "@/db/schema";
 import { toActionState } from "@/features/shared/errors";
 import type { ActionState } from "@/features/shared/types";
 import { idFrom, ValidationError } from "@/features/shared/validation";
+import { deleteSharedDataOf } from "@/features/shared/cleanup";
+import { loadRules } from "@/features/settings/queries";
+import { nextDueToStore } from "./service-logic";
 import { parseService } from "./service-validate";
 import { requireUser } from "@/lib/auth";
 
@@ -31,9 +34,13 @@ export async function createService(_prev: ActionState, fd: FormData): Promise<A
     const [vehicle] = await db.select({ id: vehicles.id }).from(vehicles).where(eq(vehicles.id, vehicleId));
     if (!vehicle) throw new ValidationError("That vehicle could not be found.");
     const f = fieldsFrom(fd);
-    await db.insert(vehicleServices).values({ vehicleId, ...f });
+    // The oil-change marker (V.1a, C147) is filled in here too, never trusting the form alone: a service of one of
+    // the rule's types with no date typed gets its marker, unless the "remind me" switch was turned off.
+    const remind = fd.get("markerRemind") !== "off";
+    const nextDueDate = nextDueToStore(f, remind, await loadRules(db));
+    const [row] = await db.insert(vehicleServices).values({ vehicleId, ...f, nextDueDate }).returning({ id: vehicleServices.id });
     refresh();
-    return { ok: true };
+    return { ok: true, id: row.id };
   } catch (err) {
     return toActionState(err);
   }
@@ -45,6 +52,7 @@ export async function updateService(_prev: ActionState, fd: FormData): Promise<A
     const id = idFrom(fd);
     const [existing] = await db.select().from(vehicleServices).where(eq(vehicleServices.id, id));
     if (!existing) throw new ValidationError("That service record could not be found.");
+    // Editing never recomputes the next due date by itself (V.1a): what the form sends is what is saved.
     const f = fieldsFrom(fd);
     await db.update(vehicleServices).set(f).where(eq(vehicleServices.id, id));
     refresh();
@@ -56,6 +64,9 @@ export async function updateService(_prev: ActionState, fd: FormData): Promise<A
 
 export async function deleteService(fd: FormData): Promise<void> {
   await requireUser({ area: "vehicles", level: "edit" });
-  await db.delete(vehicleServices).where(eq(vehicleServices.id, idFrom(fd)));
+  const id = idFrom(fd);
+  // Its invoices are attachments the database cannot delete along with the row: remove them (files first) before it.
+  await deleteSharedDataOf("vehicle_service", id);
+  await db.delete(vehicleServices).where(eq(vehicleServices.id, id));
   refresh();
 }

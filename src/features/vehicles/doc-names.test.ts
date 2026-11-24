@@ -1,5 +1,25 @@
 import { describe, expect, it } from "vitest";
-import { defaultDocTitle, docFileName, documentKind, extensionFor, parseDocUpload, renewalKind, replacementName, vehiclePart } from "./doc-names";
+import { defaultDocTitle, docFileName, documentKind, extensionFor, parseDocUpload, renewalKind, replacementName, SERVICE_FILE_KIND, vehiclePart } from "./doc-names";
+import { parseHubName } from "./papers";
+
+describe("service files (V.1a)", () => {
+  const parts = { vehicle: "BAA-5678", kind: SERVICE_FILE_KIND, date: "2026-06-14", ext: "pdf" };
+
+  it("names a file on a service PLATE_service_date.ext, never from the uploader's name or the typed service type", () => {
+    expect(docFileName(parts)).toBe("BAA-5678_service_2026-06-14.pdf");
+    expect(docFileName({ ...parts, ext: extensionFor("image/jpeg") })).toBe("BAA-5678_service_2026-06-14.jpg");
+  });
+
+  it("adds _2, _3 when the service already has a file of that name", () => {
+    expect(docFileName(parts, ["BAA-5678_service_2026-06-14.pdf"])).toBe("BAA-5678_service_2026-06-14_2.pdf");
+    expect(docFileName(parts, ["BAA-5678_service_2026-06-14.pdf", "baa-5678_service_2026-06-14_2.PDF"])).toBe("BAA-5678_service_2026-06-14_3.pdf");
+  });
+
+  it("a replacement keeps the hub name, and the name reads back as an 'other' paper dated that day", () => {
+    expect(replacementName("BAA-5678_service_2026-06-14_2.pdf", "jpg", [])).toBe("BAA-5678_service_2026-06-14.jpg");
+    expect(parseHubName("BAA-5678_service_2026-06-14.pdf")).toEqual({ kind: "other", date: "2026-06-14" });
+  });
+});
 
 describe("vehiclePart", () => {
   it("uses the plate without its province", () => {

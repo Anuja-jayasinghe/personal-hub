@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { appConfig } from "@/config/app.config";
 import { attachments, vehicleOdometerReadings, vehicleRenewals, vehicles } from "@/db/schema";
 import { db } from "@/db";
-import { deleteAttachmentsOf, deleteSharedDataOf } from "@/features/shared/cleanup";
+import { deleteAttachmentsOf, deleteServiceDataOfVehicle, deleteSharedDataOf } from "@/features/shared/cleanup";
 import { toActionState } from "@/features/shared/errors";
 import { recordUpload, removeAttachment, uploadedFrom } from "@/features/shared/files";
 import { COVER_TYPE_MESSAGE, COVER_TYPES } from "@/lib/storage";
@@ -111,6 +111,8 @@ export async function deleteVehicle(fd: FormData): Promise<void> {
   // Renewal documents are attachments owned by each renewal, which the database cannot cascade to.
   const renewals = await db.select({ id: vehicleRenewals.id }).from(vehicleRenewals).where(eq(vehicleRenewals.vehicleId, id));
   for (const r of renewals) await deleteAttachmentsOf("vehicle_renewal", r.id);
+  // Likewise a service's invoices (V.1a, C147): the rows go with the vehicle, the files must be removed here.
+  await deleteServiceDataOfVehicle(id);
   await deleteSharedDataOf("vehicle", id);
   await db.delete(vehicles).where(eq(vehicles.id, id)); // services and renewals cascade
   redirect("/vehicles");

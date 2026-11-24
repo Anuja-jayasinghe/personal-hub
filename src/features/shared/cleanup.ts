@@ -1,7 +1,7 @@
 import "server-only";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { attachments, notes, tasks } from "@/db/schema";
+import { attachments, notes, tasks, vehicleServices } from "@/db/schema";
 import type { OwnerType } from "@/lib/owners";
 import { ATTACHMENT_BUCKET, storageClient } from "@/lib/storage";
 
@@ -21,6 +21,15 @@ export async function deleteAttachmentsOf(ownerType: OwnerType, ownerId: string)
   await db
     .delete(attachments)
     .where(and(eq(attachments.ownerType, ownerType), eq(attachments.ownerId, ownerId)));
+}
+
+/**
+ * A vehicle's service records are deleted by the database along with the vehicle, but their invoices are
+ * attachments the database cannot reach (V.1a, C147): delete each service's files, tasks and notes first.
+ */
+export async function deleteServiceDataOfVehicle(vehicleId: string): Promise<void> {
+  const services = await db.select({ id: vehicleServices.id }).from(vehicleServices).where(eq(vehicleServices.vehicleId, vehicleId));
+  for (const s of services) await deleteSharedDataOf("vehicle_service", s.id);
 }
 
 /**

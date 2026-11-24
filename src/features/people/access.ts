@@ -59,6 +59,7 @@ export function areaOfOwner(ownerType: OwnerType | null): Area {
   switch (ownerType) {
     case "vehicle":
     case "vehicle_renewal":
+    case "vehicle_service":
       return "vehicles";
     case "meter":
       return "electricity_readings";
@@ -78,7 +79,7 @@ export function areaOfOwner(ownerType: OwnerType | null): Area {
  * Seeing, adding and deleting a file all use this, so the three can never disagree.
  */
 export function areaOfFile(ownerType: OwnerType | null, isCover = false): Area {
-  if (ownerType === "vehicle_renewal") return "vehicle_documents";
+  if (ownerType === "vehicle_renewal" || ownerType === "vehicle_service") return "vehicle_documents";
   if (ownerType === "vehicle") return isCover ? "vehicles" : "vehicle_documents";
   return areaOfOwner(ownerType);
 }

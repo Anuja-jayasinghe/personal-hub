@@ -4,8 +4,8 @@ import { Minus, Plus } from "lucide-react";
 import { useActionState, useState } from "react";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { initialActionState } from "@/features/shared/types";
-import { saveReminderDays, saveSlabRules } from "@/features/settings/actions";
-import { LEAD_DAY_CHOICES, RULE_LIMITS, type HubRules } from "@/features/settings/rules";
+import { saveOilRules, saveReminderDays, saveSlabRules } from "@/features/settings/actions";
+import { LEAD_DAY_CHOICES, OIL_LIMITS, RULE_LIMITS, type HubRules } from "@/features/settings/rules";
 
 function Saved({ state }: { state: { ok: boolean; error?: string } }) {
   if (state.error) {
@@ -23,11 +23,26 @@ function Saved({ state }: { state: { ok: boolean; error?: string } }) {
 }
 
 /** −, the number in Oxanium, + (DESIGN.md "Steppers"); also typeable. Sends its value under `name`. */
-function Stepper({ name, label, hint, unit, initial }: { name: keyof typeof RULE_LIMITS; label: string; hint: string; unit: string; initial: number }) {
-  const { min, max } = RULE_LIMITS[name];
+function Stepper({
+  name,
+  label,
+  hint,
+  unit,
+  initial,
+  step: size = 1,
+}: {
+  name: keyof typeof RULE_LIMITS | keyof typeof OIL_LIMITS;
+  label: string;
+  hint: string;
+  unit: string;
+  initial: number;
+  /** How much one tap of − or + changes the number. */
+  step?: number;
+}) {
+  const { min, max } = name in RULE_LIMITS ? RULE_LIMITS[name as keyof typeof RULE_LIMITS] : OIL_LIMITS[name as keyof typeof OIL_LIMITS];
   const [value, setValue] = useState(String(initial));
   const n = Number(value);
-  const step = (d: number) => setValue(String(Math.min(max, Math.max(min, (Number.isFinite(n) ? n : initial) + d))));
+  const step = (d: number) => setValue(String(Math.min(max, Math.max(min, (Number.isFinite(n) ? n : initial) + d * size))));
   const btn =
     "flex size-9 items-center justify-center rounded-lg border bg-background text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40";
   return (
@@ -74,6 +89,49 @@ export function SlabRulesForm({ rules }: { rules: HubRules }) {
         <Saved state={state} />
       </div>
     </form>
+  );
+}
+
+/**
+ * The oil-change marker (V.1a, C147): how many months after an oil-change service the next one is due, the km
+ * shown beside that date (a glance only, nothing reminds by km, C24), and which service types count. Rarely
+ * changed, so it is tucked under one quiet row instead of always open.
+ */
+export function OilChangeForm({ rules }: { rules: HubRules }) {
+  const [state, action] = useActionState(saveOilRules, initialActionState);
+  return (
+    <details className="group/oil rounded-2xl border bg-card px-4">
+      <summary className="flex min-h-14 cursor-pointer list-none items-center gap-3 outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5 py-3">
+          <span className="text-[15px] font-semibold">Next oil change</span>
+          <span className="text-[12.5px] text-muted-foreground">
+            {rules.oilChangeMonths} {rules.oilChangeMonths === 1 ? "month" : "months"} or {rules.oilChangeKm.toLocaleString("en-US")} km after {rules.oilChangeTypes.join(", ").toLowerCase()}
+          </span>
+        </span>
+        <span className="text-sm font-medium text-primary group-open/oil:hidden">Change</span>
+        <span className="hidden text-sm font-medium text-muted-foreground group-open/oil:inline">Close</span>
+      </summary>
+      <form action={action} className="flex flex-col gap-3 pb-4">
+        <div className="flex flex-col divide-y divide-raised">
+          <Stepper name="oilChangeMonths" label="Due after" hint="the reminder date, from the service date" unit="months" initial={rules.oilChangeMonths} />
+          <Stepper name="oilChangeKm" label="Or after" hint="shown beside the date; nothing reminds by km" unit="km" initial={rules.oilChangeKm} step={500} />
+        </div>
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="font-semibold">Services that set it</span>
+          <input
+            name="oilChangeTypes"
+            defaultValue={rules.oilChangeTypes.join(", ")}
+            maxLength={400}
+            className="h-11 rounded-lg border bg-background px-3 text-sm outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+          />
+          <span className="text-xs text-muted-foreground">Service types, separated by commas. Capital letters and spaces do not matter.</span>
+        </label>
+        <div className="flex flex-wrap items-center gap-3">
+          <SubmitButton pendingLabel="Saving…">Save the oil-change rule</SubmitButton>
+          <Saved state={state} />
+        </div>
+      </form>
+    </details>
   );
 }
 
