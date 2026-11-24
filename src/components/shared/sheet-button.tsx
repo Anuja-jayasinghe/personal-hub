@@ -91,7 +91,7 @@ export function SheetBody({
   return (
     <SheetContent
       side="bottom"
-      className="mx-auto max-h-[92svh] w-full max-w-xl gap-0 overflow-y-auto rounded-t-[28px] border-x-0 border-t border-border bg-card px-4 pt-2.5 pb-[calc(1.75rem+env(safe-area-inset-bottom))] md:my-auto md:max-h-[86svh] md:max-w-2xl md:rounded-[28px] md:border md:px-8 md:pt-7 md:pb-8 md:data-[side=bottom]:top-0 md:data-[side=bottom]:h-fit md:data-[side=bottom]:bottom-0"
+      className="mx-auto max-h-[92svh] w-full max-w-xl gap-0 overflow-y-auto overscroll-contain rounded-t-[28px] border-x-0 border-t border-border bg-card px-4 pt-2.5 pb-[calc(1.75rem+env(safe-area-inset-bottom))] md:my-auto md:max-h-[86svh] md:max-w-2xl md:rounded-[28px] md:border md:px-8 md:pt-7 md:pb-8 md:data-[side=bottom]:top-0 md:data-[side=bottom]:h-fit md:data-[side=bottom]:bottom-0"
     >
       <span aria-hidden className="mx-auto mb-3 block h-[5px] w-10 rounded-full bg-border md:hidden" />
       <p className="font-mono text-[10.5px] tracking-[0.14em] text-primary uppercase">{crumb}</p>

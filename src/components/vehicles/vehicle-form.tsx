@@ -48,7 +48,7 @@ export function VehicleForm({ action, fuelTypes, vehicleTypes, vehicle }: Props)
 
       <label className={labelClass}>
         <span className={labelTextClass}>Registration number (optional)</span>
-        <Input name="registrationNumber" maxLength={20} defaultValue={vehicle?.registrationNumber ?? ""} placeholder="e.g. CAB 1234" />
+        <Input name="registrationNumber" maxLength={20} autoCapitalize="characters" autoCorrect="off" spellCheck={false} defaultValue={vehicle?.registrationNumber ?? ""} placeholder="e.g. CAB 1234" />
       </label>
 
       <div className="grid gap-4 sm:grid-cols-2">

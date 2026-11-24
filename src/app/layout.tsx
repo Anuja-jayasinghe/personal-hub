@@ -15,13 +15,17 @@ export const metadata: Metadata = {
   description: appConfig.description,
 };
 
-/** Browser bar colour follows the theme: dark by default (C92), light when the phone is in light mode. */
+/**
+ * The browser bar colour starts as the dark one (the app opens dark, C92); `ThemeColorSync` (providers) switches
+ * it to the light one when the hub is in light mode. A `prefers-color-scheme` pair would follow the phone instead
+ * of the hub's own Dark / Light / Follow phone choice, so a dark hub on a light phone got a white bar.
+ * `viewportFit: "cover"` lets the page use the whole screen; the shell pads for the notch and the home
+ * indicator with `env(safe-area-inset-*)` (issue #42).
+ */
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: appConfig.themeColors.light },
-    { media: "(prefers-color-scheme: dark)", color: appConfig.themeColors.dark },
-  ],
+  themeColor: appConfig.themeColors.dark,
   colorScheme: "dark light",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

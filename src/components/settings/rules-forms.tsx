@@ -44,10 +44,10 @@ function Stepper({
   const n = Number(value);
   const step = (d: number) => setValue(String(Math.min(max, Math.max(min, (Number.isFinite(n) ? n : initial) + d * size))));
   const btn =
-    "flex size-9 items-center justify-center rounded-lg border bg-background text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40";
+    "flex size-11 items-center justify-center rounded-lg border bg-background text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40";
   return (
     <div className="flex min-h-16 flex-wrap items-center gap-3 py-2">
-      <label htmlFor={`rule-${name}`} className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <label htmlFor={`rule-${name}`} className="flex min-w-44 flex-1 flex-col gap-0.5">
         <span className="text-[15px] font-semibold">{label}</span>
         <span className="text-[12.5px] text-muted-foreground">{hint}</span>
       </label>
@@ -61,7 +61,7 @@ function Stepper({
           inputMode="numeric"
           value={value}
           onChange={(e) => setValue(e.target.value.replace(/[^0-9]/g, ""))}
-          className="h-10 w-16 rounded-lg border bg-background text-center font-display text-xl font-semibold tabular-nums outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+          className="h-11 w-16 rounded-lg border bg-background text-center font-display text-xl font-semibold tabular-nums outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
         />
         <button type="button" className={btn} onClick={() => step(1)} disabled={n >= max} aria-label={`${label}: one more`}>
           <Plus className="size-4" aria-hidden />
@@ -122,7 +122,7 @@ export function OilChangeForm({ rules }: { rules: HubRules }) {
             name="oilChangeTypes"
             defaultValue={rules.oilChangeTypes.join(", ")}
             maxLength={400}
-            className="h-11 rounded-lg border bg-background px-3 text-sm outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary"
+            className="h-11 rounded-lg border bg-background px-3 text-base outline-none focus-visible:border-primary md:text-sm focus-visible:ring-1 focus-visible:ring-primary"
           />
           <span className="text-xs text-muted-foreground">Service types, separated by commas. Capital letters and spaces do not matter.</span>
         </label>
@@ -156,7 +156,7 @@ export function ReminderDaysForm({ rules }: { rules: HubRules }) {
                 type="button"
                 aria-pressed={on}
                 onClick={() => toggle(d)}
-                className={`min-h-9 rounded-full border px-3.5 text-[13px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                className={`hit-44 min-h-9 rounded-full border px-3.5 text-[13px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   on ? "border-primary/50 bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"
                 }`}
               >

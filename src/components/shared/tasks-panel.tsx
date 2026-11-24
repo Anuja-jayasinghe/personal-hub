@@ -78,7 +78,7 @@ function TickForm({ id, done, title }: { id: string; done: boolean; title: strin
       <button
         type="submit"
         aria-label={done ? `Reopen "${title}"` : `Mark "${title}" done`}
-        className={`flex size-7 items-center justify-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+        className={`hit-44 flex size-7 items-center justify-center rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring ${
           done ? "bg-status-ok text-background" : "ring-[1.5px] ring-quiet hover:ring-primary"
         }`}
       >
@@ -128,7 +128,7 @@ function TaskItem({ task, files, today, ownerLabel, showOwner }: { task: Task; f
             ) : null}
             {showOwner && task.ownerType ? (
               ownerLabel ? (
-                <Link href={ownerLabel.href}>
+                <Link href={ownerLabel.href} className="hit-44 rounded-full">
                   <Badge variant="outline">{ownerLabel.label}</Badge>
                 </Link>
               ) : (

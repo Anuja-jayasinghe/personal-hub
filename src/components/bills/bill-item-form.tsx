@@ -25,7 +25,7 @@ const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th"}`;
 
 const selectClass =
-  "h-11 w-full rounded-lg border border-input bg-transparent px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30";
+  "h-11 w-full rounded-lg border border-input bg-transparent px-3 text-base outline-none md:text-sm focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 dark:bg-input/30";
 
 /**
  * Add / edit form for a bill or subscription (createBillItem / updateBillItem). Two shapes (S.5, owner's

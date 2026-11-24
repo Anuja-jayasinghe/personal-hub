@@ -83,7 +83,7 @@ function NoteItem({ note, files, ownerLabel, showOwner }: { note: Note; files: A
             {note.pinned ? <Badge variant="secondary">Pinned</Badge> : null}
             {showOwner && note.ownerType ? (
               ownerLabel ? (
-                <Link href={ownerLabel.href}>
+                <Link href={ownerLabel.href} className="hit-44 rounded-full">
                   <Badge variant="outline">{ownerLabel.label}</Badge>
                 </Link>
               ) : (

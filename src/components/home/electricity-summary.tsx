@@ -31,7 +31,7 @@ export function ElectricitySummary({ snapshot, action }: { snapshot: Electricity
   return (
     <section
       aria-label="Electricity"
-      className="relative flex flex-col gap-3.5 rounded-3xl border border-raised bg-[radial-gradient(120%_90%_at_85%_0%,color-mix(in_oklab,var(--primary)_14%,var(--deepest))_0%,var(--deepest)_60%)] p-4 has-[>div>a:hover]:border-primary/50 has-[>div>a:focus-visible]:ring-2 has-[>div>a:focus-visible]:ring-ring md:p-6"
+      className="relative flex flex-col gap-3.5 rounded-3xl border border-border dark:border-raised bg-[radial-gradient(120%_90%_at_85%_0%,color-mix(in_oklab,var(--primary)_14%,var(--deepest))_0%,var(--deepest)_60%)] p-4 has-[>div>a:hover]:border-primary/50 has-[>div>a:focus-visible]:ring-2 has-[>div>a:focus-visible]:ring-ring md:p-6"
     >
       <div className="flex min-h-8 items-center gap-3">
         <Link href="/electricity" aria-label={words} className="font-mono text-[10.5px] tracking-[0.14em] text-label uppercase outline-none after:absolute after:inset-0 after:rounded-3xl">

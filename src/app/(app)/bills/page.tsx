@@ -88,7 +88,7 @@ async function BillsContent({ searchParams }: { searchParams: Promise<{ archived
     <>
       {!showArchived ? (
         <>
-          <section aria-label="To pay now" className="flex flex-col gap-1 rounded-3xl border border-raised bg-deepest p-4 md:p-5">
+          <section aria-label="To pay now" className="flex flex-col gap-1 rounded-3xl border border-border bg-deepest dark:border-raised p-4 md:p-5">
             <div className="flex items-baseline font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">
               <span>To pay now</span>
               <span className="ml-auto">This period and anything late</span>
@@ -100,7 +100,7 @@ async function BillsContent({ searchParams }: { searchParams: Promise<{ archived
             </p>
           </section>
           <NextDaysLine days={occurrenceDays(soon, today, horizon)} windowDays={horizon} title={`Due in the next ${horizon} days`} link={null} />
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-2">
             <UpcomingList occurrences={soon} today={today} days={horizon} />
             <CommitmentsCard data={commitments(bills)} />
           </div>

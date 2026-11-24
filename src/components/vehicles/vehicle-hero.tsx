@@ -30,7 +30,7 @@ export function VehicleHero({
   return (
     <section
       aria-label={vehicle.nickname}
-      className={`relative isolate grid overflow-hidden rounded-3xl border border-raised bg-deepest md:grid-cols-[minmax(0,1fr)_minmax(0,46%)] ${hasPhoto ? "md:min-h-[440px] xl:min-h-[480px]" : "md:min-h-[360px] xl:min-h-[400px]"}`}
+      className={`relative isolate grid overflow-hidden rounded-3xl border border-border bg-deepest dark:border-raised md:grid-cols-[minmax(0,1fr)_minmax(0,46%)] ${hasPhoto ? "md:min-h-[440px] xl:min-h-[480px]" : "md:min-h-[360px] xl:min-h-[400px]"}`}
     >
       {/* The left side's floor: a 14 px dot grid fading to the right and a faint blue glow low on the left (DESIGN.md, Elevation). */}
       <div

@@ -3,7 +3,8 @@ import Link from "next/link";
 import { emptyDot, ledFill, ledText, todayRing, type LedTone } from "@/components/shared/circuit";
 import { titleWithBill } from "@/features/bills/schedule";
 import { byDate, monthGrid, type Occurrence } from "@/features/bills/upcoming";
-import { formatDate, formatMoney } from "@/lib/format";
+import { dayMonthIn } from "@/lib/dates";
+import { formatMoney } from "@/lib/format";
 
 const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const monthTitle = new Intl.DateTimeFormat("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -48,18 +49,18 @@ export function BillsCalendar({
   const allDates = [...new Set([...due.keys(), ...paid.map((p) => p.date)])].sort();
   const toneOf = (entries: Entry[]): LedTone => (entries.some((e) => e.tone === "late") ? "late" : entries.some((e) => e.tone === "due") ? "due" : "paid");
   const navBtn =
-    "inline-flex size-9 items-center justify-center rounded-full border text-muted-foreground outline-none hover:border-primary/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring";
+    "inline-flex size-9 pointer-coarse:size-11 items-center justify-center rounded-full border text-muted-foreground outline-none hover:border-primary/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring";
 
   return (
     <section
       aria-labelledby="calendar-title"
-      className="flex flex-col gap-3 rounded-3xl border border-raised bg-deepest bg-[radial-gradient(var(--card)_1px,transparent_1px)] bg-size-[14px_14px] p-4 md:p-5"
+      className="flex flex-col gap-3 rounded-3xl border border-border bg-deepest dark:border-raised bg-[radial-gradient(var(--card)_1px,transparent_1px)] bg-size-[14px_14px] p-4 md:p-5"
     >
       <div className="flex flex-wrap items-center gap-3">
         <h2 id="calendar-title" className="font-display text-xl font-semibold tracking-tight">
           {monthTitle.format(new Date(`${month}-01T00:00:00Z`))}
         </h2>
-        <span className="flex gap-1.5">
+        <span className="flex gap-2">
           {prevMonth ? (
             <Link href={`/bills?month=${prevMonth}`} scroll={false} className={navBtn} aria-label="Previous month">
               <ChevronLeft className="size-4" aria-hidden />
@@ -134,14 +135,14 @@ export function BillsCalendar({
         <ul className="flex flex-col divide-y divide-raised rounded-2xl border bg-card text-sm">
           {allDates.flatMap((date) =>
             entriesOn(date).map((e) => (
-              <li key={e.key} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 px-3.5 py-2">
-                <Link href={e.href} className="flex min-w-0 basis-full items-center gap-3 font-medium underline-offset-2 hover:underline sm:flex-1 sm:basis-0">
+              <li key={e.key} className="flex flex-wrap items-center gap-x-3 gap-y-0.5 px-3.5 pb-2">
+                <Link href={e.href} className="flex min-h-11 min-w-0 basis-full items-center gap-3 font-medium underline-offset-2 hover:underline sm:flex-1 sm:basis-0">
                   <span aria-hidden className={`size-2 shrink-0 rounded-full ${ledFill[e.tone]}`} />
-                  <span className="truncate">{titleWithBill(e.title, e.billDate)}</span>
+                  <span className="line-clamp-2">{titleWithBill(e.title, e.billDate, today)}</span>
                 </Link>
                 <span className="pl-5 font-mono text-xs text-muted-foreground sm:pl-0">
                   {e.tone === "paid" ? "paid " : e.tone === "late" ? "late, was due " : "due "}
-                  {formatDate(date)}
+                  {dayMonthIn(date, today)}
                   {e.autopay ? " · autopay" : ""}
                   {e.amount !== null ? ` · ${formatMoney(e.amount / 100)}` : ""}
                 </span>

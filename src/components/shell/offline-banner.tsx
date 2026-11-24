@@ -49,7 +49,7 @@ export function OfflineBanner() {
       <button
         type="button"
         onClick={() => router.refresh()}
-        className="min-h-9 shrink-0 rounded-lg px-2.5 font-semibold text-primary outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+        className="hit-44 min-h-9 shrink-0 rounded-lg px-2.5 font-semibold text-primary outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
       >
         Retry
       </button>

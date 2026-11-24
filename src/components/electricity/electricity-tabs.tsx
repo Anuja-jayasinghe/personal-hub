@@ -22,7 +22,7 @@ export function ElectricityTabs({
   const base = archived ? `${basePath}?archived=1` : basePath;
   const join = archived ? "&" : "?";
   const item = (active: boolean) =>
-    `flex min-h-9 items-center gap-2 rounded-[10px] px-3.5 text-sm transition-colors ${
+    `hit-44 flex min-h-9 items-center gap-2 rounded-[10px] px-3.5 text-sm transition-colors ${
       active ? "bg-accent font-semibold text-foreground ring-1 ring-primary/45" : "text-muted-foreground hover:text-foreground"
     }`;
 

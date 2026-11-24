@@ -20,7 +20,7 @@ export function SettingsMenuLinks({ pathname }: { pathname: string | null }) {
             <Link
               href={p.href}
               aria-current={current ? "page" : undefined}
-              className={`flex min-h-10 items-center rounded-lg border px-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              className={`flex min-h-11 items-center rounded-lg border px-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 current ? "border-primary/50 bg-accent text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >

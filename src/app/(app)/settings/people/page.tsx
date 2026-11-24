@@ -61,8 +61,8 @@ function NotificationsForm({ person }: { person: PersonWithAccess }) {
 function Who({ person, note }: { person: PersonWithAccess; note?: string }) {
   return (
     <span className="flex min-w-0 flex-1 flex-col">
-      <span className="truncate text-[15px] font-semibold">{person.name ?? person.email}</span>
-      <span className="truncate text-xs text-muted-foreground">
+      <span className="line-clamp-2 text-[15px] font-semibold break-all">{person.name ?? person.email}</span>
+      <span className="line-clamp-2 text-xs text-muted-foreground">
         {person.name ? `${person.email} · ` : ""}
         {person.lastSeenAt ? `last here ${formatDate(person.lastSeenAt)}` : "has not signed in yet"}
         {note ? ` · ${note}` : ""}
@@ -80,8 +80,8 @@ function InvitedCard({ person }: { person: PersonWithAccess }) {
     <div className={`flex flex-col gap-2 rounded-2xl border bg-card px-4 py-3 ${invite.ended ? "border-status-soon-mark/40" : ""}`}>
       <div className="flex items-center gap-3">
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-[15px] font-semibold">{person.name ?? person.email}</span>
-          {person.name ? <span className="truncate text-xs text-muted-foreground">{person.email}</span> : null}
+          <span className="line-clamp-2 text-[15px] font-semibold break-all">{person.name ?? person.email}</span>
+          {person.name ? <span className="line-clamp-2 text-xs break-all text-muted-foreground">{person.email}</span> : null}
         </span>
         <span className={`rounded-md px-2 py-0.5 font-mono text-[10px] font-semibold tracking-[0.14em] ${invite.ended ? "bg-status-soon-soft text-status-soon" : "bg-accent text-foreground"}`}>
           {invite.ended ? "EXPIRED" : "INVITED"}
@@ -163,7 +163,7 @@ async function PeopleLists() {
               <div className="flex items-center gap-3 rounded-2xl border bg-card px-4 py-3">
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="text-[15px] font-semibold">You</span>
-                  <span className="truncate text-xs text-muted-foreground">{owners.join(", ")}</span>
+                  <span className="line-clamp-2 text-xs text-muted-foreground">{owners.join(", ")}</span>
                 </span>
                 <span className="rounded-md bg-primary px-2 py-0.5 font-mono text-[10px] font-semibold tracking-[0.14em] text-primary-foreground">OWNER</span>
               </div>

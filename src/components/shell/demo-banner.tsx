@@ -2,7 +2,7 @@ import { SignOutButton } from "@clerk/nextjs";
 import Link from "next/link";
 
 const action =
-  "flex min-h-9 shrink-0 items-center rounded-lg px-2.5 font-semibold text-primary outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring";
+  "hit-44 flex min-h-9 shrink-0 items-center rounded-lg px-2.5 font-semibold text-primary outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring";
 
 /**
  * The strip at the top of every page in the demo (S.9, C118), in the offline banner's style: a DEMO tag,

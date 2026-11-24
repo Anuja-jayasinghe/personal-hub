@@ -6,7 +6,7 @@ import { AccountMenu } from "@/components/shell/account-menu";
 /** The J mark on a phone (the rail carries it on desktop), linking to Home (S.1). */
 export function PhoneMark() {
   return (
-    <Link href="/" aria-label="hub, go to Home" className="shrink-0 rounded-md pt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden">
+    <Link href="/" aria-label="hub, go to Home" className="hit-44 shrink-0 rounded-md pt-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden">
       <Logo size={30} decorative />
     </Link>
   );
@@ -63,7 +63,7 @@ function Crumb({ parent }: { parent: { href: string; label: string } }) {
   return (
     <p className="font-mono text-[11px] tracking-[0.12em] text-label uppercase">
       /{" "}
-      <Link href={parent.href} className="rounded-sm outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring">
+      <Link href={parent.href} className="hit-44 rounded-sm outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring">
         {parent.label}
       </Link>{" "}
       /

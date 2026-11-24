@@ -41,10 +41,15 @@ export const clerkAppearance = {
     formButtonPrimary: "min-h-12 text-[15px] font-semibold",
     socialButtonsBlockButton: "min-h-12 shadow-[inset_0_0_0_1px_var(--hub-edge)] hover:bg-raised",
     dividerLine: "bg-border",
-    formFieldInput: "min-h-12 shadow-[inset_0_0_0_1px_var(--hub-edge)] focus:shadow-[inset_0_0_0_1.5px_var(--hub-blue)]",
+    // 16 px text in the boxes: iOS Safari zooms the page in on focus when an input's text is smaller (issue #42).
+    formFieldInput: "min-h-12 text-base shadow-[inset_0_0_0_1px_var(--hub-edge)] focus:shadow-[inset_0_0_0_1.5px_var(--hub-blue)]",
+    otpCodeFieldInput: "text-base",
+    // "Already have an account? Sign in": keep the link on one line and give it a finger-sized tap area.
+    footerActionLink: "inline-flex min-h-11 items-center whitespace-nowrap",
     dividerText: "font-mono text-[10.5px] tracking-[0.14em] uppercase text-label",
     // The profile circle at the top right of each page (S.1): 36px, like the other header buttons.
     userButtonAvatarBox: "size-9",
+    userButtonTrigger: "min-h-11 min-w-11 justify-center",
     formFieldLabel: "text-[13px] font-medium text-muted-foreground",
   },
 } as const;

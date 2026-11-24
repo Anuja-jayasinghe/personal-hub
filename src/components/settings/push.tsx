@@ -83,7 +83,7 @@ export function DeviceView({ state, device, busy, message, onTurnOn, onTurnOff, 
             type="button"
             disabled={busy}
             onClick={onTurnOff}
-            className="min-h-10 text-sm font-medium text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            className="min-h-11 text-sm font-medium text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
           >
             Turn off here
           </button>
@@ -168,7 +168,7 @@ export function DeviceList({ devices, thisHash, busy, onRemove }: { devices: Pus
             disabled={busy}
             onClick={() => onRemove?.(d.id)}
             aria-label={`Remove ${d.label}`}
-            className="flex size-10 items-center justify-center rounded-lg text-quiet outline-none hover:bg-raised hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+            className="flex size-11 items-center justify-center rounded-lg text-quiet outline-none hover:bg-raised hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
           >
             <X className="size-4" aria-hidden />
           </button>

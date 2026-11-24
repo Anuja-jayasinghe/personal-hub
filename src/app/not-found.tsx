@@ -20,10 +20,10 @@ const secondary =
 export default function NotFound() {
   return (
     <main
-      className="flex flex-1 flex-col px-4 py-6 md:px-16 lg:px-24"
+      className="flex flex-1 flex-col px-4 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] md:px-16 lg:px-24"
       style={{ backgroundImage: "radial-gradient(60% 70% at 70% 45%, color-mix(in oklab, var(--primary) 9%, transparent) 0%, transparent 65%)" }}
     >
-      <Link href="/" className="self-start rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <Link href="/" className="hit-44 self-start rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <Logo size={34} />
       </Link>
       <div className="m-auto grid w-full max-w-6xl items-center gap-8 py-8 md:grid-cols-2 md:gap-10">
@@ -47,10 +47,10 @@ export default function NotFound() {
             <GoBackButton className={secondary} />
           </div>
           {enabledModules.length > 0 ? (
-            <nav aria-label="Jump to" className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+            <nav aria-label="Jump to" className="mt-6 flex flex-wrap items-center gap-x-5 text-sm">
               <span className="font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">Or jump to</span>
               {enabledModules.map((m) => (
-                <Link key={m.key} href={m.href} className="rounded-sm font-semibold text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
+                <Link key={m.key} href={m.href} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm font-semibold text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
                   {m.navLabel}
                 </Link>
               ))}
