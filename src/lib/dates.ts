@@ -55,6 +55,11 @@ export function todayIn(timeZone: string, now: Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
 }
 
+/** The hour of day (0 to 23) it currently is in `timeZone` at the instant `now`. */
+export function hourIn(timeZone: string, now: Date): number {
+  return Number(new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", hourCycle: "h23" }).format(now));
+}
+
 /** The calendar year of an instant in `timeZone` (e.g. a completion time as the owner would date it). */
 export function yearOfInstant(instant: Date, timeZone: string): number {
   return Number(todayIn(timeZone, instant).slice(0, 4));

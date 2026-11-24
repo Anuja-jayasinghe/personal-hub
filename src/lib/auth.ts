@@ -2,11 +2,13 @@ import "server-only";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { after } from "next/server";
 import { cache } from "react";
 import { db } from "@/db";
 import { accessGrants, people } from "@/db/schema";
 import { accessFromGrants, allows, AREAS, type Access, type Area, type Level } from "@/features/people/access";
 import { ValidationError } from "@/features/shared/validation";
+import { safeErrorSummary } from "./errors";
 import { isAllowedEmail, parseAllowedEmails } from "./allowed-emails";
 
 /**
@@ -26,6 +28,29 @@ export type AuthState =
   | { status: "not-configured" };
 
 const SEEN_EVERY_MS = 60 * 60 * 1000;
+
+/**
+ * Tells the owners that someone is waiting for approval (Notifications N.4, C142), right after the pending
+ * person is first recorded. It runs after the response (`after()`), so it never delays or breaks sign-in:
+ * any failure is swallowed and only its name and code are logged. It is reached only from the line that
+ * inserts into the REAL people table for a Clerk-verified person, never for a signed-out visitor or for
+ * someone already recorded, and it gets the real client from here (where `@/db` is allowed) instead of
+ * `readDb()`, so the demo database is never involved and a demo visitor cannot cause a notice.
+ */
+function announceAccessRequest(): void {
+  try {
+    after(async () => {
+      try {
+        const { notifyAccessRequest } = await import("@/features/notifications/access-request");
+        await notifyAccessRequest(db);
+      } catch (err) {
+        console.error(`Could not announce a sign-up request: ${safeErrorSummary(err)}`);
+      }
+    });
+  } catch (err) {
+    console.error(`Could not schedule the sign-up notice: ${safeErrorSummary(err)}`);
+  }
+}
 
 /** Memoised per request, so a page and the actions it calls ask Clerk and the database at most once. */
 export const getAuthState = cache(async (): Promise<AuthState> => {
@@ -51,7 +76,13 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
   const [person] = await db.select().from(people).where(eq(people.email, address));
   if (!person) {
     // Signed in by themselves: they wait for the owner's approval (S.8; a demo comes later).
-    await db.insert(people).values({ email: address, status: "pending", lastSeenAt: new Date() }).onConflictDoNothing();
+    const created = await db
+      .insert(people)
+      .values({ email: address, status: "pending", lastSeenAt: new Date() })
+      .onConflictDoNothing()
+      .returning({ id: people.id });
+    // Only the request that really recorded the person tells the owners (N.4, C142): a second sign-in finds the row.
+    if (created.length > 0) announceAccessRequest();
     return { status: "pending", email: address };
   }
   if (person.status === "pending") return { status: "pending", email: address };

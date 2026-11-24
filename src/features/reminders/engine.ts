@@ -113,3 +113,37 @@ export type ReminderSource = {
   label: string;
   load: (from?: SourceContext) => Promise<ReminderItem[]>;
 };
+
+/**
+ * Something that is happening NOW rather than coming due (Notifications N.4, DECISIONS C142): a meter
+ * close to its slab limit, a meter reading overdue, someone waiting for sign-up approval. Events are
+ * never shown on the Reminders page or Home (those list dated items only): only the notification
+ * planner reads them, from `noticeSources`. Their words are already safe: never an amount, a plate, a
+ * document number, free text or a person's name or email.
+ */
+export type NoticeEvent = {
+  /** Which kind it is: a key of NOTIFICATION_STEPS in src/features/notifications/steps.ts. */
+  event: "slab-near" | "slab-over" | "reading-due" | "access-request";
+  /**
+   * Its dedupe key, unique per recipient: a notice is never sent twice for the same key. It names the
+   * thing and its round: `slab:<meter>:near:<cycle start>`, `reading-due:<meter>:<last reading date>`,
+   * `access-request:<person>`.
+   */
+  key: string;
+  /** The day it is about (the cycle's start, the last reading, the day of the request): logged as the notice's date. */
+  anchor: string;
+  /** The first and last day ("YYYY-MM-DD") it may be sent: a missed run catches up inside the window. */
+  from: string;
+  until: string;
+  /** Where it opens in the app: a path on the hub. */
+  href: string;
+  title: string;
+  body: string;
+};
+
+/** A module's events for the notification planner (never the Reminders page). Register it in sources.ts under `noticeSources`. */
+export type NoticeSource = {
+  key: string;
+  label: string;
+  load: (from?: SourceContext) => Promise<NoticeEvent[]>;
+};

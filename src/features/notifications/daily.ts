@@ -2,15 +2,15 @@ import { eq } from "drizzle-orm";
 import { appConfig } from "@/config/app.config";
 import type { Db } from "@/db/read";
 import { appSettings } from "@/db/schema";
-import type { ReminderSource } from "@/features/reminders/engine";
-import { loadSources, reminderSources } from "@/features/reminders/sources";
+import type { NoticeSource, ReminderSource } from "@/features/reminders/engine";
+import { loadSources, noticeSources as defaultNoticeSources, reminderSources } from "@/features/reminders/sources";
 import { todayIn } from "@/lib/dates";
 import { safeErrorSummary } from "@/lib/errors";
 import { channelModes, NOTIFICATIONS_SETTINGS_KEY, parseSwitches, SENDERS, type ChannelModes, type ChannelSender } from "./channels";
 import { channelsUsedOn, pruneLog, readLog, rowCounts, usedKeysFrom, writeMessage } from "./log";
 import { planNotifications } from "./planner";
 import { clearLoggedGone, pushGoneNotices, withGoneNotices } from "./push/gone";
-import { itemsFor, ownerRecipients } from "./recipients";
+import { eventsFor, itemsFor, ownerRecipients } from "./recipients";
 import { CHANNELS, type Channel } from "./steps";
 
 /**
@@ -27,6 +27,8 @@ export type DailyDeps = {
   now: Date;
   allowedEmails: string | undefined;
   sources?: readonly ReminderSource[];
+  /** Events happening now (N.4): a slab limit, a reading overdue, a sign-up request. */
+  noticeSources?: readonly NoticeSource[];
   senders?: Record<Channel, ChannelSender>;
 };
 
@@ -37,6 +39,8 @@ export type RunReport = {
   /** Recipients whose part of the run threw; the others still ran. */
   failedRecipients: number;
   items: number;
+  /** Events happening now (N.4) from the sources, before the planner picks the ones due. */
+  events: number;
   failedSources: number;
   notices: Record<Channel, number>;
   messages: Record<Channel, number>;
@@ -48,14 +52,16 @@ export type RunReport = {
   pruned: number;
 };
 
-export async function runDaily({ db, now, allowedEmails, sources = reminderSources, senders = SENDERS }: DailyDeps): Promise<RunReport> {
+export async function runDaily({ db, now, allowedEmails, sources = reminderSources, noticeSources = defaultNoticeSources, senders = SENDERS }: DailyDeps): Promise<RunReport> {
   const today = todayIn(appConfig.timeZone, now);
   const [setting] = await db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, NOTIFICATIONS_SETTINGS_KEY));
   const modes = channelModes(parseSwitches(setting?.value ?? null), senders);
   const recipients = ownerRecipients(allowedEmails);
 
   const pruned = await pruneLog(db, now);
-  const { loaded, failedSources } = await loadSources(sources, { db, today });
+  const { loaded, failedSources: failedItemSources } = await loadSources(sources, { db, today });
+  const { loaded: loadedEvents, failedSources: failedEventSources } = await loadSources(noticeSources, { db, today });
+  const failedSources = [...failedItemSources, ...failedEventSources];
 
   const report: RunReport = {
     today,
@@ -63,6 +69,7 @@ export async function runDaily({ db, now, allowedEmails, sources = reminderSourc
     recipients: recipients.length,
     failedRecipients: 0,
     items: loaded.reduce((n, l) => n + l.items.length, 0),
+    events: loadedEvents.reduce((n, l) => n + l.items.length, 0),
     failedSources: failedSources.length,
     notices: { email: 0, push: 0 },
     messages: { email: 0, push: 0 },
@@ -79,6 +86,7 @@ export async function runDaily({ db, now, allowedEmails, sources = reminderSourc
       const plan = planNotifications({
         recipient: recipient.email,
         items: itemsFor(recipient, loaded),
+        events: eventsFor(recipient, loadedEvents),
         today,
         usedKeys: usedKeysFrom(log, modes),
         channelsUsedToday: usedToday,
