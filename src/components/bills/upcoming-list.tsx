@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { describeDays } from "@/features/reminders/engine";
+import { billDayMeta } from "@/features/bills/schedule";
 import { daysUntil, type Occurrence } from "@/features/bills/upcoming";
 import { formatDate, formatMoney } from "@/lib/format";
 
@@ -15,8 +16,14 @@ function UpcomingRow({ o, today, first }: { o: Occurrence; today: string; first:
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[15px] font-semibold">{o.title}</span>
           <span className="block truncate font-mono text-[10.5px] tracking-wide text-label uppercase">
-            {o.kind === "electricity" ? "Electricity" : o.kind === "subscription" ? "Subscription" : "Bill"}
-            {o.autopay ? " · autopay" : ""} · {formatDate(o.date)}
+            {o.billDate ? (
+              billDayMeta(o.billDate, o.date)
+            ) : (
+              <>
+                {o.kind === "electricity" ? "Electricity" : o.kind === "subscription" ? "Subscription" : "Bill"}
+                {o.autopay ? " · autopay" : ""} · {formatDate(o.date)}
+              </>
+            )}
           </span>
         </span>
         <span className="flex shrink-0 flex-col items-end gap-0.5">

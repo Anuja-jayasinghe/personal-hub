@@ -1,6 +1,6 @@
 import "server-only";
 import { listBillItems } from "@/features/bills/queries";
-import { rollForward } from "@/features/bills/schedule";
+import { payableFrom, rollForward } from "@/features/bills/schedule";
 import { formatMoney, todayInAppTz } from "@/lib/format";
 import type { ReminderItem, ReminderSource } from "../engine";
 
@@ -23,6 +23,9 @@ export const billItemsSource: ReminderSource = {
     return items.flatMap((item): ReminderItem[] => {
       const dueDate = item.autopay ? rollForward(item, today) : item.nextDueDate;
       if (!dueDate) return [];
+      // A monthly bill is nothing to act on until its bill has arrived and can be paid (owner, 2026-11-24).
+      const from = item.autopay ? null : payableFrom(item, dueDate);
+      if (from !== null && from > today) return [];
       const amount = item.amount !== null ? ` · ${formatMoney(Number(item.amount))}` : "";
       return [
         {

@@ -16,16 +16,16 @@ const dates = (os: { date: string }[]) => os.map((o) => o.date);
 
 describe("occurrencesOf", () => {
   it("lists a recurring item's dates up to the limit", () => {
-    expect(dates(occurrencesOf(item({ id: "a" }), TODAY, "2027-01-31"))).toEqual(["2026-11-20", "2026-12-20", "2027-01-20"]);
+    expect(dates(occurrencesOf(item({ id: "a", kind: "subscription" }), TODAY, "2027-01-31"))).toEqual(["2026-11-20", "2026-12-20", "2027-01-20"]);
   });
 
   it("keeps the anchor day through short months", () => {
-    const os = occurrencesOf(item({ id: "a", nextDueDate: "2026-11-30", anchorDay: 31 }), TODAY, "2027-03-31");
+    const os = occurrencesOf(item({ id: "a", kind: "subscription", nextDueDate: "2026-11-30", anchorDay: 31 }), TODAY, "2027-03-31");
     expect(dates(os)).toEqual(["2026-11-30", "2026-12-31", "2027-01-31", "2027-02-28", "2027-03-31"]);
   });
 
   it("counts a past due date once as overdue, then carries on from today", () => {
-    const os = occurrencesOf(item({ id: "a", nextDueDate: "2026-08-20", anchorDay: 20 }), TODAY, "2026-12-31");
+    const os = occurrencesOf(item({ id: "a", kind: "subscription", nextDueDate: "2026-08-20", anchorDay: 20 }), TODAY, "2026-12-31");
     expect(os.map((o) => [o.date, o.overdue])).toEqual([
       ["2026-08-20", true],
       ["2026-11-20", false],
@@ -53,6 +53,56 @@ describe("occurrencesOf", () => {
 
   it("is empty when nothing falls inside the limit", () => {
     expect(occurrencesOf(item({ id: "a", nextDueDate: "2027-05-01" }), TODAY, "2026-12-31")).toEqual([]);
+  });
+});
+
+describe("a monthly bill is not shown before it can be paid", () => {
+  // SLT-style: the bill arrives on the 6th and is due by the next 6th. After the November bill is paid on
+  // 24 Nov the item is due 6 Jan, but that bill (the December one) only exists once 6 Dec has passed.
+  const slt = (over: Partial<BillLike> = {}) => item({ id: "slt", nextDueDate: "2027-01-06", anchorDay: 6, amount: 750000, ...over });
+
+  it("shows nothing for the next bill until its bill day has passed", () => {
+    expect(occurrencesOf(slt(), "2026-11-24", "2027-03-31")).toEqual([]);
+    expect(occurrencesOf(slt(), "2026-12-06", "2027-03-31")).toEqual([]); // processed that day
+    expect(dates(occurrencesOf(slt(), "2026-12-07", "2027-03-31"))).toEqual(["2027-01-06"]); // payable from the 7th
+  });
+
+  it("shows the bill that has arrived and is still to pay (due by the next bill day)", () => {
+    expect(dates(occurrencesOf(slt({ nextDueDate: "2026-12-06" }), "2026-11-24", "2027-03-31"))).toEqual(["2026-12-06"]);
+    expect(dates(occurrencesOf(slt({ nextDueDate: "2026-12-06" }), "2026-11-07", "2027-03-31"))).toEqual(["2026-12-06"]);
+    expect(occurrencesOf(slt({ nextDueDate: "2026-12-06" }), "2026-11-06", "2027-03-31")).toEqual([]);
+  });
+
+  it("never hides a late bill, and still waits for the next one", () => {
+    // the October bill (due 6 Nov) is late; the November bill has arrived (due 6 Dec); the December one has not
+    const os = occurrencesOf(slt({ nextDueDate: "2026-11-06" }), "2026-11-24", "2027-03-31");
+    expect(os.map((o) => [o.date, o.overdue])).toEqual([["2026-11-06", true], ["2026-12-06", false]]);
+  });
+
+  it("keeps the anchor day through short months", () => {
+    // due 28 Feb (anchor 31): its bill day was 31 Jan, so it is payable from 1 Feb
+    expect(occurrencesOf(slt({ nextDueDate: "2027-02-28", anchorDay: 31 }), "2027-01-31", "2027-03-31")).toEqual([]);
+    expect(dates(occurrencesOf(slt({ nextDueDate: "2027-02-28", anchorDay: 31 }), "2027-02-01", "2027-03-31"))).toEqual(["2027-02-28"]);
+  });
+
+  it("does not apply to subscriptions, autopay or other frequencies, which are still shown ahead", () => {
+    expect(dates(occurrencesOf(slt({ kind: "subscription" }), "2026-11-24", "2027-01-31"))).toEqual(["2027-01-06"]);
+    expect(dates(occurrencesOf(slt({ autopay: true }), "2026-11-24", "2027-01-31"))).toEqual(["2027-01-06"]);
+    expect(dates(occurrencesOf(slt({ frequency: "yearly" }), "2026-11-24", "2027-01-31"))).toEqual(["2027-01-06"]);
+    expect(dates(occurrencesOf(slt({ frequency: "quarterly" }), "2026-11-24", "2027-01-31"))).toEqual(["2027-01-06"]);
+  });
+
+  it("carries the bill date of a bill-day item (the pay-by date minus a month), and only for those", () => {
+    const os = occurrencesOf(slt({ nextDueDate: "2026-11-06" }), "2026-11-24", "2027-03-31");
+    expect(os.map((o) => [o.date, o.billDate])).toEqual([["2026-11-06", "2026-10-06"], ["2026-12-06", "2026-11-06"]]);
+    expect(occurrencesOf(slt({ nextDueDate: "2027-02-28", anchorDay: 31 }), "2027-02-01", "2027-03-31")[0].billDate).toBe("2027-01-31");
+    expect(occurrencesOf(slt({ kind: "subscription" }), "2026-11-24", "2027-01-31")[0].billDate).toBeNull();
+    expect(occurrencesOf(slt({ autopay: true }), "2026-11-24", "2027-01-31")[0].billDate).toBeNull();
+    expect(occurrencesOf(slt({ frequency: "yearly" }), "2026-11-24", "2027-01-31")[0].billDate).toBeNull();
+  });
+
+  it("leaves the upcoming list empty of it too", () => {
+    expect(upcoming([slt()], [], "2026-11-24", 60)).toEqual([]);
   });
 });
 

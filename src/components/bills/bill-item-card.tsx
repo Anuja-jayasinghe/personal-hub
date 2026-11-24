@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Attachment, BillItem, BillPayment } from "@/db/schema";
 import { archiveBillItem, deleteBillItem, deleteBillPayment, markBillItemPaid, unarchiveBillItem, updateBillItem, updateBillPayment } from "@/features/bills/actions";
 import { sortPayments } from "@/features/bills/payments";
-import { FREQUENCY_LABELS, rollForward } from "@/features/bills/schedule";
+import { billDayWording, FREQUENCY_LABELS, markPaidHelp, paymentFor, rollForward } from "@/features/bills/schedule";
 import { describeDays } from "@/features/reminders/engine";
 import { daysBetween } from "@/lib/dates";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -33,6 +33,8 @@ export function BillItemCard({
   // An autopay item pays itself (C58): show its next charge, not a stale date it was "overdue" on.
   const shownDue = item.autopay ? rollForward(item, today) : item.nextDueDate;
   const days = shownDue ? daysBetween(today, shownDue) : null;
+  // A monthly bill that is not on autopay is spoken of by its bill date (owner, 2026-11-24).
+  const billDay = item.nextDueDate ? billDayWording(item, item.nextDueDate, today) : null;
   const tone = days === null ? "" : days < 0 ? "font-medium text-status-overdue" : days <= 7 ? "text-status-soon" : "text-muted-foreground";
 
   return (
@@ -47,7 +49,17 @@ export function BillItemCard({
             {item.archivedAt ? <Badge variant="secondary">Archived</Badge> : null}
           </div>
           <p className="mt-1 text-sm">
-            {shownDue ? (
+            {shownDue && billDay && !billDay.payable ? (
+              <>
+                Next bill <span className="font-medium">{billDay.nextBill}</span>
+                <span className="text-muted-foreground"> · payable from {billDay.payableFrom}</span>
+              </>
+            ) : shownDue && billDay?.payable ? (
+              <>
+                Bill of <span className="font-medium">{billDay.billOf}</span> · pay by <span className="font-medium">{billDay.payBy}</span>
+                {days !== null ? <span className={tone}> · {describeDays(days)}</span> : null}
+              </>
+            ) : shownDue ? (
               <>
                 {item.autopay ? "Next charge" : "Next due"} <span className="font-medium">{formatDate(shownDue)}</span>
                 {days !== null ? <span className={tone}> · {describeDays(days)}</span> : null}
@@ -81,14 +93,11 @@ export function BillItemCard({
       </div>
 
       <div className="mt-3 flex flex-col gap-2">
-        {!item.archivedAt && item.nextDueDate ? (
+        {!item.archivedAt && item.nextDueDate && !(billDay && !billDay.payable) ? (
           <details className="rounded-md border border-primary/40">
             <summary className="cursor-pointer px-3 py-1.5 text-sm font-medium">Mark paid</summary>
             <div className="border-t p-3">
-              <p className="mb-3 text-sm text-muted-foreground">
-                Records a payment for the {formatDate(item.nextDueDate)} due date
-                {item.frequency === "one_off" ? " and marks this item done." : " and moves the next due date forward."}
-              </p>
+              <p className="mb-3 text-sm text-muted-foreground">{markPaidHelp({ ...item, nextDueDate: item.nextDueDate }, formatDate)}</p>
               <PaymentForm action={markBillItemPaid} itemId={item.id} defaultDate={today} defaultAmount={item.amount} />
             </div>
           </details>
@@ -104,7 +113,7 @@ export function BillItemCard({
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                     <span className="font-medium">{formatDate(p.paidDate)}</span>
                     {p.amount !== null ? <span>{formatMoney(Number(p.amount))}</span> : null}
-                    <span className="text-muted-foreground">for the {formatDate(p.dueDate)} due date</span>
+                    <span className="text-muted-foreground">for {paymentFor(item, p.dueDate, formatDate)}</span>
                     {p.note ? <span className="text-muted-foreground">{p.note}</span> : null}
                     <form action={deleteBillPayment} className="ml-auto">
                       <input type="hidden" name="id" value={p.id} />
