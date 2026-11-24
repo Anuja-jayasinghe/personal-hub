@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, dayMonth, daysBetween, isValidDate, todayIn, yearOfInstant } from "./dates";
+import { addDays, dayMonth, daysBetween, hourIn, isValidDate, todayIn, yearOfInstant } from "./dates";
 
 describe("dayMonth", () => {
   it("writes a day as day and short month", () => {
@@ -98,5 +98,14 @@ describe("yearOfInstant", () => {
     const instant = new Date("2026-12-31T20:00:00Z");
     expect(yearOfInstant(instant, "UTC")).toBe(2026);
     expect(yearOfInstant(instant, "Asia/Colombo")).toBe(2027);
+  });
+});
+
+describe("hourIn", () => {
+  it("is the hour of day in the time zone, midnight as 0", () => {
+    expect(hourIn("Asia/Colombo", new Date("2026-11-12T18:29:59Z"))).toBe(23);
+    expect(hourIn("Asia/Colombo", new Date("2026-11-12T18:30:00Z"))).toBe(0);
+    expect(hourIn("Asia/Colombo", new Date("2026-11-12T03:30:00Z"))).toBe(9);
+    expect(hourIn("UTC", new Date("2026-11-12T00:00:00Z"))).toBe(0);
   });
 });

@@ -4,7 +4,7 @@ import path from "node:path";
 import { count, eq, sum } from "drizzle-orm";
 import { cache } from "react";
 import { connection } from "next/server";
-import { readDb } from "@/db/read";
+import { readDb, type Db } from "@/db/read";
 import { appSettings, attachments } from "@/db/schema";
 import { latestBackup, type BackupStamp } from "./backup";
 import { mergeRules, RULES_KEY, type HubRules } from "./rules";
@@ -30,13 +30,17 @@ export async function newestLocalBackup(): Promise<BackupStamp | null> {
   }
 }
 
+/** The rules in force, read from the database it is given (the daily notification run passes the real one, no request needed). */
+export async function loadRules(db: Db): Promise<HubRules> {
+  const [row] = await db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, RULES_KEY));
+  return mergeRules(row?.value ?? null);
+}
+
 /**
  * The rules in force (S.2b, C107): what is saved in Settings laid over the defaults in app.config.ts.
  * Read once per request; every page that works with limits, meter checks or reminders calls this.
  */
 export const getRules = cache(async (): Promise<HubRules> => {
   await connection();
-  const db = await readDb();
-  const [row] = await db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, RULES_KEY));
-  return mergeRules(row?.value ?? null);
+  return loadRules(await readDb());
 });

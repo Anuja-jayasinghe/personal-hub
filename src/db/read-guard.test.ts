@@ -59,6 +59,14 @@ describe("real database access", () => {
     expect(callers).toEqual(["src/app/api/notify/route.ts"]);
   });
 
+  it("only the sign-in check reaches the sign-up notice, which writes to the owners with nobody signed in (N.4, C142)", () => {
+    const notice = "src/features/notifications/access-request";
+    const callers = files("src")
+      .map((f) => f.split(path.sep).join("/"))
+      .filter((f) => importsOf(f, readFileSync(f, "utf8")).includes(notice));
+    expect(callers).toEqual(["src/lib/auth.ts"]);
+  });
+
   it("the import scan sees aliased, relative, side-effect and dynamic imports", () => {
     const file = "src/features/notifications/other.ts";
     const run = "src/features/notifications/run";

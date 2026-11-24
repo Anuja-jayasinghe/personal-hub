@@ -5,10 +5,16 @@ import { readDb, type Db } from "@/db/read";
 import { electricityBills, electricityLiveSwitches, electricityMeters, electricityReadings } from "@/db/schema";
 import { UUID_RE } from "@/features/shared/validation";
 
-/** Active meters, or archived ones, by name. */
-export async function listMeters(archived: boolean) {
+/** The database a query reads: the one passed in (the daily run: the real one, no request needed), else the signed-in person's through `readDb()`. */
+async function dbFor(from?: Db): Promise<Db> {
+  if (from) return from;
   await connection();
-  const db = await readDb();
+  return readDb();
+}
+
+/** Active meters, or archived ones, by name. */
+export async function listMeters(archived: boolean, from?: Db) {
+  const db = await dbFor(from);
   return db
     .select()
     .from(electricityMeters)
@@ -36,16 +42,14 @@ export async function listReadings(meterId: string) {
 }
 
 /** Every reading of every meter (newest first), for pages that show several meters at once. */
-export async function listAllReadings() {
-  await connection();
-  const db = await readDb();
+export async function listAllReadings(from?: Db) {
+  const db = await dbFor(from);
   return db.select().from(electricityReadings).orderBy(desc(electricityReadings.readingDate), desc(electricityReadings.createdAt));
 }
 
 /** Every bill of every meter, newest first. */
-export async function listAllBills() {
-  await connection();
-  const db = await readDb();
+export async function listAllBills(from?: Db) {
+  const db = await dbFor(from);
   return db.select().from(electricityBills).orderBy(desc(electricityBills.billDate), desc(electricityBills.createdAt));
 }
 
