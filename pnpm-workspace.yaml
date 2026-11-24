@@ -1,3 +1,8 @@
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+# Dev-tool advisories (issue #216): pin the old nested copies to patched versions. Dev-only; nothing here ships in the app.
+overrides:
+  "@esbuild-kit/core-utils>esbuild": "0.25.12"
+  "@typescript-eslint/typescript-estree>minimatch": "^11.0.1"
+  "@ts-morph/common>minimatch": "^11.0.1"
