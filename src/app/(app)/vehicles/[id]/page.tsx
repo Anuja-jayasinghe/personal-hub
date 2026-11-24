@@ -122,7 +122,7 @@ async function VehicleContent({
       ) : null}
 
       {current.key === "overview" ? (
-        <VehicleOverview vehicle={vehicle} rules={rules} />
+        <VehicleOverview vehicle={vehicle} rules={rules} paper={paper} choices={choices} canEdit={allows(access, "vehicles", "edit")} />
       ) : (
         <DocumentsTab
           vehicleId={vehicle.id}

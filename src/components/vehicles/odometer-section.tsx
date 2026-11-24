@@ -6,7 +6,7 @@ import { SubmitButton } from "@/components/shared/submit-button";
 import { deleteOdometerReading, updateOdometerReading } from "@/features/vehicles/odometer-actions";
 import { OdometerTimeline, SOURCE_NAMES, SourceMarker } from "@/components/vehicles/odometer-timeline";
 import { latestPoint, pointKey, toPoints, unfitKeys, withDistances } from "@/features/vehicles/odometer";
-import { listOdometerReadings, listRenewals, listServices } from "@/features/vehicles/queries";
+import type { VehicleOdometerReading, VehicleRenewal, VehicleService } from "@/db/schema";
 import { carriesOdometer } from "@/features/vehicles/renewal-validate";
 import { formatDate, todayInAppTz } from "@/lib/format";
 
@@ -19,9 +19,29 @@ const km = (n: number) => `${n.toLocaleString("en-LK")} km`;
  * values. A service or test value that doesn't fit is kept, flagged, and left out of the latest value
  * and the distances.
  */
-export async function OdometerSection({ vehicleId, vehicleName, ignoreEmissionOdometer = false }: { vehicleId: string; vehicleName: string; ignoreEmissionOdometer?: boolean }) {
-  const [readings, services, renewals] = await Promise.all([listOdometerReadings(vehicleId), listServices(vehicleId), listRenewals(vehicleId)]);
-  const today = todayInAppTz(); // after the queries, which opt this render into request time
+export function OdometerSection({
+  vehicleId,
+  vehicleName,
+  ignoreEmissionOdometer = false,
+  readings,
+  services,
+  renewals,
+  canAdd,
+  canEdit,
+}: {
+  vehicleId: string;
+  vehicleName: string;
+  ignoreEmissionOdometer?: boolean;
+  /** What the Overview already loaded for this vehicle (V.4: no second round of queries). */
+  readings: readonly VehicleOdometerReading[];
+  services: readonly VehicleService[];
+  renewals: readonly VehicleRenewal[];
+  /** Add in Vehicles: the "Add km" button. A person who may only see has none. */
+  canAdd: boolean;
+  /** Edit in Vehicles: changing or deleting a typed reading. */
+  canEdit: boolean;
+}) {
+  const today = todayInAppTz();
   // A vehicle whose emission certificates print an inaccurate odometer leaves them out (issue #184).
   const points = toPoints(readings, services, ignoreEmissionOdometer ? [] : renewals.filter((r) => carriesOdometer(r.type)));
   const unfit = unfitKeys(points);
@@ -38,9 +58,11 @@ export async function OdometerSection({ vehicleId, vehicleName, ignoreEmissionOd
         <h2 id="odometer" className="font-mono text-[10.5px] font-normal tracking-[0.14em] text-label uppercase">
           Odometer
         </h2>
-        <span className="ml-auto">
-          <AddOdometerSheet vehicleId={vehicleId} vehicleName={vehicleName} defaultDate={today} />
-        </span>
+        {canAdd ? (
+          <span className="ml-auto">
+            <AddOdometerSheet vehicleId={vehicleId} vehicleName={vehicleName} defaultDate={today} />
+          </span>
+        ) : null}
       </div>
       {latest ? (
         <p className="flex flex-wrap items-center gap-3">
@@ -60,7 +82,9 @@ export async function OdometerSection({ vehicleId, vehicleName, ignoreEmissionOd
           </span>
         </p>
       ) : (
-        <p className="text-sm text-muted-foreground">No readings yet. Add one with the date you read it, so an old value is never mistaken for today&apos;s.</p>
+        <p className="text-sm text-muted-foreground">
+          No readings yet.{canAdd ? " Add one with the date you read it, so an old value is never mistaken for today\u2019s." : ""}
+        </p>
       )}
 
       <OdometerTimeline points={points} unfit={unfit} />
@@ -70,7 +94,7 @@ export async function OdometerSection({ vehicleId, vehicleName, ignoreEmissionOd
           <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">History ({history.length})</summary>
           <ul className="flex flex-col divide-y border-t">
             {history.map((p) => {
-              const row = p.source === "reading" ? rowOf.get(p.id) : undefined;
+              const row = p.source === "reading" && canEdit ? rowOf.get(p.id) : undefined;
               const bad = unfit.has(pointKey(p));
               const since = distance.get(pointKey(p));
               return (
@@ -88,7 +112,7 @@ export async function OdometerSection({ vehicleId, vehicleName, ignoreEmissionOd
                       </span>
                     ) : null}
                     {p.source === "service" || p.source === "emission" ? (
-                      <Link href={`/vehicles/${vehicleId}?item=${p.source === "service" ? "service" : "renewal"}:${p.id}`} scroll={false} className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+                      <Link href={`/vehicles/${vehicleId}?item=${p.source === "service" ? "service" : "renewal"}:${p.id}`} scroll={false} className="-my-1 inline-flex min-h-11 items-center text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
                         {p.label ?? SOURCE_NAMES[p.source]}
                       </Link>
                     ) : p.label ? (
@@ -105,7 +129,7 @@ export async function OdometerSection({ vehicleId, vehicleName, ignoreEmissionOd
                   </div>
                   {row ? (
                     <details className="mt-2 rounded-md border">
-                      <summary className="cursor-pointer px-3 py-1 text-xs text-muted-foreground">Edit</summary>
+                      <summary className="flex min-h-11 cursor-pointer items-center px-3 text-xs text-muted-foreground">Edit</summary>
                       <div className="border-t p-3">
                         <OdometerForm action={updateOdometerReading} reading={row} />
                       </div>

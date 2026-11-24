@@ -86,8 +86,13 @@ export const DEMO_METERS = [
 ] as const;
 
 export const DEMO_VEHICLES = {
+  /** An insurance ending in 9 days (Needs you) and an oil-change marker due in 20 days (the amber card). */
   car: demoId(5, 1),
   bike: demoId(5, 2),
+  /** A fresh set: every paper far from running out, a recent oil change, so Overview says All clear. */
+  scooter: demoId(5, 3),
+  /** Brand new, nothing recorded: the Overview shows the "Let's set up" checklist. */
+  newcomer: demoId(5, 4),
 };
 
 export function demoRows(today: string): Rows {
@@ -193,6 +198,8 @@ export function demoRows(today: string): Rows {
   rows.vehicles.push(
     { id: DEMO_VEHICLES.car, nickname: "Family car", registrationNumber: "DEM-1234", make: "Toyota", model: "Corolla", year: 2017, fuelType: "Hybrid", vehicleType: "car", odometerKm: 84_310 },
     { id: DEMO_VEHICLES.bike, nickname: "Commuter bike", registrationNumber: "DM-5678", make: "Honda", model: "CB Shine", year: 2019, fuelType: "Petrol", vehicleType: "motorbike", odometerKm: 31_820 },
+    { id: DEMO_VEHICLES.scooter, nickname: "City scooter", registrationNumber: "DM-2468", make: "Zippy", model: "Z110", year: 2024, fuelType: "Petrol", vehicleType: "scooter", odometerKm: 3_960 },
+    { id: DEMO_VEHICLES.newcomer, nickname: "New runabout", registrationNumber: "DEM-4321", make: "Suzuki", model: "Alto", year: 2025, fuelType: "Petrol", vehicleType: "car" },
   );
   // The last number is an emission test's test-day odometer (issue #181), in line with the readings below.
   const renewals: [number, string, string, string, number, number, number | null][] = [
@@ -202,6 +209,10 @@ export function demoRows(today: string): Rows {
     [4, DEMO_VEHICLES.bike, "Revenue license", "Divisional Secretariat", 25, 1_200, null],
     [5, DEMO_VEHICLES.bike, "Insurance", "Sample Insurance Co.", 200, 9_400, null],
     [6, DEMO_VEHICLES.bike, "Emission test", "Sample Testing Centre", 60, 640, 27_600],
+    // The scooter's fresh set: all far from running out.
+    [12, DEMO_VEHICLES.scooter, "Revenue license", "Divisional Secretariat", 310, 900, null],
+    [13, DEMO_VEHICLES.scooter, "Insurance", "Sample Insurance Co.", 340, 7_200, null],
+    [14, DEMO_VEHICLES.scooter, "Emission test", "Sample Testing Centre", 280, 500, 3_600],
   ];
   for (const [n, vehicleId, type, provider, expiresIn, amount, odometerKm] of renewals) {
     const expiryDate = addDays(today, expiresIn);
@@ -222,7 +233,7 @@ export function demoRows(today: string): Rows {
   }
   // Sample papers: only the rows, there are no files behind them (the viewer shows a drawing in the demo).
   // Named the way the hub names them (C134): plate, kind, date.
-  const plateOf = (vehicleId: string) => (vehicleId === DEMO_VEHICLES.car ? "DEM-1234" : "DM-5678");
+  const plateOf = (vehicleId: string) => (vehicleId === DEMO_VEHICLES.car ? "DEM-1234" : vehicleId === DEMO_VEHICLES.scooter ? "DM-2468" : "DM-5678");
   const renewalOf = (n: number) => rows.vehicleRenewals.find((r) => r.id === demoId(8, n))!;
   const kindOf: Record<string, string> = { "Revenue license": "license", Insurance: "insurance", "Emission test": "emission" };
   const papers: [number, number, string, number, number][] = [
@@ -237,6 +248,9 @@ export function demoRows(today: string): Rows {
     [8, 8, "image/jpeg", 870, 5],
     [9, 9, "image/jpeg", 1_110, 1],
     [10, 11, "application/pdf", 490, 6],
+    [11, 12, "application/pdf", 530, 1],
+    [12, 13, "image/jpeg", 910, 2],
+    [13, 14, "application/pdf", 380, 0],
   ];
   for (const [n, renewalN, mimeType, kb, after] of papers) {
     const r = renewalOf(renewalN);
@@ -254,25 +268,50 @@ export function demoRows(today: string): Rows {
     });
   }
   const bookDate = "2017-03-02";
-  const invoiceDate = addDays(today, -75);
   rows.attachments.push(
     { id: demoId(13, 21), ownerType: "vehicle", ownerId: DEMO_VEHICLES.car, storagePath: `demo/vehicle/${DEMO_VEHICLES.car}/21.pdf`, fileName: `DEM-1234_book_${bookDate}.pdf`, title: "Registration book", mimeType: "application/pdf", sizeBytes: 2_310 * 1024, createdAt: new Date(`${addDays(today, -200)}T09:00:00Z`) },
     // An upload of a kind a renewal owns: shown "on file" under insurance, never as the current paper.
     { id: demoId(13, 23), ownerType: "vehicle", ownerId: DEMO_VEHICLES.bike, storagePath: `demo/vehicle/${DEMO_VEHICLES.bike}/23.jpg`, fileName: `DM-5678_insurance_${addDays(today, 200 - 365)}.jpg`, title: "Cover note", mimeType: "image/jpeg", sizeBytes: 340 * 1024, createdAt: new Date(`${addDays(today, -165)}T10:00:00Z`) },
-    { id: demoId(13, 22), ownerType: "vehicle", ownerId: DEMO_VEHICLES.car, storagePath: `demo/vehicle/${DEMO_VEHICLES.car}/22.jpg`, fileName: `DEM-1234_service-invoice_${invoiceDate}.jpg`, title: "Service invoice", mimeType: "image/jpeg", sizeBytes: 760 * 1024, createdAt: new Date(`${invoiceDate}T15:00:00Z`) },
+    // The scooter's book, so its Overview has nothing left to set up.
+    { id: demoId(13, 24), ownerType: "vehicle", ownerId: DEMO_VEHICLES.scooter, storagePath: `demo/vehicle/${DEMO_VEHICLES.scooter}/24.pdf`, fileName: "DM-2468_book_2024-02-10.pdf", title: "Registration book", mimeType: "application/pdf", sizeBytes: 1_980 * 1024, createdAt: new Date(`${addDays(today, -60)}T09:00:00Z`) },
   );
 
   const services: [number, string, number, string, number, number, string, number | null][] = [
     [1, DEMO_VEHICLES.car, 260, "Full service", 76_900, 28_500, "Oil, oil filter, air filter, brake check", null],
-    [2, DEMO_VEHICLES.car, 75, "Full service", 82_600, 31_200, "Oil, oil filter, cabin filter, wheel alignment", 105],
-    [3, DEMO_VEHICLES.car, 30, "Tyres", 83_700, 64_000, "Two front tyres", null],
+    [2, DEMO_VEHICLES.car, 75, "Full service", 81_700, 31_200, "Oil, oil filter, cabin filter, wheel alignment", 95],
+    [3, DEMO_VEHICLES.car, 30, "Tyres", 83_100, 64_000, "Two front tyres", null],
     [4, DEMO_VEHICLES.bike, 140, "Oil change", 29_400, 3_900, "Engine oil", null],
     [5, DEMO_VEHICLES.bike, 20, "Oil change", 31_500, 4_100, "Engine oil, chain lube", 70],
+    [6, DEMO_VEHICLES.scooter, 12, "Oil change", 3_700, 2_400, "Engine oil", 170],
   ];
   for (const [n, vehicleId, ago, serviceType, km, cost, itemsDone, nextIn] of services) {
     const serviceDate = addDays(today, -ago);
     rows.vehicleServices.push({ id: demoId(9, n), vehicleId, serviceDate, serviceType, garage: "Sample Motors", odometerKm: km, cost: money(cost), itemsDone, nextDueDate: nextIn === null ? null : addDays(serviceDate, nextIn) });
   }
+  // Service invoices (V.1a, V.4): named PLATE_service_<date>, like every file the hub names. Only some services have one.
+  const serviceOf = (n: number) => rows.vehicleServices.find((x) => x.id === demoId(9, n))!;
+  const invoices: [number, number, string, string, number][] = [
+    // n, service n, plate, mime type, size in KB
+    [31, 2, "DEM-1234", "application/pdf", 640],
+    [32, 5, "DM-5678", "image/jpeg", 820],
+    [33, 6, "DM-2468", "image/jpeg", 710],
+  ];
+  for (const [n, serviceN, plate, mimeType, kb] of invoices) {
+    const service = serviceOf(serviceN);
+    const ext = mimeType === "application/pdf" ? "pdf" : "jpg";
+    rows.attachments.push({
+      id: demoId(13, n),
+      ownerType: "vehicle_service",
+      ownerId: service.id!,
+      storagePath: `demo/vehicle_service/${service.id}/${n}.${ext}`,
+      fileName: `${plate}_service_${service.serviceDate}.${ext}`,
+      mimeType,
+      sizeBytes: kb * 1024,
+      createdAt: new Date(`${service.serviceDate}T14:00:00Z`),
+    });
+  }
+  // The scooter's newest reading is after its oil change, so its card shows "260 of 2,500 km".
+  rows.vehicleOdometerReadings.push({ id: demoId(10, 30), vehicleId: DEMO_VEHICLES.scooter, readingDate: addDays(today, -3), km: 3_960 });
   for (let month = 6; month >= 1; month--) {
     rows.vehicleOdometerReadings.push(
       { id: demoId(10, month), vehicleId: DEMO_VEHICLES.car, readingDate: addDays(today, -30 * month + 3), km: 84_310 - month * 1_150 },

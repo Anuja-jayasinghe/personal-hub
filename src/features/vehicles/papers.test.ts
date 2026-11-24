@@ -424,3 +424,100 @@ describe("at-a-glance tiles (issue #211)", () => {
     expect(glanceLabel(earlierOnly, TODAY)).toEqual({ text: "Ended Mar 2026 · no scan", tone: null });
   });
 });
+
+describe("service invoices in the Documents tab (V.4, C151)", () => {
+  const service = (id: string, serviceType: string, serviceDate: string) => ({ id, serviceType, serviceDate, createdAt: new Date(`${serviceDate}T05:00:00Z`) });
+  const invoice = (id: string, serviceId: string, name: string, extra: Partial<PaperFile> = {}) => file(id, name, { ownerType: "vehicle_service", ownerId: serviceId, ...extra });
+
+  it("makes one paper per service that has a file, titled 'Service · type', dated by the service, under Other", () => {
+    const papers = buildPapers({
+      renewals: [],
+      renewalFiles: new Map(),
+      documents: [],
+      services: [service("s1", "Oil change", "2026-06-14"), service("s2", "Tyres", "2026-08-01")],
+      serviceFiles: new Map([["s1", [invoice("f1", "s1", "CAB-1234_service_2026-06-14.pdf")]]]),
+    });
+    expect(papers).toHaveLength(1); // s2 has no file: it is not a paper, it stays a record in the Overview
+    expect(papers[0]).toMatchObject({ key: "s:s1", kind: "other", serviceId: "s1", renewalId: null, name: "Service · Oil change", dated: "2026-06-14", until: null });
+    const other = group(papers, "other");
+    expect(other.onFile.map((p) => p.key)).toEqual(["s:s1"]);
+    expect(other.status).toEqual({ tone: "file", count: 1 });
+    expect(glanceLabel(other, TODAY)).toEqual({ text: "1 paper", tone: null });
+  });
+
+  it("keeps every file of a service on its one paper, oldest first, with the hub's names", () => {
+    const papers = buildPapers({
+      renewals: [],
+      renewalFiles: new Map(),
+      documents: [],
+      services: [service("s1", "Full service", "2026-06-14")],
+      serviceFiles: new Map([["s1", [invoice("f2", "s1", "CAB-1234_service_2026-06-14_2.pdf", { createdAt: new Date("2026-06-15T00:00:00Z") }), invoice("f1", "s1", "CAB-1234_service_2026-06-14.pdf")]]]),
+    });
+    expect(papers[0].files.map((f) => f.fileName)).toEqual(["CAB-1234_service_2026-06-14.pdf", "CAB-1234_service_2026-06-14_2.pdf"]);
+  });
+
+  it("sorts with the other papers by the service date, newest first, and is found by search", () => {
+    const papers = buildPapers({
+      renewals: [],
+      renewalFiles: new Map(),
+      documents: [file("w", "scan.pdf", { title: "Warranty card" })],
+      services: [service("s1", "Oil change", "2026-06-14"), service("s2", "Tyres", "2026-09-02")],
+      serviceFiles: new Map([
+        ["s1", [invoice("f1", "s1", "CAB-1234_service_2026-06-14.pdf")]],
+        ["s2", [invoice("f2", "s2", "CAB-1234_service_2026-09-02.pdf")]],
+      ]),
+    });
+    expect(group(papers, "other").onFile.map((p) => p.name)).toEqual(["Service · Tyres", "Service · Oil change", "Warranty card"]);
+    expect(searchPapers(papers, "oil change").map((p) => p.key)).toEqual(["s:s1"]);
+    expect(searchPapers(papers, "2026-09-02").map((p) => p.key)).toEqual(["s:s2"]);
+  });
+
+  it("never touches a renewal category, and a blank type still has a title", () => {
+    const papers = buildPapers({
+      renewals: [],
+      renewalFiles: new Map(),
+      documents: [],
+      services: [service("s1", "  ", "2026-06-14")],
+      serviceFiles: new Map([["s1", [invoice("f1", "s1", "CAB-1234_service_2026-06-14.pdf")]]]),
+    });
+    expect(papers[0].name).toBe("Service · Service");
+    expect(group(papers, "insurance").status).toEqual({ tone: "none" });
+  });
+
+  it("only the services passed in become papers, so another vehicle's invoices never appear", () => {
+    const papers = buildPapers({
+      renewals: [],
+      renewalFiles: new Map(),
+      documents: [],
+      services: [service("mine", "Oil change", "2026-06-14")],
+      // A files map that also holds another vehicle's service id (it should not, but it must not leak even then).
+      serviceFiles: new Map([
+        ["mine", [invoice("f1", "mine", "CAB-1234_service_2026-06-14.pdf")]],
+        ["theirs", [invoice("f9", "theirs", "XYZ-9999_service_2026-06-14.pdf")]],
+      ]),
+    });
+    expect(papers.map((p) => p.key)).toEqual(["s:mine"]);
+  });
+});
+
+describe("a registration book's printed date (V.4, C151)", () => {
+  // Added on 23 Nov 2026 in Colombo (04:00 UTC).
+  const added = new Date("2026-11-23T04:00:00Z");
+  it("claims no printed date when the name's date is the day the book was added (it came from the clock)", () => {
+    const p = paperFromDocument(file("b", "CAB-1234_book_2026-11-23.pdf", { title: "Registration book", createdAt: added }));
+    expect(p).toMatchObject({ kind: "book", dated: null });
+    const g = group([p], "book");
+    expect(glanceLabel(g, TODAY)).toBeNull(); // no "Nov 2026" printed month
+  });
+
+  it("keeps a printed date that is not the day it was added", () => {
+    const p = paperFromDocument(file("b", "CAB-1234_book_2014-02-13.pdf", { title: "Registration book", createdAt: added }));
+    expect(p.dated).toBe("2014-02-13");
+    expect(glanceLabel(group([p], "book"), TODAY)).toEqual({ text: "Feb 2014", tone: null });
+  });
+
+  it("only applies to the book: another kind keeps the date in its name", () => {
+    const p = paperFromDocument(file("o", "CAB-1234_other-cover_2026-11-23.pdf", { title: "Cover", createdAt: added }));
+    expect(p.dated).toBe("2026-11-23");
+  });
+});

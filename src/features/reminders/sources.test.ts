@@ -24,6 +24,7 @@ const { loadSources, reminderSources } = await import("./sources");
 
 const TODAY = "2026-11-23";
 let db: Db;
+let oilServiceId: string;
 
 beforeAll(async () => {
   ({ db } = await makeTestDb({ today: TODAY }));
@@ -32,11 +33,15 @@ beforeAll(async () => {
   await db.insert(billItems).values({ name: "Plumber", kind: "bill", frequency: "one_off", amount: "25000.00", nextDueDate: addDays(TODAY, 1), autopay: false });
   // Service types are free text too: one typed with an amount and a name in it, one from the fixed list in another case.
   const [vehicle] = await db.select({ id: vehicles.id }).from(vehicles).where(isNull(vehicles.archivedAt)).limit(1);
-  await db.insert(vehicleServices).values([
-    { vehicleId: vehicle.id, serviceDate: addDays(TODAY, -100), serviceType: "Chain job LKR 9,000 at Silva garage", nextDueDate: TODAY },
-    // The newest of the oil-change types (V.1b: one cycle) decides the reminder, so this one is newer than the sample ones.
-    { vehicleId: vehicle.id, serviceDate: addDays(TODAY, -1), serviceType: "oil CHANGE", nextDueDate: TODAY },
-  ]);
+  const inserted = await db
+    .insert(vehicleServices)
+    .values([
+      { vehicleId: vehicle.id, serviceDate: addDays(TODAY, -100), serviceType: "Chain job LKR 9,000 at Silva garage", nextDueDate: TODAY },
+      // The newest of the oil-change types (V.1b: one cycle) decides the reminder, so this one is newer than the sample ones.
+      { vehicleId: vehicle.id, serviceDate: addDays(TODAY, -1), serviceType: "oil CHANGE", nextDueDate: TODAY },
+    ])
+    .returning({ id: vehicleServices.id, type: vehicleServices.serviceType });
+  oilServiceId = inserted.find((r) => r.type === "oil CHANGE")!.id;
 }, 60_000);
 
 describe("reminder sources with a database passed in", () => {
@@ -81,12 +86,23 @@ describe("reminder sources with a database passed in", () => {
     for (const i of loaded.flatMap((l) => l.items)) expect(i.href).not.toMatch(/tab=/);
   });
 
+  it("a service whose date is the oil-change marker is called 'Oil change' on Home and Reminders, whatever its type was typed as or called (V.4)", async () => {
+    const { loaded } = await loadSources(reminderSources, { db, today: TODAY });
+    const services = loaded.find((l) => l.key === "vehicle-services")!.items;
+    // The typed "oil CHANGE" and the demo's "Full service" (an oil-change type too) both read "Oil change · <nickname>".
+    expect(services.find((i) => i.id === `service:${oilServiceId}`)!.title).toMatch(/^Oil change · /);
+    const full = services.filter((i) => i.title.startsWith("Full service"));
+    expect(full).toEqual([]); // no due "Full service" is ever worded as one: its date is the oil marker
+    // Any other type keeps its own name.
+    expect(services.find((i) => i.title.startsWith("Chain job"))).toBeDefined();
+  });
+
   it("a service's free-text type never reaches a notification: only the fixed list, anything else is \"Service\"", async () => {
     const { loaded } = await loadSources(reminderSources, { db, today: TODAY });
     const services = loaded.find((l) => l.key === "vehicle-services")!.items;
     const typed = services.find((i) => i.title.startsWith("Chain job"))!;
     expect(typed.notice?.what).toBe("Service");
-    expect(services.find((i) => i.title.startsWith("oil CHANGE"))!.notice?.what).toBe("Oil change");
+    expect(services.find((i) => i.id === `service:${oilServiceId}`)!.notice?.what).toBe("Oil change");
     for (const i of services) expect(appConfig.vehicles.serviceTypes.filter((t) => t !== "Other").concat("Service")).toContain(i.notice?.what);
 
     const text = previewUpcoming(services, TODAY, new Set(), 15)

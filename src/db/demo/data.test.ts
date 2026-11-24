@@ -38,10 +38,25 @@ describe("demo sample data", () => {
   });
 
   it("names its sample papers with the made-up plates, and they belong to demo records", () => {
-    const owners = new Set([...rows.vehicles.map((v) => v.id), ...rows.vehicleRenewals.map((r) => r.id)]);
+    const owners = new Set([...rows.vehicles.map((v) => v.id), ...rows.vehicleRenewals.map((r) => r.id), ...rows.vehicleServices.map((r) => r.id)]);
     expect(rows.attachments.length).toBeGreaterThan(0);
-    expect(rows.attachments.every((a) => /^(DEM-1234|DM-5678)_[a-z-]+_\d{4}-\d{2}-\d{2}(_\d+)?\.(pdf|jpg)$/.test(a.fileName))).toBe(true);
+    expect(rows.attachments.every((a) => /^(DEM-1234|DM-5678|DM-2468)_[a-z-]+_\d{4}-\d{2}-\d{2}(_\d+)?\.(pdf|jpg)$/.test(a.fileName))).toBe(true);
     expect(rows.attachments.every((a) => owners.has(a.ownerId))).toBe(true);
+  });
+
+  it("names a service's invoice PLATE_service_<service date>, for a service of the plate's own vehicle", () => {
+    const invoices = rows.attachments.filter((a) => a.ownerType === "vehicle_service");
+    expect(invoices.length).toBeGreaterThan(0);
+    for (const a of invoices) {
+      const service = rows.vehicleServices.find((s) => s.id === a.ownerId)!;
+      const vehicle = rows.vehicles.find((v) => v.id === service.vehicleId)!;
+      expect(a.fileName).toMatch(new RegExp(`^${vehicle.registrationNumber}_service_${service.serviceDate}\\.(pdf|jpg)$`));
+    }
+  });
+
+  it("has one vehicle with nothing at all, for the new-vehicle checklist", () => {
+    const empty = rows.vehicles.filter((v) => ![...rows.vehicleRenewals, ...rows.vehicleServices, ...rows.vehicleOdometerReadings].some((r) => r.vehicleId === v.id) && !rows.attachments.some((a) => a.ownerId === v.id));
+    expect(empty.map((v) => v.nickname)).toEqual(["New runabout"]);
   });
 
   it("keeps one current renewal per vehicle and type, the earlier ones renewed", () => {

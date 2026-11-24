@@ -1,7 +1,7 @@
 import "server-only";
 import { readDb } from "@/db/read";
 import { loadRules } from "@/features/settings/queries";
-import { dueServices } from "@/features/vehicles/service-logic";
+import { dueServices, isOilChangeType } from "@/features/vehicles/service-logic";
 import { listServicesOfActiveVehicles } from "@/features/vehicles/queries";
 import type { ReminderSource } from "../engine";
 import { serviceNoticeWord } from "../notice-words";
@@ -22,7 +22,9 @@ export const vehicleServicesSource: ReminderSource = {
     const nicknames = new Map(rows.map((r) => [r.vehicleId, r.nickname]));
     return dueServices(rows, oilChangeTypes).map((r) => ({
       id: `service:${r.id}`,
-      title: `${r.serviceType} · ${nicknames.get(r.vehicleId) ?? "Vehicle"}`,
+      // The date of a service of an oil-change type is the oil-change marker (V.1a): Home and Reminders call it that,
+      // as the vehicle page does ("Oil change by 12 Dec"), whether it was an oil change or a full service.
+      title: `${isOilChangeType(r.serviceType, { oilChangeTypes }) ? "Oil change" : r.serviceType} · ${nicknames.get(r.vehicleId) ?? "Vehicle"}`,
       dueDate: r.nextDueDate,
       href: `/vehicles/${r.vehicleId}?item=service:${r.id}`, // opens the record's detail sheet (V.2)
       kind: "service",

@@ -1,5 +1,6 @@
 import "server-only";
 import { asc, count, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { cache } from "react";
 import { connection } from "next/server";
 import { readDb, type Db } from "@/db/read";
 import { vehicleOdometerReadings, vehicleRenewals, vehicleServices, vehicles } from "@/db/schema";
@@ -44,7 +45,7 @@ export async function getVehicle(idOrPlate: string) {
 }
 
 /** A vehicle's service records, newest first. */
-export async function listServices(vehicleId: string) {
+export const listServices = cache(async (vehicleId: string) => {
   await connection();
   const db = await readDb();
   return db
@@ -52,7 +53,7 @@ export async function listServices(vehicleId: string) {
     .from(vehicleServices)
     .where(eq(vehicleServices.vehicleId, vehicleId))
     .orderBy(desc(vehicleServices.serviceDate), desc(vehicleServices.createdAt));
-}
+});
 
 /** Every service record of every ACTIVE (not archived) vehicle, with the vehicle's nickname. For reminders. */
 export async function listServicesOfActiveVehicles(from?: Db) {
@@ -74,7 +75,7 @@ export async function listServicesOfActiveVehicles(from?: Db) {
 }
 
 /** A vehicle's renewals, latest expiry first (current and past; split with renewal-logic). */
-export async function listRenewals(vehicleId: string) {
+export const listRenewals = cache(async (vehicleId: string) => {
   await connection();
   const db = await readDb();
   return db
@@ -82,7 +83,7 @@ export async function listRenewals(vehicleId: string) {
     .from(vehicleRenewals)
     .where(eq(vehicleRenewals.vehicleId, vehicleId))
     .orderBy(desc(vehicleRenewals.expiryDate), desc(vehicleRenewals.createdAt));
-}
+});
 
 /** Every renewal of every ACTIVE (not archived) vehicle, with the vehicle's nickname. For reminders. */
 export async function listRenewalsOfActiveVehicles(from?: Db) {
@@ -104,7 +105,7 @@ export async function listRenewalsOfActiveVehicles(from?: Db) {
 }
 
 /** A vehicle's dated odometer readings, newest first. (Services with an odometer count too: see odometer.ts.) */
-export async function listOdometerReadings(vehicleId: string) {
+export const listOdometerReadings = cache(async (vehicleId: string) => {
   await connection();
   const db = await readDb();
   return db
@@ -112,4 +113,4 @@ export async function listOdometerReadings(vehicleId: string) {
     .from(vehicleOdometerReadings)
     .where(eq(vehicleOdometerReadings.vehicleId, vehicleId))
     .orderBy(desc(vehicleOdometerReadings.readingDate), desc(vehicleOdometerReadings.createdAt));
-}
+});

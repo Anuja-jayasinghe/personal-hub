@@ -37,7 +37,7 @@ export function DocumentRenameForm({ id, title }: { id: string; title: string })
  * Replace a paper's file (issue #187): pick the new image or PDF; it keeps the old file's name and title,
  * and the old file is removed once the new one is saved. Same upload as the record's own form (C115).
  */
-export function ReplaceFileForm({ id, owner, onDone }: { id: string; owner: { ownerType: "vehicle" | "vehicle_renewal"; ownerId: string }; onDone?: () => void }) {
+export function ReplaceFileForm({ id, owner, onDone }: { id: string; owner: { ownerType: "vehicle" | "vehicle_renewal" | "vehicle_service"; ownerId: string }; onDone?: () => void }) {
   const [state, formAction, saving] = useActionState(replaceVehicleFile, initialActionState);
   const { onSubmit, error, sending } = useDirectUpload(formAction, () => ({ purpose: "attachment", ...owner }));
 

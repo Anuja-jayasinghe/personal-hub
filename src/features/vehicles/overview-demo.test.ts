@@ -1,12 +1,14 @@
 import { eq } from "drizzle-orm";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { Db } from "@/db/read";
-import { vehicleOdometerReadings, vehicleRenewals, vehicleServices } from "@/db/schema";
+import { attachments, vehicleOdometerReadings, vehicleRenewals, vehicleServices } from "@/db/schema";
 import { DEMO_VEHICLES, demoRows } from "@/db/demo/data";
 import { makeTestDb } from "@/test/pglite";
 import { DEFAULT_RULES } from "@/features/settings/rules";
 import { toPoints, unfitKeys, pointKey } from "./odometer";
 import { buildTimeline, glanceCards, itemParam, needsYou, oilState, pickItem } from "./overview";
+import { buildOverviewModel } from "./overview-model";
+import { paperFromDocument } from "./papers";
 
 /**
  * The new Overview over the demo's made-up vehicles in a real Postgres (PGlite): what its cards and Needs you bar
@@ -31,6 +33,64 @@ beforeAll(async () => {
   ({ db } = await makeTestDb({ today: TODAY }));
   // The test database seeds the vehicles, renewals and services; the demo also has typed odometer readings.
   await db.insert(vehicleOdometerReadings).values(demoRows(TODAY).vehicleOdometerReadings);
+  await db.insert(attachments).values(demoRows(TODAY).attachments);
+});
+
+/** The demo's vehicles through the same model the page draws from (V.4, C151): one for each state the new pages show. */
+describe("the demo's vehicles show the new pages well", () => {
+  const modelOf = async (vehicleId: string) => {
+    const { renewals, services, readings, fitting } = await load(vehicleId);
+    const files = await db.select().from(attachments).where(eq(attachments.ownerId, vehicleId));
+    const documentKinds = files.map((a) => paperFromDocument({ id: a.id, ownerType: a.ownerType, ownerId: a.ownerId, fileName: a.fileName, title: a.title, mimeType: a.mimeType, sizeBytes: a.sizeBytes, createdAt: a.createdAt }).kind);
+    return buildOverviewModel({
+      today: TODAY,
+      timeZone: "Asia/Colombo",
+      archived: false,
+      renewals,
+      services,
+      readings,
+      fitting,
+      documentKinds,
+      rules: DEFAULT_RULES,
+      renewalLeadDays: new Map(),
+      can: { records: true, files: true },
+      choices: { service: true, reading: true },
+      askOdometer: true,
+    });
+  };
+
+  it("the car has an amber oil-change card (due in 20 days, with its km) beside a Needs you bar", async () => {
+    const m = await modelOf(DEMO_VEHICLES.car);
+    const oil = m.cards.find((c) => c.title === "Oil change")!;
+    expect(oil).toMatchObject({ days: 20, tone: "soon" });
+    expect(oil.km).not.toBeNull();
+    expect(m.bar).toBe("needs");
+    expect(m.checklist).toBeNull(); // book, license, insurance and emission test all there
+  });
+
+  it("the scooter is a fresh set: every card green, All clear, nothing left to set up", async () => {
+    const m = await modelOf(DEMO_VEHICLES.scooter);
+    expect(m.bar).toBe("clear");
+    expect(m.attention.next).not.toBeNull();
+    expect(m.cards.length).toBe(4);
+    expect(m.cards.every((c) => c.tone === "ok")).toBe(true);
+    expect(m.cards.find((c) => c.title === "Oil change")!.km).toMatchObject({ driven: 260, of: 2_500 });
+    expect(m.checklist).toBeNull();
+  });
+
+  it("the brand-new vehicle has nothing, so the Overview is the checklist", async () => {
+    const m = await modelOf(DEMO_VEHICLES.newcomer);
+    expect(m.blank).toBe(true);
+    expect(m.checklist).toMatchObject({ done: 0, total: 4 });
+    expect(m.bar).toBeNull();
+    expect(m.show).toEqual({ cards: false, services: false, odometer: false, timeline: false });
+  });
+
+  it("the bike shows the partly-set-up card: only its book is missing", async () => {
+    const m = await modelOf(DEMO_VEHICLES.bike);
+    expect(m.checklist).toMatchObject({ done: 3, total: 4 });
+    expect(m.checklist!.rows.filter((r) => !r.done).map((r) => r.kind)).toEqual(["book"]);
+  });
 });
 
 describe("the Overview over the demo's vehicles", () => {
