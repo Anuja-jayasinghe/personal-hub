@@ -1,5 +1,6 @@
 import { appConfig } from "@/config/app.config";
-import { addDays, daysBetween, isValidDate, todayIn } from "@/lib/dates";
+import { addDays, daysBetween, isValidDate, monthOf, todayIn } from "@/lib/dates";
+import { formatMonth } from "@/lib/format";
 import { DOC_KINDS, defaultDocTitle, isDocKind, renewalKind, type DocKind } from "./doc-names";
 
 /**
@@ -287,6 +288,46 @@ export function groupPapers(papers: readonly Paper[], today: string): PaperGroup
     const [current = null, ...earlier] = [...mine].sort(newestFirst);
     return { kind, label, current, earlier, timeline: plain(earlier), onFile: [], status: current ? { tone: "file" as const, count: mine.length } : { tone: "none" as const } };
   });
+}
+
+/** The categories that get an at-a-glance tile: those with something in them, in the usual order (a category with nothing gets none, and the add row below the sections takes over). */
+export function glanceGroups(groups: readonly PaperGroup[]): PaperGroup[] {
+  return groups.filter((g) => g.status.tone !== "none");
+}
+
+/**
+ * The paper a category's tile opens: the current one (the one the tile's days are about); with no current
+ * paper, the newest of the others on file (preferring one that has a file to show). Null for an empty category.
+ * The tile opens the viewer only when this paper has a file; otherwise it jumps to the category's section.
+ */
+export function glanceTarget(g: PaperGroup): Paper | null {
+  if (g.current) return g.current;
+  const rest = [...g.onFile, ...g.earlier].sort(newestFirst);
+  return rest.find((p) => p.files.length > 0) ?? rest[0] ?? null;
+}
+
+/**
+ * The short line under a tile's title, only ever real information: the days left for a paper that runs
+ * out (with the colour of its state), else the book's printed month, when the newest paper ends or ended,
+ * or how many papers there are. Null when there is nothing real to say (a book without a known date).
+ */
+export function glanceLabel(g: PaperGroup, today: string): { text: string; tone: "ok" | "soon" | "overdue" | null } | null {
+  const s = g.status;
+  if (s.tone === "none") return null;
+  if (s.tone !== "file") {
+    const text = s.days < 0 ? `${-s.days} day${s.days === -1 ? "" : "s"} late` : s.days === 0 ? "Ends today" : `${s.days} day${s.days === 1 ? "" : "s"} left`;
+    return { text, tone: s.tone };
+  }
+  const count = s.count === 1 ? "1 paper" : `${s.count} papers`;
+  if (g.kind === "other") return { text: count, tone: null };
+  const target = glanceTarget(g);
+  if (g.kind === "book") {
+    if (target?.dated) return { text: formatMonth(monthOf(target.dated)), tone: null };
+    return s.count > 1 ? { text: `${s.count} books`, tone: null } : null;
+  }
+  // A kind that runs out, with no current renewal: when the newest paper ends or ended.
+  if (target?.until) return { text: `${target.until < today ? "Ended" : "Until"} ${formatMonth(monthOf(target.until))}`, tone: null };
+  return { text: count, tone: null };
 }
 
 /**

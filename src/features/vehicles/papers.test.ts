@@ -4,6 +4,9 @@ import {
   byUrgency,
   daysWords,
   gapBetween,
+  glanceGroups,
+  glanceLabel,
+  glanceTarget,
   groupPapers,
   guessKind,
   kindOfRenewalType,
@@ -305,5 +308,78 @@ describe("searchPapers", () => {
     expect(searchPapers(papers, "dec 2026", shown).map((p) => p.key)).toEqual(["r:i"]);
     expect(searchPapers(papers, "Feb 2014", shown).map((p) => p.key)).toEqual(["d:b"]);
     expect(searchPapers(papers, "dec 2026").map((p) => p.key)).toEqual([]);
+  });
+});
+
+describe("at-a-glance tiles (issue #211)", () => {
+  const tilesOf = (input: Partial<Parameters<typeof buildPapers>[0]>) => groupPapers(only(input), TODAY);
+
+  it("gives a tile only to categories with something in them, in the usual order", () => {
+    const groups = tilesOf({ renewals: [renewal("i", "Insurance", null, "2027-05-01")], documents: [file("b", "CAB-1234_book_2014-02-13.pdf")] });
+    expect(glanceGroups(groups).map((g) => g.kind)).toEqual(["book", "insurance"]);
+    expect(glanceGroups(tilesOf({}))).toEqual([]);
+    const all = tilesOf({
+      renewals: [renewal("l", "Revenue license", null, "2027-02-12"), renewal("i", "Insurance", null, "2027-05-01"), renewal("e", "Emission test", null, "2027-03-05")],
+      documents: [file("b", "CAB-1234_book_2014-02-13.pdf"), file("o", "CAB-1234_service-invoice_2026-05-01.pdf")],
+    });
+    expect(glanceGroups(all).map((g) => g.kind)).toEqual(["book", "license", "emission", "insurance", "other"]);
+  });
+
+  it("opens the current paper, and with none current the newest one on file", () => {
+    const groups = tilesOf({
+      renewals: [renewal("old", "Revenue license", null, "2026-01-31", { renewedAt: new Date("2026-01-30") })],
+      documents: [
+        file("b1", "CAB-1234_book_2010-01-01.pdf"),
+        file("b2", "CAB-1234_book_2014-02-13.pdf"),
+        file("o1", "CAB-1234_service-invoice_2026-05-01.pdf"),
+        file("o2", "CAB-1234_warranty_2026-09-01.pdf"),
+        file("i", "CAB-1234_insurance_2027-05-01.pdf"),
+      ],
+    });
+    const target = (kind: string) => glanceTarget(groups.find((g) => g.kind === kind)!)?.key;
+    expect(target("book")).toBe("d:b2");
+    expect(target("other")).toBe("d:o2");
+    expect(target("insurance")).toBe("d:i"); // only an upload: newest on file
+    expect(target("license")).toBe("r:old"); // only an earlier one: the newest of those
+    expect(target("emission")).toBeUndefined();
+
+    const current = tilesOf({ renewals: [renewal("n", "Revenue license", null, "2027-02-12"), renewal("o", "Revenue license", null, "2026-02-12", { renewedAt: new Date("2026-02-01") })] });
+    expect(glanceTarget(current.find((g) => g.kind === "license")!)?.key).toBe("r:n");
+  });
+
+  it("prefers a paper that has a file when the newest on file has none", () => {
+    const groups = tilesOf({
+      renewals: [renewal("a", "Insurance", null, "2025-12-31", { renewedAt: new Date("2025-12-30") }), renewal("b", "Insurance", null, "2026-06-30", { renewedAt: new Date("2026-06-29") })],
+      renewalFiles: new Map([["a", [file("fa", "CAB-1234_insurance_2025-12-31.pdf")]]]),
+    });
+    expect(glanceTarget(groups.find((g) => g.kind === "insurance")!)?.key).toBe("r:a");
+  });
+
+  it("labels with real information only", () => {
+    const groups = tilesOf({
+      renewals: [renewal("l", "Revenue license", null, "2026-12-23"), renewal("e", "Emission test", null, "2026-11-20"), renewal("i", "Insurance", null, "2026-11-23")],
+      documents: [file("b", "CAB-1234_book_2014-02-13.pdf"), file("o1", "CAB-1234_service-invoice_2026-05-01.pdf"), file("o2", "CAB-1234_warranty_2026-09-01.pdf")],
+    });
+    const label = (kind: string) => glanceLabel(groups.find((g) => g.kind === kind)!, TODAY);
+    expect(label("license")).toEqual({ text: "30 days left", tone: "soon" });
+    expect(label("emission")).toEqual({ text: "3 days late", tone: "overdue" });
+    expect(label("insurance")).toEqual({ text: "Ends today", tone: "overdue" });
+    expect(label("book")).toEqual({ text: "Feb 2014", tone: null });
+    expect(label("other")).toEqual({ text: "2 papers", tone: null });
+  });
+
+  it("has no label for a book without a known date, and none for an empty category", () => {
+    const groups = tilesOf({ documents: [file("b", "scan.pdf", { title: "Registration book" })] });
+    expect(glanceLabel(groups.find((g) => g.kind === "book")!, TODAY)).toBeNull();
+    expect(glanceLabel(groups.find((g) => g.kind === "license")!, TODAY)).toBeNull();
+    expect(glanceLabel(tilesOf({ documents: [file("o", "scan.pdf", { title: "Warranty card" })] }).find((g) => g.kind === "other")!, TODAY)).toEqual({ text: "1 paper", tone: null });
+  });
+
+  it("says when the newest paper ends or ended for a kind with no current renewal", () => {
+    const g = (iso: string) => tilesOf({ documents: [file("l", `CAB-1234_license_${iso}.pdf`)] }).find((x) => x.kind === "license")!;
+    expect(glanceLabel(g("2027-02-12"), TODAY)).toEqual({ text: "Until Feb 2027", tone: null });
+    expect(glanceLabel(g("2026-02-12"), TODAY)).toEqual({ text: "Ended Feb 2026", tone: null });
+    const earlier = tilesOf({ renewals: [renewal("old", "Insurance", null, "2026-03-31", { renewedAt: new Date("2026-03-30") })] }).find((x) => x.kind === "insurance")!;
+    expect(glanceLabel(earlier, TODAY)).toEqual({ text: "Ended Mar 2026", tone: null });
   });
 });

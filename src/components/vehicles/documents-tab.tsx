@@ -12,6 +12,9 @@ import { docFileName, renewalKind, type DocKind } from "@/features/vehicles/doc-
 import {
   buildPapers,
   byUrgency,
+  glanceGroups,
+  glanceLabel,
+  glanceTarget,
   groupPapers,
   isDatedKind,
   kindLabel,
@@ -242,6 +245,7 @@ function AllPapers({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
   const shown = ordered.filter((g) => g.status.tone !== "none");
   const empty = ordered.filter((g) => g.status.tone === "none");
   const nothing = shown.length === 0;
+  const tiles = glanceGroups(groups);
   const canFill = ctx.access.canAdd || ctx.access.canAddRenewal;
 
   return (
@@ -259,11 +263,15 @@ function AllPapers({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
 
       {/* Desktop: the at-a-glance row, then each category in full. */}
       <div className="hidden flex-col gap-7 md:flex">
-        <nav aria-label="At a glance" className="grid grid-cols-5 gap-3">
-          {groups.map((g) => (
-            <GlanceTile key={g.kind} group={g} href={g.status.tone === "none" ? ctx.href(g.kind) : `#doc-${g.kind}`} />
-          ))}
-        </nav>
+        {tiles.length > 0 ? (
+          <ul aria-label="At a glance" className="grid grid-cols-[repeat(auto-fill,minmax(12.5rem,1fr))] gap-3">
+            {tiles.map((g) => (
+              <li key={g.kind} className="flex min-w-0">
+                <GlanceTile ctx={ctx} group={g} />
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {nothing && !canFill ? <NothingYet /> : null}
         <div className="@container">
           <div className="grid gap-x-5 gap-y-7 @5xl:grid-cols-2">
@@ -307,23 +315,49 @@ function Chips({ ctx, groups, current }: { ctx: Ctx; groups: PaperGroup[]; curre
   );
 }
 
-function GlanceTile({ group: g, href }: { group: PaperGroup; href: string }) {
+/**
+ * One at-a-glance tile (desktop): a category with something in it. It opens that category's paper in the
+ * viewer (issue #211): the current one, or the newest on file. A paper with no scan yet (a renewal waiting
+ * for its scan) has nothing to show, so its tile jumps to the category's section, where "Add the scan" is.
+ * Categories with nothing in them get no tile at all; they are added from the "Nothing yet" row.
+ */
+function GlanceTile({ ctx, group: g }: { ctx: Ctx; group: PaperGroup }) {
   const tone = toneOf(g.status);
-  const empty = g.status.tone === "none";
-  const art = g.current ?? g.onFile[0] ?? g.earlier[0];
-  return (
-    <a
-      href={href}
-      className={`flex min-w-0 items-center gap-3 rounded-2xl border p-3.5 transition-colors hover:border-quiet ${empty ? "border-dashed bg-transparent" : `bg-card ${tone ? TONE_EDGE[tone] : ""}`}`}
-    >
+  const target = glanceTarget(g);
+  const label = glanceLabel(g, ctx.today);
+  const className = `flex w-full min-w-0 items-center gap-3 rounded-2xl border bg-card p-3.5 text-left transition-colors hover:border-quiet focus-visible:border-primary ${tone ? TONE_EDGE[tone] : "border-border"}`;
+  const inner = (
+    <>
       <span className="flex h-9 w-10 shrink-0 items-center justify-center">
-        {art ? <PaperArt kind={g.kind} size="xs" /> : <span aria-hidden className="h-9 w-7 rounded-[3px] border border-dashed border-quiet" />}
+        <PaperArt kind={g.kind} size="xs" />
       </span>
       <span className="flex min-w-0 flex-col gap-0.5">
         <span className="truncate text-sm font-semibold">{g.label}</span>
-        <span className={`font-mono text-[11px] tracking-[0.06em] uppercase ${tone ? TONE_TEXT[tone] : "text-label"}`}>{statusWords(g)}</span>
+        {label ? <span className={`truncate font-mono text-[11px] tracking-[0.06em] uppercase ${label.tone ? TONE_TEXT[label.tone] : "text-label"}`}>{label.text}</span> : null}
       </span>
-    </a>
+    </>
+  );
+  if (!target || target.files.length === 0) {
+    return (
+      <a href={`#doc-${g.kind}`} className={className}>
+        {inner}
+      </a>
+    );
+  }
+  const what = g.kind === "other" ? "the newest paper in Other" : `the ${g.label.toLowerCase()}`;
+  return (
+    <PaperViewer
+      paper={target}
+      isCurrent={target === g.current}
+      today={ctx.today}
+      sample={ctx.sample}
+      canEdit={ctx.access.canEdit}
+      renew={renewFor(ctx, target, target === g.current)}
+      ariaLabel={`Open ${what}${label ? `, ${label.text}` : ""}`}
+      className={className}
+    >
+      {inner}
+    </PaperViewer>
   );
 }
 
