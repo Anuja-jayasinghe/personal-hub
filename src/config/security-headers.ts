@@ -13,8 +13,8 @@
 
 export type HeaderRule = { source: string; headers: { key: string; value: string }[] };
 
-/** Camera stays off: uploads use a plain file input (the phone's own picker), never getUserMedia. */
-export const permissionsPolicy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
+/** Only the hub itself may use the camera (it does not today: uploads use the phone's own file picker, and `(self)` keeps that safe on any device). The rest is off. */
+export const permissionsPolicy = "camera=(self), microphone=(), geolocation=(), payment=(), usb=()";
 
 /** The service worker's own policy (N.3, C140): loads nothing from anywhere else, and cannot be framed. */
 export const serviceWorkerCsp = "default-src 'self'; script-src 'self'; frame-ancestors 'none'";
@@ -31,9 +31,9 @@ const everywhere: HeaderRule = {
   ],
 };
 
-/** Nobody may frame the hub (clickjacking). Every page and route except the two entries below. */
+/** Nobody may frame the hub (clickjacking). Every page and route except `/files`, `/files/...` and `/sw.js`, which have their own entries below (`/sw.json` and `/sw.js.map` are not `/sw.js`, so they are covered here). */
 const neverFramed: HeaderRule = {
-  source: "/((?!files/|sw\\.js).*)",
+  source: "/((?!files(?:/|$)|sw\\.js$).*)",
   headers: [
     { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
     { key: "X-Frame-Options", value: "DENY" },

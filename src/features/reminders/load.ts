@@ -3,8 +3,8 @@ import { getRules } from "@/features/settings/queries";
 import { connection } from "next/server";
 import { todayInAppTz } from "@/lib/format";
 import { computeReminders, type ReminderResult } from "./engine";
+import { allowsSourceArea } from "@/features/people/access";
 import { loadSources, reminderSources, SOURCE_AREA } from "./sources";
-import { allows } from "@/features/people/access";
 import { getAccess } from "@/lib/auth";
 
 export type RemindersData = {
@@ -26,7 +26,7 @@ export async function getReminders(): Promise<RemindersData> {
 
   // Only the sections this person may see (S.8, C114); owners see every source.
   const access = await getAccess();
-  const sources = reminderSources.filter((s) => access !== null && allows(access, SOURCE_AREA[s.key] ?? "tasks_notes", "see"));
+  const sources = reminderSources.filter((s) => access !== null && allowsSourceArea(access, SOURCE_AREA[s.key] ?? "tasks_notes"));
   const { loaded, failedSources } = await loadSources(sources);
   const items = loaded.flatMap((l) => l.items);
 

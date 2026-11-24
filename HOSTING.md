@@ -87,6 +87,10 @@ not have them, so there Settings shows email as "Not set up" and the test button
 The Gmail filter matches the **sender** (From `notify@mail.hub.anujajay.com`), never only the delivery address: the
 tag is easy to guess, and a filter on To with "Never send it to Spam" would let anyone's mail past the spam filter.
 
+## Pushes that need no due date (N.4, C142)
+
+The daily run also pushes when a meter nears or crosses its slab limit and when a meter reading is overdue; **no new setting and no migration**. "Someone asked for access" is sent right away (from Next's `after()`, when a stranger is first recorded as pending) **only on Production**, only to the `ALLOWED_EMAILS` owners, only after 09:00 Colombo and only if no push has gone to that owner today; otherwise the next daily run includes it in the day's one push. Two sign-ups at the same instant send one push (an atomic per-owner, per-day claim in `app_settings`). A sign-up at 08:45 Colombo waits for the next morning's run, because instant pushes start at 09:00 and that morning's run has gone. On the first run after this ships, a meter already near or over its limit gets one push, and anyone who signed up within the last 7 days and is still pending gets one batched push; the 7-day windows are a design choice. Previews and local development share the real database but never send it. It needs push to be set up and switched on like every other push (otherwise it is logged as a dry run).
+
 ## End-to-end test (`pnpm e2e`, C121)
 
 `e2e/sharing.spec.ts` runs against the live site with Playwright: a TEST account (`hub-test-person@anujajay.com`,
@@ -99,7 +103,7 @@ another address.
 
 ## Security headers (C143)
 
-Every response carries `nosniff`, a strict referrer policy, a locked-down permissions policy and `X-Robots-Tag: noindex, nofollow, noarchive`; pages cannot be framed (`frame-ancestors 'none'`, and `'self'` only for `/files/*`). They come from `next.config.ts` (`src/config/security-headers.ts`), so they apply on Vercel with nothing to set in the dashboard. HSTS is Vercel's own (`max-age=63072000`); do not add `includeSubDomains` or `preload`, because other subdomains of the domain are not part of this project. `shadcn` is a dev dependency: Vercel installs those for the build, so keep "Install command" at its default.
+Every response carries `nosniff`, a strict referrer policy, a locked-down permissions policy (only the hub itself may use the camera) and `X-Robots-Tag: noindex, nofollow, noarchive`; pages cannot be framed (`frame-ancestors 'none'`, and `'self'` only for `/files/*`). They come from `next.config.ts` (`src/config/security-headers.ts`), so they apply on Vercel with nothing to set in the dashboard. HSTS is Vercel's own (`max-age=63072000`); do not add `includeSubDomains` or `preload`, because other subdomains of the domain are not part of this project. `shadcn` is a dev dependency: Vercel installs those for the build, so keep "Install command" at its default.
 
 ## Notes
 

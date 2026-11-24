@@ -41,6 +41,14 @@ export function allows(access: Access, area: Area, level: Level): boolean {
   return granted !== undefined && RANK[granted] >= RANK[level];
 }
 
+/** A section, or "owner" for what only the owners may hear about (a sign-up request, N.4). */
+export type SourceArea = Area | "owner";
+
+/** True when `access` may see what a reminder source or event source of this area brings. */
+export function allowsSourceArea(access: Access, area: SourceArea): boolean {
+  return area === "owner" ? access.owner : allows(access, area, "see");
+}
+
 /** The sections a person can at least see, in display order. */
 export function visibleAreas(access: Access): Area[] {
   return AREAS.map((a) => a.key).filter((key) => allows(access, key, "see"));

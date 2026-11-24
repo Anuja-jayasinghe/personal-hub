@@ -1,7 +1,7 @@
 import { appConfig } from "@/config/app.config";
-import { describeDays, type ReminderItem } from "@/features/reminders/engine";
+import { describeDays, type NoticeEvent, type ReminderItem } from "@/features/reminders/engine";
 import { addDays, dayMonth, daysBetween } from "@/lib/dates";
-import { NOTIFICATION_STEPS, dedupeKey, eventOf, stepIsDue, type Channel, type EventKey, type NoticeKind, type StepName } from "./steps";
+import { NOTIFICATION_STEPS, dedupeKey, eventOf, inWindow, stepIsDue, type Channel, type DatedEventKey, type NoticeKind, type StepName } from "./steps";
 
 /**
  * The notification planner (Notifications N.1, DECISIONS C139). Pure: no database, no clock, no env.
@@ -25,6 +25,8 @@ export type Notice = {
   dueDate: string;
   href: string;
   daysUntil: number;
+  /** More notices of this kind left out of the list by a cap (events only), counted in a batched line. */
+  extra?: number;
   /** What this notice says on its own (the send log keeps it per row). */
   title: string;
   body: string;
@@ -45,6 +47,8 @@ export type Message = {
 export type PlanInput = {
   recipient?: string;
   items: readonly ReminderItem[];
+  /** Events happening now (N.4): a slab limit, a reading overdue, a sign-up request. Push only. */
+  events?: readonly NoticeEvent[];
   today: string;
   /** Dedupe keys already used for this recipient. */
   usedKeys: ReadonlySet<string>;
@@ -71,7 +75,7 @@ function words(item: ReminderItem): { what: string; who: string | undefined } {
 }
 
 /** What one notice says by itself. */
-function noticeText(item: ReminderItem, event: EventKey, step: StepName, daysUntil: number): { title: string; body: string } {
+function noticeText(item: ReminderItem, event: DatedEventKey, step: StepName, daysUntil: number): { title: string; body: string } {
   const rule = NOTIFICATION_STEPS[event];
   const { what, who } = words(item);
   if (step === "plan") {
@@ -98,16 +102,26 @@ export function composeMessage(recipient: string, channel: Channel, notices: rea
   if (single) return { recipient, channel, title: single.title, body: single.body, href: single.href, notices: sorted };
 
   // Tasks never show their own words (free text, C139): several on one day become one line.
+  // Several sign-up requests are one line too: nothing about who they are (N.4).
   const tasks = sorted.filter((n) => n.event === "task");
-  const others = sorted.filter((n) => n.event !== "task");
+  const requests = sorted.filter((n) => n.event === "access-request");
+  const others = sorted.filter((n) => n.event !== "task" && n.event !== "access-request");
   const tasksLine = tasks.length === 1 ? tasks[0].title : `${tasks.length} tasks due today`;
-  if (others.length === 0) return { recipient, channel, title: tasksLine, body: NOTIFICATION_STEPS.task.place, href: "/tasks", notices: sorted };
+  const requestCount = requests.reduce((n, r) => n + 1 + (r.extra ?? 0), 0);
+  const requestsLine = requestCount === 1 ? requests[0].title : `${requestCount} people asked for access`;
+  if (others.length === 0 && requests.length === 0) return { recipient, channel, title: tasksLine, body: NOTIFICATION_STEPS.task.place, href: "/tasks", notices: sorted };
+  if (others.length === 0 && tasks.length === 0) return { recipient, channel, title: requestsLine, body: requests[0].body, href: requests[0].href, notices: sorted };
   const lines = [...others.map((n) => `${n.title} · ${n.body}`), ...(tasks.length > 0 ? [tasksLine] : [])];
-  return { recipient, channel, title: `${lines.length} things need you`, body: lines.join("\n"), href: "/reminders", notices: sorted };
+  // A request never says who; in a mixed batch it is one short line, and the link stays on the list of things.
+  if (requests.length > 0) lines.push(requestCount === 1 ? "Plus a request in People" : `Plus ${requestCount} requests in People`);
+  // A batch whose notices all open the same page (electricity only) opens that page; a mixed one opens the list.
+  const pages = new Set(sorted.map((n) => n.href));
+  const href = pages.size === 1 ? sorted[0].href : "/reminders";
+  return { recipient, channel, title: `${lines.length} things need you`, body: lines.join("\n"), href, notices: sorted };
 }
 
 /** The notices due today for one recipient, batched into at most one message per channel. */
-export function planNotifications({ recipient = "", items, today, usedKeys, channelsUsedToday }: PlanInput): Plan {
+export function planNotifications({ recipient = "", items, events = [], today, usedKeys, channelsUsedToday }: PlanInput): Plan {
   const notices: Notice[] = [];
   const seen = new Set<string>();
   let held = 0;
@@ -139,6 +153,33 @@ export function planNotifications({ recipient = "", items, today, usedKeys, chan
     }
   }
 
+  // Events happening now (N.4): inside their window, once per key.
+  for (const e of events) {
+    if (!inWindow(e, today)) continue;
+    for (const rule of NOTIFICATION_STEPS[e.event].steps) {
+      if (usedKeys.has(e.key) || seen.has(e.key)) continue;
+      seen.add(e.key);
+      if (channelsUsedToday?.has(rule.channel)) {
+        held++;
+        continue;
+      }
+      notices.push({
+        // The notice's own words; what the log keeps. Never a reminder item.
+        item: { id: e.key, title: e.title, dueDate: e.anchor, href: e.href, kind: e.event },
+        event: e.event,
+        step: rule.step,
+        channel: rule.channel,
+        dedupeKey: e.key,
+        dueDate: e.anchor,
+        href: e.href,
+        daysUntil: 0,
+        title: e.title,
+        body: e.body,
+        extra: e.extra,
+      });
+    }
+  }
+
   const messages = (["email", "push"] as const).flatMap((channel) => {
     const forChannel = notices.filter((n) => n.channel === channel);
     return forChannel.length > 0 ? [composeMessage(recipient, channel, forChannel)] : [];
@@ -160,12 +201,14 @@ export function previewUpcoming(
   usedKeys: ReadonlySet<string>,
   days: number,
   channelsUsedToday?: ReadonlySet<Channel>,
+  /** Events happening now (N.4): each is listed on the days inside its window (a slab event only today). */
+  events: readonly NoticeEvent[] = [],
 ): PreviewDay[] {
   const used = new Set(usedKeys);
   const out: PreviewDay[] = [];
   for (let i = 0; i < days; i++) {
     const date = addDays(today, i);
-    const plan = planNotifications({ items, today: date, usedKeys: used, channelsUsedToday: i === 0 ? channelsUsedToday : undefined });
+    const plan = planNotifications({ items, events, today: date, usedKeys: used, channelsUsedToday: i === 0 ? channelsUsedToday : undefined });
     for (const n of plan.notices) used.add(n.dedupeKey);
     if (plan.messages.length > 0) out.push({ date, messages: plan.messages });
   }

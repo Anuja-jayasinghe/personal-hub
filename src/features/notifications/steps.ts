@@ -1,8 +1,9 @@
-import type { ReminderItem } from "@/features/reminders/engine";
+import type { NoticeEvent, ReminderItem } from "@/features/reminders/engine";
 
 /**
- * When the hub reaches out, and how (Notifications N.1, DECISIONS C139). One map, so N.4 can add
- * cheques, the slab limit, missed readings and sign-ups by adding an event and a line in `eventOf`.
+ * When the hub reaches out, and how (Notifications N.1, DECISIONS C139). One map. Since N.4 (C142) it
+ * also holds the events that happen NOW and have no due date: a meter near its slab limit or over it, a
+ * meter reading overdue, someone waiting for sign-up approval (each one push, see NOW_EVENTS below).
  *
  * The owner's rules:
  *  - nothing new, nothing sent (no digest, no "all clear", no repeats);
@@ -16,19 +17,24 @@ import type { ReminderItem } from "@/features/reminders/engine";
 export type Channel = "email" | "push";
 export const CHANNELS: readonly Channel[] = ["email", "push"];
 
-export type StepName = "plan" | "act" | "overdue";
+export type StepName = "plan" | "act" | "overdue" | "now";
 
 /**
  * plan    — an email `daysBefore` the due date (caught up later inside the window, while more than one day remains)
  * act     — a push `daysBefore` the due date (1 = the day before, 0 = on the day; caught up only while still timely)
  * overdue — a push on the first run after the due date, within OVERDUE_WINDOW_DAYS
+ * now     — a push for an event happening now (N.4); the event itself says on which days it may go
  */
 export type StepRule =
   | { step: "plan"; channel: "email"; daysBefore: number }
   | { step: "act"; channel: "push"; daysBefore: 0 | 1 }
-  | { step: "overdue"; channel: "push" };
+  | { step: "overdue"; channel: "push" }
+  | { step: "now"; channel: "push" };
 
-export type EventKey = "renewal" | "service" | "electricity-bill" | "bill" | "autopay" | "task";
+/** Events that come from a due date (reminder items) and events happening now (`NoticeEvent`s, N.4). */
+export type DatedEventKey = "renewal" | "service" | "electricity-bill" | "bill" | "autopay" | "task";
+export type NowEventKey = NoticeEvent["event"];
+export type EventKey = DatedEventKey | NowEventKey;
 
 /**
  * Notices that do not come from a reminder, so never from the steps below (N.3, C140): a test push the
@@ -50,7 +56,13 @@ export type EventRule = {
 /** An overdue push is only sent within this many days after the due date (catch-up). */
 export const OVERDUE_WINDOW_DAYS = 7;
 
-export const NOTIFICATION_STEPS: Record<EventKey, EventRule> = {
+/**
+ * How many days after it begins an event happening now (a reading overdue, a sign-up request) may
+ * still be sent, so a missed run, or a day's push held back, catches up. Slab events are only ever about today.
+ */
+export const EVENT_WINDOW_DAYS = 7;
+
+const DATED_EVENTS = {
   /** Revenue license, insurance, emission test. The overdue push only if still current (the source lists only current renewals). */
   renewal: {
     verb: "ends",
@@ -101,13 +113,35 @@ export const NOTIFICATION_STEPS: Record<EventKey, EventRule> = {
     place: "Open Tasks",
     steps: [{ step: "act", channel: "push", daysBefore: 0 }],
   },
-};
+} satisfies Record<DatedEventKey, EventRule>;
+
+/**
+ * Events happening now (N.4, C142): one push each, owners only for now, never an email. Each has its
+ * own dedupe key (`NoticeEvent.key`), so none can be sent twice:
+ *  - slab-near: a meter's usage came within the near margin of its limit (once per cycle per meter);
+ *  - slab-over: it crossed the limit (once per cycle per meter);
+ *  - reading-due: no new reading for "check every N days" (once per last reading);
+ *  - access-request: someone signed in and waits for approval (once per person).
+ */
+const NOW_EVENTS = {
+  "slab-near": { steps: [{ step: "now", channel: "push" }] },
+  "slab-over": { steps: [{ step: "now", channel: "push" }] },
+  "reading-due": { steps: [{ step: "now", channel: "push" }] },
+  "access-request": { steps: [{ step: "now", channel: "push" }] },
+} satisfies Record<NowEventKey, { steps: readonly StepRule[] }>;
+
+export const NOTIFICATION_STEPS = { ...DATED_EVENTS, ...NOW_EVENTS };
+
+/** True when `today` is inside the days an event may be sent. */
+export function inWindow(event: Pick<NoticeEvent, "from" | "until">, today: string): boolean {
+  return event.from <= today && today <= event.until;
+}
 
 /**
  * Which event a reminder item is, from the prefix of its id (set by the sources in
  * src/features/reminders/sources/*). Unknown items send nothing.
  */
-export function eventOf(item: Pick<ReminderItem, "id" | "kind">): EventKey | null {
+export function eventOf(item: Pick<ReminderItem, "id" | "kind">): DatedEventKey | null {
   const prefix = item.id.slice(0, item.id.indexOf(":"));
   switch (prefix) {
     case "renewal":
@@ -136,6 +170,9 @@ export function stepIsDue(rule: StepRule, daysUntil: number): boolean {
       return daysUntil >= 0 && daysUntil <= rule.daysBefore;
     case "overdue":
       return daysUntil < 0 && daysUntil >= -OVERDUE_WINDOW_DAYS;
+    case "now":
+      // Events happening now have no due date: their own window decides (`inWindow`).
+      return false;
   }
 }
 
