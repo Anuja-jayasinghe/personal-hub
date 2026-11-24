@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addMonthsKeepingDay, anchorDayOf, daysInMonth, isFrequency, nextDueAfter, rollForward, nextBillDayAfter } from "./schedule";
+import { addMonthsKeepingDay, anchorDayOf, daysInMonth, isFrequency, nextDueAfter, rollForward, nextBillDayAfter, payableFrom } from "./schedule";
 
 describe("daysInMonth / anchorDayOf", () => {
   it("knows month lengths and leap years", () => {
@@ -96,5 +96,21 @@ describe("nextBillDayAfter", () => {
     expect(nextBillDayAfter("2026-11-19", 19)).toBe("2026-12-19");
     expect(nextBillDayAfter("2026-01-31", 31)).toBe("2026-02-28");
     expect(nextBillDayAfter("2026-12-20", 3)).toBe("2027-01-03");
+  });
+});
+
+describe("payableFrom", () => {
+  const bill = { kind: "bill" as const, frequency: "monthly" as const, autopay: false, anchorDay: 6 };
+  it("is the day after the previous bill day for a monthly bill", () => {
+    expect(payableFrom(bill, "2026-12-06")).toBe("2026-11-07");
+    expect(payableFrom(bill, "2027-01-06")).toBe("2026-12-07");
+    expect(payableFrom({ ...bill, anchorDay: 31 }, "2027-02-28")).toBe("2027-02-01");
+    expect(payableFrom({ ...bill, anchorDay: null }, "2027-01-06")).toBe("2026-12-07");
+  });
+  it("is null when the date is simply the date to pay by", () => {
+    expect(payableFrom({ ...bill, kind: "subscription" }, "2027-01-06")).toBeNull();
+    expect(payableFrom({ ...bill, autopay: true }, "2027-01-06")).toBeNull();
+    expect(payableFrom({ ...bill, frequency: "yearly" }, "2027-01-06")).toBeNull();
+    expect(payableFrom({ ...bill, frequency: "one_off" }, "2027-01-06")).toBeNull();
   });
 });

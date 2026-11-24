@@ -1,6 +1,6 @@
 import { addDays, daysBetween } from "@/lib/dates";
 import { toCents } from "@/lib/decimal";
-import { nextDueAfter, rollForward, type Frequency } from "./schedule";
+import { nextDueAfter, payableFrom, rollForward, type Frequency } from "./schedule";
 
 /**
  * What is coming up, the calendar grid and the monthly commitments (Phase 3.4). Pure: no database,
@@ -63,6 +63,8 @@ export type Occurrence = {
  * - An item that pays itself (autopay) starts at its next charge on or after `today`.
  * - Any other item starts at its stored due date; if that is in the past it counts once as
  *   overdue (like in Reminders), and later dates that are also already past are not repeated.
+ * - A monthly bill is not shown ahead of time: a date appears only once it can be paid (`payableFrom`),
+ *   so the bill of the 6th of next month is not listed on the 24th of this one (owner, 2026-11-24).
  * Finished one-off items have no dates.
  */
 export function occurrencesOf(item: BillLike, today: string, to: string): Occurrence[] {
@@ -93,6 +95,8 @@ export function occurrencesOf(item: BillLike, today: string, to: string): Occurr
     }
   }
   for (let i = 0; date !== null && date <= to && i < 1000; i++) {
+    const from = payableFrom(item, date);
+    if (from !== null && from > today) break; // later dates are even further from payable
     out.push(make(date, false));
     date = step(date);
   }

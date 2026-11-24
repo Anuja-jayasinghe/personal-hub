@@ -64,6 +64,22 @@ function addDaysTo(ymd: string, days: number): string {
 }
 
 /**
+ * The first day a due date can be paid (owner, 2026-11-24). A monthly bill that is not on autopay is
+ * processed by its provider on the bill day, so the bill due by `due` (the next bill day, S.5) does not
+ * exist, and is not shown or reminded, until the bill day before it has passed: SLT's bill of the 6th
+ * of December is only payable from the 7th. Null means payable at any time: subscriptions, items on
+ * autopay and every other frequency (their date is the date to pay by, shown ahead as before).
+ */
+export function payableFrom(
+  item: { kind: "bill" | "subscription"; frequency: Frequency; autopay: boolean; anchorDay: number | null },
+  due: string,
+): string | null {
+  if (item.kind !== "bill" || item.frequency !== "monthly" || item.autopay) return null;
+  const arrived = addMonthsKeepingDay(due, -1, item.anchorDay ?? anchorDayOf(due));
+  return addDaysTo(arrived, 1);
+}
+
+/**
  * The due date after `due`, or null for a one-off item (it is finished once paid).
  * `anchorDay` defaults to the day of `due`.
  */

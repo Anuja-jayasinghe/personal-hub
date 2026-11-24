@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/db/read";
-import { isNull } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
 import { appConfig } from "@/config/app.config";
 import { billItems, tasks, vehicles, vehicleServices } from "@/db/schema";
 import { previewUpcoming } from "@/features/notifications/planner";
@@ -111,5 +111,31 @@ describe("reminder sources with a database passed in", () => {
       .join("\n");
     expect(text).toContain("Service due today");
     expect(text).not.toMatch(/Chain|LKR|9,000|Silva/);
+  });
+
+  it("a monthly bill is not reminded about before it can be paid (owner, 2026-11-24)", async () => {
+    // Made-up broadband bill: arrives on the 6th, due by the next 6th. After the November bill is paid the item is due 6 Jan.
+    const rows = await db
+      .insert(billItems)
+      .values([
+        { name: "Broadband A", kind: "bill", frequency: "monthly", anchorDay: 6, nextDueDate: "2027-01-06", autopay: false },
+        { name: "Broadband B", kind: "bill", frequency: "monthly", anchorDay: 6, nextDueDate: "2026-12-06", autopay: false },
+        { name: "Streaming C", kind: "subscription", frequency: "monthly", anchorDay: 6, nextDueDate: "2027-01-06", autopay: false },
+      ])
+      .returning({ id: billItems.id });
+    try {
+      const titles = async (today: string) => {
+        const { loaded } = await loadSources(reminderSources, { db, today });
+        return loaded.find((l) => l.key === "bill-items")!.items.map((i) => i.title);
+      };
+      const on24 = await titles("2026-11-24");
+      expect(on24.some((x) => x.startsWith("Broadband A"))).toBe(false); // the January bill does not exist yet
+      expect(on24.some((x) => x.startsWith("Broadband B"))).toBe(true); // the November bill, still to pay by 6 Dec
+      expect(on24.some((x) => x.startsWith("Streaming C"))).toBe(true); // a subscription is shown ahead as before
+      expect((await titles("2026-12-06")).some((x) => x.startsWith("Broadband A"))).toBe(false); // processed that day
+      expect((await titles("2026-12-07")).some((x) => x.startsWith("Broadband A"))).toBe(true); // payable from the 7th
+    } finally {
+      for (const r of rows) await db.delete(billItems).where(eq(billItems.id, r.id));
+    }
   });
 });
