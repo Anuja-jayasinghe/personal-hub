@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
   calls: [] as string[],
   area: "vehicle_documents" as string,
   denied: false,
+  person: null as import("@/features/people/access").Access | null,
   recordFails: false,
   removeFails: false,
   updated: 0,
@@ -24,6 +25,12 @@ vi.mock("@/lib/auth", async () => {
     requireUser: vi.fn(async (need: unknown) => {
       state.calls.push(`requireUser ${JSON.stringify(need)}`);
       if (state.denied) throw new ValidationError("Not allowed.");
+      if (state.person) {
+        // A chosen person's real grants against what the action asks for.
+        const { allows } = await import("@/features/people/access");
+        const n = need as { area: Parameters<typeof allows>[1]; level: Parameters<typeof allows>[2] };
+        if (!allows(state.person, n.area, n.level)) throw new ValidationError("Not allowed.");
+      }
       return {};
     }),
   };
@@ -56,6 +63,8 @@ vi.mock("@/db", () => {
   };
 });
 
+import { accessFromGrants } from "@/features/people/access";
+import { replacementName } from "./doc-names";
 import { renameVehicleDocument, replaceVehicleFile } from "./document-actions";
 
 const ID = "33333333-3333-4333-8333-333333333333";
@@ -74,6 +83,7 @@ beforeEach(() => {
   state.calls = [];
   state.area = "vehicle_documents";
   state.denied = false;
+  state.person = null;
   state.recordFails = false;
   state.removeFails = false;
   state.updated = 0;
@@ -127,6 +137,76 @@ describe("replaceVehicleFile", () => {
     const result = await replace();
     expect(result.ok).toBe(true);
     expect(result.notice).toMatch(/old one could not be removed/);
+  });
+});
+
+/** An invoice on a service (V.4, C151): the same access as a renewal's file, and the service must still exist. */
+describe("replaceVehicleFile on a service's invoice", () => {
+  const SERVICE = "55555555-5555-4555-8555-555555555555";
+  const invoice = { id: ID, ownerType: "vehicle_service", ownerId: SERVICE, storagePath: `vehicle_service/${SERVICE}/old.pdf`, fileName: "CAB-1234_service_2026-06-14.pdf", title: null };
+  const replaceInvoice = (path = `vehicle_service/${SERVICE}/new.pdf`) => replaceVehicleFile({ ok: false }, form({ id: ID, uploadedPath: path, fileName: "new.pdf" }));
+  const person = (...g: [string, string][]) => accessFromGrants(g.map(([area, level]) => ({ area, level })));
+
+  it("replaces it, records the new file in the service's own folder, then removes the old one", async () => {
+    state.selects = [[invoice], [{ id: SERVICE }], [{ id: ID, fileName: invoice.fileName }]];
+    expect(await replaceInvoice()).toEqual({ ok: true });
+    expect(state.calls).toContain("recordUpload");
+    expect(state.calls.indexOf("removeAttachment")).toBeGreaterThan(state.calls.indexOf("recordUpload"));
+  });
+
+  it("keeps the hub name PLATE_service_<date> for the new file, with its own extension and a clash suffix", async () => {
+    // The old name loses any `_2` and takes the new file's extension; a sibling with the plain name pushes it to `_2`.
+    expect(replacementName("CAB-1234_service_2026-06-14.pdf", "jpg", [])).toBe("CAB-1234_service_2026-06-14.jpg");
+    expect(replacementName("CAB-1234_service_2026-06-14_2.pdf", "pdf", ["CAB-1234_service_2026-06-14.pdf"])).toBe("CAB-1234_service_2026-06-14_2.pdf");
+    expect(replacementName("CAB-1234_service_2026-06-14_3.pdf", "pdf", [])).toBe("CAB-1234_service_2026-06-14.pdf");
+  });
+
+  it("needs Edit in Vehicle documents: a person who may only see or add there is refused before anything is read", async () => {
+    for (const level of ["see", "add"]) {
+      state.person = person(["vehicle_documents", level], ["vehicles", "edit"]);
+      state.selects = [[invoice], [{ id: SERVICE }]];
+      state.calls = [];
+      expect((await replaceInvoice()).ok).toBe(false);
+      expect(state.calls).toEqual(['requireUser {"area":"vehicle_documents","level":"edit"}']);
+      expect(state.selects).toHaveLength(2); // nothing was looked up
+    }
+  });
+
+  it("Edit in Vehicles alone is not enough, and Edit in Vehicle documents is (the invoice follows the documents section)", async () => {
+    state.person = person(["vehicles", "edit"]);
+    expect((await replaceInvoice()).ok).toBe(false);
+    state.person = person(["vehicle_documents", "edit"]);
+    state.selects = [[invoice], [{ id: SERVICE }], []];
+    expect(await replaceInvoice()).toEqual({ ok: true });
+  });
+
+  it("refuses an invoice whose service no longer exists, and an id that is not a file at all", async () => {
+    state.selects = [[invoice], []];
+    expect((await replaceInvoice()).ok).toBe(false);
+    state.calls = [];
+    state.selects = [[]];
+    expect((await replaceInvoice()).ok).toBe(false);
+    expect(state.calls).not.toContain("recordUpload");
+    expect(state.calls).not.toContain("removeAttachment");
+  });
+
+  it("refuses a file that is not an invoice on a service of this kind (another owner type with the same id shape)", async () => {
+    state.selects = [[{ ...invoice, ownerType: "task" }]];
+    expect((await replaceInvoice()).ok).toBe(false);
+    expect(state.calls).not.toContain("recordUpload");
+  });
+
+  it("refuses to 'replace' the invoice with its own stored object", async () => {
+    state.selects = [[invoice], [{ id: SERVICE }]];
+    expect(await replaceInvoice(invoice.storagePath)).toEqual({ ok: false, error: "Choose the new file to upload." });
+    expect(state.calls).not.toContain("removeAttachment");
+  });
+
+  it("keeps the old invoice when the new one cannot be recorded", async () => {
+    state.selects = [[invoice], [{ id: SERVICE }], []];
+    state.recordFails = true;
+    expect((await replaceInvoice()).ok).toBe(false);
+    expect(state.calls).not.toContain("removeAttachment");
   });
 });
 

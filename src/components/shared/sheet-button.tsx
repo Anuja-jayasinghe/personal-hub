@@ -95,7 +95,7 @@ export function SheetBody({
     >
       <span aria-hidden className="mx-auto mb-3 block h-[5px] w-10 rounded-full bg-border md:hidden" />
       <p className="font-mono text-[10.5px] tracking-[0.14em] text-primary uppercase">{crumb}</p>
-      <SheetTitle className="mt-0.5 pr-10 font-display text-[26px] leading-tight font-semibold tracking-tight">{title}</SheetTitle>
+      <SheetTitle className="mt-0.5 pr-12 font-display text-[26px] leading-tight font-semibold tracking-tight">{title}</SheetTitle>
       {description ? <SheetDescription className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</SheetDescription> : null}
       <div className="@container mt-4">{typeof children === "function" ? children(close) : children}</div>
     </SheetContent>

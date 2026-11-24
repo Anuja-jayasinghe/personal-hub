@@ -299,7 +299,7 @@ function Fact({ term, value }: { term: string; value: string }) {
 
 /** The rare file actions, tucked behind ⋯: replace the file, rename a Documents upload, delete. */
 function FileMenu({ file, label, onGone, onDelete }: { file: PaperFile; label: string; onGone: () => void; onDelete: (fd: FormData) => Promise<void> }) {
-  const owner = file.ownerType === "vehicle_renewal" ? ("vehicle_renewal" as const) : ("vehicle" as const);
+  const owner = file.ownerType === "vehicle_renewal" || file.ownerType === "vehicle_service" ? file.ownerType : ("vehicle" as const);
   return (
     <PopoverButton icon="more" ariaLabel="More: replace, rename or delete" align="end">
       {(close) => (

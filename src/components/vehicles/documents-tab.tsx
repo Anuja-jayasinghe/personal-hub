@@ -7,11 +7,9 @@ import { PaperViewer, type RenewProps } from "@/components/vehicles/paper-viewer
 import { AddPaperButton } from "@/components/vehicles/paper-sheet";
 import { AddScanSheet, RenewSheet } from "@/components/vehicles/vehicle-sheets";
 import { appConfig } from "@/config/app.config";
-import type { Attachment, VehicleRenewal } from "@/db/schema";
-import { attachmentsByOwner } from "@/features/shared/queries";
+import type { VehicleRenewal } from "@/db/schema";
 import { docFileName, renewalKind, type DocKind } from "@/features/vehicles/doc-names";
 import {
-  buildPapers,
   byUrgency,
   glanceGroups,
   glanceLabel,
@@ -23,12 +21,11 @@ import {
   renewDue,
   searchPapers,
   type Paper,
-  type PaperFile,
   type PaperGroup,
   type PaperStatus,
 } from "@/features/vehicles/papers";
 import type { PaperContext } from "@/features/vehicles/paper-flow";
-import { listRenewals } from "@/features/vehicles/queries";
+import { loadVehiclePapers } from "@/features/vehicles/documents-data";
 import { isDemo } from "@/lib/auth";
 import { daysBetween, monthOf } from "@/lib/dates";
 import { formatBytes, formatDate, formatMoney, formatMonth, todayInAppTz } from "@/lib/format";
@@ -69,10 +66,6 @@ const TONE_TEXT = { ok: "text-status-ok", soon: "text-status-soon", overdue: "te
 const TONE_EDGE = { ok: "border-border", soon: "border-status-soon-mark/45", overdue: "border-status-overdue/50" } as const;
 const TONE_DOT = { ok: "bg-status-ok", soon: "bg-status-soon-mark", overdue: "bg-status-overdue" } as const;
 
-function toFile(a: Attachment): PaperFile {
-  return { id: a.id, ownerType: a.ownerType, ownerId: a.ownerId, fileName: a.fileName, title: a.title, mimeType: a.mimeType, sizeBytes: a.sizeBytes, createdAt: a.createdAt };
-}
-
 export async function DocumentsTab({
   vehicleId,
   vehicleName,
@@ -101,17 +94,10 @@ export async function DocumentsTab({
   /** What the one flow for papers needs (V.1b): behind every Add on this tab. */
   paper: PaperContext;
 }) {
-  const [own, renewalRows] = await Promise.all([attachmentsByOwner("vehicle", [vehicleId]), listRenewals(vehicleId)]);
-  const renewalFiles = await attachmentsByOwner("vehicle_renewal", renewalRows.map((r) => r.id));
+  const { papers, renewals: renewalRows } = await loadVehiclePapers(vehicleId, coverAttachmentId);
   const sample = await isDemo();
   const today = todayInAppTz(); // after the queries, which opt this render into request time
 
-  const documents = (own.get(vehicleId) ?? []).filter((a) => a.id !== coverAttachmentId).map(toFile);
-  const papers = buildPapers({
-    renewals: renewalRows,
-    renewalFiles: new Map([...renewalFiles].map(([id, list]) => [id, list.map(toFile)])),
-    documents,
-  });
   const groups = groupPapers(papers, today);
   const ctx: Ctx = {
     vehicleId,
@@ -258,7 +244,7 @@ function AllPapers({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
 
   return (
     <>
-      <Chips ctx={ctx} groups={groups} current={null} />
+      {nothing ? null : <Chips ctx={ctx} groups={groups} current={null} />}
 
       {/* Phone: compact cards, each opening its category. */}
       <div className="flex flex-col gap-2.5 md:hidden">
@@ -266,7 +252,7 @@ function AllPapers({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
           <CompactCard key={g.kind} ctx={ctx} group={g} />
         ))}
         {empty.length > 0 && canFill ? <EmptyRow ctx={ctx} groups={empty} /> : null}
-        {nothing && !canFill ? <NothingYet /> : null}
+        {nothing && !canFill ? <NothingYet name={ctx.vehicleName} /> : null}
       </div>
 
       {/* Desktop: the at-a-glance row, then each category in full. */}
@@ -280,7 +266,7 @@ function AllPapers({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
             ))}
           </ul>
         ) : null}
-        {nothing && !canFill ? <NothingYet /> : null}
+        {nothing && !canFill ? <NothingYet name={ctx.vehicleName} /> : null}
         <div className="@container">
           <div className="grid gap-x-5 gap-y-7 @5xl:grid-cols-2">
             {shown.map((g, i) => (
@@ -294,8 +280,8 @@ function AllPapers({ ctx, groups }: { ctx: Ctx; groups: PaperGroup[] }) {
   );
 }
 
-function NothingYet() {
-  return <p className="rounded-2xl border border-dashed p-6 text-center text-sm text-muted-foreground">No papers yet.</p>;
+function NothingYet({ name }: { name: string }) {
+  return <p className="px-1 text-sm text-muted-foreground">Nothing has been filed for the {name} yet.</p>;
 }
 
 /** Phone: All plus one chip per category; a category that runs out soon carries its state colour. */

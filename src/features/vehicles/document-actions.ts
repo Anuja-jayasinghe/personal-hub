@@ -3,7 +3,7 @@
 import { and, eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { db } from "@/db";
-import { attachments } from "@/db/schema";
+import { attachments, vehicleServices } from "@/db/schema";
 import { toActionState } from "@/features/shared/errors";
 import { recordUpload, removeAttachment, uploadedFrom } from "@/features/shared/files";
 import { fileArea } from "@/features/people/file-area";
@@ -39,7 +39,8 @@ export async function renameVehicleDocument(_prev: ActionState, fd: FormData): P
 }
 
 /**
- * Replaces the file of a paper (issue #187): a vehicle's own document or a file on one of its renewals. The
+ * Replaces the file of a paper (issue #187): a vehicle's own document, a file on one of its renewals or (V.4, C151) an
+ * invoice on one of its services, all with the same access (Edit in Vehicle documents). The
  * browser has already put the new file in storage (C115, the same "attachment" upload as the record's own
  * form). The new file keeps the old one's name (with its own extension) and title; the old file goes once
  * the new one is recorded, so a failure never leaves the paper with neither. If the old file then cannot be
@@ -52,8 +53,13 @@ export async function replaceVehicleFile(_prev: ActionState, fd: FormData): Prom
     await requireUser({ area: "vehicle_documents", level: "edit" });
     const id = idFrom(fd);
     const [old] = await db.select().from(attachments).where(eq(attachments.id, id));
-    if (!old || (old.ownerType !== "vehicle" && old.ownerType !== "vehicle_renewal")) throw new ValidationError("That file could not be found.");
+    if (!old || (old.ownerType !== "vehicle" && old.ownerType !== "vehicle_renewal" && old.ownerType !== "vehicle_service")) throw new ValidationError("That file could not be found.");
     if ((await fileArea(old)) !== "vehicle_documents") throw new ValidationError("That file could not be found.");
+    if (old.ownerType === "vehicle_service") {
+      // The invoice's service must still exist: the new file is named from it (`PLATE_service_<date>`), and a file left behind by a deleted service is not a paper.
+      const [service] = await db.select({ id: vehicleServices.id }).from(vehicleServices).where(eq(vehicleServices.id, old.ownerId));
+      if (!service) throw new ValidationError("That file could not be found.");
+    }
     const uploaded = uploadedFrom(fd);
     if (uploaded.path === old.storagePath) throw new ValidationError("Choose the new file to upload.");
     const siblings = await db

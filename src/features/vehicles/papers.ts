@@ -21,6 +21,9 @@ import { DOC_KINDS, defaultDocTitle, isDocKind, renewalKind, type DocKind } from
 /** One stored file, as much of an attachment row as the tab needs. */
 export type PaperFile = { id: string; ownerType: string; ownerId: string; fileName: string; title: string | null; mimeType: string; sizeBytes: number; createdAt: Date };
 
+/** As much of a service row as the tab needs, for the invoices on it (V.4, C151). */
+export type ServiceLike = { id: string; serviceType: string; serviceDate: string; createdAt: Date };
+
 /** As much of a renewal row as the tab needs. */
 export type RenewalLike = {
   id: string;
@@ -39,6 +42,8 @@ export type Paper = {
   kind: DocKind;
   /** The renewal it belongs to, when it came from a renewal. The renewal owns the record (one home per action). */
   renewalId: string | null;
+  /** The service it belongs to, when it is the invoice of a service (V.4, C151): shown under Other, never as a record here. */
+  serviceId: string | null;
   /** True for a renewal that has been renewed (history). */
   renewed: boolean;
   /** A name worth showing: the renewal's provider, or a title the owner typed. Null when it would only repeat the kind and date. */
@@ -133,15 +138,19 @@ export function paperFromDocument(file: PaperFile): Paper {
   // A title the hub made itself ("Insurance until 2027-05-01") only repeats the category and the date.
   const madeUp = title !== null && (title === kindLabel(kind) || (usableDate !== null && title === defaultDocTitle(kind, usableDate)));
   const dated = isDatedKind(kind);
+  // A book saved with no printed date is named with the day it was added (V.1b). A book whose name date IS its added
+  // day almost certainly got that day from the clock, not from the book, so no "printed" date is claimed for it.
+  const fromToday = kind === "book" && usableDate !== null && usableDate === todayIn(appConfig.timeZone, file.createdAt);
   return {
     key: `d:${file.id}`,
     kind,
     renewalId: null,
+    serviceId: null,
     renewed: false,
     name: madeUp ? null : title,
     start: null,
     until: dated ? usableDate : null,
-    dated: dated ? null : usableDate,
+    dated: dated || fromToday ? null : usableDate,
     amount: null,
     files: [file],
     addedAt: file.createdAt,
@@ -156,6 +165,7 @@ export function paperFromRenewal(r: RenewalLike, files: readonly PaperFile[]): P
     key: `r:${r.id}`,
     kind,
     renewalId: r.id,
+    serviceId: null,
     renewed: r.renewedAt !== null,
     // A renewal of a type outside the three keeps its type as its name, so "Other" still says what it is.
     name: r.provider?.trim() || (dated ? null : r.type),
@@ -168,10 +178,33 @@ export function paperFromRenewal(r: RenewalLike, files: readonly PaperFile[]): P
   };
 }
 
+/**
+ * A service's invoices as one paper under Other (V.4, C151): "Service · Oil change", dated by the service. The
+ * service record and its reminder stay in the Overview's detail sheet (one home per action); this is only the file.
+ * Text the owner typed is only ever shown, never read for meaning.
+ */
+export function paperFromService(s: ServiceLike, files: readonly PaperFile[]): Paper {
+  return {
+    key: `s:${s.id}`,
+    kind: "other",
+    renewalId: null,
+    serviceId: s.id,
+    renewed: false,
+    name: `Service · ${s.serviceType.trim() || "Service"}`,
+    start: null,
+    until: null,
+    dated: s.serviceDate,
+    amount: null,
+    files: [...files].sort(byOldest),
+    addedAt: s.createdAt,
+  };
+}
+
 const byOldest = (a: PaperFile, b: PaperFile) => a.createdAt.getTime() - b.createdAt.getTime();
 
 /**
- * Every paper of a vehicle: one per renewal (with its files, or none yet) and one per Documents upload.
+ * Every paper of a vehicle: one per renewal (with its files, or none yet), one per Documents upload and one per
+ * service that has an invoice.
  * A Documents upload of the same kind and "valid until" as a renewal is the same paper, so its file joins
  * that renewal instead of showing twice (the newest such renewal when two share the date).
  */
@@ -179,8 +212,15 @@ export function buildPapers(input: {
   renewals: readonly RenewalLike[];
   renewalFiles: ReadonlyMap<string, readonly PaperFile[]>;
   documents: readonly PaperFile[];
+  /** This vehicle's services and the files on them (V.4): only a service with a file becomes a paper. */
+  services?: readonly ServiceLike[];
+  serviceFiles?: ReadonlyMap<string, readonly PaperFile[]>;
 }): Paper[] {
   const papers = input.renewals.map((r) => paperFromRenewal(r, input.renewalFiles.get(r.id) ?? []));
+  for (const s of input.services ?? []) {
+    const files = input.serviceFiles?.get(s.id) ?? [];
+    if (files.length > 0) papers.push(paperFromService(s, files));
+  }
   for (const file of input.documents) {
     const doc = paperFromDocument(file);
     const twins = doc.until ? papers.filter((p) => p.renewalId && p.kind === doc.kind && p.until === doc.until) : [];
