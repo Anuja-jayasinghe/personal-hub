@@ -54,6 +54,16 @@ describe("deleteSharedDataOf for a service", () => {
   });
 });
 
+describe("deleteSharedDataOf for a cheque (issue #178)", () => {
+  it("removes both photos from storage, then their rows, so no picture of a cheque is left behind", async () => {
+    // tasks, notes, then the cheque's own attachments (front and back)
+    state.selects = [[], [], [{ storagePath: `cheque/${A}/one.jpg` }, { storagePath: `cheque/${A}/two.jpg` }]];
+    await deleteSharedDataOf("cheque", A);
+    expect(state.removed).toEqual([[`cheque/${A}/one.jpg`, `cheque/${A}/two.jpg`]]);
+    expect(state.deletes).toBeGreaterThanOrEqual(1);
+  });
+});
+
 describe("deleteServiceDataOfVehicle", () => {
   it("removes the files of every service of the vehicle, so no invoice is left behind", async () => {
     state.selects = [

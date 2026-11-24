@@ -21,6 +21,9 @@ export const OWNER_TYPES = [
   "bill_item",
   // A payment of a bill or subscription can carry its receipt (Phase 3.2).
   "bill_payment",
+  // A received cheque can carry its photos (front, back) (issue #178, C158). Owners only: see
+  // `OWNER_ONLY_OWNER_TYPES` in src/features/people/access.ts.
+  "cheque",
 ] as const;
 
 export type OwnerType = (typeof OWNER_TYPES)[number];

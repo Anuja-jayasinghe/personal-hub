@@ -26,7 +26,7 @@ export async function getReminders(): Promise<RemindersData> {
 
   // Only the sections this person may see (S.8, C114); owners see every source.
   const access = await getAccess();
-  const sources = reminderSources.filter((s) => access !== null && allowsSourceArea(access, SOURCE_AREA[s.key] ?? "tasks_notes"));
+  const sources = reminderSources.filter((s) => access !== null && allowsSourceArea(access, SOURCE_AREA[s.key] ?? "owner"));
   const { loaded, failedSources } = await loadSources(sources);
   const items = loaded.flatMap((l) => l.items);
 

@@ -13,3 +13,4 @@ export * from "./electricity-live";
 export * from "./people";
 export * from "./notifications";
 export * from "./push-subscriptions";
+export * from "./cheques";

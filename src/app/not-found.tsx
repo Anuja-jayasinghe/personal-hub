@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { Logo } from "@/components/brand/logo";
 import { NotFoundNetwork } from "@/components/shell/state-pictures";
 import { GoBackButton, RequestedPath } from "@/components/shell/state-links";
-import { enabledModules } from "@/config/app.config";
+import { publicModules as enabledModules } from "@/config/app.config";
 
 export const metadata: Metadata = { title: "Not found" };
 

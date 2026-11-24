@@ -333,6 +333,8 @@ Goal: one place to add anything to a vehicle, an oil-change reminder that sets i
 
 **Polish after Phase V (C152, issue #237):** the vehicle page's hero (plate, name and buttons beside a tall cover-photo panel; the drawing in the same card when there is no photo) and the Overview's cards, odometer history rows, timeline and details card were restyled, and the hero photo now loads eagerly with a reserved box. Look only; nothing new was added.
 
+**Cheques (C158, issue #178):** ✅ built: an owners-only module at `/cheques` to record received cheques (who, amount, date, optional bank and number, a front and back photo), mark them deposited, cleared, bounced or cancelled, and be reminded on the cheque date (overdue until deposited) and before the stale date, six months after it. Needs migration 0021 applied before merging.
+
 ## Later (each needs its own decision)
 
 - **Vehicle photo treatment** (C104): make an uploaded photo look its best in-house (no outside AI service), for example cut-out, lighting and the stage around it. For now the photo is shown as it is.

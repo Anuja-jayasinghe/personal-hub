@@ -32,7 +32,7 @@ export type StepRule =
   | { step: "now"; channel: "push" };
 
 /** Events that come from a due date (reminder items) and events happening now (`NoticeEvent`s, N.4). */
-export type DatedEventKey = "renewal" | "service" | "electricity-bill" | "bill" | "autopay" | "task";
+export type DatedEventKey = "renewal" | "service" | "electricity-bill" | "bill" | "autopay" | "task" | "cheque" | "cheque-stale";
 export type NowEventKey = NoticeEvent["event"];
 export type EventKey = DatedEventKey | NowEventKey;
 
@@ -45,9 +45,9 @@ export type NoticeKind = EventKey | SystemKind;
 
 export type EventRule = {
   /** How the event reads in a message: "Insurance ends 23 Dec" / "Electricity bill due 30 Nov". */
-  verb: "ends" | "due";
-  /** Said once it is past: "Insurance has ended" / "Electricity bill overdue". */
-  past: "has ended" | "overdue";
+  verb: "ends" | "due" | "to deposit" | "goes stale";
+  /** Said once it is past: "Insurance has ended" / "Electricity bill overdue" / "Cheque not deposited yet". */
+  past: "has ended" | "overdue" | "not deposited yet" | "has gone stale";
   /** The body of a push when the item has no `who` (a bill's page). */
   place: string;
   steps: readonly StepRule[];
@@ -113,6 +113,33 @@ const DATED_EVENTS = {
     place: "Open Tasks",
     steps: [{ step: "act", channel: "push", daysBefore: 0 }],
   },
+  /**
+   * A received cheque waiting to be deposited (issue #178, C158), due on its cheque date. Owners only. The
+   * words are only "Cheque" (never an amount, a name, a bank or a number). C139's three: an email a week
+   * before, a push on the day it can be deposited, a push on the first day it is overdue. Every day after
+   * that it stays on the Reminders page and Home, as the rule says.
+   */
+  cheque: {
+    verb: "to deposit",
+    past: "not deposited yet",
+    place: "Cheques",
+    steps: [
+      { step: "plan", channel: "email", daysBefore: 7 },
+      { step: "act", channel: "push", daysBefore: 0 },
+      { step: "overdue", channel: "push" },
+    ],
+  },
+  /** The same cheque going stale, six months after its date: an email a month ahead, a push the day before, a push the day after. */
+  "cheque-stale": {
+    verb: "goes stale",
+    past: "has gone stale",
+    place: "Cheques",
+    steps: [
+      { step: "plan", channel: "email", daysBefore: 30 },
+      { step: "act", channel: "push", daysBefore: 1 },
+      { step: "overdue", channel: "push" },
+    ],
+  },
 } satisfies Record<DatedEventKey, EventRule>;
 
 /**
@@ -154,6 +181,10 @@ export function eventOf(item: Pick<ReminderItem, "id" | "kind">): DatedEventKey 
       return item.kind === "autopay" ? "autopay" : "bill";
     case "task":
       return "task";
+    case "cheque":
+      return "cheque";
+    case "cheque-stale":
+      return "cheque-stale";
     default:
       return null;
   }

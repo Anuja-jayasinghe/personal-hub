@@ -1,4 +1,4 @@
-import { allows } from "@/features/people/access";
+import { allows, isOwnerOnlyOwner } from "@/features/people/access";
 import { fileArea } from "@/features/people/file-area";
 import { getAttachment } from "@/features/shared/queries";
 import { getAuthState } from "@/lib/auth";
@@ -21,7 +21,10 @@ export async function GET(request: Request, ctx: RouteContext<"/files/[id]">) {
 
   const attachment = await getAttachment(id);
   if (!attachment) return new Response("Not found", { status: 404 });
-  if (!allows(state.access, await fileArea(attachment), "see")) return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
+  // A cheque's photos are money: owners only, whatever sections a person has (issue #178, C158).
+  if (isOwnerOnlyOwner(attachment.ownerType)) {
+    if (!state.access.owner) return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
+  } else if (!allows(state.access, await fileArea(attachment), "see")) return new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });
 
   // `?download=1` asks the browser to save the file under its hub name instead of showing it (issue #187).
   const download = new URL(request.url).searchParams.get("download") === "1";

@@ -9,7 +9,7 @@
  *   Name / logo / ... → this file
  */
 
-export type ModuleKey = "vehicles" | "electricity" | "bills";
+export type ModuleKey = "vehicles" | "electricity" | "bills" | "cheques";
 
 /** Pages that belong to the app itself rather than to one module (shown under Home in the sidebar). */
 export type SharedPageConfig = {
@@ -31,6 +31,11 @@ export type ModuleConfig = {
   /** Icon name from src/components/shell/icons.tsx. */
   icon: string;
   enabled: boolean;
+  /**
+   * Only the owners get this module: it is hidden from everyone else, the demo and signed-out visitors
+   * (nav, More, the 404 links), and its page and actions refuse them (issue #178, C158).
+   */
+  ownerOnly?: boolean;
 };
 
 export const appConfig = {
@@ -180,12 +185,25 @@ export const appConfig = {
       icon: "receipt",
       enabled: true,
     },
+    {
+      key: "cheques",
+      label: "Cheques",
+      navLabel: "Cheques",
+      description: "Cheques you have received, and when to deposit them.",
+      href: "/cheques",
+      icon: "documents",
+      enabled: true,
+      ownerOnly: true,
+    },
   ] satisfies ModuleConfig[],
 } as const;
 
 export type AppConfig = typeof appConfig;
 
 export const enabledModules = appConfig.modules.filter((m) => m.enabled);
+
+/** The enabled modules everyone may be pointed to (a 404 page shows no owner-only module, issue #178). */
+export const publicModules: readonly ModuleConfig[] = enabledModules.filter((m) => !(m as ModuleConfig).ownerOnly);
 
 /** True when a module is switched on in `appConfig.modules`; route pages use it to 404 when off. */
 export function isModuleEnabled(key: ModuleKey): boolean {
