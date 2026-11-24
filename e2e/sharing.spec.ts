@@ -7,8 +7,9 @@ import postgres from "postgres";
  *   1. a TEST account signs in by itself: it is added as waiting and sees the demo, not real data;
  *   2. it is approved with Vehicles at See (the same rows Settings › People writes);
  *   3. after a reload it sees the hub with real data, Vehicles only, and nothing to change;
- *   4. given Vehicle documents at Add, it uploads a small TEST file to a vehicle (straight to storage, C115)
- *      and the file opens.
+ *   4. given Vehicle documents at Add, it adds a small TEST paper to a vehicle through the one flow for papers
+ *      (V.1b: the file goes straight to storage, C115, and is saved as a document, with no record since it may
+ *      only see Vehicles) and the file opens.
  * The TEST account, its rows and the TEST file are always deleted at the end, even when a step fails.
  */
 
@@ -120,15 +121,21 @@ test.describe("sharing with a person who signs in by themselves", () => {
     await sql`insert into access_grants (person_id, area, level) values (${waiting.id}, 'vehicle_documents', 'add')`;
     const [vehicle] = await sql<{ id: string }[]>`select id from vehicles where archived_at is null order by created_at limit 1`;
     test.skip(!vehicle, "the hub has no vehicle to attach the TEST file to");
-    await page.goto(`/vehicles/${vehicle.id}?tab=documents`);
-    await page.getByRole("button", { name: "Add document" }).click();
-    await page.getByLabel("What is it?").selectOption("other");
-    await page.getByLabel("Date").fill(TEST_DATE);
-    await page.getByLabel("What is it called?").fill(TEST_TITLE);
-    await page.locator('input[type="file"][name="file"]').setInputFiles({ name: TEST_FILE, mimeType: "application/pdf", buffer: TEST_PDF });
-    await expect(page.getByText(/Saved as .*_test-upload_2000-01-01\.pdf/)).toBeVisible();
-    await page.getByRole("button", { name: "Save document" }).click();
+    // The one flow for papers (V.1b, C148): Add, "A paper", the file, what it is, its details, Save. This person may add
+    // documents but only see vehicles, so the paper is kept as an "Other" document with no record.
+    await page.goto(`/vehicles/${vehicle.id}`);
+    await page.getByRole("button", { name: "Add", exact: true }).click();
+    await page.getByRole("button", { name: /^A paper/ }).click();
+    const sheet = page.getByRole("dialog", { name: "Add a paper" });
+    await sheet.locator('input[type="file"]').setInputFiles({ name: TEST_FILE, mimeType: "application/pdf", buffer: TEST_PDF });
+    await sheet.getByRole("button", { name: "Other", exact: true }).click();
+    await sheet.getByLabel("What is it called?").fill(TEST_TITLE);
+    await sheet.getByLabel("Date", { exact: true }).fill(TEST_DATE);
+    await expect(sheet.getByText(/Saved as .*_test-upload_2000-01-01\.pdf/)).toBeVisible();
+    await sheet.getByRole("button", { name: "Save the paper" }).click();
+    await expect(sheet).toBeHidden({ timeout: 45_000 });
     // It shows under Other on the Documents tab, as a paper that opens in the viewer (issue #187).
+    await page.goto(`/vehicles/${vehicle.id}?tab=documents`);
     const paper = page.getByRole("button", { name: new RegExp(TEST_TITLE) });
     await expect(paper).toBeVisible({ timeout: 45_000 });
 

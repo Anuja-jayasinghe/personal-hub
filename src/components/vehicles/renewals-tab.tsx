@@ -2,7 +2,8 @@ import { Trash2 } from "lucide-react";
 import { AttachmentsPanel } from "@/components/shared/attachments-panel";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { RenewalForm } from "@/components/vehicles/renewal-form";
-import { AddRenewalSheet } from "@/components/vehicles/vehicle-sheets";
+import type { PaperContext, PaperKind } from "@/features/vehicles/paper-flow";
+import { AddPaperButton } from "@/components/vehicles/paper-sheet";
 import { DaysRing } from "@/components/shared/days-ring";
 import { Badge } from "@/components/ui/badge";
 import { appConfig } from "@/config/app.config";
@@ -17,23 +18,26 @@ import { splitCurrentAndPast } from "@/features/vehicles/renewal-logic";
 import { daysBetween } from "@/lib/dates";
 import { formatDate, formatMoney, todayInAppTz } from "@/lib/format";
 
+const RENEWAL_KINDS: readonly PaperKind[] = ["license", "insurance", "emission"];
+
 /**
  * The Renewals tab: current renewals with days left, a renewed action, documents, and history. A renewal's
  * papers are Vehicle documents (C114), so they only show to people who may see that section.
  */
 export async function RenewalsTab({
   vehicleId,
-  vehicleName,
   namePrefix,
   askOdometer = true,
   showDocuments,
+  paper,
 }: {
   vehicleId: string;
-  vehicleName: string;
   namePrefix: string;
   /** False when the vehicle's emission certificates print an inaccurate odometer (issue #184). */
   askOdometer?: boolean;
   showDocuments: boolean;
+  /** What the one flow for papers needs (V.1b): "Add renewal" opens it with the three renewal kinds. */
+  paper: PaperContext;
 }) {
   const list = await listRenewals(vehicleId);
   // The demo has sample file rows but no files behind them (issue #187), so it shows no file links here.
@@ -45,7 +49,7 @@ export async function RenewalsTab({
   return (
     <section aria-label="Renewals" className="flex flex-col gap-4">
       <div>
-        <AddRenewalSheet vehicleId={vehicleId} vehicleName={vehicleName} types={types} askOdometer={askOdometer} />
+        {paper.can.records ? <AddPaperButton ctx={paper} kinds={RENEWAL_KINDS} label="Add renewal" title="Add a renewal" /> : null}
       </div>
 
       {current.length === 0 ? (

@@ -11,14 +11,15 @@ describe("addChoices (the one Add button, V.1a)", () => {
 
   it("offers a service and a reading with Add in Vehicles, and nothing else without the other sections", () => {
     const c = addChoices(grants(["vehicles", "add"]));
-    expect(c).toEqual({ paper: false, service: true, reading: true, note: false });
+    expect(c).toEqual({ paper: true, service: true, reading: true, note: false });
     expect(hasAddChoice(c)).toBe(true);
   });
 
-  it("offers a paper only with Add in Vehicle documents", () => {
+  it("offers a paper with Add in Vehicle documents (the file) or Add in Vehicles (the record), and not with only See", () => {
     expect(addChoices(grants(["vehicles", "see"], ["vehicle_documents", "add"])).paper).toBe(true);
-    expect(addChoices(grants(["vehicles", "edit"], ["vehicle_documents", "see"])).paper).toBe(false);
-    expect(addChoices(grants(["vehicles", "edit"])).paper).toBe(false);
+    expect(addChoices(grants(["vehicles", "edit"], ["vehicle_documents", "see"])).paper).toBe(true);
+    expect(addChoices(grants(["vehicles", "edit"])).paper).toBe(true);
+    expect(addChoices(grants(["vehicles", "see"], ["vehicle_documents", "see"])).paper).toBe(false);
   });
 
   it("offers a note only with Add in Tasks & notes, plus seeing the vehicle (what adding a note needs today)", () => {

@@ -8,7 +8,10 @@ import { allows, sharedVisible, type Access } from "@/features/people/access";
  */
 
 export type AddChoices = {
-  /** A paper: needs Add in Vehicle documents (for now the existing Add a document form; V.1b replaces it). */
+  /**
+   * A paper (the one flow for papers, V.1b): Add in Vehicle documents (the file) or Add in Vehicles (the record);
+   * what it saves depends on which of the two, and the sheet only offers what the person may do (`paper-flow.ts`).
+   */
   paper: boolean;
   /** A service: needs Add in Vehicles. */
   service: boolean;
@@ -20,7 +23,7 @@ export type AddChoices = {
 
 export function addChoices(access: Access): AddChoices {
   return {
-    paper: allows(access, "vehicle_documents", "add"),
+    paper: allows(access, "vehicle_documents", "add") || allows(access, "vehicles", "add"),
     service: allows(access, "vehicles", "add"),
     reading: allows(access, "vehicles", "add"),
     note: sharedVisible(access, "vehicle", "add"),

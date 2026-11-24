@@ -1,5 +1,6 @@
 import { addMonthsToDate } from "@/lib/dates";
 import { toCents } from "@/lib/decimal";
+import { parseService, type ServiceFields } from "./service-validate";
 
 /**
  * Rules for which service records matter, and yearly cost totals. Pure (no database, no clock),
@@ -21,14 +22,26 @@ export type ServiceRow = {
 export const typeKey = (type: string) => type.trim().replace(/\s+/g, " ").toLowerCase();
 
 /**
+ * The key of a service's cycle: its vehicle and its type. The types listed in `sharedCycle` (the oil-change
+ * types, V.1b) share ONE cycle per vehicle, so a Full service and an Oil change replace each other's marker;
+ * every other type keeps a cycle of its own.
+ */
+function cycleKey(row: ServiceRow, sharedCycle: readonly string[]): string {
+  const key = typeKey(row.serviceType);
+  const shared = key !== "" && sharedCycle.some((t) => typeKey(t) === key);
+  return `${row.vehicleId}::${shared ? "\u0000shared" : key}`;
+}
+
+/**
  * The latest record of each (vehicle, service type): the newest service date wins, and the most
  * recently entered record breaks a tie on the same day. An older record of a type is "superseded"
- * once a newer one exists, whatever the newer one's next due date says.
+ * once a newer one exists, whatever the newer one's next due date says. The types in `sharedCycle` (the
+ * oil-change types) count as one type: the newest service among them decides.
  */
-export function latestPerType<T extends ServiceRow>(rows: readonly T[]): T[] {
+export function latestPerType<T extends ServiceRow>(rows: readonly T[], sharedCycle: readonly string[] = []): T[] {
   const best = new Map<string, T>();
   for (const row of rows) {
-    const key = `${row.vehicleId}::${typeKey(row.serviceType)}`;
+    const key = cycleKey(row, sharedCycle);
     const current = best.get(key);
     if (
       !current ||
@@ -41,9 +54,9 @@ export function latestPerType<T extends ServiceRow>(rows: readonly T[]): T[] {
   return [...best.values()];
 }
 
-/** The records that should remind: the latest of each type, if it has a next due date. */
-export function dueServices<T extends ServiceRow>(rows: readonly T[]): (T & { nextDueDate: string })[] {
-  return latestPerType(rows).filter((r): r is T & { nextDueDate: string } => r.nextDueDate !== null);
+/** The records that should remind: the latest of each type (the oil-change types as one), if it has a next due date. */
+export function dueServices<T extends ServiceRow>(rows: readonly T[], sharedCycle: readonly string[] = []): (T & { nextDueDate: string })[] {
+  return latestPerType(rows, sharedCycle).filter((r): r is T & { nextDueDate: string } => r.nextDueDate !== null);
 }
 
 export { toCents };
@@ -96,4 +109,19 @@ export function nextDueToStore(
   if (!isOilChangeType(fields.serviceType, rules)) return fields.nextDueDate;
   if (!remind) return null;
   return fields.nextDueDate ?? oilChangeMarker(fields.serviceDate, fields.serviceType, rules);
+}
+
+/**
+ * A service as it is stored, from the raw form fields (V.1a, V.1b): validated, with its next due date worked out by
+ * `nextDueToStore`. The Add a service form and the one flow for papers both use it, so the marker is decided in one
+ * place and never trusted from the form alone.
+ */
+export function serviceToStore(
+  raw: Record<string, string | undefined>,
+  remind: boolean,
+  rules: Pick<OilRules, "oilChangeMonths" | "oilChangeTypes">,
+): { ok: true; value: ServiceFields } | { ok: false; error: string } {
+  const parsed = parseService(raw);
+  if (!parsed.ok) return parsed;
+  return { ok: true, value: { ...parsed.value, nextDueDate: nextDueToStore(parsed.value, remind, rules) } };
 }

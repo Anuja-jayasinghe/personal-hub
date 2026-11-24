@@ -27,7 +27,7 @@ export async function ServicesTab({ vehicleId, vehicleName, namePrefix, docs }: 
   const files = docs.canSee && !(await isDemo()) ? await attachmentsByOwner("vehicle_service", list.map((s) => s.id)) : null;
   const today = todayInAppTz(); // after the query, which opts this render into request time
   // The newest record of each type is the one whose next due date drives Reminders.
-  const current = new Set(latestPerType(list).map((s) => s.id));
+  const current = new Set(latestPerType(list, rules.oilChangeTypes).map((s) => s.id));
   const { serviceTypes } = appConfig.vehicles;
 
   return (

@@ -12,27 +12,25 @@ import { initialActionState, type ActionState } from "@/features/shared/types";
 type Props = {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
   types: readonly string[];
-  /** Create: the vehicle the renewal belongs to. */
-  vehicleId?: string;
-  /** Edit: the record to change. Renew: the record being renewed (its type is kept). */
+  /** The record to change (edit) or the record being renewed (renew; its type is kept). */
   renewal?: VehicleRenewal;
-  mode: "create" | "edit" | "renew";
+  /** A new renewal is added with the one flow for papers (V.1b); this form only edits and renews. */
+  mode: "edit" | "renew";
   /** Called after a successful save, e.g. to close the sheet the form sits in. */
   /** False when the vehicle's emission certificates print an inaccurate odometer (issue #184). */
   askOdometer?: boolean;
   onDone?: () => void;
 };
 
-/** One form for adding, editing and renewing a renewal (createRenewal / updateRenewal / renewRenewal). */
-export function RenewalForm({ action, types, vehicleId, renewal, mode, askOdometer = true, onDone }: Props) {
+/** One form for editing and renewing a renewal (updateRenewal / renewRenewal). */
+export function RenewalForm({ action, types, renewal, mode, askOdometer = true, onDone }: Props) {
   const [state, formAction] = useActionState(action, initialActionState);
   const { formRef, onSubmit } = useKeepValuesOnError(state);
 
   useEffect(() => {
     if (!state.ok) return;
-    if (mode === "create") formRef.current?.reset();
     onDone?.();
-  }, [formRef, state, mode, onDone]);
+  }, [state, onDone]);
 
   const renewing = mode === "renew";
   // An emission test's certificate prints the odometer on the test day (issue #181).
@@ -48,23 +46,9 @@ export function RenewalForm({ action, types, vehicleId, renewal, mode, askOdomet
 
   return (
     <form ref={formRef} action={formAction} onSubmit={onSubmit} className="flex flex-col gap-3">
-      {mode === "create" ? <input type="hidden" name="vehicleId" value={vehicleId} /> : <input type="hidden" name="id" value={renewal?.id} />}
+      <input type="hidden" name="id" value={renewal?.id} />
 
-      {mode === "create" ? (
-        <label className={labelClass}>
-          <span className={labelTextClass}>Type</span>
-          <select name="type" required defaultValue="" onChange={(e) => setType(e.target.value)} className={selectClass}>
-            <option value="" disabled>
-              Choose…
-            </option>
-            {types.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : mode === "edit" ? (
+      {mode === "edit" ? (
         <label className={labelClass}>
           <span className={labelTextClass}>Type</span>
           <select name="type" required defaultValue={renewal?.type} onChange={(e) => setType(e.target.value)} className={selectClass}>
@@ -117,15 +101,9 @@ export function RenewalForm({ action, types, vehicleId, renewal, mode, askOdomet
         </p>
       ) : null}
 
-      {mode === "create" ? (
-        <SubmitButton pendingLabel="Saving…" size="lg" className="w-full">
-          Save renewal
-        </SubmitButton>
-      ) : (
-        <div>
-          <SubmitButton pendingLabel="Saving…">{renewing ? "Renewed" : "Save changes"}</SubmitButton>
-        </div>
-      )}
+      <div>
+        <SubmitButton pendingLabel="Saving…">{renewing ? "Renewed" : "Save changes"}</SubmitButton>
+      </div>
     </form>
   );
 }

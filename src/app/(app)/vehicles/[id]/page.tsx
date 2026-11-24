@@ -21,7 +21,8 @@ import { VehicleCover } from "@/components/vehicles/vehicle-cover";
 import { appConfig, isModuleEnabled } from "@/config/app.config";
 import { getRules } from "@/features/settings/queries";
 import { addChoices, hasAddChoice } from "@/features/vehicles/add-menu";
-import { getVehicle } from "@/features/vehicles/queries";
+import { paperContext } from "@/features/vehicles/paper-context";
+import { getVehicle, listRenewals } from "@/features/vehicles/queries";
 import { todayInAppTz } from "@/lib/format";
 import { findVehicleType } from "@/features/vehicles/vehicle-type";
 
@@ -67,8 +68,16 @@ async function VehicleContent({
   const type = findVehicleType(appConfig.vehicles.types, vehicle.vehicleType);
   // The one Add button (V.1a, C147): each choice only for a person who may do it, worked out here on the server.
   const choices = addChoices(access);
-  const rules = await getRules();
+  const [rules, renewals] = await Promise.all([getRules(), listRenewals(vehicle.id)]);
   const today = todayInAppTz(); // after the queries, which opt this render into request time
+  // What the one flow for papers needs (V.1b): worked out here from the person's access, never in the browser.
+  const paper = paperContext({
+    vehicle,
+    access,
+    today,
+    oil: { oilChangeMonths: rules.oilChangeMonths, oilChangeKm: rules.oilChangeKm, oilChangeTypes: rules.oilChangeTypes },
+    renewals,
+  });
 
   return (
     <>
@@ -94,7 +103,7 @@ async function VehicleContent({
             <VehicleAddMenu
               vehicleId={vehicle.id}
               vehicleName={vehicle.nickname}
-              namePrefix={vehiclePart(vehicle)}
+              paper={paper}
               choices={choices}
               serviceTypes={appConfig.vehicles.serviceTypes}
               defaultDate={today}
@@ -144,7 +153,7 @@ async function VehicleContent({
           docs={{ canSee: allows(access, "vehicle_documents", "see"), canAdd: allows(access, "vehicle_documents", "add") }}
         />
       ) : current.key === "renewals" ? (
-        <RenewalsTab vehicleId={vehicle.id} vehicleName={vehicle.nickname} namePrefix={vehiclePart(vehicle)} askOdometer={!vehicle.ignoreEmissionOdometer} showDocuments={allows(access, "vehicle_documents", "see")} />
+        <RenewalsTab vehicleId={vehicle.id} namePrefix={vehiclePart(vehicle)} askOdometer={!vehicle.ignoreEmissionOdometer} showDocuments={allows(access, "vehicle_documents", "see")} paper={paper} />
       ) : (
         <DocumentsTab
           vehicleId={vehicle.id}
@@ -161,6 +170,7 @@ async function VehicleContent({
           }}
           askOdometer={!vehicle.ignoreEmissionOdometer}
           basePath={vehiclePath(vehicle)}
+          paper={paper}
         />
       )}
     </>

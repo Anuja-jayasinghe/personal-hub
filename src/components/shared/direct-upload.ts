@@ -4,12 +4,23 @@ import { useState, useTransition, type FormEvent } from "react";
 import { prepareUpload } from "@/features/shared/upload-actions";
 import type { UploadPurpose } from "@/lib/upload-rules";
 
-export type UploadTarget = { purpose: UploadPurpose; ownerType: string; ownerId: string; doc?: { kind?: string; date?: string; title?: string } };
+export type UploadTarget = { purpose: UploadPurpose; ownerType: string; ownerId: string };
 
 /** Browsers sometimes send an empty type for HEIC photos; fall back to the extension (as the server does). */
-function typeOf(file: File): string {
+export function typeOf(file: File): string {
   if (file.type) return file.type;
   return /\.heic$/i.test(file.name) ? "image/heic" : "";
+}
+
+/** Puts a file at a one-time upload link the server handed out (C115). */
+export async function putToStorage(signedUrl: string, file: File, mimeType: string): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(signedUrl, { method: "PUT", body: file, headers: { "content-type": mimeType, "x-upsert": "false" } });
+  } catch {
+    throw new Error("The upload did not go through. Check your connection and try again.");
+  }
+  if (!res.ok) throw new Error("The upload did not go through. Please try again.");
 }
 
 /**
@@ -21,13 +32,7 @@ export async function sendToStorage(file: File, target: UploadTarget): Promise<{
   const mimeType = typeOf(file);
   const prep = await prepareUpload({ ...target, fileName: file.name, mimeType, size: file.size });
   if (!prep.ok) throw new Error(prep.error);
-  let res: Response;
-  try {
-    res = await fetch(prep.signedUrl, { method: "PUT", body: file, headers: { "content-type": mimeType, "x-upsert": "false" } });
-  } catch {
-    throw new Error("The upload did not go through. Check your connection and try again.");
-  }
-  if (!res.ok) throw new Error("The upload did not go through. Please try again.");
+  await putToStorage(prep.signedUrl, file, mimeType);
   return { path: prep.path, fileName: file.name };
 }
 
