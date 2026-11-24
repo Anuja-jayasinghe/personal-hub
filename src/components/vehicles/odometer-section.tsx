@@ -88,7 +88,7 @@ export async function OdometerSection({ vehicleId, vehicleName, ignoreEmissionOd
                       </span>
                     ) : null}
                     {p.source === "service" || p.source === "emission" ? (
-                      <Link href={`/vehicles/${vehicleId}?tab=${p.source === "service" ? "services" : "renewals"}`} className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
+                      <Link href={`/vehicles/${vehicleId}?item=${p.source === "service" ? "service" : "renewal"}:${p.id}`} scroll={false} className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">
                         {p.label ?? SOURCE_NAMES[p.source]}
                       </Link>
                     ) : p.label ? (

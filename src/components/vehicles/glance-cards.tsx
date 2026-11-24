@@ -1,0 +1,56 @@
+import Link from "next/link";
+import { DaysRing } from "@/components/shared/days-ring";
+import { itemHref, kmGlanceWords, type GlanceCard } from "@/features/vehicles/overview";
+
+/**
+ * The at-a-glance cards of the Overview (V.2, C149), soonest first: the oil-change marker and each current
+ * renewal, each a days ring (green normally, amber inside 30 days, red inside 7 or late) with its date. The oil
+ * card also shows the km driven since that service as a glance (nothing reminds by km, C24). A card opens its
+ * detail sheet; the "nothing recorded" oil card only says so. Two columns on a phone, as many as fit on a wide screen.
+ */
+
+const EDGE = { ok: "border-border", soon: "border-status-soon-mark/45", overdue: "border-status-overdue/50" } as const;
+const FILL = { ok: "bg-status-ok", soon: "bg-status-soon-mark", overdue: "bg-status-overdue" } as const;
+const mono = "font-mono text-[10.5px] text-label uppercase md:text-[11px]";
+
+export function GlanceCards({ cards, basePath }: { cards: readonly GlanceCard[]; basePath: string }) {
+  if (cards.length === 0) return null;
+  return (
+    <section aria-label="At a glance" className="grid grid-cols-2 gap-2.5 md:grid-cols-[repeat(auto-fit,minmax(220px,1fr))] md:gap-3.5">
+      {cards.map((c) => {
+        const edge = c.tone ? EDGE[c.tone] : "border-border";
+        const body = (
+          <>
+            <span className="flex items-center gap-2.5 md:gap-3.5">
+              {c.days !== null ? <DaysRing days={c.days} ofDays={c.span} size={64} bare label={c.label} className="size-12 md:size-16" /> : null}
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="text-sm leading-tight font-semibold md:text-[15px]">{c.title}</span>
+                {c.dateLine ? <span className={mono}>{c.dateLine}</span> : null}
+              </span>
+            </span>
+            {c.km ? (
+              <span className="flex flex-col gap-1.5">
+                <span aria-hidden className="h-1.5 overflow-hidden rounded-full bg-raised">
+                  <span className={`block h-full rounded-full ${FILL[c.tone ?? "ok"]}`} style={{ width: `${Math.round(c.km.share * 100)}%` }} />
+                </span>
+                <span className={mono}>{kmGlanceWords(c.km)}</span>
+              </span>
+            ) : c.sub ? (
+              <span className={`text-[12.5px] text-muted-foreground ${c.days === null ? "" : "hidden md:block"} truncate`}>{c.sub}</span>
+            ) : null}
+          </>
+        );
+        const cls = `flex flex-col gap-2 rounded-[18px] border bg-card p-3.5 text-card-foreground md:gap-3 md:rounded-[20px] md:p-[18px] ${edge}`;
+        return c.item ? (
+          <Link key={c.key} href={itemHref(basePath, c.item)} scroll={false} aria-label={c.label} className={`${cls} outline-none hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring`}>
+            {body}
+          </Link>
+        ) : (
+          <div key={c.key} className={`${cls} border-dashed`}>
+            {body}
+          </div>
+        );
+      })}
+    </section>
+  );
+}

@@ -18,11 +18,14 @@ export async function NotesPanel({
   scope,
   title = "Notes",
   quietWhenEmpty = false,
+  hideWhenEmpty = false,
 }: {
   scope: OwnerScope;
   title?: string;
   /** With no notes, show only a small "Add a note" link: no heading, no empty-state box. */
   quietWhenEmpty?: boolean;
+  /** With no notes, show nothing at all (the vehicle page has "Add a note" in its one Add menu, V.2). */
+  hideWhenEmpty?: boolean;
 }) {
   // Only what this person may see (S.8, C114): Tasks & notes, and the section of an attached record.
   const access = (await getAccess()) ?? { owner: false as const, grants: {} };
@@ -34,6 +37,7 @@ export async function NotesPanel({
   const labels = scope.kind === "all" ? await ownerLabels(list) : new Map<string, OwnerLabel>();
   const owner = scope.kind === "owner" ? scope.owner : null;
 
+  if (hideWhenEmpty && list.length === 0) return null;
   if (quietWhenEmpty && list.length === 0) {
     return (
       <div>

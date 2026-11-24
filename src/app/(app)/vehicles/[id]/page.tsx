@@ -11,12 +11,11 @@ import { vehiclePath } from "@/features/vehicles/plate";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { OdometerSection } from "@/components/vehicles/odometer-section";
+import { ItemSheet } from "@/components/vehicles/item-sheet";
+import { VehicleOverview } from "@/components/vehicles/overview";
 import { RenewalsTab } from "@/components/vehicles/renewals-tab";
-import { NotesPanel } from "@/components/shared/notes-panel";
 import { ServicesTab } from "@/components/vehicles/services-tab";
 import { DocumentsTab } from "@/components/vehicles/documents-tab";
-import { VehicleSummary } from "@/components/vehicles/vehicle-summary";
 import { VehicleCover } from "@/components/vehicles/vehicle-cover";
 import { appConfig, isModuleEnabled } from "@/config/app.config";
 import { getRules } from "@/features/settings/queries";
@@ -25,6 +24,8 @@ import { paperContext } from "@/features/vehicles/paper-context";
 import { getVehicle, listRenewals } from "@/features/vehicles/queries";
 import { todayInAppTz } from "@/lib/format";
 import { findVehicleType } from "@/features/vehicles/vehicle-type";
+
+type SearchParams = { tab?: string; q?: string; kind?: string; item?: string };
 
 export const metadata: Metadata = { title: "Vehicle" };
 
@@ -35,30 +36,21 @@ const TABS = [
   { key: "documents", label: "Documents" },
 ] as const;
 
-function Detail({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="text-sm">{value ?? "—"}</dd>
-    </div>
-  );
-}
-
 async function VehicleContent({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; q?: string; kind?: string }>;
+  searchParams: Promise<SearchParams>;
 }) {
   const access = await requirePage({ area: "vehicles", level: "see" });
-  const [{ id }, { tab, q, kind }] = await Promise.all([params, searchParams]);
+  const [{ id }, { tab, q, kind, item }] = await Promise.all([params, searchParams]);
   const vehicle = await getVehicle(id);
   if (!vehicle) notFound();
   // Old links by id move to the plate address, keeping the tab (S.6).
   const canonical = vehiclePath(vehicle);
   if (decodeURIComponent(id) !== canonical.slice("/vehicles/".length)) {
-    const query = new URLSearchParams(Object.entries({ tab, q, kind }).filter((e): e is [string, string] => typeof e[1] === "string")).toString();
+    const query = new URLSearchParams(Object.entries({ tab, q, kind, item }).filter((e): e is [string, string] => typeof e[1] === "string")).toString();
     redirect(query ? `${canonical}?${query}` : canonical);
   }
   // Documents only for people who may see Vehicle documents (S.8, C114).
@@ -69,6 +61,9 @@ async function VehicleContent({
   // The one Add button (V.1a, C147): each choice only for a person who may do it, worked out here on the server.
   const choices = addChoices(access);
   const [rules, renewals] = await Promise.all([getRules(), listRenewals(vehicle.id)]);
+  // Closing a sheet keeps the tab, the search and the category, and drops only the item.
+  const keep = new URLSearchParams(Object.entries({ tab, q, kind }).filter((e): e is [string, string] => typeof e[1] === "string"));
+  const closeHref = keep.size > 0 ? vehiclePath(vehicle, `?${keep.toString()}`) : vehiclePath(vehicle);
   const today = todayInAppTz(); // after the queries, which opt this render into request time
   // What the one flow for papers needs (V.1b): worked out here from the person's access, never in the browser.
   const paper = paperContext({
@@ -130,21 +125,7 @@ async function VehicleContent({
       </nav>
 
       {current.key === "overview" ? (
-        <div className="flex flex-col gap-8">
-          <VehicleSummary vehicleId={vehicle.id} />
-          <dl className="grid gap-4 sm:grid-cols-3">
-            <Detail label="Type" value={type?.label} />
-            <Detail label="Make" value={vehicle.make} />
-            <Detail label="Model" value={vehicle.model} />
-            <Detail label="Year" value={vehicle.year} />
-            <Detail label="Fuel" value={vehicle.fuelType} />
-            <Detail label="Registration" value={vehicle.registrationNumber} />
-          </dl>
-
-          <NotesPanel scope={{ kind: "owner", owner: { ownerType: "vehicle", ownerId: vehicle.id } }} title="Notes" quietWhenEmpty />
-
-          <OdometerSection vehicleId={vehicle.id} vehicleName={vehicle.nickname} ignoreEmissionOdometer={vehicle.ignoreEmissionOdometer} />
-        </div>
+        <VehicleOverview vehicle={vehicle} rules={rules} />
       ) : current.key === "services" ? (
         <ServicesTab
           vehicleId={vehicle.id}
@@ -173,6 +154,11 @@ async function VehicleContent({
           paper={paper}
         />
       )}
+
+      {/* A record's detail sheet, opened by ?item= on any tab (V.2, C149). It looks the record up among THIS vehicle's own rows only. */}
+      <Suspense fallback={null}>
+        <ItemSheet vehicle={vehicle} itemParam={item} basePath={vehiclePath(vehicle)} closeHref={closeHref} access={access} />
+      </Suspense>
     </>
   );
 }
@@ -183,7 +169,7 @@ export default function VehiclePage(props: PageProps<"/vehicles/[id]">) {
     <Suspense fallback={<Skeleton className="h-64 w-full rounded-xl" aria-label="Loading vehicle" />}>
       <VehicleContent
         params={props.params as Promise<{ id: string }>}
-        searchParams={props.searchParams as Promise<{ tab?: string; q?: string; kind?: string }>}
+        searchParams={props.searchParams as Promise<SearchParams>}
       />
     </Suspense>
   );

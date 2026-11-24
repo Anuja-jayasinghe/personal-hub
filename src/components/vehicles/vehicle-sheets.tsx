@@ -5,10 +5,10 @@ import { UploadForm } from "@/components/shared/upload-form";
 import { OdometerForm } from "@/components/vehicles/odometer-form";
 import { RenewalForm } from "@/components/vehicles/renewal-form";
 import { ServiceForm } from "@/components/vehicles/service-form";
-import type { VehicleRenewal } from "@/db/schema";
+import type { VehicleRenewal, VehicleService } from "@/db/schema";
 import { addOdometerReading } from "@/features/vehicles/odometer-actions";
-import { renewRenewal } from "@/features/vehicles/renewal-actions";
-import { createService } from "@/features/vehicles/service-actions";
+import { renewRenewal, updateRenewal } from "@/features/vehicles/renewal-actions";
+import { createService, updateService } from "@/features/vehicles/service-actions";
 import type { OilRules } from "@/features/vehicles/service-logic";
 
 /**
@@ -85,6 +85,24 @@ export function RenewSheet({
           }}
         />
       )}
+    </SheetButton>
+  );
+}
+
+/** "Edit" in a detail sheet (V.2): the renewal's own edit form in a sheet on top of it. */
+export function EditRenewalSheet({ renewal, vehicleName, types, askOdometer = true }: { renewal: VehicleRenewal; vehicleName: string; types: readonly string[]; askOdometer?: boolean }) {
+  return (
+    <SheetButton label="Edit" title={`Edit ${renewal.type.toLowerCase()}`} crumb={`/ ${vehicleName} / ${renewal.type}`} variant="outline" size="lg" plus={false}>
+      {(close) => <RenewalForm mode="edit" action={updateRenewal} types={types} renewal={renewal} askOdometer={askOdometer} onDone={close} />}
+    </SheetButton>
+  );
+}
+
+/** "Edit" in a detail sheet (V.2): the service's own edit form in a sheet on top of it. */
+export function EditServiceSheet({ service, vehicleName, serviceTypes }: { service: VehicleService; vehicleName: string; serviceTypes: readonly string[] }) {
+  return (
+    <SheetButton label="Edit" title={`Edit ${service.serviceType.toLowerCase()}`} crumb={`/ ${vehicleName} / Service`} variant="outline" size="lg" plus={false}>
+      {(close) => <ServiceForm action={updateService} serviceTypes={serviceTypes} service={service} onDone={close} />}
     </SheetButton>
   );
 }

@@ -21,7 +21,7 @@ export const vehicleRenewalsSource: ReminderSource = {
       id: `renewal:${r.id}`,
       title: `${r.type} · ${nicknames.get(r.vehicleId) ?? "Vehicle"}`,
       dueDate: r.expiryDate,
-      href: `/vehicles/${r.vehicleId}?tab=renewals`,
+      href: `/vehicles/${r.vehicleId}?item=renewal:${r.id}`, // opens the record's detail sheet (V.2)
       kind: "renewal",
       ownerId: r.vehicleId,
       leadDays: leadsByType.get(r.type),

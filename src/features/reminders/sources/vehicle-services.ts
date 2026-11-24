@@ -24,7 +24,7 @@ export const vehicleServicesSource: ReminderSource = {
       id: `service:${r.id}`,
       title: `${r.serviceType} · ${nicknames.get(r.vehicleId) ?? "Vehicle"}`,
       dueDate: r.nextDueDate,
-      href: `/vehicles/${r.vehicleId}?tab=services`,
+      href: `/vehicles/${r.vehicleId}?item=service:${r.id}`, // opens the record's detail sheet (V.2)
       kind: "service",
       ownerId: r.vehicleId,
       // The type is free text: only the fixed list reaches a notification, anything else says "Service".
