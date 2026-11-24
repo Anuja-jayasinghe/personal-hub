@@ -265,7 +265,7 @@ export function PaperForm({ ctx, kind: preset, onDone }: { ctx: PaperContext; ki
                 type="button"
                 aria-pressed={on}
                 onClick={() => pick(k.key)}
-                className={`h-10 rounded-full border px-3.5 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                className={`h-10 pointer-coarse:h-11 rounded-full border px-3.5 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   on ? "border-primary bg-accent font-semibold text-foreground" : "border-border text-muted-foreground hover:border-primary/60 hover:text-foreground"
                 }`}
               >

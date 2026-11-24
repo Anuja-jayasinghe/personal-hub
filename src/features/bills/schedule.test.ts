@@ -193,26 +193,51 @@ describe("the wording in bill dates", () => {
   });
   it("card: payable says the bill of and the pay-by date", () => {
     expect(billDayWording(slt, "2026-12-06", "2026-11-24")).toEqual({ payable: true, billOf: "6 Nov", payBy: "6 Dec" });
-    expect(billDayWording(slt, "2027-01-06", "2026-12-07")).toEqual({ payable: true, billOf: "6 Dec", payBy: "6 Jan" });
+    expect(billDayWording(slt, "2027-01-06", "2026-12-07")).toEqual({ payable: true, billOf: "6 Dec", payBy: "6 Jan 2027" }); // next year: the year shows
   });
   it("card: other items have no bill-date wording", () => {
     expect(billDayWording({ ...slt, kind: "subscription" }, "2027-01-06", "2026-11-24")).toBeNull();
     expect(billDayWording({ ...slt, frequency: "weekly" }, "2027-01-06", "2026-11-24")).toBeNull();
   });
   it("list meta and calendar title", () => {
-    expect(billDayMeta("2026-11-06", "2026-12-06")).toBe("6 Nov bill · pay by 6 Dec");
-    expect(titleWithBill("SLT Fibre", "2026-11-06")).toBe("SLT Fibre · 6 Nov bill");
-    expect(titleWithBill("Netflix", null)).toBe("Netflix");
-    expect(titleWithBill("Netflix", undefined)).toBe("Netflix");
+    expect(billDayMeta("2026-11-06", "2026-12-06", "2026-11-24")).toBe("6 Nov bill · pay by 6 Dec");
+    expect(titleWithBill("SLT Fibre", "2026-11-06", "2026-11-24")).toBe("SLT Fibre · 6 Nov bill");
+    expect(titleWithBill("Netflix", null, "2026-11-24")).toBe("Netflix");
+    expect(titleWithBill("Netflix", undefined, "2026-11-24")).toBe("Netflix");
   });
   it("Mark paid help: bill dates for a bill-day item, the old text for the rest", () => {
-    expect(markPaidHelp({ ...slt, nextDueDate: "2026-12-06" }, long)).toBe("Records a payment for the 6 Nov bill and moves on to the 6 Dec bill.");
-    expect(markPaidHelp({ ...slt, frequency: "yearly", nextDueDate: "2026-12-06" }, long)).toBe("Records a payment for the <2026-12-06> due date and moves the next due date forward.");
-    expect(markPaidHelp({ ...slt, frequency: "one_off", nextDueDate: "2026-12-06" }, long)).toBe("Records a payment for the <2026-12-06> due date and marks this item done.");
-    expect(markPaidHelp({ ...slt, kind: "subscription", nextDueDate: "2026-12-06" }, long)).toBe("Records a payment for the <2026-12-06> due date and moves the next due date forward.");
+    expect(markPaidHelp({ ...slt, nextDueDate: "2026-12-06" }, long, "2026-11-24")).toBe("Records a payment for the 6 Nov bill and moves on to the 6 Dec bill.");
+    expect(markPaidHelp({ ...slt, frequency: "yearly", nextDueDate: "2026-12-06" }, long, "2026-11-24")).toBe("Records a payment for the <2026-12-06> due date and moves the next due date forward.");
+    expect(markPaidHelp({ ...slt, frequency: "one_off", nextDueDate: "2026-12-06" }, long, "2026-11-24")).toBe("Records a payment for the <2026-12-06> due date and marks this item done.");
+    expect(markPaidHelp({ ...slt, kind: "subscription", nextDueDate: "2026-12-06" }, long, "2026-11-24")).toBe("Records a payment for the <2026-12-06> due date and moves the next due date forward.");
   });
   it("payment history: the SLT payment settled the 6 Nov bill", () => {
-    expect(paymentFor(slt, "2026-12-06", long)).toBe("the 6 Nov bill");
-    expect(paymentFor({ ...slt, autopay: true }, "2026-12-06", long)).toBe("the <2026-12-06> due date");
+    expect(paymentFor(slt, "2026-12-06", long, "2026-11-24")).toBe("the 6 Nov bill");
+    expect(paymentFor({ ...slt, autopay: true }, "2026-12-06", long, "2026-11-24")).toBe("the <2026-12-06> due date");
+  });
+});
+
+describe("the year is written only when it is not this year (issue #42)", () => {
+  const slt = { kind: "bill" as const, frequency: "monthly" as const, autopay: false, anchorDay: 6 };
+  const long = (ymd: string) => `<${ymd}>`;
+  it("card: a bill date in the next year carries its year", () => {
+    // Today is 20 Dec 2026: the bill due by 6 Feb 2027 is the 6 Jan 2027 bill, payable from 7 Jan 2027.
+    expect(billDayWording(slt, "2027-02-06", "2026-12-20")).toEqual({ payable: false, nextBill: "6 Jan 2027", payableFrom: "7 Jan 2027" });
+    // The 6 Dec bill (this year) is payable now and is paid by 6 Jan 2027.
+    expect(billDayWording(slt, "2027-01-06", "2026-12-20")).toEqual({ payable: true, billOf: "6 Dec", payBy: "6 Jan 2027" });
+  });
+  it("the same dates read without a year once it is that year", () => {
+    expect(billDayWording(slt, "2027-02-06", "2027-01-20")).toEqual({ payable: true, billOf: "6 Jan", payBy: "6 Feb" });
+  });
+  it("list meta, calendar title, Mark paid help and payment history follow the same rule", () => {
+    expect(billDayMeta("2026-12-06", "2027-01-06", "2026-12-20")).toBe("6 Dec bill · pay by 6 Jan 2027");
+    expect(billDayMeta("2026-12-06", "2027-01-06", "2027-01-02")).toBe("6 Dec 2026 bill · pay by 6 Jan");
+    expect(titleWithBill("SLT Fibre", "2027-01-06", "2026-12-20")).toBe("SLT Fibre · 6 Jan 2027 bill");
+    expect(markPaidHelp({ ...slt, nextDueDate: "2027-01-06" }, long, "2026-12-20")).toBe("Records a payment for the 6 Dec bill and moves on to the 6 Jan 2027 bill.");
+    expect(paymentFor(slt, "2027-01-06", long, "2027-01-20")).toBe("the 6 Dec 2026 bill");
+  });
+  it("the Mark paid refusal names the year of a date outside this year", () => {
+    const item = { ...slt, nextDueDate: "2027-02-06" as string | null };
+    expect(payRefusal(item, "2026-12-20")).toBe("The 6 Jan 2027 bill is processed on 6 Jan 2027 and can be paid from 7 Jan 2027.");
   });
 });

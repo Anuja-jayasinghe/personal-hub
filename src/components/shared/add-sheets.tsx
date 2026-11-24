@@ -68,7 +68,7 @@ function AddBillChoice({ defaultDate, close }: { defaultDate: string; close: () 
   }
   return (
     <div className="flex flex-col gap-3">
-      <button type="button" onClick={() => setMode(null)} className="self-start rounded-md text-sm text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
+      <button type="button" onClick={() => setMode(null)} className="hit-44 self-start rounded-md text-sm text-primary outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring">
         ← {mode === "recurring" ? "Something that repeats" : "A one-time bill"} · change
       </button>
       <BillItemForm action={createBillItem} defaultDate={defaultDate} onDone={close} mode={mode} />

@@ -128,10 +128,13 @@ export async function DocumentsTab({
                 <input
                   type="search"
                   name="q"
+                  enterKeyHint="search"
+                  autoComplete="off"
+                  autoCapitalize="none"
                   defaultValue={query}
                   placeholder={`Search ${vehicleName}’s papers`}
                   aria-label={`Search ${vehicleName}’s papers`}
-                  className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-label"
+                  className="min-w-0 flex-1 bg-transparent text-base text-foreground outline-none placeholder:text-label md:text-sm"
                 />
               </label>
               {searching ? (
@@ -287,7 +290,7 @@ function NothingYet({ name }: { name: string }) {
 /** Phone: All plus one chip per category; a category that runs out soon carries its state colour. */
 function Chips({ ctx, groups, current }: { ctx: Ctx; groups: PaperGroup[]; current: DocKind | null }) {
   const chip = (selected: boolean) =>
-    `inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] transition-colors ${
+    `hit-44 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[13px] transition-colors ${
       selected ? "bg-accent font-semibold text-foreground ring-1 ring-primary/50" : "text-muted-foreground ring-1 ring-border hover:text-foreground"
     }`;
   const short: Record<DocKind, string> = { book: "Book", license: "License", emission: "Emission", insurance: "Insurance", other: "Other" };

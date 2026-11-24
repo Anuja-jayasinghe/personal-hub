@@ -11,7 +11,7 @@ import { formatDate } from "@/lib/format";
 export function ReminderStrip({ strip }: { strip: StripDay[] }) {
   const inStrip = strip.reduce((s, d) => s + d.due, 0);
   return (
-    <section aria-label="The next three weeks" className="flex flex-col gap-3 rounded-3xl border border-raised bg-deepest p-3.5 md:p-5">
+    <section aria-label="The next three weeks" className="flex flex-col gap-3 rounded-3xl border border-border bg-deepest dark:border-raised p-3.5 md:p-5">
       <p className="flex items-baseline gap-2 px-0.5">
         <span className="font-display text-3xl leading-none font-semibold">{inStrip}</span>
         <span className="text-sm text-muted-foreground">{inStrip === 1 ? "thing" : "things"} in the next 3 weeks</span>

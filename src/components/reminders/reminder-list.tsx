@@ -27,8 +27,8 @@ export function ReminderList({ results }: { results: readonly ReminderResult[] }
           <Link href={item.href} className="flex min-h-14 items-center gap-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <span aria-hidden className={`size-2.5 shrink-0 rounded-full ${lamp[level]}`} />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[15px] font-semibold">{item.title}</span>
-              <span className="block truncate text-xs text-muted-foreground">
+              <span className="line-clamp-2 text-[15px] leading-snug font-semibold">{item.title}</span>
+              <span className="line-clamp-2 text-xs text-muted-foreground">
                 {item.kind} · {formatDate(item.dueDate)}
               </span>
             </span>

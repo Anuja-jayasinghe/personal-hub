@@ -4,7 +4,7 @@
  * "anchor day"), so a bill due on the 31st goes Jan 31, Feb 28, Mar 31 and does not drift to the 28th.
  */
 
-import { dayMonth } from "@/lib/dates";
+import { dayMonthIn } from "@/lib/dates";
 
 export const FREQUENCIES =["weekly", "monthly", "quarterly", "yearly", "one_off"] as const;
 export type Frequency = (typeof FREQUENCIES)[number];
@@ -100,8 +100,8 @@ export function payRefusal(item: ScheduledItem & { nextDueDate: string | null },
   if (item.nextDueDate === null) return null;
   const from = payableFrom(item, item.nextDueDate);
   if (from === null || from <= today) return null;
-  const billDay = dayMonth(billDateOf(item, item.nextDueDate)!);
-  return `The ${billDay} bill is processed on ${billDay} and can be paid from ${dayMonth(from)}.`;
+  const billDay = dayMonthIn(billDateOf(item, item.nextDueDate)!, today);
+  return `The ${billDay} bill is processed on ${billDay} and can be paid from ${dayMonthIn(from, today)}.`;
 }
 
 /**
@@ -118,28 +118,30 @@ export function billDayWording(item: ScheduledItem, payBy: string, today: string
   if (billDate === null) return null;
   const from = addDaysTo(billDate, 1);
   return from > today
-    ? { payable: false, nextBill: dayMonth(billDate), payableFrom: dayMonth(from) }
-    : { payable: true, billOf: dayMonth(billDate), payBy: dayMonth(payBy) };
+    ? { payable: false, nextBill: dayMonthIn(billDate, today), payableFrom: dayMonthIn(from, today) }
+    : { payable: true, billOf: dayMonthIn(billDate, today), payBy: dayMonthIn(payBy, today) };
 }
 
-/** Meta line of a due entry in a list: "6 Nov bill · pay by 6 Dec". */
-export const billDayMeta = (billDate: string, payBy: string): string => `${dayMonth(billDate)} bill · pay by ${dayMonth(payBy)}`;
+/** Meta line of a due entry in a list: "6 Nov bill · pay by 6 Dec" (a year only on a date outside this year, as "6 Jan 2027"). */
+export const billDayMeta = (billDate: string, payBy: string, today: string): string =>
+  `${dayMonthIn(billDate, today)} bill · pay by ${dayMonthIn(payBy, today)}`;
 
 /** Help text under Mark paid; `formatLong` writes a date for the old wording (e.g. "6 Dec 2026"). */
-export function markPaidHelp(item: ScheduledItem & { nextDueDate: string }, formatLong: (ymd: string) => string): string {
+export function markPaidHelp(item: ScheduledItem & { nextDueDate: string }, formatLong: (ymd: string) => string, today: string): string {
   const billDate = billDateOf(item, item.nextDueDate);
-  if (billDate !== null) return `Records a payment for the ${dayMonth(billDate)} bill and moves on to the ${dayMonth(item.nextDueDate)} bill.`;
+  if (billDate !== null) return `Records a payment for the ${dayMonthIn(billDate, today)} bill and moves on to the ${dayMonthIn(item.nextDueDate, today)} bill.`;
   return `Records a payment for the ${formatLong(item.nextDueDate)} due date${item.frequency === "one_off" ? " and marks this item done." : " and moves the next due date forward."}`;
 }
 
 /** What a recorded payment settled: "the 6 Nov bill" for a bill-day item, else "the 6 Dec 2026 due date". */
-export function paymentFor(item: ScheduledItem, dueDate: string, formatLong: (ymd: string) => string): string {
+export function paymentFor(item: ScheduledItem, dueDate: string, formatLong: (ymd: string) => string, today: string): string {
   const billDate = billDateOf(item, dueDate);
-  return billDate !== null ? `the ${dayMonth(billDate)} bill` : `the ${formatLong(dueDate)} due date`;
+  return billDate !== null ? `the ${dayMonthIn(billDate, today)} bill` : `the ${formatLong(dueDate)} due date`;
 }
 
 /** A due entry's title with its bill date, for the calendar list: "SLT Fibre · 6 Nov bill". */
-export const titleWithBill = (title: string, billDate: string | null | undefined): string => (billDate ? `${title} · ${dayMonth(billDate)} bill` : title);
+export const titleWithBill = (title: string, billDate: string | null | undefined, today: string): string =>
+  billDate ? `${title} · ${dayMonthIn(billDate, today)} bill` : title;
 
 /**
  * The due date after `due`, or null for a one-off item (it is finished once paid).

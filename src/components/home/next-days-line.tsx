@@ -39,7 +39,7 @@ export function NextDaysLine({
           {title ?? `Next ${windowDays} days`}
         </h2>
         {link ? (
-          <Link href={link.href} className="ml-auto text-xs font-semibold text-primary hover:underline">
+          <Link href={link.href} className="hit-44 ml-auto text-xs font-semibold text-primary hover:underline">
             {link.label}
           </Link>
         ) : null}

@@ -41,7 +41,7 @@ async function TasksContent({ searchParams }: { searchParams: Promise<{ view?: s
             key={v.key}
             href={v.href}
             aria-current={v.key === current ? "page" : undefined}
-            className={`flex min-h-10 items-center justify-center rounded-[10px] text-sm transition-colors ${
+            className={`hit-44 flex min-h-10 items-center justify-center rounded-[10px] text-sm transition-colors ${
               v.key === current ? "bg-accent font-semibold text-foreground ring-1 ring-primary/45" : "text-muted-foreground hover:text-foreground"
             }`}
           >

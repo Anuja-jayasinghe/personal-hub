@@ -171,7 +171,7 @@ export function EmailRow({ status }: { status: EmailStatus }) {
         end={<EmailSwitch initial={status.enabled} />}
       />
       <details className="group/e pb-3">
-        <summary className="flex min-h-9 cursor-pointer list-none items-center gap-1.5 text-[13px] font-medium text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center gap-1.5 text-[13px] font-medium text-primary outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
           <span aria-hidden className="transition-transform group-open/e:rotate-90 motion-reduce:transition-none">
             ›
           </span>

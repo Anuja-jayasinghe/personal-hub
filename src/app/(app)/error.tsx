@@ -17,7 +17,7 @@ export default function PageError({ error, retry }: { error: unknown; retry: () 
   return (
     <section
       role="alert"
-      className="mx-auto flex w-full max-w-xl flex-col items-center gap-4 rounded-3xl border border-raised bg-deepest px-5 py-8 text-center"
+      className="mx-auto flex w-full max-w-xl flex-col items-center gap-4 rounded-3xl border border-border bg-deepest dark:border-raised px-5 py-8 text-center"
       style={{ backgroundImage: "radial-gradient(var(--card) 1px, transparent 1px)", backgroundSize: "14px 14px" }}
     >
       <BrokenLink />

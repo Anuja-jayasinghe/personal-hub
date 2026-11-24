@@ -26,7 +26,7 @@ export function OdometerReadingRow({ reading, dateLabel, spare = false, children
             <Button
               type="button"
               variant="ghost"
-              className="size-10 text-muted-foreground md:size-9"
+              className="size-11 text-muted-foreground md:size-9"
               aria-label={`Edit the reading from ${dateLabel}`}
               aria-expanded={editing}
               onClick={() => setEditing((v) => !v)}
@@ -35,7 +35,7 @@ export function OdometerReadingRow({ reading, dateLabel, spare = false, children
             </Button>
             <form action={deleteOdometerReading}>
               <input type="hidden" name="id" value={reading.id} />
-              <SubmitButton variant="ghost" className="size-10 text-muted-foreground hover:text-status-overdue md:size-9" aria-label={`Delete the reading from ${dateLabel}`} confirm="Delete this odometer reading?">
+              <SubmitButton variant="ghost" className="size-11 text-muted-foreground hover:text-status-overdue md:size-9" aria-label={`Delete the reading from ${dateLabel}`} confirm="Delete this odometer reading?">
                 <Trash2 aria-hidden />
               </SubmitButton>
             </form>

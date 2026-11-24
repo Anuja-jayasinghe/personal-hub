@@ -13,7 +13,7 @@ export function SetupCard({ steps }: { steps: readonly Step[] }) {
   const next = steps.find((s) => !s.done)?.key;
   return (
     <section aria-labelledby="setup-title" className="flex flex-col gap-3">
-      <div className="rounded-3xl border border-raised bg-[radial-gradient(100%_90%_at_50%_0%,color-mix(in_oklab,var(--primary)_14%,var(--deepest))_0%,var(--deepest)_62%)] p-4">
+      <div className="rounded-3xl border border-border dark:border-raised bg-[radial-gradient(100%_90%_at_50%_0%,color-mix(in_oklab,var(--primary)_14%,var(--deepest))_0%,var(--deepest)_62%)] p-4">
         <svg viewBox="0 0 358 170" className="w-full" role="img" aria-label="A grid node with two empty meter slots waiting to be added">
           <path d="M179 30V60H90V100" fill="none" stroke="var(--primary)" strokeWidth={2} />
           <path d="M179 60H268V100" fill="none" stroke="var(--border)" strokeWidth={2} strokeDasharray="5 7" />

@@ -15,7 +15,7 @@ import { vehiclePath } from "@/features/vehicles/plate";
 export function VehicleManageMenu({ vehicle }: { vehicle: Vehicle }) {
   return (
     <PopoverButton label="Manage" icon="chevron" align="end" variant="outline" className="h-[46px] rounded-[14px] px-4 text-sm md:h-[42px] md:rounded-xl">
-      <div className="flex w-72 flex-col gap-3 p-1">
+      <div className="flex w-full flex-col gap-3 p-1">
         <div className="flex flex-col gap-2">
           <span className="font-mono text-[10px] tracking-[0.14em] text-label uppercase">Photo</span>
           <CoverPhotoForm vehicleId={vehicle.id} hasCover={vehicle.coverAttachmentId !== null} />

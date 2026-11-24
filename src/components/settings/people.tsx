@@ -18,7 +18,7 @@ export function AddPersonForm() {
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_auto] sm:items-end">
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="text-muted-foreground">Their email address</span>
-          <Input name="email" type="email" required placeholder="name@example.com" autoComplete="off" />
+          <Input name="email" type="email" required placeholder="name@example.com" autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="next" />
         </label>
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="text-muted-foreground">Name (optional)</span>
@@ -147,7 +147,7 @@ export function InviteForm() {
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="text-muted-foreground">Their email address</span>
-          <Input name="email" type="email" required placeholder="name@example.com" autoComplete="off" className="h-11" />
+          <Input name="email" type="email" required placeholder="name@example.com" autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="next" className="h-11" />
         </label>
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="text-muted-foreground">Name (optional)</span>
@@ -192,7 +192,7 @@ export function InviteForm() {
         {selected ? <p className="text-xs text-muted-foreground">{selected.hint}</p> : null}
       </fieldset>
 
-      <details className="group rounded-xl border border-raised bg-deepest/40 px-3">
+      <details className="group rounded-xl border border-border bg-deepest/40 px-3 dark:border-raised">
         <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
           <span>Customise access</span>
           <span className="text-xs text-primary group-open:hidden">Open</span>

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { describeDays } from "@/features/reminders/engine";
 import { billDayMeta } from "@/features/bills/schedule";
 import { daysUntil, type Occurrence } from "@/features/bills/upcoming";
-import { formatDate, formatMoney } from "@/lib/format";
+import { dayMonthIn } from "@/lib/dates";
+import { formatMoney } from "@/lib/format";
 
 const SHOWN = 10;
 
@@ -14,14 +15,14 @@ function UpcomingRow({ o, today, first }: { o: Occurrence; today: string; first:
       <Link href={o.href} className="flex min-h-15 items-center gap-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-ring">
         <span aria-hidden className={`size-2.5 shrink-0 rounded-full ${tone === "overdue" ? "bg-status-overdue" : tone === "soon" ? "bg-status-soon-mark" : "bg-label"}`} />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-semibold">{o.title}</span>
-          <span className="block truncate font-mono text-[10.5px] tracking-wide text-label uppercase">
+          <span className="line-clamp-2 text-[15px] leading-snug font-semibold">{o.title}</span>
+          <span className="line-clamp-2 font-mono text-[10.5px] tracking-wide text-label uppercase">
             {o.billDate ? (
-              billDayMeta(o.billDate, o.date)
+              billDayMeta(o.billDate, o.date, today)
             ) : (
               <>
                 {o.kind === "electricity" ? "Electricity" : o.kind === "subscription" ? "Subscription" : "Bill"}
-                {o.autopay ? " · autopay" : ""} · {formatDate(o.date)}
+                {o.autopay ? " · autopay" : ""} · {dayMonthIn(o.date, today)}
               </>
             )}
           </span>

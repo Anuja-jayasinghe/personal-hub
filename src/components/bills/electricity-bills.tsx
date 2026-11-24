@@ -11,8 +11,8 @@ import { billStatus } from "@/features/electricity/bill-logic";
 import { meterBillLabel } from "@/features/electricity/links";
 import { formatKwh } from "@/features/electricity/usage";
 import { toCents } from "@/lib/decimal";
-import { monthOf } from "@/lib/dates";
-import { formatDate, formatMoney, formatMonth } from "@/lib/format";
+import { dayMonthIn, monthOf } from "@/lib/dates";
+import { formatMoney, formatMonth } from "@/lib/format";
 
 const SHOWN = 6;
 
@@ -20,22 +20,36 @@ const SHOWN = 6;
 function BillRow({ bill, today, meterName, canEdit }: { bill: ElectricityBill; today: string; meterName: string; canEdit: boolean }) {
   const status = billStatus(bill, today);
   const month = formatMonth(monthOf(bill.readingDate));
+  const showDue = bill.dueDate !== null && status.state !== "paid";
+  const amount = bill.amount !== null ? formatMoney(Number(bill.amount)) : null;
   return (
     <li id={`electricity-bill-${bill.id}`} className="flex scroll-mt-24 flex-wrap items-center gap-x-3 gap-y-1 border-t border-raised py-2.5 text-sm target:rounded-lg target:bg-accent target:px-2">
-      <span className="min-w-0 flex-1">
-        <span className="block whitespace-nowrap">
+      {/* On a phone the amount sits under the month, and an unpaid bill's "More" button moves up beside the info with the
+          status and Mark paid on the line below it (`max-sm:order-*`): squeezed into one row, "due 29 Nov" broke over
+          three lines, the kWh ran into the amount and the "…" was left alone on a line of its own (issue #42). */}
+      <span className="min-w-0 flex-1 max-sm:basis-44">
+        <span className="block">
           <span className="font-mono text-xs font-semibold uppercase">{month}</span>
           <span className="text-muted-foreground"> · {formatKwh(toCents(bill.units))}</span>
         </span>
-        {bill.dueDate && status.state !== "paid" ? <span className="block text-xs text-muted-foreground">due {formatDate(bill.dueDate)}</span> : null}
+        {amount ? <span className="block font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums sm:hidden">{amount}</span> : null}
+        {showDue ? <span className="block text-xs text-muted-foreground">due {dayMonthIn(bill.dueDate!, today)}</span> : null}
       </span>
-      {bill.amount !== null ? <span className="font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums">{formatMoney(Number(bill.amount))}</span> : null}
-      {status.state === "paid" ? <PaidStamp billId={bill.id} /> : <BillChip status={status} />}
+      {amount ? <span className="hidden font-mono text-xs whitespace-nowrap text-muted-foreground tabular-nums sm:inline">{amount}</span> : null}
+      {status.state === "paid" ? (
+        <PaidStamp billId={bill.id} />
+      ) : (
+        <span className="max-sm:order-2">
+          <BillChip status={status} />
+        </span>
+      )}
       {canEdit && status.state !== "paid" ? (
-        <MarkPaidButton billId={bill.id} what={`${meterName}'s ${month} bill`} amount={bill.amount !== null ? formatMoney(Number(bill.amount)) : null} today={today} size="sm" />
+        <span className="max-sm:order-2">
+          <MarkPaidButton billId={bill.id} what={`${meterName}'s ${month} bill`} amount={amount} today={today} size="sm" />
+        </span>
       ) : null}
       {canEdit ? (
-      <span className="ml-auto">
+      <span className={`ml-auto ${status.state === "paid" ? "" : "max-sm:order-1"}`}>
         <PopoverButton variant="ghost" icon="more" ariaLabel={`More for the ${month} bill`} align="end">
           <div className="flex flex-col gap-2 p-1">
             {status.state === "paid" ? (
@@ -98,7 +112,7 @@ export function ElectricityBills({
               <div className="flex flex-wrap items-center gap-2.5 py-3">
                 <MeterBadge name={m.name} />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px] font-semibold">{meterBillLabel(m)}</span>
+                  <span className="block text-[15px] leading-snug font-semibold break-words">{meterBillLabel(m)}</span>
                   {m.accountNumber ? <span className="block text-xs text-muted-foreground">{m.name}</span> : null}
                 </span>
                 {can.add ? <AddBillButton meterId={m.id} meterName={m.name} defaultDate={today} defaultPrevious={last?.currentReading} previousDate={last?.readingDate} /> : null}

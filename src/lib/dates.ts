@@ -49,6 +49,14 @@ export function dayMonth(ymd: string): string {
   return `${d.getUTCDate()} ${SHORT_MONTHS[d.getUTCMonth()]}`;
 }
 
+/**
+ * `dayMonth`, with the year added only when it is not the year of `today`: "6 Jan" in the current year,
+ * "6 Jan 2027" in any other, so a date next year is never read as this year's (issue #42).
+ */
+export function dayMonthIn(ymd: string, today: string): string {
+  return ymd.slice(0, 4) === today.slice(0, 4) ? dayMonth(ymd) : `${dayMonth(ymd)} ${ymd.slice(0, 4)}`;
+}
+
 /** The calendar day it currently is in `timeZone` (e.g. "Asia/Colombo") at the instant `now`. */
 export function todayIn(timeZone: string, now: Date): string {
   // The en-CA locale formats dates as YYYY-MM-DD.

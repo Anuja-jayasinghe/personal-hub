@@ -71,7 +71,7 @@ export function SwitchLiveButton({
       onClick={() => setDay(value)}
       disabled={earliest !== undefined && value < earliest}
       aria-pressed={day === value}
-      className={`min-h-9 rounded-full border px-3.5 text-[13px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 ${
+      className={`hit-44 min-h-9 rounded-full border px-3.5 text-[13px] font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40 ${
         day === value ? "border-primary/50 bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"
       }`}
     >
@@ -97,7 +97,7 @@ export function SwitchLiveButton({
               type="button"
               aria-label={current ? `Switch the house to ${target.name}` : `Mark ${target.name} as live`}
               title={current ? `Switch the house to ${target.name}` : `Mark ${target.name} as live`}
-              className="group -mx-2 flex min-h-8 items-center gap-1.5 rounded-full px-2 font-mono text-[10px] font-semibold tracking-[0.16em] text-label outline-none hover:text-primary focus-visible:text-primary focus-visible:ring-2 focus-visible:ring-ring"
+              className="hit-44 group -mx-2 flex min-h-8 items-center gap-1.5 rounded-full px-2 font-mono text-[10px] font-semibold tracking-[0.16em] text-label outline-none hover:text-primary focus-visible:text-primary focus-visible:ring-2 focus-visible:ring-ring"
             />
           }
         >

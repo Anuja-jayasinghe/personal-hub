@@ -77,7 +77,7 @@ export function MeterInstrument({
         {showName ? (
           <>
             <MeterBadge name={meter.name} className="h-6 min-w-7 text-xs" />
-            <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{meter.name}</span>
+            <span className="line-clamp-2 min-w-0 flex-1 text-[15px] leading-tight font-semibold">{meter.name}</span>
           </>
         ) : (
           <span className="flex-1" />
@@ -153,7 +153,7 @@ export function MeterInstrument({
   );
 
   const frame = `flex flex-col gap-2 rounded-3xl border bg-deepest bg-[radial-gradient(var(--card)_1px,transparent_1px)] bg-size-[14px_14px] p-3 md:gap-2.5 md:p-5 ${
-    meter.live ? "border-primary/45" : "border-raised"
+    meter.live ? "border-primary/45" : "border-border dark:border-raised"
   }`;
   const instrument = meter.href ? (
     <Link href={meter.href} aria-label={words} className={`${frame} outline-none hover:border-primary/60 focus-visible:ring-2 focus-visible:ring-ring`}>

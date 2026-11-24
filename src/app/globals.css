@@ -81,6 +81,32 @@
   }
   html {
     @apply font-sans;
+    /* The page colour behind everything, so a rubber-band pull at the top or bottom shows the theme and
+       never a white strip; no sideways bounce or swipe-back; a tap flashes a faint blue, not the grey box. */
+    background-color: var(--background);
+    overscroll-behavior-x: none;
+    -webkit-tap-highlight-color: color-mix(in srgb, var(--primary) 16%, transparent);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  /* No 300 ms wait or double-tap zoom on things you tap (touch-action: manipulation keeps pinch zoom). */
+  a,
+  button,
+  summary,
+  label,
+  select,
+  input,
+  textarea,
+  [role="button"],
+  [role="tab"] {
+    touch-action: manipulation;
+  }
+  /* On a touchscreen every disclosure row is at least a finger tall (44 px, DESIGN.md Accessibility). */
+  @media (pointer: coarse) {
+    summary {
+      min-height: 2.75rem;
+      align-content: center;
+    }
   }
   /* A visible focus outline for anything that does not draw its own ring (DESIGN.md, Accessibility). */
   :focus-visible {
@@ -162,6 +188,21 @@
   55%,
   100% {
     transform: skewX(-18deg) translateX(520px);
+  }
+}
+
+/* A small link or icon keeps its look but gets a 44 by 44 px tap area (an invisible box centred on it),
+   so a thumb can hit it without the layout moving (issue #42). Needs no extra markup. */
+@utility hit-44 {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
   }
 }
 

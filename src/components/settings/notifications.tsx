@@ -64,18 +64,18 @@ export function ComingUpLine({ days, today }: { days: PreviewDay[]; today: strin
               <div key={m.channel} className="flex min-w-0 flex-col gap-0.5">
                 <span className="flex min-w-0 items-baseline gap-2">
                   <span className="shrink-0 font-mono text-[10px] tracking-[0.12em] text-primary uppercase">{CHANNEL_TAG[m.channel]}</span>
-                  <span className="truncate text-[15px] font-semibold">{m.notices.length === 1 ? m.notices[0].title : `${m.notices.length} things`}</span>
+                  <span className="line-clamp-2 min-w-0 text-[15px] font-semibold">{m.notices.length === 1 ? m.notices[0].title : `${m.notices.length} things`}</span>
                 </span>
                 {m.notices.length > 1 ? (
                   <ul className="flex flex-col pl-[3.4rem] text-[12.5px] text-muted-foreground">
                     {m.notices.map((n) => (
-                      <li key={n.dedupeKey} className="truncate">
+                      <li key={n.dedupeKey} className="line-clamp-2">
                         {n.title}
                       </li>
                     ))}
                   </ul>
                 ) : m.channel === "push" ? (
-                  <span className="truncate pl-[3.4rem] text-[12.5px] text-muted-foreground">{m.notices[0].body}</span>
+                  <span className="line-clamp-2 pl-[3.4rem] text-[12.5px] text-muted-foreground">{m.notices[0].body}</span>
                 ) : null}
               </div>
             ))}
@@ -107,7 +107,7 @@ function RecentRow({ row }: { row: RecentNotification }) {
   const day = todayIn(appConfig.timeZone, row.sentAt ?? row.createdAt);
   return (
     <Row
-      label={<span className="block truncate">{row.title}</span>}
+      label={<span className="line-clamp-2">{row.title}</span>}
       hint={
         <>
           {CHANNEL_TAG[row.channel]} · {dayMonth(day)}

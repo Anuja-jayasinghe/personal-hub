@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addDays, addMonthsToDate, dayMonth, daysBetween, hourIn, isValidDate, todayIn, yearOfInstant } from "./dates";
+import { addDays, addMonthsToDate, dayMonth, dayMonthIn, daysBetween, hourIn, isValidDate, todayIn, yearOfInstant } from "./dates";
 
 describe("addMonthsToDate", () => {
   it("adds whole months and keeps the day of the month", () => {
@@ -37,6 +37,21 @@ describe("dayMonth", () => {
     expect(dayMonth("2026-12-23")).toBe("23 Dec");
     expect(dayMonth("2027-01-01")).toBe("1 Jan");
     expect(dayMonth("2028-02-29")).toBe("29 Feb");
+  });
+});
+
+describe("dayMonthIn", () => {
+  it("leaves the year out in the current year", () => {
+    expect(dayMonthIn("2026-12-23", "2026-11-24")).toBe("23 Dec");
+    expect(dayMonthIn("2026-01-01", "2026-12-31")).toBe("1 Jan");
+  });
+  it("adds the year for any other year, before or after", () => {
+    expect(dayMonthIn("2027-01-06", "2026-11-24")).toBe("6 Jan 2027");
+    expect(dayMonthIn("2025-10-22", "2026-11-24")).toBe("22 Oct 2025");
+  });
+  it("turns over with the new year", () => {
+    expect(dayMonthIn("2027-01-06", "2026-12-31")).toBe("6 Jan 2027");
+    expect(dayMonthIn("2027-01-06", "2027-01-01")).toBe("6 Jan");
   });
 });
 
