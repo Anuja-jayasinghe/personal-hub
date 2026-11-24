@@ -101,6 +101,10 @@ step fails. It also needs `SUPABASE_SECRET_KEY` (to delete the TEST file from st
 the Clerk dashboard (delete it there to switch the tests off), and `DATABASE_URL`. `E2E_BASE_URL` points it at
 another address.
 
+## Security headers (C143)
+
+Every response carries `nosniff`, a strict referrer policy, a locked-down permissions policy (only the hub itself may use the camera) and `X-Robots-Tag: noindex, nofollow, noarchive`; pages cannot be framed (`frame-ancestors 'none'`, and `'self'` only for `/files/*`). They come from `next.config.ts` (`src/config/security-headers.ts`), so they apply on Vercel with nothing to set in the dashboard. HSTS is Vercel's own (`max-age=63072000`); do not add `includeSubDomains` or `preload`, because other subdomains of the domain are not part of this project. `shadcn` is a dev dependency: Vercel installs those for the build, so keep "Install command" at its default.
+
 ## Notes
 
 - Supabase's free plan pauses a project after a week without use; opening the hub wakes it within a minute.
