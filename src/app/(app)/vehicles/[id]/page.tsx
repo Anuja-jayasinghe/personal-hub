@@ -20,7 +20,7 @@ import { addChoices, hasAddChoice } from "@/features/vehicles/add-menu";
 import { paperContext } from "@/features/vehicles/paper-context";
 import { getVehicle, listRenewals } from "@/features/vehicles/queries";
 import { todayInAppTz } from "@/lib/format";
-import { landOnTab, redirectAddress, vehicleTabs } from "@/features/vehicles/tabs";
+import { landOnTab, neighbourTab, redirectAddress, vehicleTabs, type VehicleTab } from "@/features/vehicles/tabs";
 import { findVehicleType } from "@/features/vehicles/vehicle-type";
 
 type SearchParams = { tab?: string; q?: string; kind?: string; item?: string };
@@ -57,6 +57,10 @@ async function VehicleContent({
   // Closing a sheet keeps the tab, the search and the category, and drops only the item.
   const keep = new URLSearchParams(Object.entries({ tab, q, kind }).filter((e): e is [string, string] => typeof e[1] === "string"));
   const closeHref = keep.size > 0 ? vehiclePath(vehicle, `?${keep.toString()}`) : vehiclePath(vehicle);
+  // Each tab's address, and the neighbours a sideways swipe goes to (touch only; GestureLayer, issue #176).
+  const hrefOf = (key: VehicleTab) => (key === "overview" ? vehiclePath(vehicle) : vehiclePath(vehicle, `?tab=${key}`));
+  const prevTab = neighbourTab(tabs, current.key, "prev");
+  const nextTab = neighbourTab(tabs, current.key, "next");
   const today = todayInAppTz(); // after the queries, which opt this render into request time
   // What the one flow for papers needs (V.1b): worked out here from the person's access, never in the browser.
   const paper = paperContext({
@@ -92,7 +96,7 @@ async function VehicleContent({
           {tabs.map((t) => (
             <Link
               key={t.key}
-              href={t.key === "overview" ? vehiclePath(vehicle) : vehiclePath(vehicle, `?tab=${t.key}`)}
+              href={hrefOf(t.key)}
               aria-current={t.key === current.key ? "page" : undefined}
               className={`flex min-h-11 items-center justify-center rounded-[10px] px-4 text-sm transition-colors ${
                 t.key === current.key ? "bg-accent font-semibold text-foreground ring-1 ring-primary/45" : "text-muted-foreground hover:text-foreground"
@@ -104,9 +108,11 @@ async function VehicleContent({
         </nav>
       ) : null}
 
-      {current.key === "overview" ? (
-        <VehicleOverview vehicle={vehicle} rules={rules} paper={paper} choices={choices} canEdit={allows(access, "vehicles", "edit")} />
-      ) : (
+      {/* The tab's content swipes to the neighbouring tab on a touch screen: GestureLayer reads these two attributes (the hero and the tab bar are outside it). */}
+      <div className="flex flex-col gap-6" data-tab-prev={prevTab ? hrefOf(prevTab) : undefined} data-tab-next={nextTab ? hrefOf(nextTab) : undefined}>
+        {current.key === "overview" ? (
+          <VehicleOverview vehicle={vehicle} rules={rules} paper={paper} choices={choices} canEdit={allows(access, "vehicles", "edit")} />
+        ) : (
         <DocumentsTab
           vehicleId={vehicle.id}
           vehicleName={vehicle.nickname}
@@ -124,7 +130,8 @@ async function VehicleContent({
           basePath={vehiclePath(vehicle)}
           paper={paper}
         />
-      )}
+        )}
+      </div>
 
       {/* A record's detail sheet, opened by ?item= on any tab (V.2, C149). It looks the record up among THIS vehicle's own rows only. */}
       <Suspense fallback={null}>

@@ -20,6 +20,17 @@ export function vehicleTabs(canSeeDocuments: boolean): readonly { key: VehicleTa
   return VEHICLE_TABS.filter((t) => t.key !== "documents" || canSeeDocuments);
 }
 
+/**
+ * The tab next to `current` for a sideways swipe (issue #176, C156): "next" is the one after it, "prev" the one
+ * before, null at either end or when the person has only one tab (no swipe at all then).
+ */
+export function neighbourTab(tabs: readonly { key: VehicleTab }[], current: VehicleTab, direction: "prev" | "next"): VehicleTab | null {
+  if (tabs.length < 2) return null;
+  const at = tabs.findIndex((t) => t.key === current);
+  if (at < 0) return null;
+  return tabs[direction === "next" ? at + 1 : at - 1]?.key ?? null;
+}
+
 /** The ids of the Overview's cards an old link points at: the Services card and the row of renewal cards. */
 export const SERVICES_ANCHOR = "services";
 export const RENEWALS_ANCHOR = "renewals";

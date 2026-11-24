@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { accessFromGrants, allows } from "@/features/people/access";
-import { landOnTab, redirectAddress, RENEWALS_ANCHOR, SERVICES_ANCHOR, vehicleTabs } from "./tabs";
+import { landOnTab, neighbourTab, redirectAddress, RENEWALS_ANCHOR, SERVICES_ANCHOR, vehicleTabs } from "./tabs";
 
 // Made-up ids only (public repo).
 const ITEM = "renewal:11111111-2222-3333-4444-555555555555";
@@ -107,5 +107,26 @@ describe("the address an old link moves to (redirectAddress)", () => {
 
   it("moves a person who may not see Documents off ?tab=documents, to the Overview", () => {
     expect(go({ tab: "documents", kind: "book", q: "z" }, false, false)).toBe("/vehicles/cab-1234");
+  });
+});
+
+describe("the neighbour of a tab, for a sideways swipe (issue #176)", () => {
+  const both = vehicleTabs(true);
+  const only = vehicleTabs(false);
+
+  it("goes from Overview to Documents on next, and back on prev", () => {
+    expect(neighbourTab(both, "overview", "next")).toBe("documents");
+    expect(neighbourTab(both, "documents", "prev")).toBe("overview");
+  });
+  it("stops at either end", () => {
+    expect(neighbourTab(both, "overview", "prev")).toBeNull();
+    expect(neighbourTab(both, "documents", "next")).toBeNull();
+  });
+  it("has no neighbour for a person who has only the Overview", () => {
+    expect(neighbourTab(only, "overview", "next")).toBeNull();
+    expect(neighbourTab(only, "overview", "prev")).toBeNull();
+  });
+  it("has none for a tab that is not in the list", () => {
+    expect(neighbourTab(only, "documents", "prev")).toBeNull();
   });
 });

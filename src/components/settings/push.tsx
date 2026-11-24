@@ -10,6 +10,7 @@ import { base64UrlToBytes, deviceState, isAppleMobile, type DeviceState } from "
 import { deviceLabelFrom } from "@/features/notifications/push/subscription";
 import type { PushDevice, PushSetup } from "@/features/notifications/queries";
 import { dayMonth, todayIn } from "@/lib/dates";
+import { isInstalledApp } from "@/lib/installed-app";
 
 /**
  * Settings › Notifications › "This iPhone" (Notifications N.3, DECISIONS C140; owner only, inside the
@@ -199,7 +200,7 @@ function sameKey(sub: PushSubscription, publicKey: string): boolean {
 async function detect(setup: PushSetup): Promise<Detected> {
   const device = deviceLabelFrom(navigator.userAgent, navigator.maxTouchPoints);
   const apple = isAppleMobile(navigator.userAgent, navigator.maxTouchPoints);
-  const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  const standalone = isInstalledApp();
   const hasServiceWorker = "serviceWorker" in navigator;
   const hasPushManager = "PushManager" in window;
   const hasNotification = "Notification" in window;
