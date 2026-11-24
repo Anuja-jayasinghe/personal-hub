@@ -250,10 +250,10 @@ export function renewDue(days: number | null): boolean {
   return days !== null && days <= RENEW_WITHIN_DAYS;
 }
 
-/** "81 days left", "expires today", "expired 3 days ago". */
+/** "81 days left", "1 day left", "Ends today", "3 days late": the one wording for a paper's days, everywhere. */
 export function daysWords(days: number): string {
-  if (days === 0) return "expires today";
-  if (days < 0) return `expired ${-days} day${days === -1 ? "" : "s"} ago`;
+  if (days === 0) return "Ends today";
+  if (days < 0) return `${-days} day${days === -1 ? "" : "s"} late`;
   return `${days} day${days === 1 ? "" : "s"} left`;
 }
 
@@ -309,25 +309,41 @@ export function glanceTarget(g: PaperGroup): Paper | null {
 /**
  * The short line under a tile's title, only ever real information: the days left for a paper that runs
  * out (with the colour of its state), else the book's printed month, when the newest paper ends or ended,
- * or how many papers there are. Null when there is nothing real to say (a book without a known date).
+ * or how many papers there are; plus "no scan" when the paper the tile is about has no file yet. Null when
+ * there is nothing real to say (a book without a known date, with its scan). Also what the phone's cards and
+ * chips say, so "On file" never stands alone as a label.
  */
 export function glanceLabel(g: PaperGroup, today: string): { text: string; tone: "ok" | "soon" | "overdue" | null } | null {
   const s = g.status;
   if (s.tone === "none") return null;
+  const target = glanceTarget(g);
+  const noScan = target !== null && target.files.length === 0;
+  const withScan = (text: string | null) => (noScan ? (text ? `${text} · no scan` : "No scan") : text);
   if (s.tone !== "file") {
-    const text = s.days < 0 ? `${-s.days} day${s.days === -1 ? "" : "s"} late` : s.days === 0 ? "Ends today" : `${s.days} day${s.days === 1 ? "" : "s"} left`;
-    return { text, tone: s.tone };
+    return { text: withScan(daysWords(s.days))!, tone: s.tone };
   }
   const count = s.count === 1 ? "1 paper" : `${s.count} papers`;
-  if (g.kind === "other") return { text: count, tone: null };
-  const target = glanceTarget(g);
-  if (g.kind === "book") {
-    if (target?.dated) return { text: formatMonth(monthOf(target.dated)), tone: null };
-    return s.count > 1 ? { text: `${s.count} books`, tone: null } : null;
+  let text: string | null;
+  if (g.kind === "other") {
+    text = count;
+  } else if (g.kind === "book") {
+    text = target?.dated ? formatMonth(monthOf(target.dated)) : s.count > 1 ? `${s.count} books` : null;
+  } else {
+    // A kind that runs out, with no current renewal: when the newest paper ends or ended.
+    text = target?.until ? `${target.until < today ? "Ended" : "Until"} ${formatMonth(monthOf(target.until))}` : count;
   }
-  // A kind that runs out, with no current renewal: when the newest paper ends or ended.
-  if (target?.until) return { text: `${target.until < today ? "Ended" : "Until"} ${formatMonth(monthOf(target.until))}`, tone: null };
-  return { text: count, tone: null };
+  text = withScan(text);
+  return text ? { text, tone: null } : null;
+}
+
+/**
+ * What a tile does: "viewer" opens the paper it is about; "section" jumps to the category's section, for a
+ * paper with no scan yet (a renewal waiting for its scan, where "Add the scan" is); null for an empty category.
+ */
+export function glanceOpens(g: PaperGroup): "viewer" | "section" | null {
+  const target = glanceTarget(g);
+  if (!target) return null;
+  return target.files.length > 0 ? "viewer" : "section";
 }
 
 /**
