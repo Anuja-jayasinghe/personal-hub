@@ -161,7 +161,7 @@ Delivered as four pull requests, each from its own issue (C44):
 
 | Piece | What |
 |-------|------|
-| 1.1 | **Vehicles:** list, add / edit, detail page with tabs (Overview, Services, Renewals, Documents), cover photo (C47), archive and confirmed delete (C48) |
+| 1.1 | **Vehicles:** list, add / edit, detail page with tabs (Overview, Services, Renewals, Documents; since V.3, C150, only Overview and Documents), cover photo (C47), archive and confirmed delete (C48) |
 | 1.2 | **Service records** and their next-due dates feeding Reminders |
 | 1.3 | **Renewals** (revenue license, insurance, emission test) with expiry feeding Reminders and a "renewed" flow that keeps history (C46) |
 | 1.4 | **Fixes, notes and files** from the shared panels (step 0.7), dashboard polish |
@@ -325,7 +325,7 @@ Goal: one place to add anything to a vehicle, an oil-change reminder that sets i
 | V.1a | #220 | ✅ *(C147)* **The Add button, the oil-change marker and files on services**: one "+ Add" next to Manage ("What happened?": a paper, a service, an odometer reading or a note, each only for a person who may do it, no button at all for someone who may add none); the next-oil-change date from three new rules in Settings (months, km, which service types) shown as a card in the service form, stored in the service's own next-due date; invoices on services (`vehicle_service` files, Vehicle documents access, named `PLATE_service_<date>`), deleted with the service and with the vehicle. The per-tab Add buttons stay until V.3. Service files in the Documents tab wait for V.4 |
 | V.1b | #221 | ✅ *(C148)* **One flow for papers**: the file, "What is it?" chips, only the fields that kind needs (prefilled from the last record, never numbers), "Saved as", "When you save", one Save; the paper makes its record (license, insurance, emission test, service) or is kept as a document (book, other); `preparePaper` + `savePaper` in one database transaction, the stored object removed on failure; access combinations decided by the server; history kept right (renewed days), no duplicates ("Attach the file to it"); one oil-change cycle. "Add another page" (needs a PDF merge) is a follow-up |
 | V.2 | #222 | ✅ *(C149)* **The new Overview**: a Needs you bar (what is late or inside its window, most urgent first, else All clear and what is next), cards soonest first with days rings and the oil-change km glance (a glance only, C24), the latest services, the odometer and a timeline, the vehicle's details tucked into one row, and detail sheets for a renewal or a service addressed by `?item=` (access decided on the server); reminder links open the sheet. The four tabs stay until V.3 |
-| V.3 | | One Overview, the per-tab Add buttons and the tabs go |
+| V.3 | #223 | ✅ *(C150)* **Two tabs, Overview and Documents**: the Services and Renewals tabs and their Add buttons are gone (everything they did is in the Add menu, the Overview's cards, the Services card's "Show all N", the timeline and the detail sheets; a tucked "Manage files" on a service); every old `?tab=` address (services, renewals, with `kind` or `q`, or an unknown value) lands on the Overview, scrolled to the Services card or the renewal cards, and keeps `?item=`; the link builders already point at the record's sheet; dedupe keys unchanged |
 | V.4 | | Service files in the Documents tab; the service detail |
 
 ## Later (each needs its own decision)

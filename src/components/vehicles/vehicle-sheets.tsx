@@ -8,37 +8,12 @@ import { ServiceForm } from "@/components/vehicles/service-form";
 import type { VehicleRenewal, VehicleService } from "@/db/schema";
 import { addOdometerReading } from "@/features/vehicles/odometer-actions";
 import { renewRenewal, updateRenewal } from "@/features/vehicles/renewal-actions";
-import { createService, updateService } from "@/features/vehicles/service-actions";
-import type { OilRules } from "@/features/vehicles/service-logic";
+import { updateService } from "@/features/vehicles/service-actions";
 
 /**
  * The vehicle "add" forms as bottom sheets (R.5a; board HVehicleForms). Client wrappers, because a
  * sheet closes itself after saving and the tabs that show these buttons render on the server.
  */
-
-export function AddServiceSheet({
-  vehicleId,
-  vehicleName,
-  serviceTypes,
-  defaultDate,
-  oil,
-  canAttach = false,
-}: {
-  vehicleId: string;
-  vehicleName: string;
-  serviceTypes: readonly string[];
-  defaultDate: string;
-  /** The oil-change rule in force (V.1a, C147), for the "Next oil change" card. */
-  oil?: OilRules;
-  /** May this person attach the invoice (Add in Vehicle documents)? */
-  canAttach?: boolean;
-}) {
-  return (
-    <SheetButton label="Add service" title="Add a service" crumb={`/ ${vehicleName} / New service`} variant="default">
-      {(close) => <ServiceForm action={createService} serviceTypes={serviceTypes} vehicleId={vehicleId} defaultDate={defaultDate} oil={oil} canAttach={canAttach} onDone={close} />}
-    </SheetButton>
-  );
-}
 
 /** "Add the invoice" on a service (V.1a, C147): the record's own upload form in a sheet; the hub names the file `PLATE_service_<date>`. */
 export function AddInvoiceSheet({ serviceId, serviceLabel, vehicleName, nameHint }: { serviceId: string; serviceLabel: string; vehicleName: string; nameHint: string }) {
@@ -50,7 +25,7 @@ export function AddInvoiceSheet({ serviceId, serviceLabel, vehicleName, nameHint
 }
 
 /**
- * "Renew" from the Documents tab (issue #187): the Renewals tab's own renew form in a sheet, so the renewal
+ * "Renew" from the Documents tab (issue #187): the renew form in a sheet, so the renewal
  * record keeps one home (C102). The old record and its papers stay as history.
  */
 export function RenewSheet({

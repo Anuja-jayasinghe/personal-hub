@@ -17,7 +17,7 @@ export function AttachmentsPanel({
   nameHint,
 }: {
   owner: OwnerRef;
-  items: Attachment[];
+  items: Pick<Attachment, "id" | "fileName" | "mimeType" | "sizeBytes">[];
   /** The name the hub will give an upload here (vehicle renewals, issue #179), shown under the picker. */
   nameHint?: string;
 }) {

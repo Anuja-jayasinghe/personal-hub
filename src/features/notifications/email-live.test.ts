@@ -33,9 +33,9 @@ const ENV = { RESEND_API_KEY: "re_FAKE_test_key_123456", NOTIFY_EMAIL_TO: "testu
 
 /** Several items whose email windows opened on different days before TODAY. */
 const ITEMS: ReminderItem[] = [
-  { id: "renewal:r1", title: "Insurance · Silver car", dueDate: addDays(TODAY, 20), href: "/vehicles/v1?tab=renewals", kind: "renewal", notice: { what: "Insurance", who: "Silver car" } },
-  { id: "renewal:r2", title: "Revenue license · Blue bike", dueDate: addDays(TODAY, 28), href: "/vehicles/v2?tab=renewals", kind: "renewal", notice: { what: "Revenue license", who: "Blue bike" } },
-  { id: "service:s1", title: "Full service · Silver car", dueDate: addDays(TODAY, 9), href: "/vehicles/v1?tab=services", kind: "service", notice: { what: "Full service", who: "Silver car" } },
+  { id: "renewal:r1", title: "Insurance · Silver car", dueDate: addDays(TODAY, 20), href: "/vehicles/v1?item=renewal:r1", kind: "renewal", notice: { what: "Insurance", who: "Silver car" } },
+  { id: "renewal:r2", title: "Revenue license · Blue bike", dueDate: addDays(TODAY, 28), href: "/vehicles/v2?item=renewal:r2", kind: "renewal", notice: { what: "Revenue license", who: "Blue bike" } },
+  { id: "service:s1", title: "Full service · Silver car", dueDate: addDays(TODAY, 9), href: "/vehicles/v1?item=service:s1", kind: "service", notice: { what: "Full service", who: "Silver car" } },
   { id: "electricity-bill:e1", title: "Electricity bill · LKR 4,250.00", dueDate: addDays(TODAY, 5), href: "/bills#electricity-bill-e1", kind: "bill", notice: { what: "Electricity bill", who: "Main house" } },
 ];
 const source: ReminderSource = { key: "vehicles", label: "Vehicles", load: async () => ITEMS };

@@ -36,10 +36,10 @@ const TODAY = "2026-11-23";
 const MORNING = new Date(`${TODAY}T02:10:00Z`);
 
 function renewal(days: number, who = "Silver car", id = "renewal:r1"): ReminderItem {
-  return { id, title: `Insurance · ${who}`, dueDate: addDays(TODAY, days), href: "/vehicles/v1?tab=renewals", kind: "renewal", notice: { what: "Insurance", who } };
+  return { id, title: `Insurance · ${who}`, dueDate: addDays(TODAY, days), href: "/vehicles/v1?item=renewal:r1", kind: "renewal", notice: { what: "Insurance", who } };
 }
 function service(days: number, who = "Silver car"): ReminderItem {
-  return { id: "service:s1", title: `Full service · ${who}`, dueDate: addDays(TODAY, days), href: "/vehicles/v1?tab=services", kind: "service", notice: { what: "Full service", who } };
+  return { id: "service:s1", title: `Full service · ${who}`, dueDate: addDays(TODAY, days), href: "/vehicles/v1?item=service:s1", kind: "service", notice: { what: "Full service", who } };
 }
 function electricity(days: number): ReminderItem {
   // The title holds an account number and an amount; a message must never carry them.
@@ -116,15 +116,15 @@ describe("renderEmail", () => {
   it("one item: the subject is hub · <what> · <when>, and the item links into the hub", () => {
     const { subject, text, html } = renderEmail(emailOf([renewal(30)]));
     expect(subject).toBe("hub · Insurance · Silver car ends 23 Dec");
-    expect(text).toContain(`${appConfig.siteUrl}/vehicles/v1?tab=renewals`);
-    expect(html).toContain(`href="${appConfig.siteUrl}/vehicles/v1?tab=renewals"`);
+    expect(text).toContain(`${appConfig.siteUrl}/vehicles/v1?item=renewal:r1`);
+    expect(html).toContain(`href="${appConfig.siteUrl}/vehicles/v1?item=renewal:r1"`);
     expect(text).toContain("in 30 days");
   });
 
   it("several items: hub · N things coming up, one line and one link each", () => {
     const { subject, text, html } = renderEmail(emailOf([renewal(30), service(14), electricity(7)]));
     expect(subject).toBe("hub · 3 things coming up");
-    for (const href of ["/vehicles/v1?tab=renewals", "/vehicles/v1?tab=services", "/bills#electricity-bill-e1"]) {
+    for (const href of ["/vehicles/v1?item=renewal:r1", "/vehicles/v1?item=service:s1", "/bills#electricity-bill-e1"]) {
       expect(text).toContain(`${appConfig.siteUrl}${href}`);
       expect(html).toContain(`${appConfig.siteUrl}${href}`);
     }
@@ -167,8 +167,8 @@ describe("renderEmail", () => {
       expect(part).toContain(defuseLinks(sneaky));
     }
     // The hub's own links stay whole.
-    expect(html).toContain(`href="${appConfig.siteUrl}/vehicles/v1?tab=renewals"`);
-    expect(text).toContain(`${appConfig.siteUrl}/vehicles/v1?tab=renewals`);
+    expect(html).toContain(`href="${appConfig.siteUrl}/vehicles/v1?item=renewal:r1"`);
+    expect(text).toContain(`${appConfig.siteUrl}/vehicles/v1?item=renewal:r1`);
   });
 
   it("keeps the subject on one line, without C0 or C1 control characters", () => {

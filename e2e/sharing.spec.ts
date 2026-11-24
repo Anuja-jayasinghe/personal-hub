@@ -135,7 +135,15 @@ test.describe("sharing with a person who signs in by themselves", () => {
     await sheet.getByRole("button", { name: "Save the paper" }).click();
     await expect(sheet).toBeHidden({ timeout: 45_000 });
     // It shows under Other on the Documents tab, as a paper that opens in the viewer (issue #187).
-    await page.goto(`/vehicles/${vehicle.id}?tab=documents`);
+    // The page has two tabs (V.3, C150): Overview and Documents, which this person may see.
+    await page.goto(`/vehicles/${vehicle.id}`);
+    const tabs = page.getByRole("navigation", { name: "Vehicle sections" });
+    await expect(tabs.getByRole("link")).toHaveText(["Overview", "Documents"]);
+    // An old Renewals link still lands on the Overview.
+    await page.goto(`/vehicles/${vehicle.id}?tab=renewals`);
+    await expect(tabs.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+    await tabs.getByRole("link", { name: "Documents" }).click();
+    await expect(tabs.getByRole("link", { name: "Documents" })).toHaveAttribute("aria-current", "page");
     const paper = page.getByRole("button", { name: new RegExp(TEST_TITLE) });
     await expect(paper).toBeVisible({ timeout: 45_000 });
 

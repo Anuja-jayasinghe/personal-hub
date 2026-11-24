@@ -97,6 +97,8 @@ export type ServiceSheetModel = {
     addInvoice: boolean;
     /** Delete one of its files. */
     deleteFile: boolean;
+    /** The tucked "Manage files" list (add another, delete any): it has files and the person may add or delete them. */
+    manageFiles: boolean;
     download: boolean;
   };
 };
@@ -139,6 +141,7 @@ export function serviceSheet(input: {
       delete: access.canEdit,
       addInvoice: files !== null && files.length === 0 && access.canAddFile && !sample,
       deleteFile: files !== null && files.length > 0 && access.canEditFiles && !sample,
+      manageFiles: files !== null && files.length > 0 && (access.canAddFile || access.canEditFiles) && !sample,
       download: files !== null && files.length > 0 && !sample,
     },
   };

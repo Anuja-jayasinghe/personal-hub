@@ -4,7 +4,7 @@ import { parseService, type ServiceFields } from "./service-validate";
 
 /**
  * Rules for which service records matter, and yearly cost totals. Pure (no database, no clock),
- * so they can be tested. Used by the Services tab and by the reminder source.
+ * so they can be tested. Used by the Overview, the service sheet and the reminder source.
  */
 
 export type ServiceRow = {

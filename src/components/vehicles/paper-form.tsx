@@ -60,9 +60,9 @@ function defaultsFor(kind: PaperKind, ctx: PaperContext): Values {
   return { ...EMPTY };
 }
 
-export function PaperForm({ ctx, kind: preset, kinds, onDone }: { ctx: PaperContext; kind?: PaperKind; kinds?: readonly PaperKind[]; onDone?: () => void }) {
+export function PaperForm({ ctx, kind: preset, onDone }: { ctx: PaperContext; kind?: PaperKind; onDone?: () => void }) {
   const { can } = ctx;
-  const offered = kindsFor(can).filter((k) => !kinds || kinds.includes(k.key));
+  const offered = kindsFor(can);
   const start = preset && offered.some((k) => k.key === preset) ? preset : null;
 
   const [kind, setKind] = useState<PaperKind | null>(start);

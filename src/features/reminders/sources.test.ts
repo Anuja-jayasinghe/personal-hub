@@ -64,6 +64,23 @@ describe("reminder sources with a database passed in", () => {
     for (const i of items) if (i.notice?.who) expect(i.notice.who).not.toMatch(/LKR|DEMO-\d|DEM-\d/);
   });
 
+  it("vehicle reminders link to the record's own sheet, never to a tab (V.3, C150)", async () => {
+    const { loaded } = await loadSources(reminderSources, { db, today: TODAY });
+    const renewalItems = loaded.find((l) => l.key === "vehicle-renewals")!.items;
+    const serviceItems = loaded.find((l) => l.key === "vehicle-services")!.items;
+    expect(renewalItems.length).toBeGreaterThan(0);
+    expect(serviceItems.length).toBeGreaterThan(0);
+    for (const i of renewalItems) {
+      expect(i.href).toBe(`/vehicles/${i.ownerId}?item=${i.id}`); // the id is `renewal:<row id>`
+      expect(i.id).toMatch(/^renewal:/);
+    }
+    for (const i of serviceItems) {
+      expect(i.href).toBe(`/vehicles/${i.ownerId}?item=${i.id}`);
+      expect(i.id).toMatch(/^service:/);
+    }
+    for (const i of loaded.flatMap((l) => l.items)) expect(i.href).not.toMatch(/tab=/);
+  });
+
   it("a service's free-text type never reaches a notification: only the fixed list, anything else is \"Service\"", async () => {
     const { loaded } = await loadSources(reminderSources, { db, today: TODAY });
     const services = loaded.find((l) => l.key === "vehicle-services")!.items;

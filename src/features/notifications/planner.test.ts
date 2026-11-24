@@ -9,10 +9,10 @@ const TODAY = "2026-11-23";
 const none = new Set<string>();
 
 function renewal(dueDate: string, id = "renewal:r1", who = "Silver car", what = "Insurance"): ReminderItem {
-  return { id, title: `${what} · ${who}`, dueDate, href: "/vehicles/v1?tab=renewals", kind: "renewal", ownerId: "v1", notice: { what, who } };
+  return { id, title: `${what} · ${who}`, dueDate, href: "/vehicles/v1?item=renewal:r1", kind: "renewal", ownerId: "v1", notice: { what, who } };
 }
 function service(dueDate: string, id = "service:s1"): ReminderItem {
-  return { id, title: "Full service · Silver car", dueDate, href: "/vehicles/v1?tab=services", kind: "service", notice: { what: "Full service", who: "Silver car" } };
+  return { id, title: "Full service · Silver car", dueDate, href: "/vehicles/v1?item=service:s1", kind: "service", notice: { what: "Full service", who: "Silver car" } };
 }
 function electricity(dueDate: string, id = "electricity-bill:e1"): ReminderItem {
   return { id, title: "Electricity bill · Account DEMO-0001 · LKR 4,250.00", dueDate, href: "/bills#electricity-bill-e1", kind: "bill", notice: { what: "Electricity bill", who: "Main house" } };
@@ -222,6 +222,18 @@ describe("dedupe keys", () => {
     expect(dedupeKey("task:t1", "act", "2026-11-23")).toBe("task:t1:act:2026-11-23");
   });
 
+  it("do not depend on where the notice links to, so moving a link (V.3, C150) never re-sends a notice", () => {
+    const keysOf = (renewalHref: string, serviceHref: string) =>
+      planNotifications({ items: [{ ...renewal("2026-12-23"), href: renewalHref }, { ...service("2026-12-01"), href: serviceHref }], today: TODAY, usedKeys: none }).notices.map((n) => n.dedupeKey);
+    const before = keysOf("/vehicles/v1?tab=renewals", "/vehicles/v1?tab=services");
+    const after = keysOf("/vehicles/v1?item=renewal:r1", "/vehicles/v1?item=service:s1");
+    expect(after).toEqual(before);
+    expect(after).toContain("renewal:r1:plan:2026-12-23");
+    // A key already used before the change still blocks the notice after it.
+    const plan = planNotifications({ items: [renewal("2026-12-23")], today: TODAY, usedKeys: new Set(["renewal:r1:plan:2026-12-23"]) });
+    expect(plan.notices).toHaveLength(0);
+  });
+
   it("a renewed item has a new due date, so it is notified again", () => {
     const old = planNotifications({ items: [electricity(addDays(TODAY, 7))], today: TODAY, usedKeys: none });
     const used = new Set(old.notices.map((n) => n.dedupeKey));
@@ -242,8 +254,8 @@ describe("messages", () => {
     const [email] = planNotifications({ items: [renewal("2026-12-23")], today: TODAY, usedKeys: none }).messages;
     expect(email.title).toBe("hub · Insurance · Silver car ends 23 Dec");
     expect(email.body).toContain("Insurance · Silver car ends 23 Dec (in 30 days)");
-    expect(email.body).toContain("https://hub.anujajay.com/vehicles/v1?tab=renewals");
-    expect(email.href).toBe("/vehicles/v1?tab=renewals");
+    expect(email.body).toContain("https://hub.anujajay.com/vehicles/v1?item=renewal:r1");
+    expect(email.href).toBe("/vehicles/v1?item=renewal:r1");
   });
 
   it("a push reads like the owner's examples", () => {
