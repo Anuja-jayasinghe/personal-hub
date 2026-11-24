@@ -7,6 +7,7 @@ import { cache } from "react";
 import { db } from "@/db";
 import { accessGrants, people } from "@/db/schema";
 import { accessFromGrants, allows, AREAS, type Access, type Area, type Level } from "@/features/people/access";
+import { activateInvitedPerson, requestAccessAfterExpiry } from "@/features/people/invite-activation";
 import { ValidationError } from "@/features/shared/validation";
 import { safeErrorSummary } from "./errors";
 import { isAllowedEmail, parseAllowedEmails } from "./allowed-emails";
@@ -52,6 +53,15 @@ function announceAccessRequest(): void {
   }
 }
 
+/**
+ * True when Clerk lists this address on the signed-in account as verified. The session's "email" claim
+ * cannot say, so before an invitation is activated the account itself is asked (a rare, one-time call).
+ */
+async function isVerifiedByClerk(address: string): Promise<boolean> {
+  const user = await currentUser();
+  return !!user?.emailAddresses?.some((e) => e.emailAddress.trim().toLowerCase() === address && e.verification?.status === "verified");
+}
+
 /** Memoised per request, so a page and the actions it calls ask Clerk and the database at most once. */
 export const getAuthState = cache(async (): Promise<AuthState> => {
   const owners = parseAllowedEmails(process.env.ALLOWED_EMAILS);
@@ -75,7 +85,8 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
   const address = email.trim().toLowerCase();
   // Only the columns it needs, so an existing person's sign-in does not depend on columns added later
   // (notifications_enabled, N.5). The insert below still names every column: migrations go first.
-  const [person] = await db.select({ id: people.id, status: people.status, lastSeenAt: people.lastSeenAt }).from(people).where(eq(people.email, address));
+  const findPerson = async () => (await db.select({ id: people.id, status: people.status, lastSeenAt: people.lastSeenAt }).from(people).where(eq(people.email, address)))[0];
+  let person = await findPerson();
   if (!person) {
     // Signed in by themselves: they wait for the owner's approval (S.8; a demo comes later).
     const created = await db
@@ -87,7 +98,23 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
     if (created.length > 0) announceAccessRequest();
     return { status: "pending", email: address };
   }
+
+  // An invitation (issue #236, C154) is a placeholder with no power. It becomes active only here, only for
+  // the address Clerk has VERIFIED, and only before it ends. Each step is a single conditional update, so
+  // two tabs signing in together cannot both win. Past its end it is an ordinary request (just below).
+  if (person.status === "invited") {
+    if (!(await isVerifiedByClerk(address))) return { status: "not-allowed", email: null };
+    const activation = await activateInvitedPerson(db, address, new Date());
+    if (activation.result === "activated") person = { id: activation.personId, status: "active", lastSeenAt: new Date() };
+    else person = (await findPerson()) ?? person; // another request may have changed it first
+  }
+  if (person.status === "expired") {
+    // The request begins now: the one request that makes the row pending tells the owners (N.4 dedupes per person).
+    if (await requestAccessAfterExpiry(db, address, new Date())) announceAccessRequest();
+    return { status: "pending", email: address };
+  }
   if (person.status === "pending") return { status: "pending", email: address };
+  // Blocked gets nothing; so does an invitation that is still waiting (it cannot be, after the step above).
   if (person.status !== "active") return { status: "not-allowed", email: address };
 
   const grants = await db.select({ area: accessGrants.area, level: accessGrants.level }).from(accessGrants).where(eq(accessGrants.personId, person.id));

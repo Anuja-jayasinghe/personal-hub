@@ -94,6 +94,14 @@ while it is still timely, **but at most 3 times**; after that it is never planne
 (Resend answers 422) loses a notice after three mornings: fix the configuration promptly. **Email is the owners'
 only** (N.5, C144): shared people are never emailed, whatever their grants; they get pushes.
 
+## Invitations (issue #236, C154)
+
+Settings › People › Invite someone emails a sign-up link (`<site>/sign-up?invite=<code>`) through the same Resend setup:
+**no new setting**, it only needs `RESEND_API_KEY` (Production only, as above) and sends from the same
+`hub <notify@mail.hub.anujajay.com>`. **Only Production sends**: on a preview or locally the invitation is saved and
+the owner is told the email is only sent from the live site. The link's host is `siteUrl` in `app.config.ts`. Apply
+migration 0020 before merging: the sign-in check reads the new `invited` and `expired` states and columns.
+
 ## Pushes that need no due date (N.4, C142)
 
 The daily run also pushes when a meter nears or crosses its slab limit and when a meter reading is overdue; **no new setting and no migration**. "Someone asked for access" is sent right away (from Next's `after()`, when a stranger is first recorded as pending) **only on Production**, only to the `ALLOWED_EMAILS` owners, only after 09:00 Colombo and only if no push has gone to that owner today; otherwise the next daily run includes it in the day's one push. Two sign-ups at the same instant send one push (an atomic per-owner, per-day claim in `app_settings`). A sign-up at 08:45 Colombo waits for the next morning's run, because instant pushes start at 09:00 and that morning's run has gone. On the first run after this ships, a meter already near or over its limit gets one push, and anyone who signed up within the last 7 days and is still pending gets one batched push; the 7-day windows are a design choice. Previews and local development share the real database but never send it. It needs push to be set up and switched on like every other push (otherwise it is logged as a dry run).

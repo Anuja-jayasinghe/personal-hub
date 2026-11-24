@@ -298,6 +298,8 @@ Goal: the hub reaches you only when something is new. At most three notices per 
 
 Goal: your father and one other person can add readings and see usage, and you control exactly what each person can see and do. Needs the Hub hosted (4.2) and a roles and permissions model on top of the login; the questions to settle first are in P40. Not planned in detail yet.
 
+- **Invitations** (issue #236, C154): ✅ built, **migration 0020 to apply before merge**. Settings › People › Invite someone sends a branded sign-up link by email (production only); the person is an empty `invited` placeholder with the chosen access until they sign up with that verified address, then `active`; 14 days, Resend and Withdraw, limits, expired and different-address paths as in C154.
+
 ## Phase 6 — CI/CD and versions (C120, C123)
 
 Goal: every change is checked automatically, releases get a version without hand work, and the live site is tested after each deploy.

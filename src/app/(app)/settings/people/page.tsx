@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { OwnerOnly } from "@/components/settings/owner-only";
-import { AccessGrid, AddPersonForm } from "@/components/settings/people";
+import { AccessGrid, AddPersonForm, InviteActions, InviteForm } from "@/components/settings/people";
 import { SettingsColumn, SettingsColumns, SettingsSection } from "@/components/settings/settings-ui";
 import { SubmitButton } from "@/components/shared/submit-button";
 import { PageHeader } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { removePerson, setPersonNotifications, setPersonStatus } from "@/features/people/actions";
+import { summariseAccess } from "@/features/people/access-summary";
 import { listPeople, type PersonWithAccess } from "@/features/people/queries";
 import { formatDate } from "@/lib/format";
 import { parseAllowedEmails } from "@/lib/allowed-emails";
@@ -70,15 +71,65 @@ function Who({ person, note }: { person: PersonWithAccess; note?: string }) {
   );
 }
 
+/** An invitation that is waiting (invited, or ended): how it stands, what they will get, Resend and Withdraw (issue #236). */
+function InvitedCard({ person }: { person: PersonWithAccess }) {
+  const invite = person.invite;
+  if (!invite) return null;
+  const sees = summariseAccess(person.access.grants);
+  return (
+    <div className={`flex flex-col gap-2 rounded-2xl border bg-card px-4 py-3 ${invite.ended ? "border-status-soon-mark/40" : ""}`}>
+      <div className="flex items-center gap-3">
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate text-[15px] font-semibold">{person.name ?? person.email}</span>
+          {person.name ? <span className="truncate text-xs text-muted-foreground">{person.email}</span> : null}
+        </span>
+        <span className={`rounded-md px-2 py-0.5 font-mono text-[10px] font-semibold tracking-[0.14em] ${invite.ended ? "bg-status-soon-soft text-status-soon" : "bg-accent text-foreground"}`}>
+          {invite.ended ? "EXPIRED" : "INVITED"}
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {invite.line} · {invite.opened}
+      </p>
+      <p className="text-xs">{sees.length > 0 ? sees.join(" · ") : "No access chosen yet"}</p>
+      <InviteActions personId={person.id} label={person.name ?? person.email} canResend={invite.canResend} resendNote={invite.resendNote} ended={invite.ended} />
+      <details className="group border-t border-raised pt-1">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-9 [&::-webkit-details-marker]:hidden">
+          <span>Change access</span>
+          <span className="text-xs text-primary group-open:hidden">Open</span>
+          <span className="hidden text-xs text-muted-foreground group-open:inline">Close</span>
+        </summary>
+        <AccessGrid personId={person.id} grants={person.access.grants} />
+      </details>
+    </div>
+  );
+}
+
 async function PeopleLists() {
   const all = await listPeople();
   const waiting = all.filter((p) => p.status === "pending");
+  const invited = all.filter((p) => p.status === "invited" || p.status === "expired");
   const active = all.filter((p) => p.status === "active");
   const blocked = all.filter((p) => p.status === "blocked");
   const owners = parseAllowedEmails(process.env.ALLOWED_EMAILS);
 
   return (
     <SettingsColumns>
+      <SettingsColumn>
+        <SettingsSection label="Invite someone" note="They get an email from hub with a sign-up link. You choose what they can do before it is sent.">
+          <InviteForm />
+        </SettingsSection>
+        <details className="group rounded-2xl border bg-card">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between px-4 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+            <span className="text-muted-foreground">Add without an email</span>
+            <span className="text-xs text-primary group-open:hidden">Open</span>
+            <span className="hidden text-xs text-muted-foreground group-open:inline">Close</span>
+          </summary>
+          <div className="px-3 pb-3">
+            <AddPersonForm />
+          </div>
+        </details>
+      </SettingsColumn>
+
       <SettingsColumn>
           {waiting.length > 0 ? (
             <SettingsSection label={`Waiting for you · ${waiting.length}`} note="They signed in by themselves. Approve to give them a place here, then choose what they see.">
@@ -89,6 +140,19 @@ async function PeopleLists() {
                     <StatusForm id={p.id} status="active" label="Approve" variant="default" />
                     <StatusForm id={p.id} status="blocked" label="Block" />
                   </div>
+                ))}
+              </div>
+            </SettingsSection>
+          ) : null}
+
+          {invited.length > 0 ? (
+            <SettingsSection
+              label={`Invited · ${invited.length}`}
+              note="They have no access yet. It starts when they sign up with the address you invited. An invitation ends after 14 days."
+            >
+              <div className="flex flex-col gap-3">
+                {invited.map((p) => (
+                  <InvitedCard key={p.id} person={p} />
                 ))}
               </div>
             </SettingsSection>
@@ -144,11 +208,6 @@ async function PeopleLists() {
           ) : null}
       </SettingsColumn>
 
-      <SettingsColumn>
-          <SettingsSection label="Add someone">
-            <AddPersonForm />
-          </SettingsSection>
-      </SettingsColumn>
     </SettingsColumns>
   );
 }
