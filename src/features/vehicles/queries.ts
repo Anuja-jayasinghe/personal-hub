@@ -103,25 +103,6 @@ export async function listRenewalsOfActiveVehicles(from?: Db) {
     .where(isNull(vehicles.archivedAt));
 }
 
-/** Raw figures for a vehicle's Overview tab; the page turns them into text with the pure helpers. */
-export async function getVehicleSummary(vehicleId: string) {
-  await connection();
-  const db = await readDb();
-  const [services, renewals] = await Promise.all([
-    db
-      .select()
-      .from(vehicleServices)
-      .where(eq(vehicleServices.vehicleId, vehicleId))
-      .orderBy(desc(vehicleServices.serviceDate), desc(vehicleServices.createdAt)),
-    db
-      .select()
-      .from(vehicleRenewals)
-      .where(eq(vehicleRenewals.vehicleId, vehicleId))
-      .orderBy(desc(vehicleRenewals.expiryDate), desc(vehicleRenewals.createdAt)),
-  ]);
-  return { services, renewals };
-}
-
 /** A vehicle's dated odometer readings, newest first. (Services with an odometer count too: see odometer.ts.) */
 export async function listOdometerReadings(vehicleId: string) {
   await connection();
