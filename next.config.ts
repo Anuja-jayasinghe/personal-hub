@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { securityHeaders } from "./src/config/security-headers";
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -25,19 +26,9 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_CLERK_KEYLESS_DISABLED: "true",
     NEXT_PUBLIC_CLERK_TELEMETRY_DISABLED: "1",
   },
-  // The service worker for iPhone push (N.3, C140; the Next.js PWA guide): always fetched fresh, served
-  // as JavaScript, and allowed to load nothing from anywhere else. It caches nothing itself.
+  // Security headers on every response, and the service worker's own rules (issue #207, DECISIONS C143).
   async headers() {
-    return [
-      {
-        source: "/sw.js",
-        headers: [
-          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
-          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
-          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
-        ],
-      },
-    ];
+    return securityHeaders;
   },
   turbopack: {
     rules: {
