@@ -3,7 +3,7 @@
 import { and, eq } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { db } from "@/db";
-import { accessGrants, people } from "@/db/schema";
+import { accessGrants, people, pushSubscriptions } from "@/db/schema";
 import { toActionState } from "@/features/shared/errors";
 import type { ActionState } from "@/features/shared/types";
 import { idFrom, ValidationError } from "@/features/shared/validation";
@@ -40,14 +40,34 @@ export async function setPersonStatus(fd: FormData): Promise<void> {
   await requireUser("owner");
   const status = String(fd.get("status") ?? "");
   if (status !== "active" && status !== "blocked") throw new ValidationError("Unknown status.");
-  await db.update(people).set({ status }).where(eq(people.id, idFrom(fd)));
+  const id = idFrom(fd);
+  const [person] = await db.update(people).set({ status }).where(eq(people.id, id)).returning({ email: people.email });
+  // A blocked person's phones are unregistered at once (N.5, C144): they would otherwise stay registered,
+  // keep "belonging" to this account, and resume pushes if the person is let back in or added again.
+  if (status === "blocked" && person) await db.delete(pushSubscriptions).where(eq(pushSubscriptions.recipient, person.email));
+  refresh();
+}
+
+/**
+ * Switches one person's notifications on or off (N.5, C144). Off, the daily run skips them; the setting
+ * is the owner's, so a person cannot change it, and it does not touch their devices or their access.
+ */
+export async function setPersonNotifications(fd: FormData): Promise<void> {
+  await requireUser("owner");
+  const enabled = String(fd.get("enabled") ?? "");
+  if (enabled !== "true" && enabled !== "false") throw new ValidationError("Choose on or off.");
+  await db.update(people).set({ notificationsEnabled: enabled === "true" }).where(eq(people.id, idFrom(fd)));
   refresh();
 }
 
 /** Removes a person and their access. If they sign in again they come back as waiting. */
 export async function removePerson(fd: FormData): Promise<void> {
   await requireUser("owner");
-  await db.delete(people).where(eq(people.id, idFrom(fd)));
+  const id = idFrom(fd);
+  // Their devices go first (keyed by their email, N.5, C144), so a failure leaves the person in place to retry.
+  const [person] = await db.select({ email: people.email }).from(people).where(eq(people.id, id));
+  if (person) await db.delete(pushSubscriptions).where(eq(pushSubscriptions.recipient, person.email));
+  await db.delete(people).where(eq(people.id, id));
   refresh();
 }
 

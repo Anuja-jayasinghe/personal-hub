@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, index, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, index, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { createdAt, updatedAt } from "./_columns";
 
 /**
@@ -16,6 +16,11 @@ export const people = pgTable(
     name: text("name"),
     status: text("status").$type<"pending" | "active" | "blocked">().notNull().default("pending"),
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+    /**
+     * The owner's switch for this person's notifications (N.5, C144): off, the daily run skips them.
+     * It never stops them turning pushes on for their device; they simply hear nothing.
+     */
+    notificationsEnabled: boolean("notifications_enabled").notNull().default(true),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

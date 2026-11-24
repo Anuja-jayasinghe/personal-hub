@@ -73,7 +73,9 @@ export const getAuthState = cache(async (): Promise<AuthState> => {
   if (!email) return { status: "not-allowed", email: null };
 
   const address = email.trim().toLowerCase();
-  const [person] = await db.select().from(people).where(eq(people.email, address));
+  // Only the columns it needs, so an existing person's sign-in does not depend on columns added later
+  // (notifications_enabled, N.5). The insert below still names every column: migrations go first.
+  const [person] = await db.select({ id: people.id, status: people.status, lastSeenAt: people.lastSeenAt }).from(people).where(eq(people.email, address));
   if (!person) {
     // Signed in by themselves: they wait for the owner's approval (S.8; a demo comes later).
     const created = await db

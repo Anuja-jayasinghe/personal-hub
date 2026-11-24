@@ -1,0 +1,1 @@
+ALTER TABLE "people" ADD COLUMN "notifications_enabled" boolean DEFAULT true NOT NULL;

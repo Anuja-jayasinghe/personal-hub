@@ -46,6 +46,12 @@ export type PushSenderDeps = {
   /** Only the device whose endpoint hashes to this (SHA-256, hex): a test push goes to the device that asked. */
   onlyEndpointHash?: string;
   now?: () => Date;
+  /**
+   * Whether this recipient may be emailed (default: everyone). Only the owners may (N.5, C144): for anyone
+   * else a gone device is just marked, and their own page shows "Stopped accepting pushes"; no email is
+   * written or sent about it.
+   */
+  canEmail?: (recipient: string) => boolean;
   /** Called once for each subscription this sender marked gone. Default: log its email notice (held if an email already went today). */
   onGone?: (device: GoneDevice) => Promise<unknown>;
 };
@@ -54,7 +60,7 @@ export type DeviceOutcome = "delivered" | "gone" | "refused" | "unknown";
 
 export const endpointHash = (endpoint: string) => createHash("sha256").update(endpoint).digest("hex");
 
-export function createPushSender({ db, transport, emailSender, onlyEndpointHash, now = () => new Date(), onGone }: PushSenderDeps): ChannelSender {
+export function createPushSender({ db, transport, emailSender, onlyEndpointHash, now = () => new Date(), canEmail = () => true, onGone }: PushSenderDeps): ChannelSender {
   const notifyGone = onGone ?? ((d: GoneDevice) => deliverGoneNotices(db, { recipient: d.recipient, now: now(), emailSender }));
 
   async function toDevice(sub: typeof pushSubscriptions.$inferSelect, payload: string): Promise<DeviceOutcome> {
@@ -79,7 +85,7 @@ export function createPushSender({ db, transport, emailSender, onlyEndpointHash,
         .set({ goneAt: now() })
         .where(and(eq(pushSubscriptions.id, sub.id), isNull(pushSubscriptions.goneAt)))
         .returning({ id: pushSubscriptions.id });
-      if (marked.length > 0) {
+      if (marked.length > 0 && canEmail(sub.recipient)) {
         try {
           await notifyGone({ recipient: sub.recipient, subscriptionId: sub.id, deviceLabel: sub.deviceLabel });
         } catch (err) {

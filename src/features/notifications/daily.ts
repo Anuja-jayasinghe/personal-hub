@@ -4,13 +4,15 @@ import type { Db } from "@/db/read";
 import { appSettings } from "@/db/schema";
 import type { NoticeSource, ReminderSource } from "@/features/reminders/engine";
 import { loadNoticeSources, loadSources, noticeSources as defaultNoticeSources, reminderSources } from "@/features/reminders/sources";
+import { parseAllowedEmails } from "@/lib/allowed-emails";
 import { todayIn } from "@/lib/dates";
 import { safeErrorSummary } from "@/lib/errors";
 import { channelModes, NOTIFICATIONS_SETTINGS_KEY, parseSwitches, SENDERS, type ChannelModes, type ChannelSender } from "./channels";
 import { channelsUsedOn, pruneLog, readLog, rowCounts, usedKeysFrom, writeMessage } from "./log";
 import { planNotifications } from "./planner";
 import { clearLoggedGone, pushGoneNotices, withGoneNotices } from "./push/gone";
-import { eventsFor, itemsFor, ownerRecipients } from "./recipients";
+import { loadPersonRecipients } from "./person-recipients";
+import { eventsFor, itemsFor, ownerRecipients, type Recipient } from "./recipients";
 import { CHANNELS, type Channel } from "./steps";
 
 /**
@@ -36,6 +38,8 @@ export type RunReport = {
   today: string;
   modes: ChannelModes;
   recipients: number;
+  /** How many of them are shared people (N.5): push only, only what their grants allow. */
+  people: number;
   /** Recipients whose part of the run threw; the others still ran. */
   failedRecipients: number;
   items: number;
@@ -56,7 +60,18 @@ export async function runDaily({ db, now, allowedEmails, sources = reminderSourc
   const today = todayIn(appConfig.timeZone, now);
   const [setting] = await db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, NOTIFICATIONS_SETTINGS_KEY));
   const modes = channelModes(parseSwitches(setting?.value ?? null), senders);
-  const recipients = ownerRecipients(allowedEmails);
+  const owners = ownerRecipients(allowedEmails);
+  // Shared people (N.5, C144): active, switched on, with a live device. A failure reading them (for
+  // example the code deployed before its migration) never stops the owners' run.
+  let people: Recipient[] = [];
+  let peopleFailed = false;
+  try {
+    people = await loadPersonRecipients(db, new Set(parseAllowedEmails(allowedEmails)));
+  } catch (err) {
+    peopleFailed = true;
+    console.error(`Reading the shared people failed: ${safeErrorSummary(err)}`);
+  }
+  const recipients = [...owners, ...people];
 
   const pruned = await pruneLog(db, now);
   const { loaded, failedSources: failedItemSources } = await loadSources(sources, { db, today });
@@ -67,7 +82,8 @@ export async function runDaily({ db, now, allowedEmails, sources = reminderSourc
     today,
     modes,
     recipients: recipients.length,
-    failedRecipients: 0,
+    people: people.length,
+    failedRecipients: peopleFailed ? 1 : 0,
     items: loaded.reduce((n, l) => n + l.items.length, 0),
     events: loadedEvents.reduce((n, l) => n + l.items.length, 0),
     failedSources: failedSources.length,
@@ -90,15 +106,20 @@ export async function runDaily({ db, now, allowedEmails, sources = reminderSourc
         today,
         usedKeys: usedKeysFrom(log, modes),
         channelsUsedToday: usedToday,
+        channels: recipient.channels,
+        listHref: recipient.listHref,
       });
       report.held += plan.held;
 
       // A device that stopped accepting pushes since the last email (N.3, C140): its one notice joins
       // today's email, or is held for tomorrow if an email already went today.
       // A push problem never blocks this person's email: if reading the gone devices fails, carry on without them.
+      // Only for recipients who may be emailed: a person is never emailed (N.5, C144); their page shows
+      // "Stopped accepting pushes" for the marked device instead, and the row stays until they remove it.
+      const emailable = recipient.channels.includes("email");
       let gone: Awaited<ReturnType<typeof pushGoneNotices>> = [];
       try {
-        gone = await pushGoneNotices(db, recipient.email, today);
+        if (emailable) gone = await pushGoneNotices(db, recipient.email, today);
       } catch (err) {
         console.error(`Reading gone push devices failed for one recipient: ${safeErrorSummary(err)}`);
       }
@@ -116,7 +137,7 @@ export async function runDaily({ db, now, allowedEmails, sources = reminderSourc
         report.rows.failed += result.failed;
         report.rows.unknown += result.unknown;
       }
-      if (gone.length > 0) {
+      if (emailable && gone.length > 0) {
         try {
           await clearLoggedGone(db, recipient.email);
         } catch (err) {

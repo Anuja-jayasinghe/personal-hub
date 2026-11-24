@@ -9,7 +9,7 @@ import { makeTestDb } from "@/test/pglite";
  * Postgres. The signed-in owner is faked, Resend is a mocked `fetch`: nothing is sent, nothing real is
  * touched. Everything here is made up (public repo).
  */
-const h = vi.hoisted(() => ({ db: null as unknown as Db, email: "owner@example.com" }));
+const h = vi.hoisted(() => ({ db: null as unknown as Db, email: "testusernotreal0@gmail.com" }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/cache", () => ({ refresh: () => {} }));
@@ -27,7 +27,7 @@ const { sendTestEmail, setEmailEnabled } = await import("./email-actions");
 const { setPushLive } = await import("./actions");
 
 const KEY = "re_FAKE_test_key_123456";
-const TO = "owner+tag@example.com";
+const TO = "testusernotreal0+tag@gmail.com";
 
 const okFetch = () => vi.fn<typeof fetch>(async () => Response.json({ id: "email_1" }));
 const toOf = (f: ReturnType<typeof okFetch>, call = 0) => JSON.parse(String(f.mock.calls[call][1]?.body)).to[0];
@@ -40,7 +40,7 @@ const enabled = (on: boolean) => {
 
 beforeEach(async () => {
   ({ db: h.db } = await makeTestDb());
-  h.email = "owner@example.com";
+  h.email = "testusernotreal0@gmail.com";
   vi.stubEnv("RESEND_API_KEY", KEY);
   vi.stubEnv("NOTIFY_EMAIL_TO", TO);
 }, 60_000);
@@ -85,7 +85,7 @@ describe("sendTestEmail", () => {
   it("sends to the viewer's delivery address", async () => {
     const f = okFetch();
     vi.stubGlobal("fetch", f);
-    h.email = "Owner@Example.com";
+    h.email = "TestUserNotReal0@Gmail.com";
     await sendTestEmail();
     expect(toOf(f)).toBe(TO);
 

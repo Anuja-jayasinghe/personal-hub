@@ -27,9 +27,9 @@ const { buildSenders } = await import("./senders");
 
 const TODAY = "2026-11-23";
 const at = (day: string) => new Date(`${day}T02:10:00Z`); // 07:40 in Colombo
-const OWNER = "owner@example.com";
+const OWNER = "testusernotreal0@gmail.com";
 const SECOND = "second@example.com";
-const ENV = { RESEND_API_KEY: "re_FAKE_test_key_123456", NOTIFY_EMAIL_TO: "owner+tag@example.com" };
+const ENV = { RESEND_API_KEY: "re_FAKE_test_key_123456", NOTIFY_EMAIL_TO: "testusernotreal0+tag@gmail.com" };
 
 /** Several items whose email windows opened on different days before TODAY. */
 const ITEMS: ReminderItem[] = [
@@ -73,7 +73,7 @@ describe("switching email on", () => {
     const report = await runDaily({ db, now: at(TODAY), allowedEmails, sources: [source], senders });
     expect(report.modes.email).toBe("live");
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(recipientsOf(fetch).sort()).toEqual(["owner+tag@example.com", SECOND]);
+    expect(recipientsOf(fetch).sort()).toEqual([SECOND, "testusernotreal0+tag@gmail.com"]);
     expect(report.messages.email).toBe(2);
     const body = JSON.parse(String(fetch.mock.calls[0][1]?.body));
     expect(body.subject).toBe("hub · 4 things coming up");
@@ -104,7 +104,7 @@ describe("switching email on", () => {
 
   it("a refusal is logged failed, without the address, and retried on a later run", async () => {
     await switchEmail(true);
-    const refuse = vi.fn(async () => Response.json({ name: "validation_error", message: "Invalid `to` field: owner+tag@example.com" }, { status: 422 }));
+    const refuse = vi.fn(async () => Response.json({ name: "validation_error", message: "Invalid `to` field: testusernotreal0+tag@gmail.com" }, { status: 422 }));
     await runDaily({ db, now: at(TODAY), allowedEmails: OWNER, sources: [source], senders: { ...SENDERS, email: emailSender(() => ENV, { fetch: refuse }) } });
     const failed = await db.select().from(notifications).where(sql`${notifications.channel} = 'email'`);
     expect(failed.length).toBe(4);
