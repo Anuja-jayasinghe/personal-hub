@@ -56,7 +56,7 @@ export function OdometerTimeline({ points, unfit }: { points: readonly OdometerP
   const oldest = fitting[0];
 
   return (
-    <figure className="flex flex-col gap-2">
+    <figure className="flex flex-col gap-2" data-no-gesture>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="w-full"

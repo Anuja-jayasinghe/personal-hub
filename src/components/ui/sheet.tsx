@@ -5,6 +5,7 @@ import { Dialog as SheetPrimitive } from "@base-ui/react/dialog"
 import { cn } from "cn"
 
 import { Button } from "@/components/ui/button"
+import { useSheetDrag } from "@/components/ui/use-sheet-drag"
 import { XIcon } from "lucide-react"
 
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
@@ -46,10 +47,15 @@ function SheetContent({
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
 }) {
+  // A bottom sheet closes on a swipe down from its top area (issue #176): through the dialog's own Close
+  // button, so focus, scroll lock and onOpenChange behave exactly as for the X or Escape.
+  const closeRef = React.useRef<HTMLButtonElement>(null)
+  const dragRef = useSheetDrag(side === "bottom", () => closeRef.current?.click())
   return (
     <SheetPortal>
       <SheetOverlay />
       <SheetPrimitive.Popup
+        ref={dragRef}
         data-slot="sheet-content"
         data-side={side}
         className={cn(
@@ -59,8 +65,12 @@ function SheetContent({
         {...props}
       >
         {children}
+        {side === "bottom" && !showCloseButton && (
+          <SheetPrimitive.Close ref={closeRef} className="hidden" tabIndex={-1} aria-hidden />
+        )}
         {showCloseButton && (
           <SheetPrimitive.Close
+            ref={closeRef}
             data-slot="sheet-close"
             render={
               <Button
@@ -77,6 +87,25 @@ function SheetContent({
         )}
       </SheetPrimitive.Popup>
     </SheetPortal>
+  )
+}
+
+/**
+ * The grab handle at the top of a phone's bottom sheet (DESIGN.md, 40 by 5). It looks the same as it always did;
+ * it now also marks where to swipe down to close (`useSheetDrag`), with a wider tap area and no browser panning
+ * of its own, and a window on a wide screen has none.
+ */
+function SheetHandle({ className, ...props }: React.ComponentProps<"span">) {
+  return (
+    <span
+      aria-hidden
+      data-slot="sheet-handle"
+      className={cn(
+        "relative mx-auto mb-3 block h-[5px] w-10 touch-none rounded-full bg-border after:absolute after:-inset-x-10 after:-inset-y-3 after:content-[''] md:hidden",
+        className
+      )}
+      {...props}
+    />
   )
 }
 
@@ -131,6 +160,7 @@ export {
   SheetTrigger,
   SheetClose,
   SheetContent,
+  SheetHandle,
   SheetHeader,
   SheetFooter,
   SheetTitle,
