@@ -2,7 +2,7 @@ import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import type { Db } from "@/db/read";
 import { notifications } from "@/db/schema";
 import { todayIn } from "@/lib/dates";
-import { NotSentError, type ChannelMode, type ChannelModes, type ChannelSender } from "./channels";
+import { NotSentError, type ChannelMode, type ChannelModes, type ChannelSender, type SendContext } from "./channels";
 import { composeMessage, type Message } from "./planner";
 import type { Channel } from "./steps";
 
@@ -127,7 +127,13 @@ export async function recordDryRun(db: Db, message: Message): Promise<WriteResul
  * whose row was written, then stamps them `sent`. If the sender says nothing went out (`NotSentError`)
  * they become `failed` and may be retried; any other error leaves them `pending` with the error noted.
  */
-export async function sendLive(db: Db, message: Message, sender: Pick<ChannelSender, "send">, now: () => Date = () => new Date()): Promise<WriteResult> {
+export async function sendLive(
+  db: Db,
+  message: Message,
+  sender: Pick<ChannelSender, "send">,
+  now: () => Date = () => new Date(),
+  context?: SendContext,
+): Promise<WriteResult> {
   const inserted = await db
     .insert(notifications)
     .values(rowsOf(message, "pending"))
@@ -144,7 +150,7 @@ export async function sendLive(db: Db, message: Message, sender: Pick<ChannelSen
   const ids = inserted.map((r) => r.id);
   const mine = and(inArray(notifications.id, ids), eq(notifications.status, "pending"));
   try {
-    await sender.send(toSend);
+    await sender.send(toSend, context);
   } catch (err) {
     if (err instanceof NotSentError) {
       await db.update(notifications).set({ status: "failed", error: shortError(err) }).where(mine);
@@ -157,7 +163,7 @@ export async function sendLive(db: Db, message: Message, sender: Pick<ChannelSen
   return { written: ids.length, sent: ids.length, failed: 0, unknown: 0, message: toSend };
 }
 
-/** Writes one message the way its channel's mode says. */
-export function writeMessage(db: Db, message: Message, mode: ChannelMode, sender: Pick<ChannelSender, "send">): Promise<WriteResult> {
-  return mode === "live" ? sendLive(db, message, sender) : recordDryRun(db, message);
+/** Writes one message the way its channel's mode says. `context` (the run's day) goes to the sender. */
+export function writeMessage(db: Db, message: Message, mode: ChannelMode, sender: Pick<ChannelSender, "send">, context?: SendContext): Promise<WriteResult> {
+  return mode === "live" ? sendLive(db, message, sender, undefined, context) : recordDryRun(db, message);
 }

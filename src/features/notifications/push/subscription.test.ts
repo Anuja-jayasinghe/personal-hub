@@ -8,9 +8,9 @@ const ALLOWED = [
   "https://web.push.apple.com/QGf0abc",
   "https://api.push.apple.com/3/device/xyz",
   "https://fcm.googleapis.com/fcm/send/abc:def",
-  "https://android.googleapis.com/gcm/send/abc",
   "https://updates.push.services.mozilla.com/wpush/v2/gAAA",
   "https://wns2-par02p.notify.windows.com/w/?token=abc",
+  `https://${"a".repeat(63)}.push.apple.com/x`,
 ];
 
 /** Made-up keys of the right shape: a 65-byte public key (87 characters) and a 16-byte secret (22). */
@@ -36,6 +36,10 @@ describe("push endpoint allowlist (no server-side request forgery)", () => {
     ["Google Cloud Storage", "https://storage.googleapis.com/bucket/x"],
     ["any other googleapis host", "https://www.googleapis.com/x"],
     ["two labels under push.apple.com", "https://a.b.push.apple.com/x"],
+    ["the legacy GCM host (never works with VAPID)", "https://android.googleapis.com/gcm/send/abc"],
+    ["a label of 64 characters under push.apple.com", `https://${"a".repeat(64)}.push.apple.com/x`],
+    ["a label starting with a hyphen", "https://-api.push.apple.com/x"],
+    ["a label ending with a hyphen", "https://wns2-.notify.windows.com/x"],
     ["upper case (not canonical)", "https://FCM.googleapis.com/x"],
     ["no path", "https://fcm.googleapis.com"],
     ["an explicit default port", "https://fcm.googleapis.com:443/x"],

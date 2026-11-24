@@ -19,8 +19,8 @@ import { systemNotice } from "../system";
  *    indexes refuse a second row; once the notice is logged the subscription row is deleted.
  *  - One email a day: if an email already went to this person today, the notice is HELD: the row stays
  *    marked gone and the next daily run puts it into that day's email (batched with anything else).
- *  - A dry run until N.2 builds the email sender and the owner switches email on. The email sender is
- *    the one the run was given (passed in), so N.2's sender plugs in without touching this file.
+ *  - A dry run until email is set up and the owner switches it on (N.2, C141). The email sender is the
+ *    one the run was given (passed in; senders.ts builds the real Resend sender).
  */
 
 export const pushGoneDedupeKey = (subscriptionId: string) => `push-gone:${subscriptionId}`;
@@ -100,7 +100,7 @@ export async function deliverGoneNotices(
   // Only email matters here; push is given as live so its rows never count as email.
   const modes: ChannelModes = { email: mode, push: "live" };
   if (channelsUsedOn(await readLog(db, recipient), modes, today, appConfig.timeZone).has("email")) return { status: "held" };
-  const result = await writeMessage(db, composeMessage(recipient, "email", notices), mode, emailSender);
+  const result = await writeMessage(db, composeMessage(recipient, "email", notices), mode, emailSender, { today });
   await clearLoggedGone(db, recipient);
   return { status: "logged", result };
 }

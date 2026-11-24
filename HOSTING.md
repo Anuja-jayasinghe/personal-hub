@@ -72,6 +72,21 @@ preview's address: a push opens the preview, and it stops working when the previ
 3. Merge, or redeploy if already merged: `NEXT_PUBLIC_VAPID_PUBLIC_KEY` is put into the build, so a deploy made
    before it was set does not have it.
 
+## Plan-ahead email (N.2, C141)
+
+The run sends the plan-ahead email through **Resend** (its REST API, no SDK) from `hub <notify@mail.hub.anujajay.com>`,
+on the sending subdomain `mail.hub.anujajay.com` verified in Resend. Two settings, both **sensitive, Production
+only** (not on Preview, unlike most settings: a preview must never send email):
+
+- `RESEND_API_KEY`: a Resend key with sending access only, restricted to `mail.hub.anujajay.com`;
+- `NOTIFY_EMAIL_TO`: the owner's delivery address (a tagged Gmail address). Never in the repo.
+
+Without both, or until the owner switches email on in *Settings › Notifications*, email stays a dry run. Previews do
+not have them, so there Settings shows email as "Not set up" and the test button is not offered.
+
+The Gmail filter matches the **sender** (From `notify@mail.hub.anujajay.com`), never only the delivery address: the
+tag is easy to guess, and a filter on To with "Never send it to Spam" would let anyone's mail past the spam filter.
+
 ## End-to-end test (`pnpm e2e`, C121)
 
 `e2e/sharing.spec.ts` runs against the live site with Playwright: a TEST account (`hub-test-person@anujajay.com`,

@@ -258,9 +258,15 @@ export function ThisDevice({ setup }: { setup: PushSetup }) {
       const permission = await Notification.requestPermission();
       if (permission !== "granted") return permission === "denied" ? null : { tone: "error", text: "Pushes stay off until you allow them." };
       const reg = await navigator.serviceWorker.ready;
-      // A subscription made with another key pair cannot receive our pushes: drop it and make a new one.
+      // Drop the browser's subscription and make a new one when it was made with another key pair (it
+      // cannot receive our pushes), or when it is not live in the list (not saved, or marked gone): saving
+      // it again could store an endpoint the push service already refuses.
       const existing = await reg.pushManager.getSubscription();
-      if (existing && !sameKey(existing, setup.publicKey)) await existing.unsubscribe();
+      if (existing) {
+        const hash = await sha256Hex(existing.endpoint);
+        const live = setup.devices.some((d) => d.endpointHash === hash && !d.gone);
+        if (!sameKey(existing, setup.publicKey) || !live) await existing.unsubscribe();
+      }
       const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: base64UrlToBytes(setup.publicKey) });
       const res = await subscribePush(sub.toJSON(), deviceLabelFrom(navigator.userAgent, navigator.maxTouchPoints));
       if (!res.ok) {

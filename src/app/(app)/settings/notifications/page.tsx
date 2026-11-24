@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { OwnerOnly } from "@/components/settings/owner-only";
 import { ChannelRows, ComingUpLine, RecentList } from "@/components/settings/notifications";
+import { EmailRow } from "@/components/settings/notifications-email";
 import { ThisDevice } from "@/components/settings/push";
 import { SettingsColumn, SettingsColumns, SettingsSection } from "@/components/settings/settings-ui";
 import { PageHeader } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getEmailStatus } from "@/features/notifications/email-settings";
 import { getComingUp, getPushSetup, listRecentNotifications } from "@/features/notifications/queries";
 
 export const metadata: Metadata = { title: "Notifications" };
@@ -23,8 +25,8 @@ async function ComingUp() {
 }
 
 async function Channels() {
-  const { configured, switchedOn } = await getPushSetup();
-  return <ChannelRows push={{ configured, switchedOn }} />;
+  const [{ configured, switchedOn }, email] = await Promise.all([getPushSetup(), getEmailStatus()]);
+  return <ChannelRows email={<EmailRow status={email} />} push={{ configured, switchedOn }} />;
 }
 
 /** Left out while push is not set up on the server: the iPhone row above already says so. Its heading names the device. */
@@ -38,10 +40,10 @@ async function Recent() {
 }
 
 /**
- * Settings › Notifications (N.1, DECISIONS C139; N.3, C140; board HSettingsMore). The hub writes only
- * when something is new: a plan-ahead email, an act-now iPhone push, one push on the first day overdue.
- * Email is not built yet (N.2). iPhone push is turned on per device under "This iPhone" and made real by
- * the switch on its channel row; until then the daily run logs what it would send ("not sent").
+ * Settings › Notifications (N.1, DECISIONS C139; N.2, C141; N.3, C140; board HSettingsMore). The hub
+ * writes only when something is new: a plan-ahead email, an act-now iPhone push, one push on the first
+ * day overdue. Each channel's row has its switch; until it is set up and switched on, the daily run logs
+ * what it would send ("not sent"). iPhone push is also turned on per device under "This iPhone".
  * Owner only: the page checks it itself (OwnerOnly) and so do its queries, as well as the Settings layout.
  */
 export default function NotificationsPage() {

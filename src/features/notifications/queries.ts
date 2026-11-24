@@ -10,7 +10,8 @@ import { appSettings, notifications, pushSubscriptions } from "@/db/schema";
 import { loadSources, reminderSources } from "@/features/reminders/sources";
 import { getAuthState, requirePage } from "@/lib/auth";
 import { todayInAppTz } from "@/lib/format";
-import { channelModes, NOTIFICATIONS_SETTINGS_KEY, parseSwitches, SENDERS, type ChannelModes, type NotificationSwitches } from "./channels";
+import { channelModes, NOTIFICATIONS_SETTINGS_KEY, parseSwitches, type ChannelModes, type NotificationSwitches } from "./channels";
+import { emailSetup } from "./email";
 import { vapidFromEnv } from "./push/config";
 import { channelsUsedOn, readLog, shownStatus, usedKeysFrom } from "./log";
 import { previewUpcoming, type PreviewDay } from "./planner";
@@ -29,9 +30,9 @@ async function switchesFrom(db: Db): Promise<NotificationSwitches> {
   return parseSwitches(row?.value ?? null);
 }
 
-/** Each channel's mode as the daily run would see it: push counts as built only when the VAPID keys are set (C140). */
+/** Each channel's mode as the daily run would see it: email counts as built only with its two settings (C141), push only with the VAPID keys (C140). */
 async function modesFrom(db: Db): Promise<ChannelModes> {
-  return channelModes(await switchesFrom(db), { email: SENDERS.email, push: { implemented: vapidFromEnv() !== null } });
+  return channelModes(await switchesFrom(db), { email: { implemented: emailSetup(process.env) !== null }, push: { implemented: vapidFromEnv() !== null } });
 }
 
 /** The owner looking at the page, lower-cased (the send log's recipient); not-found for anyone else. */
