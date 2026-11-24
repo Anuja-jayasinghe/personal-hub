@@ -1,5 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { addDays, dayMonth, daysBetween, hourIn, isValidDate, todayIn, yearOfInstant } from "./dates";
+import { addDays, addMonthsToDate, dayMonth, daysBetween, hourIn, isValidDate, todayIn, yearOfInstant } from "./dates";
+
+describe("addMonthsToDate", () => {
+  it("adds whole months and keeps the day of the month", () => {
+    expect(addMonthsToDate("2026-06-14", 6)).toBe("2026-12-14");
+    expect(addMonthsToDate("2026-11-30", 1)).toBe("2026-12-30");
+    expect(addMonthsToDate("2026-01-01", 24)).toBe("2028-01-01");
+  });
+
+  it("clamps to the end of a shorter month", () => {
+    expect(addMonthsToDate("2026-08-31", 6)).toBe("2027-02-28");
+    expect(addMonthsToDate("2026-03-31", 1)).toBe("2026-04-30");
+    expect(addMonthsToDate("2026-12-31", 2)).toBe("2027-02-28");
+  });
+
+  it("gets leap years right", () => {
+    expect(addMonthsToDate("2027-08-31", 6)).toBe("2028-02-29"); // 2028 is a leap year
+    expect(addMonthsToDate("2028-02-29", 12)).toBe("2029-02-28");
+    expect(addMonthsToDate("2028-02-29", 48)).toBe("2032-02-29");
+    expect(addMonthsToDate("2099-08-31", 6)).toBe("2100-02-28"); // 2100 is not a leap year
+  });
+
+  it("goes back for a negative count and crosses the year", () => {
+    expect(addMonthsToDate("2026-03-31", -1)).toBe("2026-02-28");
+    expect(addMonthsToDate("2026-01-15", -2)).toBe("2025-11-15");
+  });
+
+  it("refuses something that is not a real day", () => {
+    expect(() => addMonthsToDate("2026-02-31", 1)).toThrow();
+    expect(() => addMonthsToDate("nonsense", 1)).toThrow();
+  });
+});
 
 describe("dayMonth", () => {
   it("writes a day as day and short month", () => {

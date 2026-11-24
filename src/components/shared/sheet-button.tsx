@@ -33,23 +33,71 @@ export function SheetButton({
   children: ReactNode | ((close: () => void) => ReactNode);
 }) {
   const [open, setOpen] = useState(false);
-  const close = () => setOpen(false);
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger render={<Button type="button" variant={variant} size={size} />}>
         {plus ? <Plus aria-hidden /> : null}
         {label}
       </SheetTrigger>
-      <SheetContent
-        side="bottom"
-        className="mx-auto max-h-[92svh] w-full max-w-xl gap-0 overflow-y-auto rounded-t-[28px] border-x-0 border-t border-border bg-card px-4 pt-2.5 pb-[calc(1.75rem+env(safe-area-inset-bottom))] md:my-auto md:max-h-[86svh] md:max-w-2xl md:rounded-[28px] md:border md:px-8 md:pt-7 md:pb-8 md:data-[side=bottom]:top-0 md:data-[side=bottom]:h-fit md:data-[side=bottom]:bottom-0"
-      >
-        <span aria-hidden className="mx-auto mb-3 block h-[5px] w-10 rounded-full bg-border md:hidden" />
-        <p className="font-mono text-[10.5px] tracking-[0.14em] text-primary uppercase">{crumb}</p>
-        <SheetTitle className="mt-0.5 pr-10 font-display text-[26px] leading-tight font-semibold tracking-tight">{title}</SheetTitle>
-        {description ? <SheetDescription className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</SheetDescription> : null}
-        <div className="@container mt-4">{typeof children === "function" ? children(close) : children}</div>
-      </SheetContent>
+      <SheetBody title={title} crumb={crumb} description={description} close={() => setOpen(false)}>
+        {children}
+      </SheetBody>
     </Sheet>
+  );
+}
+
+/**
+ * The same sheet without a button of its own, opened and closed by its parent (V.1a: the vehicle's Add
+ * menu opens the form the person chose). Use it when something other than a trigger decides to open it.
+ */
+export function SheetPanel({
+  open,
+  onOpenChange,
+  title,
+  crumb,
+  description,
+  children,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  crumb: string;
+  description?: string;
+  children: ReactNode | ((close: () => void) => ReactNode);
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetBody title={title} crumb={crumb} description={description} close={() => onOpenChange(false)}>
+        {children}
+      </SheetBody>
+    </Sheet>
+  );
+}
+
+/** The sheet's content: the grab handle, breadcrumb, title, close button and the form. Shared by both of the above. */
+export function SheetBody({
+  title,
+  crumb,
+  description,
+  close,
+  children,
+}: {
+  title: string;
+  crumb: string;
+  description?: string;
+  close: () => void;
+  children: ReactNode | ((close: () => void) => ReactNode);
+}) {
+  return (
+    <SheetContent
+      side="bottom"
+      className="mx-auto max-h-[92svh] w-full max-w-xl gap-0 overflow-y-auto rounded-t-[28px] border-x-0 border-t border-border bg-card px-4 pt-2.5 pb-[calc(1.75rem+env(safe-area-inset-bottom))] md:my-auto md:max-h-[86svh] md:max-w-2xl md:rounded-[28px] md:border md:px-8 md:pt-7 md:pb-8 md:data-[side=bottom]:top-0 md:data-[side=bottom]:h-fit md:data-[side=bottom]:bottom-0"
+    >
+      <span aria-hidden className="mx-auto mb-3 block h-[5px] w-10 rounded-full bg-border md:hidden" />
+      <p className="font-mono text-[10.5px] tracking-[0.14em] text-primary uppercase">{crumb}</p>
+      <SheetTitle className="mt-0.5 pr-10 font-display text-[26px] leading-tight font-semibold tracking-tight">{title}</SheetTitle>
+      {description ? <SheetDescription className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</SheetDescription> : null}
+      <div className="@container mt-4">{typeof children === "function" ? children(close) : children}</div>
+    </SheetContent>
   );
 }

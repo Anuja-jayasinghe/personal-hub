@@ -99,6 +99,12 @@ export const appConfig = {
     /** Suggestions for the service type box (Phase 1.2); anything else can be typed in. */
     serviceTypes: ["Full service", "Oil change", "Tyres", "Brakes", "Battery", "Other"] as readonly string[],
     /**
+     * The oil-change marker (V.1a, C147): a service of one of these types sets the next-oil-change date this
+     * many months later, with the km shown beside it (a glance only; nothing reminds by km, C24). These are only
+     * the defaults: the owner changes them in Settings, and `getRules()` gives the numbers in force.
+     */
+    oilChange: { months: 6, km: 2500, types: ["Oil change", "Full service"] as readonly string[] },
+    /**
      * Renewals that expire (Phase 1.3, DECISIONS C23: the driving license is not here, C45).
      * `leadDays` is optional: leave it out to use the app-wide reminder lead times above, or set
      * it to warn earlier for one type, e.g. { label: "Insurance", leadDays: [60, 30, 14, 7, 1, 0] }.

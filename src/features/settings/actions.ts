@@ -8,7 +8,7 @@ import { toActionState } from "@/features/shared/errors";
 import type { ActionState } from "@/features/shared/types";
 import { ValidationError } from "@/features/shared/validation";
 import { requireUser } from "@/lib/auth";
-import { cleanLeadDays, mergeRules, parseSlabRules, RULES_KEY, type HubRules } from "./rules";
+import { cleanLeadDays, mergeRules, parseOilRules, parseSlabRules, RULES_KEY, type HubRules } from "./rules";
 
 // Server Actions are public HTTP endpoints, so every input is validated here (S.2b, C107).
 
@@ -46,6 +46,24 @@ export async function saveReminderDays(_prev: ActionState, fd: FormData): Promis
     const leadDays = cleanLeadDays(fd.getAll("leadDays"));
     if (leadDays.length === 0) throw new ValidationError("Pick at least one day.");
     await store({ ...(await savedRules()), leadDays });
+    refresh();
+    return { ok: true };
+  } catch (err) {
+    return toActionState(err);
+  }
+}
+
+/** Saves the oil-change marker: months after the service, the km shown beside it, and which service types set it (V.1a, C147). */
+export async function saveOilRules(_prev: ActionState, fd: FormData): Promise<ActionState> {
+  try {
+    await requireUser("owner");
+    const parsed = parseOilRules({
+      oilChangeMonths: fd.get("oilChangeMonths"),
+      oilChangeKm: fd.get("oilChangeKm"),
+      oilChangeTypes: fd.get("oilChangeTypes"),
+    });
+    if (!parsed.ok) throw new ValidationError(parsed.error);
+    await store({ ...(await savedRules()), ...parsed.value });
     refresh();
     return { ok: true };
   } catch (err) {

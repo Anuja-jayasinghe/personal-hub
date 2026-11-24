@@ -68,6 +68,20 @@ export function yearOfInstant(instant: Date, timeZone: string): number {
 /** "YYYY-MM" of a "YYYY-MM-DD". */
 export const monthOf = (ymd: string): string => ymd.slice(0, 7);
 
+/**
+ * The calendar day `n` months after `ymd`, keeping the day of the month and clamping to the month's end when
+ * the target month is shorter: 31 Aug + 6 months = 28 Feb (29 in a leap year), 31 Mar + 1 month = 30 Apr.
+ * Calendar days only, never timestamps; throws for something that is not a real date, like the helpers above.
+ */
+export function addMonthsToDate(ymd: string, n: number): string {
+  utcMidnight(ymd); // validates
+  const day = Number(ymd.slice(8, 10));
+  const target = addMonths(monthOf(ymd), n);
+  const [ty, tm] = target.split("-").map(Number);
+  const lastDay = new Date(Date.UTC(ty, tm, 0)).getUTCDate();
+  return `${target}-${String(Math.min(day, lastDay)).padStart(2, "0")}`;
+}
+
 /** The month `n` months after `month` ("YYYY-MM"), negative for before, as "YYYY-MM". */
 export function addMonths(month: string, n: number): string {
   const [y, m] = month.split("-").map(Number);

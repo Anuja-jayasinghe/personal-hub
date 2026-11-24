@@ -11,6 +11,7 @@ import { DOC_KINDS, type DocKind } from "@/features/vehicles/doc-names";
 import { addOdometerReading } from "@/features/vehicles/odometer-actions";
 import { createRenewal, renewRenewal } from "@/features/vehicles/renewal-actions";
 import { createService } from "@/features/vehicles/service-actions";
+import type { OilRules } from "@/features/vehicles/service-logic";
 
 /**
  * The vehicle "add" forms as bottom sheets (R.5a; board HVehicleForms). Client wrappers, because a
@@ -31,10 +32,35 @@ export function AddRenewalSheet({ vehicleId, vehicleName, types, askOdometer = t
   );
 }
 
-export function AddServiceSheet({ vehicleId, vehicleName, serviceTypes, defaultDate }: { vehicleId: string; vehicleName: string; serviceTypes: readonly string[]; defaultDate: string }) {
+export function AddServiceSheet({
+  vehicleId,
+  vehicleName,
+  serviceTypes,
+  defaultDate,
+  oil,
+  canAttach = false,
+}: {
+  vehicleId: string;
+  vehicleName: string;
+  serviceTypes: readonly string[];
+  defaultDate: string;
+  /** The oil-change rule in force (V.1a, C147), for the "Next oil change" card. */
+  oil?: OilRules;
+  /** May this person attach the invoice (Add in Vehicle documents)? */
+  canAttach?: boolean;
+}) {
   return (
     <SheetButton label="Add service" title="Add a service" crumb={`/ ${vehicleName} / New service`} variant="default">
-      {(close) => <ServiceForm action={createService} serviceTypes={serviceTypes} vehicleId={vehicleId} defaultDate={defaultDate} onDone={close} />}
+      {(close) => <ServiceForm action={createService} serviceTypes={serviceTypes} vehicleId={vehicleId} defaultDate={defaultDate} oil={oil} canAttach={canAttach} onDone={close} />}
+    </SheetButton>
+  );
+}
+
+/** "Add the invoice" on a service (V.1a, C147): the record's own upload form in a sheet; the hub names the file `PLATE_service_<date>`. */
+export function AddInvoiceSheet({ serviceId, serviceLabel, vehicleName, nameHint }: { serviceId: string; serviceLabel: string; vehicleName: string; nameHint: string }) {
+  return (
+    <SheetButton label="Add the invoice" title="Add the invoice" crumb={`/ ${vehicleName} / ${serviceLabel}`} variant="ghost" size="sm">
+      {(close) => <UploadForm owner={{ ownerType: "vehicle_service", ownerId: serviceId }} nameHint={nameHint} onDone={close} />}
     </SheetButton>
   );
 }

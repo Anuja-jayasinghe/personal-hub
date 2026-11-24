@@ -51,11 +51,27 @@ describe("areaOfFile", () => {
 
   it("does not let Vehicles alone add or delete vehicle papers", () => {
     const vehiclesOnly = accessFromGrants([{ area: "vehicles", level: "edit" }]);
-    for (const ownerType of ["vehicle", "vehicle_renewal"] as const) {
+    for (const ownerType of ["vehicle", "vehicle_renewal", "vehicle_service"] as const) {
       expect(allows(vehiclesOnly, areaOfFile(ownerType), "add")).toBe(false);
       expect(allows(vehiclesOnly, areaOfFile(ownerType), "edit")).toBe(false);
     }
     expect(allows(vehiclesOnly, areaOfFile("vehicle", true), "edit")).toBe(true);
+  });
+
+  it("a service's invoice follows Vehicle documents for seeing, adding and deleting, like a renewal's file (V.1a)", () => {
+    expect(areaOfFile("vehicle_service")).toBe("vehicle_documents");
+    expect(areaOfOwner("vehicle_service")).toBe("vehicles"); // a task or note on the service itself would follow Vehicles
+    const levels = ["see", "add", "edit"] as const;
+    for (const granted of levels) {
+      const person = accessFromGrants([{ area: "vehicle_documents", level: granted }]);
+      for (const needed of levels) {
+        expect(allows(person, areaOfFile("vehicle_service"), needed)).toBe(allows(person, areaOfFile("vehicle_renewal"), needed));
+      }
+    }
+    // Seeing the service records (Vehicles) does not open its invoice.
+    const vehiclesOnly = accessFromGrants([{ area: "vehicles", level: "edit" }]);
+    expect(allows(vehiclesOnly, areaOfFile("vehicle_service"), "see")).toBe(false);
+    expect(allows({ owner: true }, areaOfFile("vehicle_service"), "edit")).toBe(true);
   });
 });
 

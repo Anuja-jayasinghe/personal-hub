@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { OwnerOnly } from "@/components/settings/owner-only";
-import { ReminderDaysForm } from "@/components/settings/rules-forms";
+import { OilChangeForm, ReminderDaysForm } from "@/components/settings/rules-forms";
 import { HubFacts, SlabRuleTiles, SubPageList } from "@/components/settings/settings-sections";
 import { SettingsColumn, SettingsColumns, SettingsSection } from "@/components/settings/settings-ui";
 import { PageHeader } from "@/components/shell/page-header";
@@ -33,6 +33,14 @@ async function ReminderSection() {
   return (
     <SettingsSection label="Reminders">
       <ReminderDaysForm rules={await getRules()} />
+    </SettingsSection>
+  );
+}
+
+async function OilSection() {
+  return (
+    <SettingsSection label="Vehicles">
+      <OilChangeForm rules={await getRules()} />
     </SettingsSection>
   );
 }
@@ -71,6 +79,10 @@ export default function SettingsPage() {
           <SettingsColumn>
             <Suspense fallback={<Skeleton className="h-44 rounded-2xl" />}>
               <ReminderSection />
+            </Suspense>
+
+            <Suspense fallback={<Skeleton className="h-16 rounded-2xl" />}>
+              <OilSection />
             </Suspense>
 
             <SettingsSection label="This hub">
