@@ -10,11 +10,11 @@
  */
 
 /**
- * Exact hosts of the push services: Apple's documented Safari / iPhone host, Google's FCM (and its old
- * GCM host, still used by some Chrome installs) and Mozilla's autopush. Not every `*.googleapis.com`:
- * that would include Google Cloud Storage, where anyone can host a URL.
+ * Exact hosts of the push services: Apple's documented Safari / iPhone host, Google's FCM and Mozilla's
+ * autopush. Not the legacy GCM host (android.googleapis.com): it never works with VAPID. Not every
+ * `*.googleapis.com`: that would include Google Cloud Storage, where anyone can host a URL.
  */
-const EXACT_HOSTS = new Set(["web.push.apple.com", "fcm.googleapis.com", "android.googleapis.com", "updates.push.services.mozilla.com"]);
+const EXACT_HOSTS = new Set(["web.push.apple.com", "fcm.googleapis.com", "updates.push.services.mozilla.com"]);
 
 /**
  * One extra label in front of these: Apple asks servers that check endpoints to allow `*.push.apple.com`
@@ -49,7 +49,8 @@ export function isAllowedPushEndpoint(endpoint: unknown): endpoint is string {
   // Plain ASCII names only (an IP address never matches the names below).
   if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host)) return false;
   if (EXACT_HOSTS.has(host)) return true;
-  return ONE_LABEL_UNDER.some((suffix) => host.endsWith(suffix) && /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/.test(host.slice(0, -suffix.length)));
+  // Exactly one DNS label (at most 63 characters, no leading or trailing hyphen) in front of the suffix.
+  return ONE_LABEL_UNDER.some((suffix) => host.endsWith(suffix) && /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(host.slice(0, -suffix.length)));
 }
 
 /** base64url (no padding after we strip it): letters, digits, `-` and `_` only. */

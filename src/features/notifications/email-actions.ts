@@ -6,9 +6,9 @@ import { db } from "@/db";
 import { appSettings } from "@/db/schema";
 import { AuthError, requireUser } from "@/lib/auth";
 import { safeErrorSummary } from "@/lib/errors";
-import { NOTIFICATIONS_SETTINGS_KEY } from "./channels";
-import { deliveryAddress, emailSetup, maskAddress, postToResend, renderTestEmail, testIdempotencyKey } from "./email";
 import { NotSentError } from "./channels";
+import { deliveryAddress, emailSetup, maskAddress, postToResend, renderTestEmail, testIdempotencyKey } from "./email";
+import { saveSwitch } from "./switches";
 
 // Settings › Notifications › Email (N.2, C141). Server Actions are public endpoints: owner only, inputs checked.
 
@@ -27,18 +27,8 @@ export async function setEmailEnabled(fd: FormData): Promise<EmailActionResult> 
     if (raw !== "true" && raw !== "false") return { ok: false, error: "Could not read the switch." };
     const enabled = raw === "true";
     if (enabled && !emailSetup(process.env)) return { ok: false, error: "Email is not set up yet." };
-    const patch = { email: { enabled } };
-    // Merged into the saved switches in one statement, so the iPhone switch (N.3) is never overwritten.
-    await db
-      .insert(appSettings)
-      .values({ key: NOTIFICATIONS_SETTINGS_KEY, value: patch })
-      .onConflictDoUpdate({
-        target: appSettings.key,
-        set: {
-          value: sql`(case when jsonb_typeof(${appSettings.value}) = 'object' then ${appSettings.value} else '{}'::jsonb end) || ${JSON.stringify(patch)}::jsonb`,
-          updatedAt: new Date(),
-        },
-      });
+    // Merged in one statement, so the iPhone switch (N.3) is never overwritten (switches.ts).
+    await saveSwitch(db, "email", enabled);
     refresh();
     return { ok: true };
   } catch (err) {

@@ -3,12 +3,14 @@
 import { useState, useTransition } from "react";
 import { Row, RowMeta } from "@/components/settings/settings-ui";
 import { Button } from "@/components/ui/button";
+import { appConfig } from "@/config/app.config";
 import { sendTestEmail, setEmailEnabled, type TestEmailResult } from "@/features/notifications/email-actions";
 import type { EmailStatus } from "@/features/notifications/email-settings";
 
 /**
  * Settings › Notifications › Email (N.2, C141): the Email row of "Where to tell you". Set up = the masked
- * delivery address and the switch; not set up = the two settings it waits for. The test email and the
+ * delivery address and the switch; not set up = the two settings it waits for (previews: they are
+ * Production only). The test email and the
  * Gmail filter how-to are used once or twice, so they are tucked away under the row.
  */
 
@@ -34,6 +36,7 @@ function EmailSwitch({ initial }: { initial: boolean }) {
 
   return (
     <span className="flex shrink-0 flex-col items-end gap-1">
+      {/* A 44 px tall touch target around the 44 by 26 switch (DESIGN.md). */}
       <button
         type="button"
         role="switch"
@@ -41,12 +44,16 @@ function EmailSwitch({ initial }: { initial: boolean }) {
         aria-label="Send plan-ahead emails"
         disabled={pending}
         onClick={flip}
-        className={`relative h-[26px] w-11 shrink-0 rounded-full outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60 ${on ? "bg-primary" : "bg-raised ring-1 ring-border"}`}
+        className="group/s -mr-2 grid min-h-11 min-w-14 shrink-0 place-items-center rounded-full outline-none disabled:opacity-60"
       >
         <span
           aria-hidden
-          className={`absolute top-[3px] left-[3px] size-5 rounded-full transition-transform motion-reduce:transition-none ${on ? "translate-x-[18px] bg-primary-foreground" : "bg-quiet"}`}
-        />
+          className={`relative h-[26px] w-11 rounded-full transition-colors group-focus-visible/s:ring-2 group-focus-visible/s:ring-ring ${on ? "bg-primary" : "bg-raised ring-1 ring-border"}`}
+        >
+          <span
+            className={`absolute top-[3px] left-[3px] size-5 rounded-full transition-transform motion-reduce:transition-none ${on ? "translate-x-[18px] bg-primary-foreground" : "bg-quiet"}`}
+          />
+        </span>
       </button>
       {error ? (
         <span role="alert" className="text-xs text-status-overdue">
@@ -83,11 +90,18 @@ function TestEmail() {
   );
 }
 
-/** Gmail's steps as a line of nodes (DESIGN.md: node-and-line). */
+/** The sender's bare address, from `appConfig.emailFrom` ("hub <notify@…>"). */
+const FROM_ADDRESS = appConfig.emailFrom.match(/<([^>]+)>/)?.[1] ?? appConfig.emailFrom;
+
+/**
+ * Gmail's steps as a line of nodes (DESIGN.md: node-and-line). The filter matches the SENDER, never only
+ * the tagged delivery address: anyone who guesses that address could otherwise skip the spam filter.
+ */
 const FILTER_STEPS: React.ReactNode[] = [
   <>Gmail → Settings → Filters → Create filter</>,
   <>
-    <b className="font-semibold text-foreground">To</b>: the delivery address above
+    <b className="font-semibold text-foreground">From</b>: <span className="font-mono break-all text-foreground">{FROM_ADDRESS}</span> (and, if you like, To: the
+    address above)
   </>,
   <>
     Apply the label <b className="font-semibold text-foreground">hub</b>, <b className="font-semibold text-foreground">Never send it to Spam</b>,{" "}
@@ -118,17 +132,18 @@ function GmailFilter() {
 }
 
 export function EmailRow({ status }: { status: EmailStatus }) {
-  if (!status.configured || !status.maskedTo) {
+  if (status.state !== "ready" || !status.maskedTo) {
+    const why = status.state === "no-address" ? "set up, but your sign-in address could not be read: reload and sign in again" : "waits for RESEND_API_KEY and NOTIFY_EMAIL_TO";
     return (
       <Row
         label="Email"
         hint={
           <>
             {PLANS}
-            <span className="block font-mono text-[11px]">waits for RESEND_API_KEY and NOTIFY_EMAIL_TO</span>
+            <span className="block font-mono text-[11px]">{why}</span>
           </>
         }
-        end={<RowMeta tone="quiet">Not set up</RowMeta>}
+        end={<RowMeta tone="quiet">{status.state === "no-address" ? "No address" : "Not set up"}</RowMeta>}
       />
     );
   }
@@ -139,7 +154,8 @@ export function EmailRow({ status }: { status: EmailStatus }) {
         hint={
           <>
             {PLANS}
-            <span className="block font-mono text-[11.5px] text-foreground/80">{status.maskedTo}</span>
+            <span className="block font-mono text-[11.5px] break-all text-foreground/80">{status.maskedTo}</span>
+            {status.enabled ? null : <span className="block">Switching on sends anything already inside its window, in one email.</span>}
           </>
         }
         end={<EmailSwitch initial={status.enabled} />}

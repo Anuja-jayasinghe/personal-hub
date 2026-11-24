@@ -87,13 +87,19 @@ export async function runDaily({ db, now, allowedEmails, sources = reminderSourc
 
       // A device that stopped accepting pushes since the last email (N.3, C140): its one notice joins
       // today's email, or is held for tomorrow if an email already went today.
-      const gone = await pushGoneNotices(db, recipient.email, today);
+      // A push problem never blocks this person's email: if reading the gone devices fails, carry on without them.
+      let gone: Awaited<ReturnType<typeof pushGoneNotices>> = [];
+      try {
+        gone = await pushGoneNotices(db, recipient.email, today);
+      } catch (err) {
+        console.error(`Reading gone push devices failed for one recipient: ${safeErrorSummary(err)}`);
+      }
       const messages = withGoneNotices(recipient.email, plan.messages, gone, usedToday.has("email"));
       if (gone.length > 0 && usedToday.has("email")) report.held += gone.length;
 
       for (const message of messages) {
         const mode = modes[message.channel];
-        const result = await writeMessage(db, message, mode, senders[message.channel]);
+        const result = await writeMessage(db, message, mode, senders[message.channel], { today });
         if (!result.message) continue;
         report.messages[message.channel]++;
         report.notices[message.channel] += result.message.notices.length;
@@ -102,7 +108,14 @@ export async function runDaily({ db, now, allowedEmails, sources = reminderSourc
         report.rows.failed += result.failed;
         report.rows.unknown += result.unknown;
       }
-      if (gone.length > 0) await clearLoggedGone(db, recipient.email);
+      if (gone.length > 0) {
+        try {
+          await clearLoggedGone(db, recipient.email);
+        } catch (err) {
+          // The rows stay marked gone; the next run tries again (the log's unique index keeps the notice to once).
+          console.error(`Clearing gone push devices failed for one recipient: ${safeErrorSummary(err)}`);
+        }
+      }
 
       // The month's budget: distinct days with a message, per channel (today's included).
       const month = today.slice(0, 7);

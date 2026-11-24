@@ -12,13 +12,19 @@ import { deliveryAddress, emailSetup, maskAddress } from "./email";
  * switch. Owner only, checked here as well as by the page (a partial request can skip the layout).
  */
 export type EmailStatus = {
-  /** RESEND_API_KEY and NOTIFY_EMAIL_TO are both set. */
-  configured: boolean;
-  /** Where the viewing owner's emails go, masked (`na•••+hub@example.com`); null when not set up. */
+  /**
+   * "not-set-up": RESEND_API_KEY or NOTIFY_EMAIL_TO is missing (previews: they are Production only);
+   * "no-address": both are set, but the viewer's own sign-in address could not be read;
+   * "ready": set up, with the masked delivery address.
+   */
+  state: "not-set-up" | "no-address" | "ready";
+  /** Where the viewing owner's emails go, masked (`na•••+tag@example.com`); null unless "ready". */
   maskedTo: string | null;
   /** The owner's switch in `app_settings` › notifications › email (default off). */
   enabled: boolean;
 };
+
+const looksLikeAddress = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 
 export async function getEmailStatus(): Promise<EmailStatus> {
   await connection();
@@ -27,10 +33,9 @@ export async function getEmailStatus(): Promise<EmailStatus> {
   const viewer = state.status === "ok" ? state.email.trim().toLowerCase() : "";
   const db = await readDb();
   const [row] = await db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, NOTIFICATIONS_SETTINGS_KEY));
+  const enabled = parseSwitches(row?.value ?? null).email.enabled;
   const setup = emailSetup(process.env);
-  return {
-    configured: setup !== null,
-    maskedTo: setup && viewer ? maskAddress(deliveryAddress(viewer, setup.notifyTo)) : null,
-    enabled: parseSwitches(row?.value ?? null).email.enabled,
-  };
+  if (!setup) return { state: "not-set-up", maskedTo: null, enabled };
+  if (!looksLikeAddress(viewer)) return { state: "no-address", maskedTo: null, enabled };
+  return { state: "ready", maskedTo: maskAddress(deliveryAddress(viewer, setup.notifyTo)), enabled };
 }

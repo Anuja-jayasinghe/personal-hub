@@ -6,8 +6,9 @@ import type { Channel } from "./steps";
  * push (N.3, web push). Until a channel is built and set up, the run is a dry run for it: it writes the
  * send log with status `dry_run` and nothing leaves the server. A channel only goes live when it is both
  * implemented and switched on in Settings (`app_settings`, key "notifications", default off). Pure.
- * Push is built (src/features/notifications/push, C140) but needs the database and the VAPID keys, so
- * run.ts creates it; `SENDERS.push` below is what stands in when the keys are missing.
+ * Both are built (email: email.ts, C141; push: src/features/notifications/push, C140). The real senders
+ * are made in ONE place, senders.ts (`buildSenders`), for the run and the actions; `SENDERS` below are
+ * the stand-ins the tests and pure code default to (never implemented, so always a dry run).
  */
 
 /**
@@ -24,11 +25,14 @@ export class NotSentError extends Error {
 
 export type ChannelSender = {
   channel: Channel;
-  /** False until N.2 (email) / N.3 (push) build the real sender. */
+  /** True only when the real sender can send (email: its two settings; push: the VAPID keys). */
   implemented: boolean;
   /** Sends one batched message. Throws `NotSentError` when nothing went out, anything else when unsure. */
-  send: (message: Message) => Promise<void>;
+  send: (message: Message, context?: SendContext) => Promise<void>;
 };
+
+/** What the run knows when it sends (N.2): its day, "YYYY-MM-DD" in the app time zone (email's idempotency key). */
+export type SendContext = { today: string };
 
 function notBuiltYet(channel: Channel, piece: string): ChannelSender {
   return {
@@ -41,8 +45,8 @@ function notBuiltYet(channel: Channel, piece: string): ChannelSender {
 }
 
 export const SENDERS: Record<Channel, ChannelSender> = {
-  email: notBuiltYet("email", "N.2"),
-  push: notBuiltYet("push", "N.3"),
+  email: notBuiltYet("email", "use buildSenders"),
+  push: notBuiltYet("push", "use buildSenders"),
 };
 
 export const NOTIFICATIONS_SETTINGS_KEY = "notifications";

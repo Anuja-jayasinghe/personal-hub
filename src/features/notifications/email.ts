@@ -1,33 +1,37 @@
+import "server-only";
 import { createHash } from "node:crypto";
 import { appConfig } from "@/config/app.config";
 import { describeDays } from "@/features/reminders/engine";
 import { todayIn } from "@/lib/dates";
-import type { ChannelSender } from "./channels";
-import { NotSentError } from "./channels";
-import type { Message } from "./planner";
+import { NotSentError, type ChannelSender, type SendContext } from "./channels";
+import type { Message, Notice } from "./planner";
 
 /**
  * The plan-ahead email (Notifications N.2, DECISIONS C139 and C141). Resend's REST API through `fetch`
  * (no SDK), from `appConfig.emailFrom` on the verified sending subdomain, to the owner's address.
  *
  * Settings: RESEND_API_KEY (a send-only key restricted to the sending domain) and NOTIFY_EMAIL_TO (the
- * owner's Gmail "+hub" address, so one Gmail filter catches every hub email). Both are secrets: neither
- * is ever logged, stored in an error or put in the idempotency key, and neither is in the code.
+ * owner's delivery address, a tagged Gmail address). Both are secrets: neither is ever logged, stored
+ * in an error or put in the idempotency key, and neither is in the code.
  *
  * Outcomes, as N.1's send log needs them (log.ts):
  *  - 2xx: sent;
- *  - 400, 401, 403, 404, 409, 422, 429: Resend refused it, nothing went out: `NotSentError` (retried while timely);
- *  - anything else (5xx, a timeout, a network error): unknown outcome, never repeated.
+ *  - 400, 401, 403, 404, 422, 429: Resend refused it, nothing went out: `NotSentError` (retried while
+ *    timely, at most MAX_FAILED_TRIES times);
+ *  - anything else: an unknown outcome, never repeated. That includes 409 (a request with the same
+ *    idempotency key is in progress, or the key was used with another body: the first one may have
+ *    gone out), a 5xx, a timeout and a network error.
  *
- * The message words come from the planner, which never puts an amount, a plate or free text in them;
- * names the owner typed (bill names, vehicle nicknames) are escaped in the HTML.
+ * The message words come from the planner, which never puts an amount, a plate or free text in them.
+ * Names people typed (bill names, service types, vehicle nicknames) are escaped in the HTML, and a
+ * zero-width space after ".", ":" and "/" keeps Gmail from turning URL-like text into a link.
  */
 
 export const RESEND_URL = "https://api.resend.com/emails";
 export const SEND_TIMEOUT_MS = 10_000;
 
-/** The statuses where Resend says it did not accept the message. */
-const REFUSED = new Set([400, 401, 403, 404, 409, 422, 429]);
+/** The statuses where Resend says it did not accept the message. 409 is not one of them (see above). */
+const REFUSED = new Set([400, 401, 403, 404, 422, 429]);
 
 export type EmailEnv = { RESEND_API_KEY?: string; NOTIFY_EMAIL_TO?: string; [name: string]: string | undefined };
 export type EmailSetup = { apiKey: string; notifyTo: string };
@@ -41,24 +45,36 @@ export function emailSetup(env: EmailEnv): EmailSetup | null {
   return apiKey && looksLikeAddress(notifyTo) ? { apiKey, notifyTo } : null;
 }
 
-/** An address without its "+tag", lower-cased: `Me+hub@Example.com` → `me@example.com`. */
-function baseAddress(address: string): string {
-  const at = address.lastIndexOf("@");
-  if (at < 1) return address.trim().toLowerCase();
-  const local = address.slice(0, at).split("+")[0];
-  return `${local}@${address.slice(at + 1)}`.trim().toLowerCase();
+const GMAIL_DOMAINS = new Set(["gmail.com", "googlemail.com"]);
+
+/**
+ * An address as its mailbox: lower-cased, without its "+tag", and for Gmail without dots in the name
+ * and with googlemail.com as gmail.com (Gmail delivers all of those to the same inbox):
+ * `Me.Name+tag@GoogleMail.com` → `mename@gmail.com`.
+ */
+function mailbox(address: string): string {
+  const clean = address.trim().toLowerCase();
+  const at = clean.lastIndexOf("@");
+  if (at < 1) return clean;
+  let local = clean.slice(0, at).split("+")[0];
+  let domain = clean.slice(at + 1);
+  if (GMAIL_DOMAINS.has(domain)) {
+    local = local.replace(/\./g, "");
+    domain = "gmail.com";
+  }
+  return `${local}@${domain}`;
 }
 
 /**
- * Where an owner's email goes: NOTIFY_EMAIL_TO when it is the owner's own address with a "+tag"
- * (compared without the tag, ignoring case), so every hub email lands under one Gmail filter; any
- * other owner gets it at their own address.
+ * Where an owner's email goes: NOTIFY_EMAIL_TO when it is the same mailbox as the owner's own address
+ * (compared without the tag, ignoring case, Gmail's dots and googlemail.com), so every hub email
+ * arrives at the tagged address; any other owner gets it at their own address.
  */
 export function deliveryAddress(recipient: string, notifyTo: string): string {
-  return baseAddress(recipient) === baseAddress(notifyTo) ? notifyTo : recipient;
+  return mailbox(recipient) === mailbox(notifyTo) ? notifyTo : recipient;
 }
 
-/** For Settings: `name+hub@example.com` → `na•••+hub@example.com`. Never the whole local part. */
+/** For Settings: `name+tag@example.com` → `na•••+tag@example.com`. Never the whole local part. */
 export function maskAddress(address: string): string {
   const at = address.lastIndexOf("@");
   if (at < 1) return "•••";
@@ -75,8 +91,15 @@ export function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-/** One line, no control characters (a subject is a header). */
-const oneLine = (value: string) => value.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim();
+/** One line, without control characters, C0 or C1 (a subject is a header). */
+export const oneLine = (value: string) => value.replace(/[\u0000-\u001f\u007f-\u009f]+/g, " ").replace(/\s+/g, " ").trim();
+
+/**
+ * Words people typed, made safe from auto-linking: a zero-width space after every ".", ":" and "/", so
+ * a name like "evil.example/login" is not turned into a link by Gmail. Used in the text and HTML parts
+ * (the HTML is escaped afterwards); never on the hub's own links.
+ */
+export const defuseLinks = (value: string) => value.replace(/([.:/])/g, "$1​");
 
 /** A link into the hub: the site address plus an app path (anything else falls back to Reminders). */
 const hubLink = (href: string) => `${appConfig.siteUrl}${href.startsWith("/") && !href.startsWith("//") ? href : "/reminders"}`;
@@ -88,7 +111,7 @@ export type RenderedEmail = { subject: string; text: string; html: string };
 
 type Line = { title: string; note: string; href: string };
 
-/** The HTML shell shared by the notice and the test email. Plain tables, inline styles, no images or pixels. */
+/** The HTML shell shared by every email. Plain tables, inline styles, no images or pixels. */
 function page(subject: string, heading: string, lines: readonly Line[], intro?: string): string {
   const e = escapeHtml;
   const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
@@ -96,8 +119,9 @@ function page(subject: string, heading: string, lines: readonly Line[], intro?: 
   const rows = lines
     .map(
       (l) => `<tr><td style="padding:14px 24px;border-top:1px solid #e3e8ef;">
-<a href="${e(hubLink(l.href))}" style="color:#2869d8;text-decoration:none;font:600 16px/1.35 ${font};">${e(l.title)}</a>
-<div style="padding-top:3px;color:#5b6779;font:400 13px/1.4 ${font};">${e(l.note)}</div>
+<a href="${e(hubLink(l.href))}" style="color:#2869d8;text-decoration:none;font:600 16px/1.35 ${font};">${e(l.title)}</a>${
+        l.note ? `\n<div style="padding-top:3px;color:#5b6779;font:400 13px/1.4 ${font};">${e(l.note)}</div>` : ""
+      }
 </td></tr>`,
     )
     .join("\n");
@@ -107,7 +131,7 @@ function page(subject: string, heading: string, lines: readonly Line[], intro?: 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>${e(subject)}</title>
+<title>${e(defuseLinks(subject))}</title>
 </head>
 <body style="margin:0;padding:0;background:#ecf0f5;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ecf0f5;">
@@ -126,22 +150,41 @@ ${rows}
 </html>`;
 }
 
-const textFooter = () => `${FOOTER}: ${hubLink(SETTINGS_PATH)}`;
+const textFooter = () => ["", `${appConfig.name} writes only when something is new.`, `${FOOTER}: ${hubLink(SETTINGS_PATH)}`];
+
+/** A system notice (N.3: "iPhone stopped accepting pushes") speaks for itself; a planner notice says when. */
+const isSystem = (n: Notice) => n.step === "system";
+const noteOf = (n: Notice) => defuseLinks(isSystem(n) ? n.body : describeDays(n.daysUntil));
 
 /**
- * The email for one batched plan-ahead message. The subject is the planner's (C139): `hub · <what> ·
- * <when>`, or `hub · N things coming up`. Each item links into the hub through its own href.
+ * The email for one batched message. The subject is the planner's (C139): `hub · <what> · <when>`, or
+ * `hub · N things coming up`. Each item links into the hub through its own href. A planner notice says
+ * when ("In 30 days"); a system notice (N.3's push-gone email) says its own body, and alone it is the
+ * email's heading and text.
  */
 export function renderEmail(message: Message): RenderedEmail {
   const subject = oneLine(message.title);
-  const n = message.notices.length;
-  const lines = message.notices.map((x) => ({ title: x.title, note: describeDays(x.daysUntil), href: x.href }));
-  const heading = n === 1 ? "Coming up" : `${n} things coming up`;
+  const notices = message.notices;
+  const onlySystem = notices.length > 0 && notices.every(isSystem);
+
+  if (onlySystem && notices.length === 1) {
+    // Its link is the footer's when it points at Settings › Notifications, otherwise a line of its own.
+    const [n] = notices;
+    const title = defuseLinks(n.title);
+    const body = defuseLinks(n.body);
+    const own = n.href !== SETTINGS_PATH;
+    const lines = own ? [{ title: `Open ${appConfig.name}`, note: "", href: n.href }] : [];
+    const text = [title, "", body, ...(own ? ["", hubLink(n.href)] : []), ...textFooter()].join("\n");
+    return { subject, text, html: page(subject, title, lines, body) };
+  }
+
+  const lines = notices.map((n) => ({ title: defuseLinks(n.title), note: noteOf(n), href: n.href }));
+  const heading = onlySystem ? `${notices.length} updates` : notices.length === 1 ? "Coming up" : `${notices.length} things coming up`;
   const text = [
-    ...message.notices.map((x) => `• ${x.title} (${describeDays(x.daysUntil).toLowerCase()})\n  ${hubLink(x.href)}`),
-    "",
-    `${appConfig.name} writes only when something is new.`,
-    textFooter(),
+    ...notices.map((n) =>
+      isSystem(n) ? `• ${defuseLinks(n.title)}\n  ${noteOf(n)}\n  ${hubLink(n.href)}` : `• ${defuseLinks(n.title)} (${noteOf(n).toLowerCase()})\n  ${hubLink(n.href)}`,
+    ),
+    ...textFooter(),
   ].join("\n");
   return { subject, text, html: page(subject, heading, lines) };
 }
@@ -151,7 +194,7 @@ export const TEST_SUBJECT = `${appConfig.name} · Test`;
 /** "Send a test email" in Settings: a fixed subject, no notices. */
 export function renderTestEmail(): RenderedEmail {
   const intro = "This is a test. Plan-ahead notices arrive like this: renewals 30 days before, services 14, electricity bills 7.";
-  const text = [intro, "", hubLink(SETTINGS_PATH), "", textFooter()].join("\n");
+  const text = [intro, "", hubLink(SETTINGS_PATH), ...textFooter()].join("\n");
   return { subject: TEST_SUBJECT, text, html: page(TEST_SUBJECT, "Email works", [], intro) };
 }
 
@@ -178,7 +221,6 @@ export function scrubSecrets(text: string, secrets: readonly string[] = []): str
   let out = text;
   for (const s of secrets) {
     if (s.length < 4) continue;
-    out = out.split(s).join("[hidden]");
     out = out.replace(new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), "[hidden]");
   }
   return out
@@ -208,8 +250,8 @@ async function refusalDetail(res: Response, secrets: readonly string[]): Promise
 
 /**
  * POSTs one email to Resend. Resolves when Resend accepted it; throws `NotSentError` when Resend
- * refused it; throws a plain Error (an unknown outcome) on a 5xx, a timeout or a network error. Error
- * messages never include the key, the address or the body. Nothing is logged here.
+ * refused it; throws a plain Error (an unknown outcome) on a 409, a 5xx, a timeout or a network error.
+ * Error messages never include the key, the address or the body. Nothing is logged here.
  */
 export async function postToResend(setup: EmailSetup, email: OutgoingEmail, deps: SendDeps = {}): Promise<void> {
   const doFetch = deps.fetch ?? fetch;
@@ -237,24 +279,26 @@ export async function postToResend(setup: EmailSetup, email: OutgoingEmail, deps
     const detail = await refusalDetail(res, secrets);
     throw new NotSentError(`Resend refused it (${res.status}${detail ? `, ${detail}` : ""})`);
   }
+  if (res.status === 409) throw new Error("Resend answered 409 (the same request may be in progress or done)");
   throw new Error(`Resend answered ${res.status}`);
 }
 
 /**
  * The email channel for the daily run. "Implemented" only while both settings are present (read when
- * asked, not when loaded); the run also needs the owner's switch in Settings before it sends.
+ * asked, not when loaded); the run also needs the owner's switch in Settings before it sends. The day
+ * in the idempotency key is the run's own day (`context.today`); without one, today in the app time zone.
  */
-export function emailSender(env: () => EmailEnv = () => process.env, deps: SendDeps & { now?: () => Date } = {}): ChannelSender {
+export function emailSender(env: () => EmailEnv = () => process.env, deps: SendDeps = {}): ChannelSender {
   return {
     channel: "email",
     get implemented() {
       return emailSetup(env()) !== null;
     },
-    async send(message: Message) {
+    async send(message: Message, context?: SendContext) {
       const setup = emailSetup(env());
       if (!setup) throw new NotSentError("Email is not set up (RESEND_API_KEY or NOTIFY_EMAIL_TO missing).");
       const to = deliveryAddress(message.recipient, setup.notifyTo);
-      const day = todayIn(appConfig.timeZone, (deps.now ?? (() => new Date()))());
+      const day = context?.today ?? todayIn(appConfig.timeZone, new Date());
       const idempotencyKey = noticeIdempotencyKey(
         to,
         day,

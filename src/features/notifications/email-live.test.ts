@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/db/read";
-import { appSettings, notifications } from "@/db/schema";
+import { appSettings, notifications, pushSubscriptions } from "@/db/schema";
 import type { ReminderItem, ReminderSource } from "@/features/reminders/engine";
 import { addDays } from "@/lib/dates";
 import { makeTestDb } from "@/test/pglite";
@@ -22,13 +22,14 @@ vi.mock("@/db/read", () => ({
 
 const { runDaily } = await import("./daily");
 const { SENDERS } = await import("./channels");
-const { emailSender } = await import("./email");
+const { emailSender, noticeIdempotencyKey } = await import("./email");
+const { buildSenders } = await import("./senders");
 
 const TODAY = "2026-11-23";
 const at = (day: string) => new Date(`${day}T02:10:00Z`); // 07:40 in Colombo
 const OWNER = "owner@example.com";
 const SECOND = "second@example.com";
-const ENV = { RESEND_API_KEY: "re_FAKE_test_key_123456", NOTIFY_EMAIL_TO: "owner+hub@example.com" };
+const ENV = { RESEND_API_KEY: "re_FAKE_test_key_123456", NOTIFY_EMAIL_TO: "owner+tag@example.com" };
 
 /** Several items whose email windows opened on different days before TODAY. */
 const ITEMS: ReminderItem[] = [
@@ -40,8 +41,9 @@ const ITEMS: ReminderItem[] = [
 const source: ReminderSource = { key: "vehicles", label: "Vehicles", load: async () => ITEMS };
 
 let db: Db;
+let client: Awaited<ReturnType<typeof makeTestDb>>["client"];
 beforeEach(async () => {
-  ({ db } = await makeTestDb());
+  ({ db, client } = await makeTestDb());
 }, 60_000);
 
 const switchEmail = (enabled: boolean) =>
@@ -71,7 +73,7 @@ describe("switching email on", () => {
     const report = await runDaily({ db, now: at(TODAY), allowedEmails, sources: [source], senders });
     expect(report.modes.email).toBe("live");
     expect(fetch).toHaveBeenCalledTimes(2);
-    expect(recipientsOf(fetch).sort()).toEqual(["owner+hub@example.com", SECOND]);
+    expect(recipientsOf(fetch).sort()).toEqual(["owner+tag@example.com", SECOND]);
     expect(report.messages.email).toBe(2);
     const body = JSON.parse(String(fetch.mock.calls[0][1]?.body));
     expect(body.subject).toBe("hub · 4 things coming up");
@@ -102,7 +104,7 @@ describe("switching email on", () => {
 
   it("a refusal is logged failed, without the address, and retried on a later run", async () => {
     await switchEmail(true);
-    const refuse = vi.fn(async () => Response.json({ name: "validation_error", message: "Invalid `to` field: owner+hub@example.com" }, { status: 422 }));
+    const refuse = vi.fn(async () => Response.json({ name: "validation_error", message: "Invalid `to` field: owner+tag@example.com" }, { status: 422 }));
     await runDaily({ db, now: at(TODAY), allowedEmails: OWNER, sources: [source], senders: { ...SENDERS, email: emailSender(() => ENV, { fetch: refuse }) } });
     const failed = await db.select().from(notifications).where(sql`${notifications.channel} = 'email'`);
     expect(failed.length).toBe(4);
@@ -112,6 +114,76 @@ describe("switching email on", () => {
     const { fetch, senders } = liveSenders();
     await runDaily({ db, now: at(addDays(TODAY, 1)), allowedEmails: OWNER, sources: [source], senders });
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("a notice refused three times (MAX_FAILED_TRIES) is not sent again by email", async () => {
+    await switchEmail(true);
+    const refuse = vi.fn(async () => Response.json({ name: "validation_error", message: "Invalid" }, { status: 422 }));
+    const refusing = { ...SENDERS, email: emailSender(() => ENV, { fetch: refuse }) };
+    for (let d = 0; d < 3; d++) await runDaily({ db, now: at(addDays(TODAY, d)), allowedEmails: OWNER, sources: [source], senders: refusing });
+    expect(refuse).toHaveBeenCalledTimes(3);
+    const failed = await db.select().from(notifications).where(sql`${notifications.status} = 'failed'`);
+    expect(failed.length).toBe(12); // four notices, three tries each
+
+    // Day four: every notice is still inside its window, but each has used up its tries.
+    const { fetch, senders } = liveSenders();
+    await runDaily({ db, now: at(addDays(TODAY, 3)), allowedEmails: OWNER, sources: [source], senders });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("a 409 stays pending (unknown) and is never sent again", async () => {
+    await switchEmail(true);
+    const conflict = vi.fn(async () => Response.json({ name: "concurrent_idempotent_requests", message: "in progress" }, { status: 409 }));
+    await runDaily({ db, now: at(TODAY), allowedEmails: OWNER, sources: [source], senders: { ...SENDERS, email: emailSender(() => ENV, { fetch: conflict }) } });
+    const rows = await db.select().from(notifications).where(sql`${notifications.channel} = 'email'`);
+    expect(rows.length).toBe(4);
+    expect(rows.every((r) => r.status === "pending" && r.error?.startsWith("Unknown outcome: Resend answered 409"))).toBe(true);
+
+    const { fetch, senders } = liveSenders();
+    await runDaily({ db, now: at(addDays(TODAY, 1)), allowedEmails: OWNER, sources: [source], senders });
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("the Idempotency-Key uses the run's day", async () => {
+    await switchEmail(true);
+    const { fetch, senders } = liveSenders();
+    await runDaily({ db, now: at(TODAY), allowedEmails: OWNER, sources: [source], senders });
+    const keys = (await db.select().from(notifications).where(sql`${notifications.channel} = 'email'`)).map((r) => r.dedupeKey);
+    const headers = fetch.mock.calls[0][1]?.headers as Record<string, string>;
+    expect(headers["Idempotency-Key"]).toBe(noticeIdempotencyKey(ENV.NOTIFY_EMAIL_TO, TODAY, keys));
+  });
+
+  it("the push-gone notice goes through the real email sender from buildSenders, batched into one email", async () => {
+    vi.stubEnv("RESEND_API_KEY", ENV.RESEND_API_KEY);
+    vi.stubEnv("NOTIFY_EMAIL_TO", ENV.NOTIFY_EMAIL_TO);
+    const fetch = vi.fn<typeof globalThis.fetch>(async () => Response.json({ id: "email_1" }));
+    vi.stubGlobal("fetch", fetch);
+    try {
+      await switchEmail(true);
+      await db.insert(pushSubscriptions).values({ recipient: OWNER, endpoint: "https://web.push.apple.com/gone-1", p256dh: `B${"A".repeat(86)}`, auth: "abcdefghijklmnopqrstuv", deviceLabel: "iPhone", goneAt: at(TODAY) });
+      const report = await runDaily({ db, now: at(TODAY), allowedEmails: OWNER, sources: [source], senders: buildSenders(db) });
+      expect(report.modes.email).toBe("live");
+      expect(fetch).toHaveBeenCalledTimes(1);
+      const body = JSON.parse(String(fetch.mock.calls[0][1]?.body));
+      expect(body.subject).toBe("hub · 5 things coming up");
+      expect(body.text).toContain("iPhone stopped accepting pushes");
+      expect(body.to).toEqual([ENV.NOTIFY_EMAIL_TO]);
+      expect(await db.select().from(pushSubscriptions)).toEqual([]);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("a push problem never blocks the email: reading gone devices fails, the email still goes", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await switchEmail(true);
+    await client.exec("drop table push_subscriptions cascade");
+    const { fetch, senders } = liveSenders();
+    const report = await runDaily({ db, now: at(TODAY), allowedEmails: OWNER, sources: [source], senders });
+    expect(report.failedRecipients).toBe(0);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(console.error).mock.calls.flat().join(" ")).not.toContain(OWNER);
   });
 
   it("a 5xx stays pending (unknown) and is never sent again", async () => {

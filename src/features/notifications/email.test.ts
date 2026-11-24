@@ -6,12 +6,14 @@ import type { ReminderItem } from "@/features/reminders/engine";
 import { addDays } from "@/lib/dates";
 import { channelModes, NotSentError, parseSwitches, SENDERS } from "./channels";
 import {
+  defuseLinks,
   deliveryAddress,
   emailSender,
   emailSetup,
   escapeHtml,
   maskAddress,
   noticeIdempotencyKey,
+  oneLine,
   postToResend,
   RESEND_URL,
   renderEmail,
@@ -20,10 +22,13 @@ import {
   testIdempotencyKey,
 } from "./email";
 import { planNotifications, type Message } from "./planner";
+import { systemMessage } from "./system";
+
+vi.mock("server-only", () => ({}));
 
 // Everything here is made up (public repo): example.com addresses, a fake key.
 const KEY = "re_FAKE_test_key_123456";
-const TO = "owner+hub@example.com";
+const TO = "owner+tag@example.com";
 const OWNER = "owner@example.com";
 const ENV = { RESEND_API_KEY: KEY, NOTIFY_EMAIL_TO: TO };
 const TODAY = "2026-11-23";
@@ -55,19 +60,28 @@ const headersOf = (f: ReturnType<typeof okFetch>, call = 0) => f.mock.calls[call
 
 describe("routing", () => {
   it("an owner whose address is NOTIFY_EMAIL_TO without the +tag gets it at NOTIFY_EMAIL_TO", () => {
-    expect(deliveryAddress("owner@example.com", "owner+hub@example.com")).toBe("owner+hub@example.com");
-    expect(deliveryAddress("Owner@Example.COM", "owner+hub@example.com")).toBe("owner+hub@example.com");
-    expect(deliveryAddress("owner+other@example.com", "OWNER+hub@example.com")).toBe("OWNER+hub@example.com");
+    expect(deliveryAddress("owner@example.com", "owner+tag@example.com")).toBe("owner+tag@example.com");
+    expect(deliveryAddress("Owner@Example.COM", "owner+tag@example.com")).toBe("owner+tag@example.com");
+    expect(deliveryAddress("owner+other@example.com", "OWNER+tag@example.com")).toBe("OWNER+tag@example.com");
   });
 
   it("any other owner gets it at their own address", () => {
-    expect(deliveryAddress("second@example.com", "owner+hub@example.com")).toBe("second@example.com");
-    expect(deliveryAddress("owner@example.org", "owner+hub@example.com")).toBe("owner@example.org");
-    expect(deliveryAddress("owners@example.com", "owner+hub@example.com")).toBe("owners@example.com");
+    expect(deliveryAddress("second@example.com", "owner+tag@example.com")).toBe("second@example.com");
+    expect(deliveryAddress("owner@example.org", "owner+tag@example.com")).toBe("owner@example.org");
+    expect(deliveryAddress("owners@example.com", "owner+tag@example.com")).toBe("owners@example.com");
+    // Dots only fold away for Gmail, where they do not matter.
+    expect(deliveryAddress("own.er@example.com", "owner+tag@example.com")).toBe("own.er@example.com");
+  });
+
+  it("matches a Gmail address however its dots and domain are written", () => {
+    // Made-up mailboxes (Gmail's rules need Gmail's domains).
+    expect(deliveryAddress("made.up.x7q@gmail.com", "madeupx7q+tag@gmail.com")).toBe("madeupx7q+tag@gmail.com");
+    expect(deliveryAddress("MadeUpX7q@googlemail.com", "made.up.x7q+tag@gmail.com")).toBe("made.up.x7q+tag@gmail.com");
+    expect(deliveryAddress("madeupx7q2@gmail.com", "madeupx7q+tag@gmail.com")).toBe("madeupx7q2@gmail.com");
   });
 
   it("masks the delivery address for Settings", () => {
-    expect(maskAddress("owner+hub@example.com")).toBe("ow•••+hub@example.com");
+    expect(maskAddress("owner+tag@example.com")).toBe("ow•••+tag@example.com");
     expect(maskAddress("someone@example.com")).toBe("so•••@example.com");
     expect(maskAddress("abc@example.com")).toBe("a•••@example.com");
     expect(maskAddress("not an address")).toBe("•••");
@@ -120,16 +134,59 @@ describe("renderEmail", () => {
     const evil = `<script>alert("x")</script> & 'Bob's' "car"`;
     const { subject, text, html } = renderEmail(emailOf([renewal(30, evil)]));
     expect(html).not.toContain("<script>");
-    expect(html).toContain(escapeHtml(evil));
-    expect(html).toContain("&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; &#39;Bob&#39;s&#39; &quot;car&quot;");
-    // Plain text and the subject are not HTML: they keep the words as typed.
-    expect(text).toContain(evil);
+    expect(html).toContain(escapeHtml(defuseLinks(evil)));
+    expect(html).toContain("&lt;script&gt;alert(&quot;x&quot;)&lt;/​script&gt; &amp; &#39;Bob&#39;s&#39; &quot;car&quot;");
+    // Plain text and the subject are not HTML: they keep the words as typed (the text part defused).
+    expect(text).toContain(defuseLinks(evil));
     expect(subject).toContain(evil);
   });
 
-  it("keeps the subject on one line", () => {
-    const { subject } = renderEmail(emailOf([renewal(30, "Line\r\nBcc: someone@example.com")]));
-    expect(subject).not.toMatch(/[\r\n]/);
+  it("defuses URL-like names so Gmail cannot auto-link them", () => {
+    const sneaky = "evil.example/login: http://x.test";
+    const { text, html } = renderEmail(emailOf([renewal(30, sneaky)]));
+    expect(defuseLinks(sneaky)).toBe("evil.​example/​login:​ http:​/​/​x.​test");
+    for (const part of [text, html]) {
+      expect(part).not.toContain("evil.example");
+      expect(part).not.toContain("http://x.test");
+      expect(part).toContain(defuseLinks(sneaky));
+    }
+    // The hub's own links stay whole.
+    expect(html).toContain(`href="${appConfig.siteUrl}/vehicles/v1?tab=renewals"`);
+    expect(text).toContain(`${appConfig.siteUrl}/vehicles/v1?tab=renewals`);
+  });
+
+  it("keeps the subject on one line, without C0 or C1 control characters", () => {
+    const { subject } = renderEmail(emailOf([renewal(30, "Line\r\nBcc: someone@example.com\u0085x\u009by")]));
+    expect(subject).not.toMatch(/[\u0000-\u001f\u007f-\u009f]/);
+    expect(oneLine("a\u0080b\u009fc\u0007d")).toBe("a b c d");
+  });
+
+  it("a system notice (iPhone stopped accepting pushes) has its own heading and body, not 'Coming up'", () => {
+    const body = "iPhone stopped accepting pushes from hub, so it was removed. Turn pushes on again in Settings › Notifications.";
+    const message = systemMessage({
+      recipient: OWNER,
+      channel: "email",
+      kind: "push-gone",
+      dedupeKey: "push-gone:d1",
+      title: "iPhone stopped accepting pushes",
+      body,
+      href: "/settings/notifications",
+      today: TODAY,
+    });
+    const { subject, text, html } = renderEmail(message);
+    expect(subject).toBe("hub · iPhone stopped accepting pushes");
+    expect(html).toContain(">iPhone stopped accepting pushes</h1>");
+    expect(html).toContain(escapeHtml(defuseLinks(body)));
+    expect(html).not.toContain("Coming up");
+    expect(html).not.toContain("Today");
+    expect(text.startsWith("iPhone stopped accepting pushes\n\n")).toBe(true);
+    expect(text).not.toMatch(/\(today\)/i);
+
+    // Batched with a plan-ahead notice: the planner line says when, the system line says its body.
+    const mixed = renderEmail({ ...message, notices: [...emailOf([renewal(30)]).notices, ...message.notices] });
+    expect(mixed.html).toContain("2 things coming up");
+    expect(mixed.html).toContain("In 30 days");
+    expect(mixed.html).toContain(escapeHtml(defuseLinks(body)));
   });
 
   it("the test email has the fixed subject", () => {
@@ -173,7 +230,7 @@ describe("postToResend and the sender", () => {
     expect(typeof body.html).toBe("string");
   });
 
-  it.each([400, 401, 403, 404, 409, 422, 429])("a %i is a known refusal (NotSentError) without the key or any address", async (status) => {
+  it.each([400, 401, 403, 404, 422, 429])("a %i is a known refusal (NotSentError) without the key or any address", async (status) => {
     const f = vi.fn(async () =>
       Response.json({ statusCode: status, name: "validation_error", message: `Bad ${TO} and other@example.org with ${KEY}` }, { status }),
     );
@@ -184,6 +241,15 @@ describe("postToResend and the sender", () => {
     expect(message).toContain("validation_error");
     expect(message).not.toContain(KEY);
     expect(message).not.toMatch(/@/);
+  });
+
+  it("a 409 (the same idempotent request in progress, or the key reused) is an unknown outcome, never retried", async () => {
+    const f = vi.fn(async () => Response.json({ name: "concurrent_idempotent_requests", message: `for ${TO}` }, { status: 409 }));
+    const err = await postToResend(setup, email, { fetch: f }).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect(err).not.toBeInstanceOf(NotSentError);
+    expect((err as Error).message).toMatch(/^Resend answered 409/);
+    expect((err as Error).message).not.toMatch(/@/);
   });
 
   it.each([500, 502, 503])("a %i is an unknown outcome (not NotSentError)", async (status) => {
@@ -220,17 +286,21 @@ describe("postToResend and the sender", () => {
     expect(scrubSecrets("x <someone.else+tag@example.org> re_FAKE_other_9")).toBe("x <[address]> [key]");
   });
 
-  it("the sender routes to NOTIFY_EMAIL_TO and keys by recipient, day and notices", async () => {
+  it("the sender routes to NOTIFY_EMAIL_TO and keys by recipient, the run's day and notices", async () => {
     const f = okFetch();
-    const sender = emailSender(() => ENV, { fetch: f, now: () => MORNING });
+    const sender = emailSender(() => ENV, { fetch: f });
     expect(sender.implemented).toBe(true);
     const message = emailOf([renewal(30)]);
-    await sender.send(message);
+    await sender.send(message, { today: TODAY });
     expect(bodyOf(f).to).toEqual([TO]);
     expect(headersOf(f)["Idempotency-Key"]).toBe(noticeIdempotencyKey(TO, TODAY, message.notices.map((n) => n.dedupeKey)));
 
-    await sender.send(emailOf([renewal(30)], "second@example.com"));
-    expect(bodyOf(f, 1).to).toEqual(["second@example.com"]);
+    // The day comes from the run, not the sender's clock.
+    await sender.send(message, { today: "2027-01-02" });
+    expect(headersOf(f, 1)["Idempotency-Key"]).toBe(noticeIdempotencyKey(TO, "2027-01-02", message.notices.map((n) => n.dedupeKey)));
+
+    await sender.send(emailOf([renewal(30)], "second@example.com"), { today: TODAY });
+    expect(bodyOf(f, 2).to).toEqual(["second@example.com"]);
   });
 
   it("logs nothing while sending, even on failure", async () => {
