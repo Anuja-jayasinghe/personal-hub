@@ -5,13 +5,17 @@ import { readDb } from "@/db/read";
 import { accessGrants, people, pushSubscriptions } from "@/db/schema";
 import { requirePage } from "@/lib/auth";
 import { accessFromGrants, type Access } from "./access";
+import { isInvitationStatus } from "./invitation-config";
+import { inviteView, type InviteView } from "./invite-status";
 
 export type PersonWithAccess = {
   id: string;
   email: string;
   name: string | null;
-  status: "pending" | "active" | "blocked";
+  status: "pending" | "active" | "blocked" | "invited" | "expired";
   lastSeenAt: Date | null;
+  /** For an invited or expired person (issue #236): how the invitation stands. Null for everyone else. */
+  invite: InviteView | null;
   access: Access & { owner: false };
   /** The owner's switch for this person's notifications (N.5, C144). */
   notificationsEnabled: boolean;
@@ -33,12 +37,14 @@ export async function listPeople(): Promise<PersonWithAccess[]> {
     db.select().from(accessGrants),
     db.select({ recipient: pushSubscriptions.recipient }).from(pushSubscriptions).where(isNull(pushSubscriptions.goneAt)),
   ]);
+  const now = new Date();
   return rows.map((p) => ({
     id: p.id,
     email: p.email,
     name: p.name,
     status: p.status,
     lastSeenAt: p.lastSeenAt,
+    invite: isInvitationStatus(p.status) ? inviteView(p, now) : null,
     access: accessFromGrants(grants.filter((g) => g.personId === p.id)) as Access & { owner: false },
     notificationsEnabled: p.notificationsEnabled,
     devices: devices.filter((d) => d.recipient === p.email).length,
