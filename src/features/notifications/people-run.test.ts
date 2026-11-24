@@ -83,12 +83,14 @@ const run = (day = TODAY, allowedEmails = OWNER) => {
 };
 
 type Grants = Record<string, "see" | "add" | "edit">;
-async function addPerson(email: string, grants: Grants, over: { status?: "pending" | "active" | "blocked"; enabled?: boolean; device?: boolean } = {}) {
+async function addPerson(email: string, grants: Grants, over: { status?: "pending" | "active" | "blocked"; enabled?: boolean; device?: boolean; reminders?: boolean } = {}) {
+  // Due dates need the Reminders section too (N.5): given by default, so each test is about the one thing it names.
+  const all: Grants = over.reminders === false ? grants : { reminders: "see", ...grants };
   const [p] = await db
     .insert(people)
     .values({ email, status: over.status ?? "active", notificationsEnabled: over.enabled ?? true })
     .returning();
-  for (const [area, level] of Object.entries(grants)) await db.insert(accessGrants).values({ personId: p.id, area, level });
+  for (const [area, level] of Object.entries(all)) await db.insert(accessGrants).values({ personId: p.id, area, level });
   if (over.device ?? true) await db.insert(pushSubscriptions).values({ recipient: email, endpoint: `https://web.push.apple.com/${email}`, p256dh: P256DH, auth: AUTH, deviceLabel: "iPhone" });
   return p;
 }
@@ -145,6 +147,37 @@ describe("who the run writes to", () => {
     // The vehicle renewal due tomorrow, by push; the 20-day one waits for an email a person never gets.
     expect(await kindsOf("v@example.com")).toEqual(["renewal"]);
     expect(await kindsOf("t@example.com")).toEqual(["task"]);
+  });
+
+  it("a person with Bills, Vehicles, Tasks and Electricity bills but no Reminders hears nothing about due dates", async () => {
+    await addPerson("noreminders@example.com", { bills: "edit", vehicles: "edit", tasks_notes: "edit", electricity_bills: "edit" }, { reminders: false });
+    const report = await run();
+    expect(report.people).toBe(1);
+    expect(await rowsOf("noreminders@example.com")).toEqual([]);
+    expect(pushedTo("noreminders@example.com")).toEqual([]);
+  });
+
+  it("electricity events do not need Reminders, and a batch of them opens Electricity", async () => {
+    await addPerson("meter@example.com", { electricity_readings: "add" }, { reminders: false });
+    await run();
+    expect(await kindsOf("meter@example.com")).toEqual(["reading-due", "slab-near"]);
+    const [m] = pushedTo("meter@example.com");
+    expect(m.notices).toHaveLength(2);
+    expect(m.href).toBe("/electricity");
+    // A single one opens it too, and never the Reminders page.
+    await addPerson("seeonly@example.com", { electricity_readings: "see" }, { reminders: false });
+    await run(addDays(TODAY, 1));
+    expect(pushedTo("seeonly@example.com").map((x) => x.href)).toEqual(["/electricity"]);
+    expect(pushed.every((x) => x.recipient === OWNER || x.href !== "/reminders")).toBe(true);
+  });
+
+  it("with Reminders, a batch about different pages opens Reminders", async () => {
+    await addPerson("mixed@example.com", { bills: "see", tasks_notes: "see" });
+    await run();
+    const [m] = pushedTo("mixed@example.com");
+    expect(m.notices.map((n) => n.event).sort()).toEqual(["bill", "task"]);
+    expect(m.href).toBe("/reminders");
+    expect(m.listHref).toBe("/reminders");
   });
 
   it("electricity readings at See: slab events but not 'reading due'; at Add: both", async () => {

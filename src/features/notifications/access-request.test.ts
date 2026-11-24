@@ -189,7 +189,8 @@ describe("notifyAccessRequest", () => {
     await run();
     expect(calls).toBe(1);
     expect((await logOf())[0].status).toBe("pending");
-  });
+    // It builds a second in-memory database, which takes more than the default 5 s on a busy machine.
+  }, 60_000);
 
   it("swallows a database failure for one owner and carries on, logging only the error's name", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});

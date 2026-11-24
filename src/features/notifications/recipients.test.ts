@@ -2,8 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import type { NoticeEvent, ReminderItem } from "@/features/reminders/engine";
 import { AREAS } from "@/features/people/access";
 import { channelModes, parseSwitches } from "./channels";
+import { composeMessage, planNotifications } from "./planner";
 import { eventsFor, itemsFor, ownerRecipients, personRecipient, type Recipient } from "./recipients";
-import { TOPICS, topicsFor } from "./topics";
+import { TOPICS, topicNeeds, topicsFor, topicsNeedingReminders } from "./topics";
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/server", () => ({ connection: async () => {} }));
@@ -12,14 +13,15 @@ vi.mock("@/db/read", () => ({ readDb: async () => { throw new Error("no database
 const item = (id: string): ReminderItem => ({ id, title: id, dueDate: "2026-11-23", href: "/", kind: "task" });
 const event = (kind: NoticeEvent["event"], key: string = kind): NoticeEvent => ({ event: kind, key, anchor: "2026-11-23", from: "2026-11-23", until: "2026-11-23", href: "/", title: kind, body: "b" });
 
-const OWNER: Recipient = { email: "o@example.com", access: { owner: true }, channels: ["email", "push"] };
-const person = (grants: Record<string, "see" | "add" | "edit">): Recipient => ({ email: "p@example.com", access: { owner: false, grants }, channels: ["push"] });
+const OWNER: Recipient = { email: "o@example.com", access: { owner: true }, channels: ["email", "push"], listHref: "/reminders" };
+const person = (grants: Record<string, "see" | "add" | "edit">): Recipient =>
+  personRecipient({ email: "p@example.com", status: "active", notificationsEnabled: true, grants: Object.entries(grants).map(([area, level]) => ({ area, level })) }, new Set())!;
 
 describe("recipients", () => {
   it("are the owners from ALLOWED_EMAILS, lower-cased, once each, for email and push", () => {
     expect(ownerRecipients(" Owner@Example.com, second@example.com;owner@example.com nonsense")).toEqual([
-      { email: "owner@example.com", access: { owner: true }, channels: ["email", "push"] },
-      { email: "second@example.com", access: { owner: true }, channels: ["email", "push"] },
+      { email: "owner@example.com", access: { owner: true }, channels: ["email", "push"], listHref: "/reminders" },
+      { email: "second@example.com", access: { owner: true }, channels: ["email", "push"], listHref: "/reminders" },
     ]);
     expect(ownerRecipients(undefined)).toEqual([]);
   });
@@ -31,8 +33,19 @@ describe("recipients", () => {
       { area: "tasks_notes" as const, items: [item("task:1")] },
     ];
     expect(itemsFor(OWNER, loaded).map((i) => i.id)).toEqual(["renewal:1", "bill-item:1", "task:1"]);
-    expect(itemsFor(person({ bills: "see" }), loaded).map((i) => i.id)).toEqual(["bill-item:1"]);
+    // Due dates need the Reminders section too, exactly as the Reminders page does.
+    expect(itemsFor(person({ reminders: "see", bills: "see" }), loaded).map((i) => i.id)).toEqual(["bill-item:1"]);
+    expect(itemsFor(person({ reminders: "see" }), loaded)).toEqual([]);
     expect(itemsFor(person({}), loaded)).toEqual([]);
+  });
+
+  it("a person with Bills and Vehicles but no Reminders hears nothing about due dates", () => {
+    const loaded = [
+      { area: "vehicles" as const, items: [item("renewal:1")] },
+      { area: "bills" as const, items: [item("bill-item:1")] },
+    ];
+    expect(itemsFor(person({ bills: "edit", vehicles: "edit", tasks_notes: "edit", electricity_bills: "edit" }), loaded)).toEqual([]);
+    expect(itemsFor(person({ reminders: "see", bills: "see", vehicles: "see" }), loaded).map((i) => i.id)).toEqual(["renewal:1", "bill-item:1"]);
   });
 });
 
@@ -41,7 +54,15 @@ describe("a shared person as a recipient (N.5, C144)", () => {
   const row = (over: Partial<Parameters<typeof personRecipient>[0]> = {}) => ({ email: "Friend@Example.com", status: "active", notificationsEnabled: true, grants: [{ area: "bills", level: "see" }], ...over });
 
   it("is push only, with the access their grants give", () => {
-    expect(personRecipient(row(), owners)).toEqual({ email: "friend@example.com", access: { owner: false, grants: { bills: "see" } }, channels: ["push"] });
+    expect(personRecipient(row(), owners)).toEqual({ email: "friend@example.com", access: { owner: false, grants: { bills: "see" } }, channels: ["push"], listHref: "/" });
+  });
+
+  it("opens Reminders for a batch of different pages only for someone who may see it, otherwise Home", () => {
+    expect(person({ bills: "see" }).listHref).toBe("/");
+    expect(person({ electricity_readings: "add" }).listHref).toBe("/");
+    expect(person({ reminders: "see", bills: "see" }).listHref).toBe("/reminders");
+    expect(person({ reminders: "edit" }).listHref).toBe("/reminders");
+    expect(OWNER.listHref).toBe("/reminders");
   });
 
   it("is nobody while pending or blocked, or with notifications switched off", () => {
@@ -98,6 +119,29 @@ describe("events for a recipient", () => {
   });
 });
 
+describe("where a mixed batch opens (N.5)", () => {
+  const today = "2026-11-22";
+  const items: ReminderItem[] = [
+    { id: "bill-item:1", title: "x", dueDate: "2026-11-23", href: "/bills", kind: "bill", notice: { what: "Water bill" } },
+    { id: "renewal:1", title: "x", dueDate: "2026-11-23", href: "/vehicles/v1", kind: "renewal", notice: { what: "Insurance", who: "Car" } },
+  ];
+  const plan = (listHref?: string) => planNotifications({ recipient: "p@example.com", items, today, usedKeys: new Set(), channels: ["push"], listHref });
+
+  it("opens the recipient's own list page: Reminders only for someone who may see it, otherwise Home", () => {
+    expect(plan("/").messages[0].href).toBe("/");
+    expect(plan("/reminders").messages[0].href).toBe("/reminders");
+    // The default (owners) is unchanged.
+    expect(plan().messages[0].href).toBe("/reminders");
+    expect(plan().messages[0]).not.toHaveProperty("listHref");
+  });
+
+  it("is kept on the message, so a re-batch of what was claimed opens the same page", () => {
+    const [m] = plan("/").messages;
+    expect(m.listHref).toBe("/");
+    expect(composeMessage(m.recipient, m.channel, m.notices, m.listHref).href).toBe("/");
+  });
+});
+
 describe("what the notifications page says", () => {
   it("lists a topic for every section a shared person can be told about", async () => {
     const { SOURCE_AREA } = await import("@/features/reminders/sources");
@@ -107,17 +151,44 @@ describe("what the notifications page says", () => {
 
   it("follows the grants, and 'readings due' needs Add", () => {
     expect(topicsFor({ owner: false, grants: {} })).toEqual([]);
-    expect(topicsFor({ owner: false, grants: { bills: "see" } }).map((t) => t.key)).toEqual(["bills"]);
+    // Due dates need Reminders too; electricity events do not.
+    expect(topicsFor({ owner: false, grants: { bills: "see" } })).toEqual([]);
+    expect(topicsFor({ owner: false, grants: { bills: "see", reminders: "see" } }).map((t) => t.key)).toEqual(["bills"]);
     expect(topicsFor({ owner: false, grants: { electricity_readings: "see" } }).map((t) => t.key)).toEqual(["slab"]);
     expect(topicsFor({ owner: false, grants: { electricity_readings: "add" } }).map((t) => t.key)).toEqual(["readings-due", "slab"]);
     expect(topicsFor({ owner: true })).toHaveLength(TOPICS.length);
   });
 
-  it("matches what the run sends: every topic's section and level is one the run filters by", () => {
+  it("says which grants are missing: the due-date topics held back until Reminders is given", () => {
+    expect(topicsNeedingReminders({ owner: false, grants: { bills: "see", vehicles: "see", electricity_readings: "see" } }).map((t) => t.key)).toEqual(["bills", "vehicles"]);
+    expect(topicsNeedingReminders({ owner: false, grants: { bills: "see", reminders: "see" } })).toEqual([]);
+    expect(topicsNeedingReminders({ owner: true })).toEqual([]);
+    expect(topicNeeds(TOPICS.find((t) => t.key === "vehicles")!)).toBe("Vehicles + Reminders");
+    expect(topicNeeds(TOPICS.find((t) => t.key === "readings-due")!)).toBe("Electricity readings at Add");
+    expect(topicNeeds(TOPICS.find((t) => t.key === "slab")!)).toBe("Electricity readings");
+  });
+
+  it("matches what the run sends: holding a topic's grants (and Reminders for due dates) is exactly what opens it", () => {
+    const loaded = [
+      { area: "electricity_readings" as const, items: [] },
+      { area: "electricity_bills" as const, items: [item("electricity-bill:1")] },
+      { area: "bills" as const, items: [item("bill-item:1")] },
+      { area: "vehicles" as const, items: [item("renewal:1")] },
+      { area: "tasks_notes" as const, items: [item("task:1")] },
+    ];
+    const events = [{ area: "electricity_readings" as const, items: [event("slab-near", "s"), event("reading-due", "r")] }];
     for (const t of TOPICS) {
-      const sees = person({ [t.area]: t.level });
-      // Holding the topic's grant is enough to hear the section's items or events.
-      expect(topicsFor(sees.access).map((x) => x.key)).toContain(t.key);
+      const grants = { [t.area]: t.level, ...(t.needsReminders ? { reminders: "see" as const } : {}) };
+      const p = person(grants);
+      expect(topicsFor(p.access).map((x) => x.key)).toContain(t.key);
+      const heard = t.needsReminders ? itemsFor(p, loaded).length > 0 : eventsFor(p, events).length > 0;
+      expect(heard, t.key).toBe(true);
+      // Without the Reminders grant a due-date topic is neither promised nor sent.
+      if (t.needsReminders) {
+        const q = person({ [t.area]: t.level });
+        expect(topicsFor(q.access).map((x) => x.key)).not.toContain(t.key);
+        expect(itemsFor(q, loaded)).toEqual([]);
+      }
     }
   });
 });

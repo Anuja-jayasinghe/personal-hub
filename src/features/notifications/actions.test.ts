@@ -41,7 +41,7 @@ vi.mock("./push/transport", () => ({
 
 const { subscribePush, unsubscribePush, removePushDevice, sendTestPush, setPushLive } = await import("./actions");
 const { setEmailEnabled, sendTestEmail } = await import("./email-actions");
-const { setPersonNotifications, setPersonStatus, setAccess } = await import("@/features/people/actions");
+const { setPersonNotifications, setPersonStatus, setAccess, removePerson } = await import("@/features/people/actions");
 const { endpointHash } = await import("./push/sender");
 
 const OWNER = "owner@example.com";
@@ -282,6 +282,111 @@ describe("the owner-only switches stay owner-only", () => {
     expect((await setAccess(fd({ personId: alice.id, area: "bills", level: "edit" }))).ok).toBe(false);
     expect((await h.db.select().from(people).where(eq(people.id, alice.id)))[0].notificationsEnabled).toBe(true);
     expect(await h.db.select().from(accessGrants)).toEqual([]);
+  });
+});
+
+describe("the device cap holds when subscribes run in parallel", () => {
+  it("nine devices and three parallel subscribes leave exactly ten", async () => {
+    await addPerson(ALICE);
+    signIn(ALICE);
+    for (let i = 0; i < 9; i++) expect((await subscribePush(sub(`https://web.push.apple.com/a${i}`), "iPhone")).ok).toBe(true);
+    const results = await Promise.all([10, 11, 12].map((i) => subscribePush(sub(`https://web.push.apple.com/a${i}`), "iPhone")));
+    expect(results.filter((r) => r.ok)).toHaveLength(1);
+    expect(await devicesOf(ALICE)).toHaveLength(10);
+  });
+
+  it("a parallel resubscribe of a device already in the list still works at the cap", async () => {
+    await addPerson(ALICE);
+    signIn(ALICE);
+    for (let i = 0; i < 10; i++) await subscribePush(sub(`https://web.push.apple.com/a${i}`), "iPhone");
+    const results = await Promise.all([subscribePush(sub("https://web.push.apple.com/a0"), "Mac"), subscribePush(sub("https://web.push.apple.com/a10"), "iPhone")]);
+    expect(results.map((r) => r.ok)).toEqual([true, false]);
+    expect(await devicesOf(ALICE)).toHaveLength(10);
+  });
+});
+
+describe("test pushes are capped per person per day", () => {
+  const testRow = (recipient: string, n: number, createdAt: Date, kind = "push-test") =>
+    h.db.insert(notifications).values({ recipient, dedupeKey: `${kind}:${n}`, channel: "push", kind, title: "t", body: "b", href: "/", dueDate: "2026-11-23", status: "dry_run", createdAt });
+
+  beforeEach(async () => {
+    await addPerson(ALICE);
+    await addPerson(BOB);
+    signIn(ALICE);
+    await subscribePush(sub(ENDPOINT_A), "iPhone");
+  });
+
+  it("refuses the eleventh test of the day, without contacting the push service", async () => {
+    // Ten earlier tests today (the minute limit only looks at this minute).
+    for (let n = 1; n <= 10; n++) await testRow(ALICE, n, new Date(Date.now() - 2 * 60_000));
+    const res = await sendTestPush(endpointHash(ENDPOINT_A));
+    expect(res.ok).toBe(false);
+    expect(h.contacted).toEqual([]);
+    expect((await h.db.select().from(notifications)).filter((r) => r.recipient === ALICE)).toHaveLength(10);
+  });
+
+  it("allows the tenth, and counts only today's tests, only hers, only of that kind", async () => {
+    for (let n = 1; n <= 9; n++) await testRow(ALICE, n, new Date(Date.now() - 2 * 60_000));
+    // None of these count: another day, another person, another kind.
+    for (let n = 100; n < 110; n++) await testRow(ALICE, n, new Date(Date.now() - 48 * 3_600_000));
+    for (let n = 200; n < 210; n++) await testRow(BOB, n, new Date(Date.now() - 2 * 60_000));
+    for (let n = 300; n < 310; n++) await testRow(ALICE, n, new Date(Date.now() - 2 * 60_000), "renewal");
+    expect(await sendTestPush(endpointHash(ENDPOINT_A))).toEqual({ ok: true });
+    expect(h.contacted).toEqual([ENDPOINT_A]);
+  });
+});
+
+describe("removing or blocking a person unregisters their devices", () => {
+  const setup = async () => {
+    const alice = await addPerson(ALICE);
+    const bob = await addPerson(BOB);
+    for (const [email, endpoint] of [
+      [ALICE, ENDPOINT_A],
+      [ALICE, "https://web.push.apple.com/alice-tablet"],
+      [BOB, ENDPOINT_B],
+    ]) {
+      signIn(email);
+      await subscribePush(sub(endpoint), "iPhone");
+    }
+    signIn(OWNER);
+    return { alice, bob };
+  };
+
+  it("blocking deletes their devices and no one else's; letting them back in does not bring them back", async () => {
+    const { alice } = await setup();
+    await setPersonStatus(fd({ id: alice.id, status: "blocked" }));
+    expect(await devicesOf(ALICE)).toEqual([]);
+    expect(await devicesOf(BOB)).toHaveLength(1);
+    await setPersonStatus(fd({ id: alice.id, status: "active" }));
+    expect(await devicesOf(ALICE)).toEqual([]);
+    // Another account can now use the browser Alice had.
+    signIn(BOB);
+    expect((await subscribePush(sub(ENDPOINT_A), "iPhone")).ok).toBe(true);
+  });
+
+  it("approving or re-activating someone leaves devices alone", async () => {
+    const { bob } = await setup();
+    await setPersonStatus(fd({ id: bob.id, status: "active" }));
+    expect(await devicesOf(BOB)).toHaveLength(1);
+  });
+
+  it("removing deletes their devices and the person, and re-adding them starts with none", async () => {
+    const { alice, bob } = await setup();
+    await removePerson(fd({ id: alice.id }));
+    expect(await devicesOf(ALICE)).toEqual([]);
+    expect(await h.db.select().from(people).where(eq(people.email, ALICE))).toEqual([]);
+    expect(await devicesOf(BOB)).toHaveLength(1);
+    expect((await h.db.select().from(people).where(eq(people.id, bob.id))).length).toBe(1);
+    await addPerson(ALICE);
+    expect(await devicesOf(ALICE)).toEqual([]);
+  });
+
+  it("only an owner can do either", async () => {
+    const { alice } = await setup();
+    signIn(BOB);
+    await expect(removePerson(fd({ id: alice.id }))).rejects.toThrow();
+    await expect(setPersonStatus(fd({ id: alice.id, status: "blocked" }))).rejects.toThrow();
+    expect(await devicesOf(ALICE)).toHaveLength(2);
   });
 });
 

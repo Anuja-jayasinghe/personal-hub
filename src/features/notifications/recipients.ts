@@ -17,6 +17,11 @@ export type Recipient = {
   access: Access;
   /** The channels this recipient may be written to. */
   channels: readonly Channel[];
+  /**
+   * Where a batch of notices about different pages opens: the Reminders page for someone who may see
+   * it, otherwise Home (a page the person cannot see answers "not found", N.5).
+   */
+  listHref: string;
 };
 
 export const OWNER_CHANNELS: readonly Channel[] = ["email", "push"];
@@ -25,7 +30,7 @@ export const PERSON_CHANNELS: readonly Channel[] = ["push"];
 
 /** The owners from the raw ALLOWED_EMAILS value (the existing parser: lower-cased, invalid entries dropped). */
 export function ownerRecipients(rawAllowedEmails: string | undefined): Recipient[] {
-  return [...new Set(parseAllowedEmails(rawAllowedEmails))].map((email) => ({ email, access: { owner: true }, channels: OWNER_CHANNELS }));
+  return [...new Set(parseAllowedEmails(rawAllowedEmails))].map((email) => ({ email, access: { owner: true }, channels: OWNER_CHANNELS, listHref: "/reminders" }));
 }
 
 /** One row of the `people` table and their grants, as the run reads them. */
@@ -40,11 +45,18 @@ export type PersonRow = { email: string; status: string; notificationsEnabled: b
 export function personRecipient(person: PersonRow, ownerEmails: ReadonlySet<string>): Recipient | null {
   const email = person.email.trim().toLowerCase();
   if (person.status !== "active" || !person.notificationsEnabled || ownerEmails.has(email)) return null;
-  return { email, access: accessFromGrants(person.grants), channels: PERSON_CHANNELS };
+  const access = accessFromGrants(person.grants);
+  return { email, access, channels: PERSON_CHANNELS, listHref: allows(access, "reminders", "see") ? "/reminders" : "/" };
 }
 
-/** The items of the sources a recipient may see (the Reminders page's own rule: `allowsSourceArea`). */
+/**
+ * The dated items (due dates) a recipient may hear about: exactly what the Reminders page would show
+ * them (N.5, C144). That needs the Reminders section at See AND the item's own section at See (the
+ * page's rule: `allowsSourceArea`). A person without the Reminders grant hears nothing about due
+ * dates, because the page a batch opens would be "not found" for them. Owners reach every source.
+ */
 export function itemsFor<T = ReminderItem>(recipient: Recipient, loaded: readonly { area: SourceArea; items: readonly T[] }[]): T[] {
+  if (!allows(recipient.access, "reminders", "see")) return [];
   return loaded.filter((l) => allowsSourceArea(recipient.access, l.area)).flatMap((l) => l.items);
 }
 

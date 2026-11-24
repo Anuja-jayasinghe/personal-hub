@@ -104,8 +104,9 @@ The daily run also pushes to **active shared people** who have turned pushes on 
 let them see, push only (no email, ever, and never a sign-up request). **One migration, apply it BEFORE merging:**
 `0019_overconfident_lady_mastermind.sql` adds `people.notifications_enabled boolean not null default true` with
 `pnpm db:migrate`. It is additive, so the code already live keeps working with the column in place; the other way round
-(code first) Settings › People fails until it is applied (sign-in does not, a person's own page only cannot say
-"paused", and the daily run carries on for the owners without the people). No new setting. A person turns pushes on at
+(code first) a stranger's first sign-in (the insert that records them as waiting), "Add person" and Settings › People
+all fail until it is applied. Only an existing person's sign-in, a person's own page (it cannot say "paused") and the
+owners' daily run (it carries on without the people) survive. So: migrate first, then merge. No new setting. A person turns pushes on at
 `/notifications` (profile menu or More), on `hub.anujajay.com` and with the hub on their iPhone's Home Screen; the owner
 sees each person's devices in Settings › People and can switch a person's notifications off there.
 

@@ -146,6 +146,7 @@ export async function sendLive(
     message.recipient,
     message.channel,
     message.notices.filter((n) => claimed.has(n.dedupeKey)),
+    message.listHref,
   );
   const ids = inserted.map((r) => r.id);
   const mine = and(inArray(notifications.id, ids), eq(notifications.status, "pending"));

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Suspense } from "react";
 import { getAuthState } from "@/lib/auth";
 import { Logo } from "@/components/brand/logo";
 import { AccountMenu } from "@/components/shell/account-menu";
@@ -13,20 +12,18 @@ export function PhoneMark() {
   );
 }
 
-/** The menu with its Notifications link, for people the hub lets in (N.5, C144); the plain menu for visitors. */
-async function AccountMenuForPerson() {
+/**
+ * Your profile circle, at the top right of every app page (S.1, owner's list items 9 and 10), with a
+ * Notifications link in its menu for people the hub lets in (N.5, C144), the plain menu for visitors.
+ * The session is read here directly, with no Suspense of its own: every page already sits inside the
+ * (app) layout's Suspense and gate, which read the same memoised session, so nothing waits twice and the
+ * avatar is drawn once, in one place, with no swap between two menus.
+ */
+export async function HeaderAccount() {
   const state = await getAuthState();
-  return <AccountMenu notifications={state.status === "ok"} />;
-}
-
-/** Your profile circle, at the top right of every app page (S.1, owner's list items 9 and 10). */
-export function HeaderAccount() {
   return (
     <span className="flex size-10 shrink-0 items-center justify-center">
-      {/* The session is request-time data, so it is read inside its own Suspense; until it is known the plain menu shows. */}
-      <Suspense fallback={<AccountMenu />}>
-        <AccountMenuForPerson />
-      </Suspense>
+      <AccountMenu notifications={state.status === "ok"} />
     </span>
   );
 }

@@ -7,7 +7,7 @@ import { SettingsColumn, SettingsColumns, SettingsSection } from "@/components/s
 import { PageHeader } from "@/components/shell/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getOwnNotifications } from "@/features/notifications/queries";
-import { topicsFor } from "@/features/notifications/topics";
+import { topicsFor, topicsNeedingReminders } from "@/features/notifications/topics";
 
 export const metadata: Metadata = { title: "Notifications" };
 
@@ -32,7 +32,7 @@ async function Content() {
 
       <SettingsColumn>
         <SettingsSection label="You will be told about" note={access.owner ? undefined : "Pushes only, and only for what you can see. Never an amount or a name."}>
-          <TopicsLine topics={topicsFor(access)} paused={paused} />
+          <TopicsLine topics={topicsFor(access)} paused={paused} heldBack={topicsNeedingReminders(access)} />
         </SettingsSection>
         {access.owner ? (
           <p className="text-xs text-muted-foreground">

@@ -1,16 +1,28 @@
-import type { Topic } from "@/features/notifications/topics";
+import { topicNeeds, type Topic } from "@/features/notifications/topics";
 
 /**
- * What a person will be told about (Notifications N.5, DECISIONS C144), read-only: one node per section
- * they can see (DESIGN.md: node-and-line), the section's name and the one thing that triggers a push.
- * It only draws; the page works the topics out from the person's grants.
+ * What a person will be told about (Notifications N.5, DECISIONS C144), read-only: one node per topic
+ * they can hear about (DESIGN.md: node-and-line), its name, the one thing that triggers a push and, in
+ * mono, the grants it depends on. `heldBack` are topics whose section they have but which stay silent
+ * until the owner also gives them Reminders. It only draws; the page works the topics out from the
+ * person's grants.
  */
-export function TopicsLine({ topics, paused }: { topics: readonly Topic[]; paused: boolean }) {
+export function TopicsLine({ topics, paused, heldBack = [] }: { topics: readonly Topic[]; paused: boolean; heldBack?: readonly Topic[] }) {
+  const needReminders =
+    heldBack.length > 0 ? (
+      <p className="text-xs text-status-soon">
+        Due dates for {heldBack.map((t) => t.label.toLowerCase()).join(", ")} stay quiet until you also have Reminders. Ask the owner.
+      </p>
+    ) : null;
+
   if (topics.length === 0) {
     return (
-      <p className="rounded-2xl border bg-card px-4 py-3.5 text-sm text-muted-foreground">
-        Nothing yet. Once the owner gives you a section, what comes due in it will reach you here.
-      </p>
+      <div className="flex flex-col gap-3">
+        <p className="rounded-2xl border bg-card px-4 py-3.5 text-sm text-muted-foreground">
+          {heldBack.length > 0 ? "Nothing is sent yet." : "Nothing yet. Once the owner gives you a section, what comes due in it will reach you here."}
+        </p>
+        {needReminders}
+      </div>
     );
   }
   return (
@@ -23,10 +35,12 @@ export function TopicsLine({ topics, paused }: { topics: readonly Topic[]; pause
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <span className="text-[15px] font-semibold">{t.label}</span>
               <span className="text-[12.5px] text-muted-foreground">{t.detail}</span>
+              <span className="font-mono text-[10px] tracking-[0.12em] text-label uppercase">{topicNeeds(t)}</span>
             </span>
           </li>
         ))}
       </ol>
+      {needReminders}
       {paused ? (
         <p role="status" className="text-xs text-status-soon">
           Paused by the owner: nothing is sent to you for now.

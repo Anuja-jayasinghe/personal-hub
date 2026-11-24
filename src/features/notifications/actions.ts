@@ -1,6 +1,6 @@
 "use server";
 
-import { and, count, eq, isNull } from "drizzle-orm";
+import { and, count, eq, isNull, sql } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { appConfig } from "@/config/app.config";
 import { db } from "@/db";
@@ -35,6 +35,8 @@ import { systemMessage } from "./system";
 const MAX_DEVICES = 10;
 /** One test push per clock minute per person. */
 const TEST_EVERY_MS = 60_000;
+/** And at most this many test pushes per person per day (the app's time zone). */
+const TEST_PER_DAY = 10;
 
 const NOT_SET_UP = "iPhone push is not set up on the server yet (the VAPID keys are missing).";
 
@@ -57,24 +59,30 @@ export async function subscribePush(subscription: unknown, label: unknown): Prom
     const recipient = lower(email);
     const deviceLabel = cleanDeviceLabel(label);
 
-    const [mine] = await db.select({ n: count() }).from(pushSubscriptions).where(eq(pushSubscriptions.recipient, recipient));
-    const [existing] = await db
-      .select({ id: pushSubscriptions.id })
-      .from(pushSubscriptions)
-      .where(and(eq(pushSubscriptions.endpoint, parsed.value.endpoint), eq(pushSubscriptions.recipient, recipient)));
-    if (!existing && (mine?.n ?? 0) >= MAX_DEVICES) throw new ValidationError(`Pushes are on for ${MAX_DEVICES} devices already. Remove one first.`);
+    // The device cap and the insert are one atomic step: a transaction that first takes an advisory lock
+    // keyed by this person, so two parallel subscribes cannot both see room for the last slot (the lock is
+    // held only for these few statements, nothing else runs inside it, and it is released at the end).
+    const saved = await db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`push-subscribe:${recipient}`}))`);
+      const [mine] = await tx.select({ n: count() }).from(pushSubscriptions).where(eq(pushSubscriptions.recipient, recipient));
+      const [existing] = await tx
+        .select({ id: pushSubscriptions.id })
+        .from(pushSubscriptions)
+        .where(and(eq(pushSubscriptions.endpoint, parsed.value.endpoint), eq(pushSubscriptions.recipient, recipient)));
+      if (!existing && (mine?.n ?? 0) >= MAX_DEVICES) throw new ValidationError(`Pushes are on for ${MAX_DEVICES} devices already. Remove one first.`);
 
-    // Upsert by endpoint, but never move a device that belongs to another account: the update only applies
-    // to the caller's own row, and nothing comes back otherwise. A resubscribe also clears `gone_at`.
-    const saved = await db
-      .insert(pushSubscriptions)
-      .values({ recipient, endpoint: parsed.value.endpoint, p256dh: parsed.value.p256dh, auth: parsed.value.auth, deviceLabel })
-      .onConflictDoUpdate({
-        target: pushSubscriptions.endpoint,
-        set: { p256dh: parsed.value.p256dh, auth: parsed.value.auth, deviceLabel, goneAt: null },
-        setWhere: eq(pushSubscriptions.recipient, recipient),
-      })
-      .returning({ id: pushSubscriptions.id });
+      // Upsert by endpoint, but never move a device that belongs to another account: the update only applies
+      // to the caller's own row, and nothing comes back otherwise. A resubscribe also clears `gone_at`.
+      return tx
+        .insert(pushSubscriptions)
+        .values({ recipient, endpoint: parsed.value.endpoint, p256dh: parsed.value.p256dh, auth: parsed.value.auth, deviceLabel })
+        .onConflictDoUpdate({
+          target: pushSubscriptions.endpoint,
+          set: { p256dh: parsed.value.p256dh, auth: parsed.value.auth, deviceLabel, goneAt: null },
+          setWhere: eq(pushSubscriptions.recipient, recipient),
+        })
+        .returning({ id: pushSubscriptions.id });
+    });
     if (saved.length === 0) throw new ValidationError("Pushes on this device belong to another account. Turn them off there first.");
     refresh();
     return { ok: true };
@@ -142,6 +150,21 @@ export async function sendTestPush(thisEndpointHash: unknown): Promise<ActionSta
       .where(and(eq(notifications.recipient, recipient), eq(notifications.dedupeKey, dedupeKey)))
       .limit(1);
     if (already) throw tooSoon;
+
+    // And at most TEST_PER_DAY a day (the app's own day), counted from the send log by kind and recipient,
+    // so a person cannot keep a push service busy all day with a test a minute.
+    const day = todayIn(appConfig.timeZone, now);
+    const [usedToday] = await db
+      .select({ n: count() })
+      .from(notifications)
+      .where(
+        and(
+          eq(notifications.recipient, recipient),
+          eq(notifications.kind, TEST_KIND),
+          sql`(${notifications.createdAt} at time zone ${appConfig.timeZone})::date = ${day}::date`,
+        ),
+      );
+    if ((usedToday?.n ?? 0) >= TEST_PER_DAY) throw new ValidationError(`That is ${TEST_PER_DAY} tests today. Try again tomorrow.`);
 
     const message = systemMessage({
       recipient,

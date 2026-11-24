@@ -107,6 +107,7 @@ export async function runDaily({ db, now, allowedEmails, sources = reminderSourc
         usedKeys: usedKeysFrom(log, modes),
         channelsUsedToday: usedToday,
         channels: recipient.channels,
+        listHref: recipient.listHref,
       });
       report.held += plan.held;
 
