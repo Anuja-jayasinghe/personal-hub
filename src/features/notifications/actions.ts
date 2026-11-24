@@ -4,18 +4,18 @@ import { and, count, eq, isNull } from "drizzle-orm";
 import { refresh } from "next/cache";
 import { appConfig } from "@/config/app.config";
 import { db } from "@/db";
-import { appSettings, notifications, pushSubscriptions } from "@/db/schema";
+import { notifications, pushSubscriptions } from "@/db/schema";
 import type { ActionState } from "@/features/shared/types";
 import { ValidationError } from "@/features/shared/validation";
 import { requireUser } from "@/lib/auth";
 import { todayIn } from "@/lib/dates";
 import { safeErrorSummary } from "@/lib/errors";
-import { NOTIFICATIONS_SETTINGS_KEY, parseSwitches } from "./channels";
 import { sendLive, TEST_KIND } from "./log";
 import { vapidFromEnv } from "./push/config";
 import { endpointHash } from "./push/sender";
 import { cleanDeviceLabel, parseSubscription } from "./push/subscription";
 import { buildSenders } from "./senders";
+import { saveSwitch } from "./switches";
 import { systemMessage } from "./system";
 
 /**
@@ -167,13 +167,8 @@ export async function setPushLive(enabled: unknown): Promise<ActionState> {
     await requireUser("owner");
     if (typeof enabled !== "boolean") throw new ValidationError("Choose on or off.");
     if (enabled && !vapidFromEnv()) throw new ValidationError(NOT_SET_UP);
-    const [row] = await db.select({ value: appSettings.value }).from(appSettings).where(eq(appSettings.key, NOTIFICATIONS_SETTINGS_KEY));
-    const switches = parseSwitches(row?.value ?? null);
-    const value = { ...switches, push: { enabled } };
-    await db
-      .insert(appSettings)
-      .values({ key: NOTIFICATIONS_SETTINGS_KEY, value })
-      .onConflictDoUpdate({ target: appSettings.key, set: { value, updatedAt: new Date() } });
+    // Merged in one statement, so the email switch (N.2) is never overwritten (switches.ts).
+    await saveSwitch(db, "push", enabled);
     refresh();
     return { ok: true };
   } catch (err) {

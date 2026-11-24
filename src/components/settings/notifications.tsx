@@ -8,7 +8,7 @@ import { dayMonth, daysBetween, todayIn } from "@/lib/dates";
 
 /**
  * Settings › Notifications (N.1, DECISIONS C139). Display only: the page reads the data and passes it in.
- * Email says "not set up yet" until N.2; the iPhone row has its switch since N.3 (C140).
+ * The Email row is in notifications-email.tsx (N.2, C141); the iPhone row has its switch since N.3 (C140).
  */
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -23,13 +23,13 @@ function dayLabel(date: string, today: string): string {
 const CHANNEL_TAG: Record<Channel, string> = { email: "Email", push: "iPhone" };
 
 /**
- * The two ways the hub reaches you. Email waits for N.2. The iPhone row carries the switch that makes
- * the morning run's pushes real (N.3, C140): off, it only logs what it would push.
+ * The two ways the hub reaches you. `email` is the Email row (N.2, C141, notifications-email.tsx). The
+ * iPhone row carries the switch that makes the morning run's pushes real (N.3, C140): off, it only logs.
  */
-export function ChannelRows({ push }: { push: { configured: boolean; switchedOn: boolean } }) {
+export function ChannelRows({ email, push }: { email: React.ReactNode; push: { configured: boolean; switchedOn: boolean } }) {
   return (
     <RowCard>
-      <Row label="Email" hint="plans ahead: renewals 30 days before, services 14, electricity bills 7" end={<RowMeta tone="quiet">Not set up yet</RowMeta>} />
+      {email}
       <Row
         label="iPhone"
         hint={

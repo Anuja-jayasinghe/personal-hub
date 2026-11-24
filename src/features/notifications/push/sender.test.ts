@@ -142,6 +142,9 @@ describe("createPushSender", () => {
       .send(message())
       .catch(() => {});
     expect(sent).toEqual(["hub · iPhone stopped accepting pushes"]);
+    // The log's created_at comes from the database clock; pin it to the test's day, or this test only
+    // passes on 2026-11-23 in Colombo.
+    await db.update(notifications).set({ createdAt: NOW });
 
     // A second device gone the same day: held, its row stays marked gone, no second email.
     const tablet = await addDevice("https://web.push.apple.com/tablet", OWNER, "iPad");
