@@ -5,6 +5,7 @@ import { CurrentNavLinks } from "@/components/shell/app-nav";
 import { phoneBarItems, railBottomItems, railItems } from "@/components/shell/nav";
 import { NavLinks } from "@/components/shell/nav-links";
 import { DemoBanner } from "@/components/shell/demo-banner";
+import { Footer } from "@/components/shell/footer";
 import { OfflineBanner } from "@/components/shell/offline-banner";
 import { navItemVisible } from "@/features/people/access";
 import { getAccess, getAuthState, isDemoState } from "@/lib/auth";
@@ -55,6 +56,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           {isDemoState(state) ? <DemoBanner waitingAs={state.status === "pending" ? state.email : null} /> : null}
           <OfflineBanner />
           {children}
+          <Footer />
         </div>
       </main>
 
