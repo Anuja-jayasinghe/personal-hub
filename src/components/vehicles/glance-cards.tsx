@@ -40,7 +40,7 @@ export function GlanceCards({ cards, basePath }: { cards: readonly GlanceCard[];
                 <span className={mono}>{kmGlanceWords(c.km)}</span>
               </span>
             ) : c.sub ? (
-              <span className={`mt-auto border-t border-border/60 pt-2.5 text-[12.5px] text-muted-foreground ${c.days === null ? "" : "hidden md:block"} truncate`}>{c.sub}</span>
+              <span className={`mt-auto border-t border-border/60 pt-2.5 text-[12.5px] text-muted-foreground ${c.days === null ? "" : "hidden md:block"} line-clamp-2`}>{c.sub}</span>
             ) : null}
           </>
         );
