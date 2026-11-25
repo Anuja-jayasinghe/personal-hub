@@ -29,7 +29,9 @@ function createDb() {
       // transaction mode is ever used again). Locally: up to 5.
       max: process.env.VERCEL ? 1 : 5,
       prepare: false,
-      idle_timeout: 20,
+      // The session pooler allows only 15 clients in all (issue #253), so on Vercel an idle copy gives its
+      // connection back after 4 seconds instead of 20; the next request simply reconnects. Locally: 20.
+      idle_timeout: process.env.VERCEL ? 4 : 20,
       connect_timeout: 15,
     });
   if (process.env.NODE_ENV !== "production") globalForDb.__pgClient = client;
