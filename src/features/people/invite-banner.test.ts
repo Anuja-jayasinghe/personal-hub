@@ -28,7 +28,7 @@ const EMAIL = "someone@example.com";
 const NOW = new Date("2026-11-24T04:00:00Z");
 const later = (ms: number) => new Date(NOW.getTime() + ms);
 const add = async (over: Partial<typeof people.$inferInsert> = {}) =>
-  db.insert(people).values({ email: EMAIL, status: "invited", inviterName: "Asha", inviteCode: CODE, inviteExpiresAt: later(86_400_000), ...over });
+  db.insert(people).values({ email: EMAIL, status: "invited", inviterName: "Asha", inviteCode: CODE, inviteExpiresAt: new Date(Date.now() + 365 * 86_400_000), ...over });
 const row = async () => (await db.select().from(people).where(eq(people.email, EMAIL)))[0];
 const runScheduled = async () => {
   const callbacks = scheduled.callbacks.splice(0);
