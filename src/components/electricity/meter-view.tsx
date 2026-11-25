@@ -24,7 +24,7 @@ import { roomText, type LimitUnits } from "@/features/electricity/limits-text";
 import { formatKwh } from "@/features/electricity/usage";
 import { toCents } from "@/lib/decimal";
 import { formatDate, formatMoney, formatMonth } from "@/lib/format";
-import { monthOf } from "@/lib/dates";
+import { dayMonthIn, monthOf } from "@/lib/dates";
 
 const SHOWN = 4; // rows shown before "Show all"
 
@@ -148,7 +148,7 @@ export function MeterView({
               </>
             ) : (
               <p className="text-sm text-muted-foreground">
-                {usage.state === "no-reading" ? `Read the meters to count from the ${formatDate(usage.sinceDate)} bill.` : "Add the last bill in Bills to start counting."}
+                {usage.state === "no-reading" ? `Read the meters to count from the ${dayMonthIn(usage.sinceDate, today)} bill.` : "Add the last bill in Bills to start counting."}
               </p>
             )}
           </section>
@@ -162,15 +162,15 @@ export function MeterView({
             <p className="mt-1.5">
               {last.amount !== null ? <span className="font-display text-2xl font-semibold tracking-tight">{formatMoney(Number(last.amount))}</span> : null}
               <span className="block text-xs text-muted-foreground">
-                {formatKwh(toCents(last.units))} · the cycle started at {kwhParts(toCents(last.currentReading)).value} on {formatDate(last.readingDate)}
+                {formatKwh(toCents(last.units))} · the cycle started at {kwhParts(toCents(last.currentReading)).value} on {dayMonthIn(last.readingDate, today)}
               </span>
             </p>
             <p className="mt-1.5 flex flex-wrap items-center gap-2">
               {lastStatus.state === "paid" ? <PaidStamp billId={last.id} /> : <BillChip status={lastStatus} />}
               {lastStatus.state === "paid" ? (
-                <span className="text-xs text-muted-foreground">paid on {formatDate(lastStatus.paidDate)}</span>
+                <span className="text-xs text-muted-foreground">paid on {dayMonthIn(lastStatus.paidDate, today)}</span>
               ) : last.dueDate ? (
-                <span className="text-xs text-muted-foreground">due {formatDate(last.dueDate)}</span>
+                <span className="text-xs text-muted-foreground">due {dayMonthIn(last.dueDate, today)}</span>
               ) : null}
             </p>
           </div>
@@ -223,7 +223,7 @@ export function MeterView({
             <>
               <ul>
                 {readingRows.slice(0, SHOWN).map((r) => (
-                  <ReadingRowItem key={r.id} row={r} reading={can.editReadings ? readingById.get(r.id) : undefined} />
+                  <ReadingRowItem key={r.id} row={r} today={today} reading={can.editReadings ? readingById.get(r.id) : undefined} />
                 ))}
               </ul>
               {readingRows.length > SHOWN ? (
@@ -233,7 +233,7 @@ export function MeterView({
                   </summary>
                   <ul>
                     {readingRows.slice(SHOWN).map((r) => (
-                      <ReadingRowItem key={r.id} row={r} reading={can.editReadings ? readingById.get(r.id) : undefined} />
+                      <ReadingRowItem key={r.id} row={r} today={today} reading={can.editReadings ? readingById.get(r.id) : undefined} />
                     ))}
                   </ul>
                 </details>
@@ -246,13 +246,13 @@ export function MeterView({
   );
 }
 
-function ReadingRowItem({ row, reading }: { row: MeterData["readingRows"][number]; reading: ElectricityReading | undefined }) {
+function ReadingRowItem({ row, reading, today }: { row: MeterData["readingRows"][number]; reading: ElectricityReading | undefined; today: string }) {
   const kwh = kwhParts(row.value);
   return (
     <li className="flex items-center gap-3 border-t border-raised py-2.5 text-sm">
       <span aria-hidden className="size-2 shrink-0 rounded-full bg-label" />
       <span className="min-w-0 flex-1 font-mono text-[11px] text-label uppercase">
-        {formatDate(row.date)}
+        {dayMonthIn(row.date, today)}
         {row.replaced ? <span className="ml-2 normal-case">meter replaced</span> : null}
       </span>
       <span className="font-mono text-sm font-semibold tabular-nums">{kwh.value}</span>

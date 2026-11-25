@@ -7,7 +7,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        // DESIGN.md "Disabled": Raised fill, grey text (no opacity) so a disabled primary reads as off, not as a faded blue.
+        default: "bg-primary text-primary-foreground hover:bg-primary/80 disabled:bg-raised disabled:text-label disabled:opacity-100",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:

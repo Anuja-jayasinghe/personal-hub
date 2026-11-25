@@ -62,7 +62,10 @@ export function MeterInstrument({
   // The needles stop short of the scale numbers so they never cover them.
   const needle = used === null ? null : dialPoint(dial, used, dial.r - 40);
   const paceTip = pace === null ? null : dialPoint(dial, pace, dial.r - 40);
-  const paceLabel = pace === null ? null : dialPoint(dial, pace, dial.r + 17);
+  // The "~128" label sits outside the slab arcs. Its width is what reaches the arc where the dial runs sideways,
+  // so it is pushed out by up to 7 more the closer it is to the left or right of the dial (the top keeps 17).
+  const paceSide = pace === null ? 0 : Math.abs(dialPoint(dial, pace, 1).x - dial.cx);
+  const paceLabel = pace === null ? null : dialPoint(dial, pace, dial.r + 17 + 7 * paceSide);
   const labels = [
     { v: 0, fill: "var(--label)" },
     { v: low, fill: "var(--status-soon)" },
@@ -73,11 +76,11 @@ export function MeterInstrument({
 
   const body = (
     <>
-      <span className="flex items-center gap-2.5">
+      <span className={`flex items-center gap-2 md:gap-2.5 ${showName ? "min-h-9 md:min-h-0" : ""}`}>
         {showName ? (
           <>
             <MeterBadge name={meter.name} className="h-6 min-w-7 text-xs" />
-            <span className="line-clamp-2 min-w-0 flex-1 text-[15px] leading-tight font-semibold">{meter.name}</span>
+            <span className="line-clamp-2 min-w-0 flex-1 text-sm leading-tight font-semibold md:text-[15px]">{meter.name}</span>
           </>
         ) : (
           <span className="flex-1" />
@@ -85,7 +88,7 @@ export function MeterInstrument({
         {meter.liveControl ? (
           <span aria-hidden className="invisible h-6 w-24" />
         ) : meter.live !== null ? (
-          <span className={`flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-[0.16em] ${meter.live ? "text-primary" : "text-label"}`}>
+          <span className={`flex items-center gap-1.5 font-mono text-[10px] font-semibold tracking-[0.1em] md:tracking-[0.16em] ${meter.live ? "text-primary" : "text-label"}`}>
             <span aria-hidden className={`size-1.5 rounded-full ${meter.live ? "bg-primary" : "bg-quiet"}`} />
             {meter.live ? "LIVE" : "IDLE"}
           </span>
@@ -93,7 +96,7 @@ export function MeterInstrument({
       </span>
 
       <span className="relative block">
-        <svg viewBox="0 0 260 200" className="w-full" aria-hidden>
+        <svg viewBox="0 0 260 200" className="w-full overflow-visible" aria-hidden>
           <path d={dialArc(dial, 0, dial.top)} fill="none" stroke="var(--raised)" strokeWidth={10} strokeLinecap="round" />
           <path d={dialArc(dial, low, high, dial.r + 9)} fill="none" stroke="var(--status-soon-mark)" strokeWidth={3} strokeLinecap="round" opacity={0.9} />
           <path d={dialArc(dial, high, dial.top, dial.r + 9)} fill="none" stroke="var(--status-overdue)" strokeWidth={3} strokeLinecap="round" />

@@ -10,7 +10,7 @@ import { addReadings } from "@/features/electricity/actions";
 import { previewReading } from "@/features/electricity/readings-batch";
 import { formatKwh } from "@/features/electricity/usage";
 import { initialActionState } from "@/features/shared/types";
-import { formatDate } from "@/lib/format";
+import { dayMonthIn } from "@/lib/dates";
 
 export type MeterForEntry = {
   id: string;
@@ -52,7 +52,7 @@ export function BothReadingsForm({ meters, defaultDate, onDone }: { meters: Mete
               {m.name}
               {m.lastValue !== null && m.lastDate ? (
                 <span className="ml-auto font-mono text-[11px] font-normal text-label">
-                  last {formatKwh(m.lastValue)} · {formatDate(m.lastDate)}
+                  last {formatKwh(m.lastValue)} · {dayMonthIn(m.lastDate, defaultDate)}
                 </span>
               ) : null}
             </label>
@@ -60,6 +60,7 @@ export function BothReadingsForm({ meters, defaultDate, onDone }: { meters: Mete
               id={`reading-${m.id}`}
               name={`value:${m.id}`}
               inputMode="decimal"
+              enterKeyHint="next"
               autoComplete="off"
               placeholder={m.lastValue !== null ? formatKwh(m.lastValue).replace(" kWh", "") : "Reading"}
               aria-describedby={hintId}

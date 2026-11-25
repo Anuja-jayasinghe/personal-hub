@@ -37,6 +37,11 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
   )
 }
 
+/** Fields that open a picker when focused: on a phone that picker would cover the sheet the moment it opens. */
+const PICKER_TYPES = new Set(["date", "time", "month", "week", "datetime-local"])
+const FIRST_TABBABLE =
+  'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),summary,[tabindex]:not([tabindex="-1"])'
+
 function SheetContent({
   className,
   children,
@@ -51,11 +56,30 @@ function SheetContent({
   // button, so focus, scroll lock and onOpenChange behave exactly as for the X or Escape.
   const closeRef = React.useRef<HTMLButtonElement>(null)
   const dragRef = useSheetDrag(side === "bottom", () => closeRef.current?.click())
+  const popupRef = React.useRef<HTMLElement | null>(null)
+  const setPopup = React.useCallback(
+    (el: HTMLElement | null) => {
+      popupRef.current = el
+      dragRef(el)
+    },
+    [dragRef]
+  )
+  // Focus goes to the first field on open (the dialog's default), except that on a touch screen a date field is
+  // never focused automatically: iOS would open the date picker straight away. The sheet itself takes the focus
+  // then (what the dialog already does for a sheet opened by touch); text fields keep their focus as before.
+  const initialFocus = (openType: string) => {
+    const popup = popupRef.current
+    const first = popup?.querySelector<HTMLElement>(FIRST_TABBABLE)
+    const touch = openType === "touch" || openType === "pen" || (typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches)
+    if (popup && touch && first instanceof HTMLInputElement && PICKER_TYPES.has(first.type)) return popup
+    return true
+  }
   return (
     <SheetPortal>
       <SheetOverlay />
       <SheetPrimitive.Popup
-        ref={dragRef}
+        ref={setPopup}
+        initialFocus={initialFocus}
         data-slot="sheet-content"
         data-side={side}
         className={cn(

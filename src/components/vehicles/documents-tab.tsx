@@ -138,7 +138,7 @@ export async function DocumentsTab({
                 />
               </label>
               {searching ? (
-                <Link href={ctx.href()} className="shrink-0 text-sm text-muted-foreground underline-offset-2 hover:underline">
+                <Link href={ctx.href()} className="hit-44 shrink-0 text-sm text-muted-foreground underline-offset-2 hover:underline">
                   Clear
                 </Link>
               ) : null}

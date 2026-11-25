@@ -39,11 +39,11 @@ export function OdometerForm({ action, vehicleId, reading, defaultDate, onDone }
         </label>
         <label className={labelClass}>
           <span className={labelTextClass}>Odometer (km)</span>
-          <Input name="km" required inputMode="numeric" defaultValue={reading?.km ?? ""} placeholder="84000" />
+          <Input name="km" enterKeyHint="next" required inputMode="numeric" defaultValue={reading?.km ?? ""} placeholder="84000" />
         </label>
         <label className={labelClass}>
           <span className={labelTextClass}>Note (optional)</span>
-          <Input name="note" maxLength={200} defaultValue={reading?.note ?? ""} placeholder="e.g. when I bought it" />
+          <Input name="note" enterKeyHint="done" maxLength={200} defaultValue={reading?.note ?? ""} placeholder="e.g. when I bought it" />
         </label>
       </div>
       {state.error ? (

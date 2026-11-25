@@ -44,7 +44,7 @@ export function TaskForm({ action, owner, task, onDone, addLabel = "Add task" }:
 
       <label className={labelClass}>
         <span className={labelTextClass}>Title</span>
-        <Input name="title" required maxLength={200} defaultValue={task?.title} placeholder="What needs doing?" />
+        <Input name="title" enterKeyHint="next" required maxLength={200} defaultValue={task?.title} placeholder="What needs doing?" />
       </label>
 
       <label className={labelClass}>
@@ -67,11 +67,11 @@ export function TaskForm({ action, owner, task, onDone, addLabel = "Add task" }:
         </label>
         <label className={labelClass}>
           <span className={labelTextClass}>Estimated cost</span>
-          <Input name="estimatedCost" inputMode="decimal" defaultValue={task?.estimatedCost ?? ""} placeholder="0.00" />
+          <Input name="estimatedCost" enterKeyHint="next" inputMode="decimal" defaultValue={task?.estimatedCost ?? ""} placeholder="0.00" />
         </label>
         <label className={labelClass}>
           <span className={labelTextClass}>Actual cost</span>
-          <Input name="actualCost" inputMode="decimal" defaultValue={task?.actualCost ?? ""} placeholder="0.00" />
+          <Input name="actualCost" enterKeyHint="next" inputMode="decimal" defaultValue={task?.actualCost ?? ""} placeholder="0.00" />
         </label>
       </div>
 

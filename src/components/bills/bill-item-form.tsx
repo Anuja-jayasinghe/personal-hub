@@ -55,7 +55,7 @@ export function BillItemForm({ action, item, defaultDate, onDone, mode }: Props)
       <div className="grid gap-3 sm:grid-cols-3">
         <label className={`${labelClass} ${shape === "once" ? "sm:col-span-2" : ""}`}>
           <span className={labelTextClass}>Name</span>
-          <Input name="name" required maxLength={80} defaultValue={item?.name} placeholder={shape === "once" ? "e.g. Plumber, School fees" : "e.g. Dialog fibre, Netflix"} />
+          <Input name="name" enterKeyHint="next" required maxLength={80} defaultValue={item?.name} placeholder={shape === "once" ? "e.g. Plumber, School fees" : "e.g. Dialog fibre, Netflix"} />
         </label>
         {shape === "recurring" ? (
           <>
@@ -111,18 +111,18 @@ export function BillItemForm({ action, item, defaultDate, onDone, mode }: Props)
         ) : null}
         <label className={labelClass}>
           <span className={labelTextClass}>{shape === "once" ? "Amount (optional, LKR)" : "Usual amount (optional, LKR)"}</span>
-          <Input name="amount" inputMode="decimal" defaultValue={item?.amount ?? ""} placeholder="0.00" />
+          <Input name="amount" enterKeyHint="next" inputMode="decimal" defaultValue={item?.amount ?? ""} placeholder="0.00" />
         </label>
         <label className={labelClass}>
           <span className={labelTextClass}>Paid with (optional label)</span>
-          <Input name="paymentMethod" maxLength={60} defaultValue={item?.paymentMethod ?? ""} placeholder="e.g. Visa, Sampath" />
+          <Input name="paymentMethod" enterKeyHint="next" maxLength={60} defaultValue={item?.paymentMethod ?? ""} placeholder="e.g. Visa, Sampath" />
         </label>
       </div>
       {byBillDay ? <p className="-mt-1 text-xs text-muted-foreground">Each month&apos;s bill is due before the next one arrives.</p> : null}
       <p className="-mt-1 text-xs text-muted-foreground">Write a label only. Card numbers are never stored, and the app refuses anything that looks like one.</p>
 
       {shape === "recurring" ? (
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 text-sm pointer-coarse:min-h-11">
           <input type="checkbox" name="autopay" defaultChecked={item?.autopay ?? false} className="size-4" />
           Paid automatically (autopay)
         </label>

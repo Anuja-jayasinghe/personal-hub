@@ -7,7 +7,7 @@ import { useKeepValuesOnError } from "@/components/shared/use-keep-values-on-err
 import { Input } from "@/components/ui/input";
 import type { ElectricityBill } from "@/db/schema";
 import { initialActionState, type ActionState } from "@/features/shared/types";
-import { formatDate } from "@/lib/format";
+import { dayMonthIn } from "@/lib/dates";
 
 type Props = {
   action: (prev: ActionState, formData: FormData) => Promise<ActionState>;
@@ -56,11 +56,11 @@ export function BillForm({ action, meterId, bill, defaultDate, defaultPrevious, 
       {autoPrevious ? (
         <details className="rounded-md border px-3 py-2 text-sm">
           <summary className="cursor-pointer text-muted-foreground">
-            Previous reading {defaultPrevious} kWh, from the last bill{previousDate ? ` (${formatDate(previousDate)})` : ""}. Change
+            Previous reading {defaultPrevious} kWh, from the last bill{previousDate ? ` (${defaultDate ? dayMonthIn(previousDate, defaultDate) : previousDate})` : ""}. Change
           </summary>
           <label className={`${labelClass} mt-2 max-w-xs`}>
             <span className={labelTextClass}>Previous reading (kWh)</span>
-            <Input name="previousReading" required inputMode="decimal" defaultValue={defaultPrevious} />
+            <Input name="previousReading" enterKeyHint="next" required inputMode="decimal" defaultValue={defaultPrevious} />
           </label>
         </details>
       ) : null}
@@ -69,23 +69,23 @@ export function BillForm({ action, meterId, bill, defaultDate, defaultPrevious, 
         {autoPrevious ? null : (
           <label className={labelClass}>
             <span className={labelTextClass}>{bill ? "Previous reading (kWh)" : "Previous reading (kWh), needed once for the first bill"}</span>
-            <Input name="previousReading" required inputMode="decimal" defaultValue={bill?.previousReading ?? ""} placeholder="12345.6" />
+            <Input name="previousReading" enterKeyHint="next" required inputMode="decimal" defaultValue={bill?.previousReading ?? ""} placeholder="12345.6" />
           </label>
         )}
         <label className={labelClass}>
           <span className={labelTextClass}>Current reading (kWh)</span>
-          <Input name="currentReading" required inputMode="decimal" defaultValue={bill?.currentReading ?? ""} placeholder="12560" />
+          <Input name="currentReading" enterKeyHint="next" required inputMode="decimal" defaultValue={bill?.currentReading ?? ""} placeholder="12560" />
         </label>
         <label className={labelClass}>
           <span className={labelTextClass}>Units (optional)</span>
-          <Input name="units" inputMode="decimal" defaultValue={bill?.units ?? ""} placeholder="current − previous" />
+          <Input name="units" enterKeyHint="next" inputMode="decimal" defaultValue={bill?.units ?? ""} placeholder="current − previous" />
         </label>
       </div>
 
       <div className="grid gap-3 @sm:grid-cols-2 @lg:grid-cols-3">
         <label className={labelClass}>
           <span className={labelTextClass}>Amount (optional)</span>
-          <Input name="amount" inputMode="decimal" defaultValue={bill?.amount ?? ""} placeholder="0.00" />
+          <Input name="amount" enterKeyHint="next" inputMode="decimal" defaultValue={bill?.amount ?? ""} placeholder="0.00" />
         </label>
         <label className={labelClass}>
           <span className={labelTextClass}>Due date (optional)</span>
@@ -99,7 +99,7 @@ export function BillForm({ action, meterId, bill, defaultDate, defaultPrevious, 
 
       <label className={labelClass}>
         <span className={labelTextClass}>Notes (optional)</span>
-        <Input name="notes" maxLength={500} defaultValue={bill?.notes ?? ""} />
+        <Input name="notes" enterKeyHint="done" maxLength={500} defaultValue={bill?.notes ?? ""} />
       </label>
 
       {state.error ? (

@@ -39,11 +39,11 @@ export function PaymentForm({ action, itemId, payment, defaultDate, defaultAmoun
         </label>
         <label className={labelClass}>
           <span className={labelTextClass}>Amount paid (optional, LKR)</span>
-          <Input name="amount" inputMode="decimal" defaultValue={payment?.amount ?? defaultAmount ?? ""} placeholder="0.00" />
+          <Input name="amount" enterKeyHint="next" inputMode="decimal" defaultValue={payment?.amount ?? defaultAmount ?? ""} placeholder="0.00" />
         </label>
         <label className={labelClass}>
           <span className={labelTextClass}>Note (optional)</span>
-          <Input name="note" maxLength={500} defaultValue={payment?.note ?? ""} />
+          <Input name="note" enterKeyHint="done" maxLength={500} defaultValue={payment?.note ?? ""} />
         </label>
       </div>
       {state.error ? (
