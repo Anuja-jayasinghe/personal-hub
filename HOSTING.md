@@ -128,6 +128,13 @@ step fails. It also needs `SUPABASE_SECRET_KEY` (to delete the TEST file from st
 the Clerk dashboard (delete it there to switch the tests off), and `DATABASE_URL`. `E2E_BASE_URL` points it at
 another address.
 
+`e2e/invitation.spec.ts` (C159) checks the invitation sign-in the same way with its own TEST address
+(`hub-test-invitee@anujajay.com`): it writes the `invited` row and its Vehicles grant straight to the database (no email
+is sent), checks the sign-up page's welcome and that an unknown code shows nothing, signs the TEST account in and checks
+the row became `active`, the real hub shows with Vehicles only and the other sections answer not found, then deletes the
+account and the row. The expired invitation is not run live (it would send the owners the real sign-up push); the PGlite
+tests cover it. The workflow runs the whole `e2e/` folder, so it runs after each production deploy with no setup of its own.
+
 ## Security headers (C143)
 
 Every response carries `nosniff`, a strict referrer policy, a locked-down permissions policy (only the hub itself may use the camera) and `X-Robots-Tag: noindex, nofollow, noarchive`; pages cannot be framed (`frame-ancestors 'none'`, and `'self'` only for `/files/*`). They come from `next.config.ts` (`src/config/security-headers.ts`), so they apply on Vercel with nothing to set in the dashboard. HSTS is Vercel's own (`max-age=63072000`); do not add `includeSubDomains` or `preload`, because other subdomains of the domain are not part of this project. `shadcn` is a dev dependency: Vercel installs those for the build, so keep "Install command" at its default.
