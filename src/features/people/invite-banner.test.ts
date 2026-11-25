@@ -28,7 +28,7 @@ const EMAIL = "someone@example.com";
 const NOW = new Date("2026-11-24T04:00:00Z");
 const later = (ms: number) => new Date(NOW.getTime() + ms);
 const add = async (over: Partial<typeof people.$inferInsert> = {}) =>
-  db.insert(people).values({ email: EMAIL, status: "invited", inviterName: "Asha", inviteCode: CODE, inviteExpiresAt: new Date(Date.now() + 365 * 86_400_000), ...over });
+  db.insert(people).values({ email: EMAIL, status: "invited", inviterName: "Asha", inviteCode: CODE, inviteExpiresAt: later(86_400_000), ...over });
 const row = async () => (await db.select().from(people).where(eq(people.email, EMAIL)))[0];
 const runScheduled = async () => {
   const callbacks = scheduled.callbacks.splice(0);
@@ -99,7 +99,7 @@ describe("markInvitationOpened", () => {
 
 describe("invitationBannerFor (the page's wrapper)", () => {
   it("shows the banner and marks it opened after the response, once", async () => {
-    await add();
+    await add({ inviteExpiresAt: new Date(Date.now() + 365 * 86_400_000) });
     expect(await invitationBannerFor(CODE)).toEqual({ inviterName: "Asha" });
     expect((await row()).inviteOpenedAt).toBeNull(); // not before the response
     expect(await runScheduled()).toBe(1);
@@ -111,7 +111,7 @@ describe("invitationBannerFor (the page's wrapper)", () => {
   });
 
   it("an unknown or malformed code shows nothing and marks nothing", async () => {
-    await add();
+    await add({ inviteExpiresAt: new Date(Date.now() + 365 * 86_400_000) });
     expect(await invitationBannerFor("zzzzzzzzzzzzzzzzzzzzzz")).toBeNull();
     expect(await invitationBannerFor("not a code")).toBeNull();
     expect(await invitationBannerFor(undefined)).toBeNull();
@@ -121,7 +121,7 @@ describe("invitationBannerFor (the page's wrapper)", () => {
 
   it("never throws into the page, whatever fails, and never logs the code or an address", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
-    await add();
+    await add({ inviteExpiresAt: new Date(Date.now() + 365 * 86_400_000) });
     scheduled.throwOnSchedule = true;
     expect(await invitationBannerFor(CODE)).toBeNull();
     expect(log).toHaveBeenCalledTimes(1);
