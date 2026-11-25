@@ -152,7 +152,13 @@ test.describe("sharing with a person who signs in by themselves", () => {
     expect(stored?.file_name).toMatch(/^[A-Z0-9-]+_test-upload_2000-01-01\.pdf$/);
     expect(stored?.mime_type).toBe("application/pdf");
     expect(Number(stored?.size_bytes)).toBe(TEST_PDF.length);
-    const opened = await page.request.get(`/files/${stored.id}`);
+    // The live database pooler only has a few client slots (issue #253): a burst of requests can briefly answer 500
+    // ("max clients reached"), so ask again for up to 30 seconds. A file that really cannot be opened still fails.
+    let opened = await page.request.get(`/files/${stored.id}`);
+    for (let attempt = 0; attempt < 6 && opened.status() !== 200; attempt++) {
+      await page.waitForTimeout(5_000);
+      opened = await page.request.get(`/files/${stored.id}`);
+    }
     expect(opened.status()).toBe(200);
     expect((await opened.body()).subarray(0, 8).toString()).toBe("%PDF-1.4");
   });
