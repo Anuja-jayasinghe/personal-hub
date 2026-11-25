@@ -2,6 +2,13 @@
 
 Versions follow semver: **major** for changes that break how the hub is used or stored, **minor** for new features, **patch** for fixes (while below 1.0, breaking changes bump the minor). Since 0.6.1 they are automatic (DECISIONS C123): pull request titles follow Conventional Commits (`feat: …`, `fix: …`), release-please keeps a release pull request with the next version and its notes, and merging it tags `vX.Y.Z` and publishes the GitHub release (pre-release below 1.0). 0.6.0 and 0.6.1 were versioned by hand (C120).
 
+## [0.26.0](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.25.3...v0.26.0) (2026-11-25)
+
+
+### Features
+
+* **ui:** a quiet footer on every page, the same signature as the SolarEdge dashboard ([#275](https://github.com/Anuja-jayasinghe/personal-hub/issues/275)) ([#276](https://github.com/Anuja-jayasinghe/personal-hub/issues/276)) ([37c4129](https://github.com/Anuja-jayasinghe/personal-hub/commit/37c41298c091d52891561926ba62ae747d1c026e))
+
 ## [0.25.3](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.25.2...v0.25.3) (2026-11-25)
 
 
