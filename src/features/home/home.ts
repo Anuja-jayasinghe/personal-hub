@@ -212,15 +212,20 @@ export function areaGlances(reminders: readonly ReminderResult[], days: number):
 
 export type ElectricityNote = { tone: "overdue" | "soon"; text: string };
 
-/** One line on the slab rule for the brief: the meter over its limit (red) or near it (amber), or null when all is well. */
+/**
+ * One line on the slab rule for the brief: the meter over its limit (red) or near it (amber), or null when all is well.
+ * `left` and `limit` are in HUNDREDTHS of a unit, as the slab maths keeps them (the electricity card shows whole units
+ * the same way): "8 units from 120", never "800 from 12000". Units left round down and an overrun rounds up, so the
+ * note never understates how close or how far over a meter is.
+ */
 export function electricityNote(
   limits: readonly { id: string; state: "ok" | "near" | "over"; left: number; limit: number }[],
   nameOf: (id: string) => string,
 ): ElectricityNote | null {
   const over = limits.find((m) => m.state === "over");
-  if (over) return { tone: "overdue", text: `${nameOf(over.id)} is ${Math.round(-over.left)} over ${over.limit}` };
+  if (over) return { tone: "overdue", text: `${nameOf(over.id)} is ${Math.ceil(-over.left / 100)} over ${Math.round(over.limit / 100)}` };
   const near = limits.find((m) => m.state === "near");
-  if (near) return { tone: "soon", text: `${nameOf(near.id)} is ${Math.round(near.left)} units from ${near.limit}` };
+  if (near) return { tone: "soon", text: `${nameOf(near.id)} is ${Math.floor(near.left / 100)} units from ${Math.round(near.limit / 100)}` };
   return null;
 }
 

@@ -183,8 +183,12 @@ describe("electricityNote", () => {
         ],
         nameOf,
       ),
-    ).toEqual({ tone: "overdue", text: "Main house is 300 over 12000" });
-    expect(electricityNote([{ id: "a", state: "near", left: 800, limit: 18000 }], nameOf)).toEqual({ tone: "soon", text: "Annex is 800 units from 18000" });
+    ).toEqual({ tone: "overdue", text: "Main house is 3 over 120" });
+    // the slab maths keeps hundredths of a unit: 800 left to 18000 is "8 units from 180" (the real-data bug of 2026-11-25
+    // said "800 units from 18000")
+    expect(electricityNote([{ id: "a", state: "near", left: 800, limit: 18000 }], nameOf)).toEqual({ tone: "soon", text: "Annex is 8 units from 180" });
+    expect(electricityNote([{ id: "a", state: "near", left: 899, limit: 12000 }], nameOf)).toEqual({ tone: "soon", text: "Annex is 8 units from 120" }); // rounds down
+    expect(electricityNote([{ id: "m", state: "over", left: -301, limit: 12000 }], nameOf)).toEqual({ tone: "overdue", text: "Main house is 4 over 120" }); // rounds up
     expect(electricityNote([{ id: "a", state: "ok", left: 5000, limit: 18000 }], nameOf)).toBeNull();
   });
 });
