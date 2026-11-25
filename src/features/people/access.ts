@@ -54,6 +54,17 @@ export function visibleAreas(access: Access): Area[] {
   return AREAS.map((a) => a.key).filter((key) => allows(access, key, "see"));
 }
 
+/**
+ * Records only the owners may reach (issue #178, C158): a received cheque and its photos are money, so
+ * there is no access section for them and nobody else can be given one. Files, tasks and notes attached
+ * to such a record follow the same rule: every check that maps an owner type to a section must ask this first.
+ */
+export const OWNER_ONLY_OWNER_TYPES: readonly OwnerType[] = ["cheque"];
+
+export function isOwnerOnlyOwner(ownerType: string | null): boolean {
+  return ownerType !== null && (OWNER_ONLY_OWNER_TYPES as readonly string[]).includes(ownerType);
+}
+
 /** Which section a shared record (task, note, file) belongs to, from what it is attached to. */
 export function areaOfOwner(ownerType: OwnerType | null): Area {
   switch (ownerType) {
@@ -84,6 +95,16 @@ export function areaOfFile(ownerType: OwnerType | null, isCover = false): Area {
   return areaOfOwner(ownerType);
 }
 
+/** What it takes to act on a shared record of `ownerType` (task, note): "owner" for an owner-only record, else the record's section at `level`. */
+export function needOfOwner(ownerType: OwnerType | null, level: Level): "owner" | { area: Area; level: Level } {
+  return isOwnerOnlyOwner(ownerType) ? "owner" : { area: areaOfOwner(ownerType), level };
+}
+
+/** What it takes to see, add or delete a file attached to `ownerType` (see `areaOfFile`): "owner" for an owner-only record. */
+export function needOfFile(ownerType: OwnerType | null, level: Level, isCover = false): "owner" | { area: Area; level: Level } {
+  return isOwnerOnlyOwner(ownerType) ? "owner" : { area: areaOfFile(ownerType, isCover), level };
+}
+
 /** Grants as a person's access, ignoring anything not a known section or level. */
 export function accessFromGrants(rows: readonly { area: string; level: string }[]): Access {
   const grants: Partial<Record<Area, Level>> = {};
@@ -100,16 +121,20 @@ export const NAV_AREAS: Record<string, readonly Area[]> = {
   tasks: ["tasks_notes"],
 };
 
+/** Nav items only the owners see (issue #178): no section covers them, so nobody else is ever granted them. */
+const OWNER_ONLY_NAV: readonly string[] = ["cheques"];
+
 /** True when a nav item (by key) should show; Home and More always do, Settings only for owners. */
 export function navItemVisible(access: Access, key: string): boolean {
   if (key === "home" || key === "more") return true;
-  if (key === "settings") return access.owner;
+  if (key === "settings" || OWNER_ONLY_NAV.includes(key)) return access.owner;
   const areas = NAV_AREAS[key];
   return !areas || areas.some((a) => allows(access, a, "see"));
 }
 
 /** A task or note shows when the person may see Tasks & notes and, when it is attached, that record's section (S.8). */
 export function sharedVisible(access: Access, ownerType: OwnerType | string | null, level: Level = "see"): boolean {
+  if (isOwnerOnlyOwner(ownerType)) return access.owner;
   if (!allows(access, "tasks_notes", level)) return false;
   if (!ownerType) return true;
   return allows(access, areaOfOwner(ownerType as OwnerType), "see");

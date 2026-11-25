@@ -16,6 +16,7 @@ const ALLOWED = [
   /^src\/features\/settings\/exports\.ts$/,
   /^src\/features\/shared\/(cleanup|files)\.ts$/,
   /^src\/features\/vehicles\/doc-naming\.ts$/, // names uploads inside actions, after their check (issue #179)
+  /^src\/features\/cheques\/file-name\.ts$/, // names a cheque's photo inside the upload actions, after their owner check (issue #178)
   /^src\/features\/people\/invite-banner\.ts$/, // the public sign-up page: nobody is signed in; it takes a code and answers a first name or nothing (issue #236)
   /^src\/features\/notifications\/run\.ts$/, // no signed-in person; only /api/notify calls it, after CRON_SECRET and production (C139)
 ];

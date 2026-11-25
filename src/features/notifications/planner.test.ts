@@ -108,8 +108,8 @@ describe("rule 2: at most three notices per item, ever", () => {
   });
 
   it("items from unknown sources send nothing", () => {
-    expect(eventOf({ id: "cheque:1", kind: "cheque" })).toBeNull();
-    expect(planNotifications({ items: [{ ...task(TODAY), id: "cheque:1" }], today: TODAY, usedKeys: none }).notices).toEqual([]);
+    expect(eventOf({ id: "gift:1", kind: "gift" })).toBeNull();
+    expect(planNotifications({ items: [{ ...task(TODAY), id: "gift:1" }], today: TODAY, usedKeys: none }).notices).toEqual([]);
   });
 
   it("maps the real source ids and kinds to events", () => {

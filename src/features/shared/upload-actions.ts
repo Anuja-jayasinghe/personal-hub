@@ -3,7 +3,8 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { vehicles } from "@/db/schema";
-import { areaOfFile } from "@/features/people/access";
+import { needOfFile } from "@/features/people/access";
+import { chequeFileName } from "@/features/cheques/file-name";
 import { renewalFileName, serviceFileName } from "@/features/vehicles/doc-naming";
 import { requireUser } from "@/lib/auth";
 import { isOwnerType, type OwnerRef } from "@/lib/owners";
@@ -41,14 +42,16 @@ export async function prepareUpload(input: PrepareUploadInput): Promise<PrepareU
     if (input.purpose === "attachment") {
       // A new file is never the cover photo (that is its own purpose below), so on a vehicle or a
       // renewal it is a Vehicle document and needs Add there, the same as the Documents tab.
-      await requireUser({ area: areaOfFile(owner.ownerType), level: "add" });
+      await requireUser(needOfFile(owner.ownerType, "add"));
       // A renewal's or a service's file is stored under the name the hub gives it (issue #179, V.1a).
       const named =
         owner.ownerType === "vehicle_renewal"
           ? { ...file, fileName: await renewalFileName(owner.ownerId, file.mimeType) }
           : owner.ownerType === "vehicle_service"
             ? { ...file, fileName: await serviceFileName(owner.ownerId, file.mimeType) }
-            : file;
+            : owner.ownerType === "cheque"
+              ? { ...file, fileName: await chequeFileName(owner.ownerId, file.mimeType) }
+              : file;
       return { ok: true, ...(await signUpload(owner, named)) };
     }
     if (owner.ownerType !== "vehicle") throw new ValidationError("That item could not be found.");

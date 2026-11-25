@@ -8,7 +8,7 @@ const settings: NavItem = { key: "settings", label: "Settings", href: "/settings
 const more: NavItem = { key: "more", label: "More", href: "/more", icon: "more" };
 
 /** Electricity first: it is what the hub exists for (C83). Other modules keep their config order. */
-const moduleOrder = ["electricity", "vehicles", "bills"];
+const moduleOrder = ["electricity", "vehicles", "bills", "cheques"];
 
 function moduleItems(): NavItem[] {
   return [...enabledModules]
@@ -33,13 +33,16 @@ export function railBottomItems(): NavItem[] {
 /** Phone bar: Home, Vehicles, Electricity, Bills, More (DESIGN.md). The rest lives on the More page. */
 export function phoneBarItems(): NavItem[] {
   const phoneOrder = ["vehicles", "electricity", "bills"];
-  const mods = [...moduleItems()].sort((a, b) => phoneOrder.indexOf(a.key) - phoneOrder.indexOf(b.key));
+  // Only these three have a tab; the other modules (Cheques) are reached from More (issue #178).
+  const mods = moduleItems().filter((m) => phoneOrder.includes(m.key)).sort((a, b) => phoneOrder.indexOf(a.key) - phoneOrder.indexOf(b.key));
   return [home, ...mods, more];
 }
 
-/** Pages reached from the More tab, so the tab shows as current while you are on them. */
+/** Pages reached from the More tab, so the tab shows as current while you are on them: the modules with no tab of their own, the shared pages and Settings. */
 export function morePageItems(): NavItem[] {
-  return [...sharedItems(), settings];
+  const phoneOrder = ["vehicles", "electricity", "bills"];
+  const extra = moduleItems().filter((m) => !phoneOrder.includes(m.key));
+  return [...sharedItems(), ...extra, settings];
 }
 
 /** True when `pathname` is inside `item` (Home only matches "/"). More also covers the pages it lists. */

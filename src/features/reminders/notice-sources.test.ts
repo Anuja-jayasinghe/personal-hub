@@ -199,7 +199,7 @@ describe("event sources fail closed", () => {
     expect(loaded[0].area).toBe("owner");
     expect(itemsFor({ email: OWNER, access: { owner: true }, channels: ["email", "push"], listHref: "/reminders" }, loaded)).toHaveLength(1);
     expect(itemsFor({ email: "p@example.com", access: { owner: false, grants: { electricity_readings: "edit", vehicles: "edit" } }, channels: ["push"], listHref: "/" }, loaded)).toEqual([]);
-    // Reminder sources keep their own default.
-    expect((await loadSources([{ ...unmapped, load: async () => [] }], { db, today: "2026-11-20" })).loaded[0].area).toBe("tasks_notes");
+    // Reminder sources fail closed too since issue #178: forgetting the line can never show a source to a shared person.
+    expect((await loadSources([{ ...unmapped, load: async () => [] }], { db, today: "2026-11-20" })).loaded[0].area).toBe("owner");
   });
 });

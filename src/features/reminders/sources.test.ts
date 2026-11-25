@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/db/read";
 import { eq, isNull } from "drizzle-orm";
 import { appConfig } from "@/config/app.config";
-import { billItems, tasks, vehicles, vehicleServices } from "@/db/schema";
+import { billItems, cheques, tasks, vehicles, vehicleServices } from "@/db/schema";
 import { previewUpcoming } from "@/features/notifications/planner";
 import { addDays } from "@/lib/dates";
 import { makeTestDb } from "@/test/pglite";
@@ -41,6 +41,11 @@ beforeAll(async () => {
       { vehicleId: vehicle.id, serviceDate: addDays(TODAY, -1), serviceType: "oil CHANGE", nextDueDate: TODAY },
     ])
     .returning({ id: vehicleServices.id, type: vehicleServices.serviceType });
+  // Made-up cheques (public repo): one still waiting with a date in a few days, one already deposited, which must never remind.
+  await db.insert(cheques).values([
+    { fromParty: "Zebra Hardware (Pvt) Ltd", amount: "184250.50", bank: "Zebra Bank", chequeNumber: "700123", chequeDate: addDays(TODAY, 3), note: "for the roof job", status: "waiting" },
+    { fromParty: "Quokka Traders", amount: "99999.00", chequeNumber: "700124", chequeDate: addDays(TODAY, 2), status: "deposited", depositedOn: TODAY },
+  ]);
   oilServiceId = inserted.find((r) => r.type === "oil CHANGE")!.id;
 }, 60_000);
 

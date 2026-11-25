@@ -8,8 +8,9 @@ import { deleteAttachmentsOf } from "./cleanup";
 import { toActionState as failure } from "./errors";
 import { recordUpload, removeAttachment, uploadedFrom } from "./files";
 import type { ActionState } from "./types";
-import { areaOfFile, areaOfOwner, type Level } from "@/features/people/access";
+import { isOwnerOnlyOwner, needOfFile, needOfOwner, type Level } from "@/features/people/access";
 import { fileArea } from "@/features/people/file-area";
+import { chequeFileName } from "@/features/cheques/file-name";
 import { renewalFileName, serviceFileName } from "@/features/vehicles/doc-naming";
 import { isOwnerType } from "@/lib/owners";
 import { requireUser } from "@/lib/auth";
@@ -34,7 +35,7 @@ import {
  */
 async function requireOwnerSection(owner: { ownerType: string | null; ownerId: string | null } | null | undefined, level: Level) {
   if (!owner?.ownerType || !isOwnerType(owner.ownerType)) return;
-  await requireUser({ area: areaOfOwner(owner.ownerType), level });
+  await requireUser(needOfOwner(owner.ownerType, level));
 }
 
 async function ownerOf(table: typeof tasks | typeof notes | typeof attachments, id: string) {
@@ -177,7 +178,7 @@ export async function uploadAttachment(_prev: ActionState, fd: FormData): Promis
     const owner = requiredOwner(fd);
     // The section the file will belong to, not just its record's: a file on a vehicle or a renewal is a
     // Vehicle document (C114), so it needs Add there.
-    await requireUser({ area: areaOfFile(owner.ownerType), level: "add" });
+    await requireUser(needOfFile(owner.ownerType, "add"));
     // The browser has already put the file in storage (C115); this records it after checking it. A file on a
     // renewal or a service is named by the hub from that record (issue #179, V.1a), never by the uploader.
     const nameFor =
@@ -185,7 +186,9 @@ export async function uploadAttachment(_prev: ActionState, fd: FormData): Promis
         ? (mimeType: string) => renewalFileName(owner.ownerId, mimeType)
         : owner.ownerType === "vehicle_service"
           ? (mimeType: string) => serviceFileName(owner.ownerId, mimeType)
-          : undefined;
+          : owner.ownerType === "cheque"
+            ? (mimeType: string) => chequeFileName(owner.ownerId, mimeType)
+            : undefined;
     await recordUpload(owner, uploadedFrom(fd), undefined, undefined, null, nameFor);
     refresh();
     return { ok: true };
@@ -200,7 +203,7 @@ export async function deleteAttachment(fd: FormData): Promise<void> {
   const [row] = await db.select().from(attachments).where(eq(attachments.id, id));
   if (!row) return;
   // Edit in the section the file belongs to: Vehicle documents for a vehicle's papers, Vehicles for its cover.
-  await requireUser({ area: await fileArea(row), level: "edit" });
+  await requireUser(isOwnerOnlyOwner(row.ownerType) ? "owner" : { area: await fileArea(row), level: "edit" });
   await removeAttachment(row);
   refresh();
 }

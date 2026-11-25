@@ -4,6 +4,7 @@ import { safeErrorSummary } from "@/lib/errors";
 import type { NoticeEvent, NoticeSource, ReminderItem, ReminderSource, SourceContext } from "./engine";
 import { accessRequestsSource } from "./sources/access-requests";
 import { billItemsSource } from "./sources/bill-items";
+import { chequesSource } from "./sources/cheques";
 import { electricityBillsSource } from "./sources/electricity-bills";
 import { electricityNoticesSource } from "./sources/electricity-notices";
 import { tasksSource } from "./sources/tasks";
@@ -13,7 +14,7 @@ import { vehicleServicesSource } from "./sources/vehicle-services";
 /**
  * Every module that has dates worth reminding about adds one line here.
  */
-export const reminderSources: ReminderSource[] = [tasksSource, vehicleServicesSource, vehicleRenewalsSource, electricityBillsSource, billItemsSource];
+export const reminderSources: ReminderSource[] = [tasksSource, vehicleServicesSource, vehicleRenewalsSource, electricityBillsSource, billItemsSource, chequesSource];
 
 /**
  * Events for the notification planner only (N.4, C142): a slab limit, a reading overdue, a sign-up
@@ -22,13 +23,18 @@ export const reminderSources: ReminderSource[] = [tasksSource, vehicleServicesSo
  */
 export const noticeSources: NoticeSource[] = [electricityNoticesSource, accessRequestsSource];
 
-/** Which section each source belongs to (S.8). A new source adds a line here. */
+/**
+ * Which section each source belongs to (S.8). A new source adds a line here. A source with no line is
+ * owners-only (fails closed, issue #178): `loadSources` and the Reminders page both fall back to "owner".
+ */
 export const SOURCE_AREA: Record<string, SourceArea> = {
   tasks: "tasks_notes",
   "vehicle-services": "vehicles",
   "vehicle-renewals": "vehicles",
   "electricity-bills": "electricity_bills",
   "bill-items": "bills",
+  // Money: owners only, there is no section for it (issue #178, C158).
+  cheques: "owner",
   // Events (N.4): the meters' area, and the owner alone for sign-up requests.
   "electricity-notices": "electricity_readings",
   "access-requests": "owner",
@@ -45,8 +51,8 @@ export type LoadedNoticeSource = LoadedSource<NoticeEvent>;
 export async function loadSources<T = ReminderItem>(
   sources: readonly { key: string; label: string; load: (from?: SourceContext) => Promise<T[]> }[],
   from?: SourceContext,
-  /** The section of a source with no line in SOURCE_AREA. Event sources pass "owner": a source nobody mapped is heard by nobody else. */
-  fallbackArea: SourceArea = "tasks_notes",
+  /** The section of a source with no line in SOURCE_AREA: the owners alone, so forgetting the line never shows a source to someone else. */
+  fallbackArea: SourceArea = "owner",
 ): Promise<{ loaded: LoadedSource<T>[]; failedSources: string[] }> {
   const settled = await Promise.allSettled(sources.map((s) => s.load(from)));
   const loaded = settled.flatMap((r, i) =>
