@@ -69,7 +69,13 @@ test.describe("sharing with a person who signs in by themselves", () => {
   let sql: postgres.Sql;
   let userId: string;
 
-  test.beforeAll(async () => {
+  test.beforeAll(async ({}, testInfo) => {
+    // A retry starts at once, but the live database pool (15 clients, issue #253) needs a minute or two to free up
+    // after a burst: wait before trying again (issue #273). The hook gets extra time for the wait.
+    if (testInfo.retry > 0) {
+      testInfo.setTimeout(testInfo.timeout + 70_000);
+      await new Promise((resolve) => setTimeout(resolve, 60_000));
+    }
     sql = postgres(databaseUrl!, { max: 1, prepare: false });
     await deleteTestFiles(sql); // a run that was cut short may have left these behind
     await deleteTestAccount(sql);
