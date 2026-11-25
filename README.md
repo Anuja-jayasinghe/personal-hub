@@ -96,12 +96,15 @@ and how much room is left?* The limits are editable in Settings, because tariffs
 
 | Part | What you get |
 | --- | --- |
+| **Home** | Both meters, what needs you next, and the next 30 days |
 | **Electricity** | Readings for both meters, the live meter, usage per cycle against the 120 / 180 limits, a projection to the end of the cycle, bills with due dates |
-| **Bills & subscriptions** | Everything paid again and again: what is due, what is late, a calendar, and what it all costs per month |
-| **Vehicles** | Each vehicle under its plate number, licence, insurance and emission test renewals, services, mileage and documents |
+| **Vehicles** | Each vehicle under its plate number, with two tabs. **Overview**: what needs you, renewals (revenue licence, insurance, emission test) as countdowns, services and mileage. **Documents**: every paper in one place, by kind. One **Add** button adds a paper, a service, a reading or a note; one flow for papers: pick the file and what it is, and the hub names it and, if you may, creates its renewal or service record from it |
+| **Bills & subscriptions** | Everything paid again and again: what is due, what is late, a calendar, and what it costs per month. A monthly bill follows its **bill day**: it is processed on that day, so it is listed and reminded only once it can be paid (autopay items and subscriptions are shown ahead), and the screens speak in bill dates ("Bill of 6 Nov, pay by 6 Dec") |
 | **Reminders** | One list of everything due soon across every part, with lead times you choose |
 | **Tasks & notes** | To-dos and notes, on their own or attached to a vehicle, a meter or a bill, with files |
-| **Sharing** | People sign in by themselves and wait for approval; then each part is Hidden, See, Add or Edit for them |
+| **Notifications** | A daily run each morning (Colombo time) sends a plan-ahead email and an iPhone push when something is due, a meter nears its limit or someone is waiting for approval. Both are off until switched on in Settings, and the email goes to the owner only |
+| **Sharing** | The owner gives each person a level per part (Hidden, See, Add or Edit), by inviting them with an emailed sign-up link or approving them after they sign in by themselves. They get pushes only for what they may see |
+| **Phone and installed app** | Added to a phone's Home Screen it opens full screen, with edge swipes for back and forward and pull to refresh (an ordinary browser keeps its own). On any touch screen a sheet closes with a swipe down and a vehicle's two tabs swap with a sideways swipe |
 | **Demo** | Anyone not approved sees the whole hub with sample data, so the app explains itself |
 
 ## How it works
@@ -133,6 +136,42 @@ and how much room is left?* The limits are editable in Settings, because tariffs
 </picture>
 </div>
 
+**How access works.** Anyone can sign in (Clerk: email code or Google), but signing in grants nothing. The owners are
+the addresses in the `ALLOWED_EMAILS` setting and may do everything; if it is empty, nobody gets in. Everyone else
+is a row in the `people` table with a level per part. Someone who signs in by themselves is recorded as waiting and
+sees the demo until the owner approves them. An **invitation** is an empty placeholder that holds the access the owner
+chose; it comes alive only when the person signs in with the invited address, verified by Clerk, within 14 days.
+Past that it is an ordinary request, and a different address never inherits it. The link's code only shows a
+welcome and is not a credential.
+
+## Security, in short
+
+- **Private by default.** Files live in a private storage bucket and open only through a 60-second signed link, after
+  the person's access to that kind of file is checked. Every table has row-level security switched on, with no
+  policies: the browser never talks to the database, only the server does.
+- **Owners and people.** Owner-only parts (meters, rules, Settings, backups) refuse everyone else on the server, not
+  only in the page. Every Server Action and file link checks the person first, and tests fail if one does not.
+- **Secrets stay out of the browser and the repo.** Keys live in `.env.local` and the host's settings, never in git.
+- **The repository is public, so no real data goes in it:** no real addresses, plates, names or files, only made-up
+  demo data. The live test uses a TEST account and deletes what it creates.
+
+## Run it yourself
+
+Not needed to use the hub, but the code is meant to be read and run. You need Node 22 or newer and pnpm.
+
+```sh
+pnpm install
+cp .env.example .env.local   # then fill it in: your own Supabase project and Clerk application
+pnpm db:migrate              # creates the tables in your database
+pnpm storage:setup           # creates the private files bucket
+pnpm dev --port 3100
+```
+
+`.env.example` explains every setting; email, push and the end-to-end tests are optional. Put your own address in
+`ALLOWED_EMAILS`, or nobody is let in. `pnpm lint`, `pnpm typecheck`, `pnpm test` and
+`pnpm build` are the checks CI runs. [SETUP.md](SETUP.md) walks through a second computer and [HOSTING.md](HOSTING.md)
+covers the live site.
+
 ## How it ships
 
 <div align="center">
@@ -156,6 +195,7 @@ turns the merged titles into the next version and its notes.
 | **App** | Next.js (App Router), React, TypeScript, Tailwind CSS, shadcn/ui on Base UI |
 | **Data** | Supabase Postgres through Drizzle ORM, a private Supabase Storage bucket, PGlite for the demo |
 | **Login** | Clerk (email code and Google), with the app's own approval and per-section access |
+| **Notifications** | Resend (email, through its REST API) and Web Push (iPhone), sent by a daily Vercel Cron run |
 | **Hosting** | Vercel (Singapore), Cloudflare DNS |
 | **Quality** | Vitest unit tests, Playwright end-to-end tests on the live site, GitHub Actions, release-please |
 | **Design** | Its own brand: Oxanium, Sora and JetBrains Mono on dark charcoal with one blue ([DESIGN.md](DESIGN.md)) |
