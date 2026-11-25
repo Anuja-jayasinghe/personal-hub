@@ -217,9 +217,15 @@ service is added and no data is touched without an explicit yes, and every answe
 
 ## Status
 
-The [latest release](https://github.com/Anuja-jayasinghe/personal-hub/releases) is what runs at [hub.anujajay.com](https://hub.anujajay.com):
+**1.0.0 is the first stable release.** The [latest release](https://github.com/Anuja-jayasinghe/personal-hub/releases) is what runs at [hub.anujajay.com](https://hub.anujajay.com):
 every merge to `main` deploys, and the live test above runs right after. What each release changed is in the
 [changelog](CHANGELOG.md); what comes next is in the [plan](PLAN.md).
+
+What 1.0.0 does not have yet, on purpose:
+
+- **Received-cheque reminders** (issue #178) are built but wait for 1.1.
+- **Scheduled backups** (issue #41): back up by hand with `pnpm backup` (see [BACKUP.md](BACKUP.md)); an automatic, private copy comes later.
+- **Real-phone checks:** the phone layout, gestures and installed-app behaviour were tested in a browser, not yet on every real device (issue #42).
 
 ## License
 
