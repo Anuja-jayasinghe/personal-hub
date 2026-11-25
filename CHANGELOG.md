@@ -2,6 +2,13 @@
 
 Versions follow semver: **major** for changes that break how the hub is used or stored, **minor** for new features, **patch** for fixes (while below 1.0, breaking changes bump the minor). Since 0.6.1 they are automatic (DECISIONS C123): pull request titles follow Conventional Commits (`feat: …`, `fix: …`), release-please keeps a release pull request with the next version and its notes, and merging it tags `vX.Y.Z` and publishes the GitHub release (pre-release below 1.0). 0.6.0 and 0.6.1 were versioned by hand (C120).
 
+## [0.25.0](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.24.1...v0.25.0) (2026-11-25)
+
+
+### Features
+
+* **db:** make the database pool size a setting and document the transaction-pooler switch ([#258](https://github.com/Anuja-jayasinghe/personal-hub/issues/258)) ([444306d](https://github.com/Anuja-jayasinghe/personal-hub/commit/444306dede890a884ae562f3b9082e8811feacd9))
+
 ## [0.24.1](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.24.0...v0.24.1) (2026-11-25)
 
 
