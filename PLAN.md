@@ -333,6 +333,9 @@ Goal: one place to add anything to a vehicle, an oil-change reminder that sets i
 
 **Polish after Phase V (C152, issue #237):** the vehicle page's hero (plate, name and buttons beside a tall cover-photo panel; the drawing in the same card when there is no photo) and the Overview's cards, odometer history rows, timeline and details card were restyled, and the hero photo now loads eagerly with a reserved box. Look only; nothing new was added.
 
+## v1.0.0 — the first stable release (issue #278, C168)
+
+In: everything on `main` plus the Home redesign (PR #249), and the live database on the transaction pooler (C168, evidence in the decision). Out, named as known gaps in the README: the cheque reminders (PR #250, migration 0021, for 1.1), scheduled backups (#41) and real-phone checks (#42). Release mechanics: the merge commit carries `Release-As: 1.0.0`, release-please opens the release pull request, and it is merged once Vercel is accepting builds (the free plan's build rate limit rejected the v0.26.0 deploy on 2026-11-25). Done when: the live test passes on the 1.0.0 deployment, a vehicles-list burst test is clean on the new pooler, and the footer reads v1.0.0.
 **A more welcoming Home (C157, issue #218):** Home is a centred column (at most 1560 px): a hero with a greeting by the time of day, one line on how the day stands ("5 things need you." with what is late, due this week, which meters to read and the slab rule, or a calm "All clear" and what is next), "Needs you" beside it, then Electricity with the 30-day line beside a ring-and-name glance at Vehicles, Bills and Tasks; same data and access as before, no new query. Three layouts were tried and looked at; the choice and the rejected ones are in C157. Left unmerged for the owner to look at first.
 
 ## Later (each needs its own decision)

@@ -12,18 +12,19 @@ owner before it is done. Secrets are never printed, committed or pasted into cha
 - `vercel.json` also sets the framework to **Next.js**: the project was created with the preset "Other", which made the first deploy answer 404 everywhere (issue #130).
 - Vercel project **personal-hub** (team anuja-jayasinghes-projects), linked from this folder (`.vercel/`, git-ignored).
 - Production settings on Vercel: `SUPABASE_URL`, `SUPABASE_SECRET_KEY` (sensitive), `ALLOWED_EMAILS` (sensitive),
-  `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL`, `DATABASE_URL` (sensitive; Supabase's
-  **session pooler**, port 5432, the same address as `.env.local`). Not the transaction pooler (port 6543): it hung
-  every signed-in page, because it cannot take more than two queries at once on one connection (issue #135, C119).
+  `NEXT_PUBLIC_CLERK_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL`, `DATABASE_URL` (sensitive; see the
+  pooler paragraph below: the transaction pooler, port 6543, from v1.0.0; before that the session pooler, port 5432, C119).
 
-  **Optional switch to the transaction pooler (issue #257, C163).** The session pooler allows only 15 clients in all
-  (issue #253), which a burst of requests can fill. A test on 2026-11-25 showed the transaction pooler (port 6543) works
-  when each connection carries one query at a time (12 concurrent queries with 12 connections answered in about 0.5 s;
-  40 separate clients all succeeded) and hangs only when queries queue on one connection (the C119 case). To switch,
-  in Vercel set `DATABASE_URL` to Supabase's **transaction pooler** string (port 6543, same user and password) and add
-  `DATABASE_MAX_CONNECTIONS=12`, for Production and Preview, then redeploy and watch the live end-to-end run. To go
-  back, restore the old `DATABASE_URL` and remove `DATABASE_MAX_CONNECTIONS`. Keep `.env.local` on the port 5432
-  address: migrations and local scripts should not use the transaction pooler.
+  **The live site uses the transaction pooler from v1.0.0 (issue #278, C168).** The session pooler allows only 15
+  clients in all (issue #253), which a burst of requests filled. The transaction pooler (port 6543) has far more
+  room but hung in C119 when queries queued on one connection. The database client now tells the driver to send
+  **one query at a time per connection** (`max_pipeline: 1`) whenever `DATABASE_URL` is on port 6543 (`src/db/index.ts`),
+  which tested fine at any load (2026-11-25: 100 concurrent queries on 8 connections in 0.9 s; the app's own client,
+  60 concurrent queries in 1.2 s). On the live site `DATABASE_URL` (sensitive, Production and Preview) is
+  the **transaction pooler** string (port 6543, same user and password as the session one) and the client uses 4
+  connections per server copy (`DATABASE_MAX_CONNECTIONS` overrides it, 1 to 40). To go back, restore the port 5432
+  address in Vercel and redeploy (the client then behaves exactly as before). **Keep `.env.local` on port 5432**:
+  migrations (`pnpm db:migrate`) and local scripts should use the session pooler.
 
 - **Preview settings** (C133, issue #174): previews use **real data**. Preview has the same `DATABASE_URL`,
   `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ALLOWED_EMAILS` and sign-in/up paths as Production, but **Clerk's development
