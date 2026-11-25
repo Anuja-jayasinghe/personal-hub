@@ -14,7 +14,7 @@ import * as schema from "./schema";
  * the fresh-clone rehearsal for step 0.9); a missing DATABASE_URL only fails when a query runs.
  */
 /** The pool size: `DATABASE_MAX_CONNECTIONS` when it is a whole number from 1 to 40, else 1 on Vercel and 5 locally. */
-export function maxConnections(env: { DATABASE_MAX_CONNECTIONS?: string; VERCEL?: string } = process.env): number {
+export function maxConnections(env: Record<string, string | undefined> = process.env): number {
   const set = Number(env.DATABASE_MAX_CONNECTIONS);
   if (Number.isInteger(set) && set >= 1 && set <= 40) return set;
   return env.VERCEL ? 1 : 5;
