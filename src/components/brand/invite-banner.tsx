@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { appConfig } from "@/config/app.config";
 import { invitationBannerFor } from "@/features/people/invite-banner";
 
@@ -7,6 +8,8 @@ import { invitationBannerFor } from "@/features/people/invite-banner";
  * an unknown, expired or malformed code renders nothing at all, exactly like no code.
  */
 export async function InviteBanner({ searchParams }: { searchParams: Promise<{ invite?: string | string[] }> }) {
+  // Request time, not prerender time: the lookup reads the clock (Next.js: blocking-prerender-current-time).
+  await connection();
   const { invite } = await searchParams;
   const banner = await invitationBannerFor(Array.isArray(invite) ? invite[0] : invite);
   if (!banner) return null;
