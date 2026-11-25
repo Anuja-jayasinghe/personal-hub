@@ -13,6 +13,13 @@ import * as schema from "./schema";
  * `pnpm build` and the tests work on a brand-new computer before `.env.local` exists (found by
  * the fresh-clone rehearsal for step 0.9); a missing DATABASE_URL only fails when a query runs.
  */
+/** The pool size: `DATABASE_MAX_CONNECTIONS` when it is a whole number from 1 to 40, else 1 on Vercel and 5 locally. */
+export function maxConnections(env: { DATABASE_MAX_CONNECTIONS?: string; VERCEL?: string } = process.env): number {
+  const set = Number(env.DATABASE_MAX_CONNECTIONS);
+  if (Number.isInteger(set) && set >= 1 && set <= 40) return set;
+  return env.VERCEL ? 1 : 5;
+}
+
 function createDb() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
@@ -25,9 +32,11 @@ function createDb() {
     globalForDb.__pgClient ??
     postgres(connectionString, {
       // On Vercel each server copy keeps one connection to the session pooler (C119), which queues a
-      // page's queries on it. Prepared statements stay off (harmless, and needed if a pooler in
-      // transaction mode is ever used again). Locally: up to 5.
-      max: process.env.VERCEL ? 1 : 5,
+      // page's queries on it. Prepared statements stay off (needed for a pooler in transaction mode).
+      // Locally: up to 5. `DATABASE_MAX_CONNECTIONS` overrides this (issue #257): the transaction pooler
+      // (port 6543) hangs when queries queue on ONE connection but is fine with one query per connection,
+      // so with that address set it to about 12 (see HOSTING.md). Unset, nothing changes.
+      max: maxConnections(),
       prepare: false,
       // The session pooler allows only 15 clients in all (issue #253), so on Vercel an idle copy gives its
       // connection back after 4 seconds instead of 20; the next request simply reconnects. Locally: 20.
