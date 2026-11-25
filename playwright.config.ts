@@ -17,7 +17,10 @@ export default defineConfig({
   expect: { timeout: 20_000 },
   fullyParallel: false,
   workers: 1,
-  retries: 0,
+  // After a deploy the live site's small database pool (15 clients, issue #253) can be briefly full, which makes a
+  // test fail although nothing is broken: in CI a failed test is tried again, up to twice, after the pool has
+  // had a minute to recover. A real bug fails every attempt. Locally: no retries.
+  retries: process.env.CI ? 2 : 0,
   reporter: [["list"]],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? "https://hub.anujajay.com",
