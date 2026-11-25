@@ -333,6 +333,8 @@ Goal: one place to add anything to a vehicle, an oil-change reminder that sets i
 
 **Polish after Phase V (C152, issue #237):** the vehicle page's hero (plate, name and buttons beside a tall cover-photo panel; the drawing in the same card when there is no photo) and the Overview's cards, odometer history rows, timeline and details card were restyled, and the hero photo now loads eagerly with a reserved box. Look only; nothing new was added.
 
+**A more welcoming Home (C157, issue #218):** Home is a centred column (at most 1560 px): a hero with a greeting by the time of day, one line on how the day stands ("5 things need you." with what is late, due this week, which meters to read and the slab rule, or a calm "All clear" and what is next), "Needs you" beside it, then Electricity with the 30-day line beside a ring-and-name glance at Vehicles, Bills and Tasks; same data and access as before, no new query. Three layouts were tried and looked at; the choice and the rejected ones are in C157. Left unmerged for the owner to look at first.
+
 ## Later (each needs its own decision)
 
 - **Vehicle photo treatment** (C104): make an uploaded photo look its best in-house (no outside AI service), for example cut-out, lighting and the stage around it. For now the photo is shown as it is.

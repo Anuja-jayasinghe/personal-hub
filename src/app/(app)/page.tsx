@@ -1,121 +1,25 @@
-import { allows, navItemVisible } from "@/features/people/access";
-import { getRules } from "@/features/settings/queries";
-import { connection } from "next/server";
 import { Suspense } from "react";
-import { AddBothReadingsButton } from "@/components/electricity/popover-button";
-import { AreaTiles } from "@/components/home/area-tiles";
-import { ElectricitySummary } from "@/components/home/electricity-summary";
-import { NeedsYouNext, type NextItem } from "@/components/home/needs-you-next";
-import { NextDaysLine } from "@/components/home/next-days-line";
-import { SetupCard } from "@/components/home/setup-card";
-import { HeaderAccount, PhoneMark } from "@/components/shell/page-header";
+import { HomeView } from "@/components/home/home-view";
 import { Skeleton } from "@/components/ui/skeleton";
-import { isModuleEnabled } from "@/config/app.config";
-import { listAllBills, listAllReadings, listLiveSwitches, listMeters } from "@/features/electricity/queries";
-import { electricitySnapshot } from "@/features/electricity/snapshot";
-import { dayOfYear, dayStamp, dueByArea, greetingFor, meterCheckDue, nextDays, setupSteps } from "@/features/home/home";
-import { getReminders } from "@/features/reminders/load";
-import { getAccess, getFirstName } from "@/lib/auth";
-import { hourInAppTz } from "@/lib/format";
-
-/** How far ahead Home looks (the line and the tiles). */
-const WINDOW_DAYS = 30;
-/** How many rows "Needs you next" shows; the Reminders page has everything. */
-const NEXT_SHOWN = 4;
+import { loadHome } from "@/features/home/load";
 
 /**
- * Home (R.4; boards HHomePhone, HHome, HStates): a greeting, the electricity card (or first-day setup),
- * Read the meters, the next 30 days as a line, what needs you next, and small tiles for the other areas.
+ * Home (issue #218, C157): read everything at request time, then draw it. The reading is `loadHome()` (the same
+ * queries as before the redesign, through `readDb()`, so visitors see the demo and a person with limited access only
+ * what they may see); the drawing is `HomeView`.
  */
 async function HomeContent() {
-  await connection();
-  // Home shows only what this person may see (S.8, C114).
-  const access = (await getAccess()) ?? { owner: false as const, grants: {} };
-  const electricityOn = isModuleEnabled("electricity") && allows(access, "electricity_readings", "see");
-  const canRead = allows(access, "electricity_readings", "add");
-  const [meters, readings, bills, switches, reminders, firstName, rules] = await Promise.all([
-    electricityOn ? listMeters(false) : Promise.resolve([]),
-    electricityOn ? listAllReadings() : Promise.resolve([]),
-    electricityOn ? listAllBills() : Promise.resolve([]),
-    electricityOn ? listLiveSwitches() : Promise.resolve([]),
-    getReminders(),
-    getFirstName(),
-    getRules(),
-  ]);
-  const { today, results } = reminders;
-  const snap = electricitySnapshot({ meters, readings, bills, switches, rules, today });
-  const { checkEveryDays } = rules;
-  const year = dayOfYear(today);
-
-  // First day: until every meter has a bill and a reading after it, Home shows the setup steps.
-  const steps = setupSteps({
-    meters: meters.length,
-    bills: meters.filter((m) => snap.data.get(m.id)!.last).length === meters.length && meters.length > 0 ? 1 : 0,
-    readingsSinceBill: meters.length > 0 && meters.every((m) => snap.data.get(m.id)!.usage.state === "ok") ? 1 : 0,
-  });
-  // The first-day steps open Settings, which is the owner's only (S.8).
-  const settingUp = electricityOn && access.owner && steps.some((s) => !s.done);
-
-  const checks = meters.map((m) => ({ meterName: m.name, dueDate: meterCheckDue(snap.data.get(m.id)!.readingRows[0]?.date ?? null, checkEveryDays, today) }));
-  const days = nextDays({ reminders: results, checks, today, days: WINDOW_DAYS });
-  const kindOf = new Map(results.map((r) => [r.item.id, r.item.kind]));
-  const next: NextItem[] = days
-    .flatMap((d) => d.items.map((i) => ({ ...i, date: d.date, sub: i.tone === "check" || i.key.startsWith("check:") ? `every ${checkEveryDays} days` : (kindOf.get(i.key) ?? "") })))
-    .sort((a, b) => a.daysUntil - b.daysUntil)
-    .slice(0, NEXT_SHOWN);
-
-  const entries = meters.map((m, i) => {
-    const newest = snap.data.get(m.id)?.readingRows[0];
-    return { id: m.id, name: m.name, toneIndex: i, lastValue: newest?.value ?? null, lastDate: newest?.date ?? null };
-  });
-
-  return (
-    <>
-      <header className="flex items-start gap-3">
-        <PhoneMark />
-        <div className="min-w-0 flex-1">
-          <p className="font-mono text-[10.5px] tracking-[0.14em] text-label uppercase">
-            {dayStamp(today)} · day {year.day} of {year.of}
-          </p>
-          <h1 className="mt-1 text-[26px] leading-tight font-normal tracking-tight md:text-[40px] md:font-light">
-            {greetingFor(hourInAppTz())}
-            {firstName ? `, ${firstName}` : ""}.
-          </h1>
-        </div>
-        <HeaderAccount />
-      </header>
-
-      <div className="grid gap-3 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] md:gap-5">
-        <div className="flex flex-col gap-3 md:gap-5">
-          {settingUp ? (
-            <SetupCard steps={steps} />
-          ) : meters.length > 0 ? (
-            <ElectricitySummary snapshot={snap} action={canRead ? <AddBothReadingsButton meters={entries} defaultDate={today} compact /> : undefined} />
-          ) : null}
-          <NextDaysLine days={days} windowDays={WINDOW_DAYS} />
-        </div>
-        <NeedsYouNext items={next} />
-      </div>
-
-      <AreaTiles counts={dueByArea(results, WINDOW_DAYS)} windowDays={WINDOW_DAYS} visible={(area) => navItemVisible(access, area)} />
-
-      {reminders.failedSources.length > 0 ? (
-        <p role="alert" className="text-sm text-destructive">
-          Couldn&apos;t load reminders from: {reminders.failedSources.join(", ")}.
-        </p>
-      ) : null}
-    </>
-  );
+  return <HomeView data={await loadHome()} />;
 }
 
 export default function Home() {
   return (
     <Suspense
       fallback={
-        <div className="flex flex-col gap-3" aria-label="Loading Home">
-          <Skeleton className="h-16 w-2/3 rounded-xl" />
+        <div className="mx-auto flex w-full max-w-[1560px] flex-col gap-4 md:gap-5" aria-label="Loading Home">
+          <Skeleton className="h-10 w-full rounded-xl" />
+          <Skeleton className="h-72 w-full rounded-3xl md:h-[360px]" />
           <Skeleton className="h-64 w-full rounded-3xl" />
-          <Skeleton className="h-32 w-full rounded-2xl" />
         </div>
       }
     >
