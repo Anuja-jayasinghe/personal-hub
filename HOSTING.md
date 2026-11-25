@@ -16,6 +16,15 @@ owner before it is done. Secrets are never printed, committed or pasted into cha
   **session pooler**, port 5432, the same address as `.env.local`). Not the transaction pooler (port 6543): it hung
   every signed-in page, because it cannot take more than two queries at once on one connection (issue #135, C119).
 
+  **Optional switch to the transaction pooler (issue #257, C163).** The session pooler allows only 15 clients in all
+  (issue #253), which a burst of requests can fill. A test on 2026-11-25 showed the transaction pooler (port 6543) works
+  when each connection carries one query at a time (12 concurrent queries with 12 connections answered in about 0.5 s;
+  40 separate clients all succeeded) and hangs only when queries queue on one connection (the C119 case). To switch,
+  in Vercel set `DATABASE_URL` to Supabase's **transaction pooler** string (port 6543, same user and password) and add
+  `DATABASE_MAX_CONNECTIONS=12`, for Production and Preview, then redeploy and watch the live end-to-end run. To go
+  back, restore the old `DATABASE_URL` and remove `DATABASE_MAX_CONNECTIONS`. Keep `.env.local` on the port 5432
+  address: migrations and local scripts should not use the transaction pooler.
+
 - **Preview settings** (C133, issue #174): previews use **real data**. Preview has the same `DATABASE_URL`,
   `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `ALLOWED_EMAILS` and sign-in/up paths as Production, but **Clerk's development
   keys** (`pk_test` / `sk_test`, as in `.env.local`), because the production Clerk instance only works on
