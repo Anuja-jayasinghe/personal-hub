@@ -43,6 +43,15 @@ export const appConfig = {
   /** The live address (HOSTING.md, C115), for links in notifications, which are read outside the app. */
   siteUrl: "https://hub.anujajay.com",
 
+  /** The signature in the footer of every page (issue #275, the same one as the SolarEdge dashboard). */
+  author: {
+    name: "Anuja Jayasinghe",
+    url: "https://anujajay.com",
+    github: "https://github.com/Anuja-jayasinghe",
+  },
+  /** The public repository: the footer's version links to this version's release notes. */
+  repoUrl: "https://github.com/Anuja-jayasinghe/personal-hub",
+
   /**
    * Who the plan-ahead emails come from (N.2, C141): Resend, from the verified sending subdomain. Not a
    * secret. The address they go to is the NOTIFY_EMAIL_TO setting, never in the code.
