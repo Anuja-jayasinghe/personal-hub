@@ -91,7 +91,7 @@ export function VehicleForm({ action, fuelTypes, vehicleTypes, vehicle }: Props)
           : "Optional. It is saved as a reading dated today; add later readings on the vehicle's Overview page. Nothing reminds you by distance."}
       </p>
 
-      <label className="flex items-start gap-2 text-sm">
+      <label className="flex items-start gap-2 text-sm pointer-coarse:min-h-11">
         <input type="checkbox" name="ignoreEmissionOdometer" defaultChecked={vehicle?.ignoreEmissionOdometer ?? false} className="mt-0.5 size-4" />
         <span>
           Emission test odometers aren&apos;t accurate

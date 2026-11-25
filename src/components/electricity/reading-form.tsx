@@ -47,11 +47,11 @@ export function ReadingForm({ action, meterId, reading, defaultDate, onDone }: P
         </label>
         <label className={labelClass}>
           <span className={labelTextClass}>{replaced ? "New meter's starting reading (kWh)" : "Meter reading (kWh)"}</span>
-          <Input name="value" required inputMode="decimal" defaultValue={reading?.value ?? ""} placeholder="12345.6" />
+          <Input name="value" enterKeyHint="next" required inputMode="decimal" defaultValue={reading?.value ?? ""} placeholder="12345.6" />
         </label>
       </div>
 
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex items-center gap-2 text-sm pointer-coarse:min-h-11">
         <input
           type="checkbox"
           name="replaced"
@@ -64,13 +64,13 @@ export function ReadingForm({ action, meterId, reading, defaultDate, onDone }: P
       {replaced ? (
         <label className={labelClass}>
           <span className={labelTextClass}>Old meter&apos;s final reading (kWh)</span>
-          <Input name="replacedFinalValue" required inputMode="decimal" defaultValue={reading?.replacedFinalValue ?? ""} className="max-w-48" />
+          <Input name="replacedFinalValue" enterKeyHint="next" required inputMode="decimal" defaultValue={reading?.replacedFinalValue ?? ""} className="max-w-48" />
         </label>
       ) : null}
 
       <label className={labelClass}>
         <span className={labelTextClass}>Note (optional)</span>
-        <Input name="note" maxLength={500} defaultValue={reading?.note ?? ""} />
+        <Input name="note" enterKeyHint="done" maxLength={500} defaultValue={reading?.note ?? ""} />
       </label>
 
       {state.error ? (
