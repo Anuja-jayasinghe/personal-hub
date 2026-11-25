@@ -2,6 +2,13 @@
 
 Versions follow semver: **major** for changes that break how the hub is used or stored, **minor** for new features, **patch** for fixes (while below 1.0, breaking changes bump the minor). Since 0.6.1 they are automatic (DECISIONS C123): pull request titles follow Conventional Commits (`feat: …`, `fix: …`), release-please keeps a release pull request with the next version and its notes, and merging it tags `vX.Y.Z` and publishes the GitHub release (pre-release below 1.0). 0.6.0 and 0.6.1 were versioned by hand (C120).
 
+## [0.24.1](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.24.0...v0.24.1) (2026-11-25)
+
+
+### Fixes
+
+* **db:** free idle database connections after 4 seconds on Vercel ([#253](https://github.com/Anuja-jayasinghe/personal-hub/issues/253)) ([#254](https://github.com/Anuja-jayasinghe/personal-hub/issues/254)) ([060ba18](https://github.com/Anuja-jayasinghe/personal-hub/commit/060ba181b9960021ad1bc56d70297a295d3cada9))
+
 ## [0.24.0](https://github.com/Anuja-jayasinghe/personal-hub/compare/v0.23.1...v0.24.0) (2026-11-24)
 
 
